@@ -1,0 +1,63 @@
+**/.claude/settings.local.json
+# Compiled executable files
+# If your main package is in the root of "go-llms", the executable might be named "go-llms".
+bin/go-llms
+bin/go-llms.exe # For Windows builds
+
+# General compiled files and binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.out
+
+# Test binaries
+*.test
+
+# Archives
+*.a
+*.o
+
+# Dependency directory
+# Add 'vendor/' if you choose not to commit your vendored dependencies.
+# Most Go projects using modules do not commit the vendor directory unless specific needs arise.
+# vendor/
+
+# Go Module files
+# The go.sum file is usually committed to ensure reproducible builds.
+# Only ignore it if you have a very specific reason.
+# go.sum
+
+# IDE settings & files
+.idea/
+*.iml
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Environment variable files
+.env
+.env.*
+!.env.example
+
+# Log files
+*.log
+*.log.*
+
+# Profiling and coverage data
+profile.out
+coverage.out
+c.out
+
+# Common build output directories (uncomment if you use them)
+# _output/
+# bin/
+# dist/
