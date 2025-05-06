@@ -336,9 +336,8 @@ func TestArrayValidation(t *testing.T) {
 		}
 	})
 
-	// Test array with item constraint violation - skip this test for now
+	// Test array with item constraint violation
 	t.Run("invalid array - item constraint violation", func(t *testing.T) {
-		t.Skip("Skipping this test until we fix array item validation")
 		input := `{"tags": ["golang", "validation", "json"], "scores": [85, 110, 75.5]}`
 		result, err := validator.Validate(schema, input)
 
@@ -348,7 +347,7 @@ func TestArrayValidation(t *testing.T) {
 		if result.Valid {
 			t.Errorf("Expected invalid result for item constraint violation")
 		}
-		if !containsError(result.Errors, "scores[1]", "maximum") {
+		if !containsError(result.Errors, "scores[1]", "at most") {
 			t.Errorf("Expected maximum error for 'scores[1]', got: %v", result.Errors)
 		}
 	})

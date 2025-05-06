@@ -31,7 +31,7 @@ TEST_FLAGS=-v -race -coverprofile=coverage.out -covermode=atomic
 DEP_FLAGS=-v
 
 # Commands
-.PHONY: all build clean test coverage lint fmt vet mod-tidy mod-download help examples examples-all
+.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples examples-all
 
 # Default target
 all: clean test build
@@ -80,14 +80,76 @@ test-pkg:
 	fi
 	$(GOTEST) $(TEST_FLAGS) ./$(PACKAGE_DIR)/$(PKG)
 
+# Run tests with verbose output
+test-verbose:
+	$(GOTEST) -v ./...
+
+# Run tests for a specific package with verbose output (usage: make test-verbose-pkg PKG=schema/validation)
+test-verbose-pkg:
+	@if [ -z "$(PKG)" ]; then \
+		echo "Usage: make test-verbose-pkg PKG=<package-path>"; \
+		exit 1; \
+	fi
+	$(GOTEST) -v ./$(PACKAGE_DIR)/$(PKG)
+
+# Run tests with race detection
+test-race:
+	$(GOTEST) -race ./...
+
+# Run tests for a specific package with race detection (usage: make test-race-pkg PKG=schema/validation)
+test-race-pkg:
+	@if [ -z "$(PKG)" ]; then \
+		echo "Usage: make test-race-pkg PKG=<package-path>"; \
+		exit 1; \
+	fi
+	$(GOTEST) -race ./$(PACKAGE_DIR)/$(PKG)
+
+# Run only short tests (useful for quick checks)
+test-short:
+	$(GOTEST) -short ./...
+
+# Run only short tests for a specific package (usage: make test-short-pkg PKG=schema/validation)
+test-short-pkg:
+	@if [ -z "$(PKG)" ]; then \
+		echo "Usage: make test-short-pkg PKG=<package-path>"; \
+		exit 1; \
+	fi
+	$(GOTEST) -short ./$(PACKAGE_DIR)/$(PKG)
+
+# Test a specific test function (usage: make test-func PKG=schema/validation FUNC=TestArrayValidation)
+test-func:
+	@if [ -z "$(PKG)" ] || [ -z "$(FUNC)" ]; then \
+		echo "Usage: make test-func PKG=<package-path> FUNC=<function-name>"; \
+		exit 1; \
+	fi
+	$(GOTEST) -v ./$(PACKAGE_DIR)/$(PKG) -run "$(FUNC)"
+
 # Run benchmarks
 benchmark:
 	$(GOTEST) -bench=. -benchmem ./...
+
+# Run benchmarks for a specific package (usage: make benchmark-pkg PKG=schema/validation)
+benchmark-pkg:
+	@if [ -z "$(PKG)" ]; then \
+		echo "Usage: make benchmark-pkg PKG=<package-path>"; \
+		exit 1; \
+	fi
+	$(GOTEST) -bench=. -benchmem ./$(PACKAGE_DIR)/$(PKG)
 
 # Generate test coverage
 coverage: test
 	$(GOCMD) tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated at coverage.html"
+
+# Generate test coverage for a specific package
+coverage-pkg:
+	@if [ -z "$(PKG)" ]; then \
+		echo "Usage: make coverage-pkg PKG=<package-path>"; \
+		exit 1; \
+	fi
+	$(GOTEST) -coverprofile=coverage.out -covermode=atomic ./$(PACKAGE_DIR)/$(PKG)
+	$(GOCMD) tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report for $(PKG) generated at coverage.html"
 
 # Run linting
 lint:
@@ -130,19 +192,43 @@ help:
 	@echo "Go-LLMs Makefile"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make all          Build and test everything"
-	@echo "  make build        Build the main binary"
-	@echo "  make example      Build a specific example (usage: make example EXAMPLE=simple)"
-	@echo "  make examples-all Build all example binaries"
-	@echo "  make test         Run all tests"
-	@echo "  make test-pkg     Run tests for a specific package (usage: make test-pkg PKG=schema/validation)"
-	@echo "  make benchmark    Run benchmarks"
-	@echo "  make coverage     Generate test coverage report"
-	@echo "  make lint         Run linters"
-	@echo "  make fmt          Format Go code"
-	@echo "  make vet          Run Go vet"
-	@echo "  make mod-tidy     Tidy Go module dependencies"
-	@echo "  make mod-download Download Go module dependencies"
-	@echo "  make clean        Clean build artifacts"
-	@echo "  make install-lint Install golangci-lint"
-	@echo "  make help         Show this help message"
+	@echo "  make all              Build and test everything"
+	@echo "  make build            Build the main binary"
+	@echo "  make example          Build a specific example (usage: make example EXAMPLE=simple)"
+	@echo "  make examples-all     Build all example binaries"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make test             Run all tests with race detection and coverage"
+	@echo "  make test-pkg         Run tests for a specific package with race detection and coverage"
+	@echo "                        (usage: make test-pkg PKG=schema/validation)"
+	@echo "  make test-verbose     Run all tests with verbose output"
+	@echo "  make test-verbose-pkg Run tests for a specific package with verbose output"
+	@echo "                        (usage: make test-verbose-pkg PKG=schema/validation)"
+	@echo "  make test-race        Run all tests with race detection"
+	@echo "  make test-race-pkg    Run tests for a specific package with race detection"
+	@echo "                        (usage: make test-race-pkg PKG=schema/validation)"
+	@echo "  make test-short       Run only short tests"
+	@echo "  make test-short-pkg   Run only short tests for a specific package"
+	@echo "                        (usage: make test-short-pkg PKG=schema/validation)"
+	@echo "  make test-func        Run a specific test function"
+	@echo "                        (usage: make test-func PKG=schema/validation FUNC=TestArrayValidation)"
+	@echo "  make benchmark        Run benchmarks for all packages"
+	@echo "  make benchmark-pkg    Run benchmarks for a specific package"
+	@echo "                        (usage: make benchmark-pkg PKG=schema/validation)"
+	@echo "  make coverage         Generate test coverage report"
+	@echo "  make coverage-pkg     Generate test coverage report for a specific package"
+	@echo "                        (usage: make coverage-pkg PKG=schema/validation)"
+	@echo ""
+	@echo "Code quality:"
+	@echo "  make lint             Run linters"
+	@echo "  make fmt              Format Go code"
+	@echo "  make vet              Run Go vet"
+	@echo ""
+	@echo "Dependencies:"
+	@echo "  make mod-tidy         Tidy Go module dependencies"
+	@echo "  make mod-download     Download Go module dependencies"
+	@echo "  make install-lint     Install golangci-lint"
+	@echo ""
+	@echo "Maintenance:"
+	@echo "  make clean            Clean build artifacts"
+	@echo "  make help             Show this help message"
