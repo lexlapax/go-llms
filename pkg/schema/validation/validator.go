@@ -385,22 +385,28 @@ func (v *DefaultValidator) validateString(path string, schema *domain.Schema, da
 		switch format {
 		case "email":
 			emailPattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-			re, _ := regexp.Compile(emailPattern)
-			if !re.MatchString(str) {
+			re, err := regexp.Compile(emailPattern)
+			if err != nil {
+				errors = append(errors, fmt.Sprintf("invalid email pattern: %v", err))
+			} else if !re.MatchString(str) {
 				errors = append(errors, fmt.Sprintf("%s must be a valid email address", displayPath))
 			}
 		case "date-time":
 			// Simplified ISO8601 date-time validation
-			dateTimePattern := `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(.\d+)?(Z|[+-]\d{2}:\d{2})$`
-			re, _ := regexp.Compile(dateTimePattern)
-			if !re.MatchString(str) {
+			dateTimePattern := `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$`
+			re, err := regexp.Compile(dateTimePattern)
+			if err != nil {
+				errors = append(errors, fmt.Sprintf("invalid date-time pattern: %v", err))
+			} else if !re.MatchString(str) {
 				errors = append(errors, fmt.Sprintf("%s must be a valid ISO8601 date-time", displayPath))
 			}
 		case "uri":
 			// Simplified URI validation
 			uriPattern := `^(https?|ftp)://[^\s/$.?#].[^\s]*$`
-			re, _ := regexp.Compile(uriPattern)
-			if !re.MatchString(str) {
+			re, err := regexp.Compile(uriPattern)
+			if err != nil {
+				errors = append(errors, fmt.Sprintf("invalid URI pattern: %v", err))
+			} else if !re.MatchString(str) {
 				errors = append(errors, fmt.Sprintf("%s must be a valid URI", displayPath))
 			}
 		default:

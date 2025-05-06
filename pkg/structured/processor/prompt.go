@@ -115,3 +115,9 @@ func (p *PromptEnhancer) EnhanceWithOptions(prompt string, schema *schemaDomain.
 
 	return builder.String(), nil
 }
+
+// EnhancePromptWithSchema is a convenience function that creates a prompt enhancer and enhances a prompt
+func EnhancePromptWithSchema(prompt string, schema *schemaDomain.Schema) (string, error) {
+	enhancer := NewPromptEnhancer()
+	return enhancer.Enhance(prompt, schema)
+}

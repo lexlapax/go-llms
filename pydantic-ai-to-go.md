@@ -387,7 +387,7 @@ import (
     "context"
     "fmt"
     
-    "github.com/yourusername/goagent"
+    "github.com/lexlapax/goagent"
 )
 
 // Dependencies for the agent

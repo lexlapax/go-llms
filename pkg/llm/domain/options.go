@@ -11,6 +11,7 @@ type ProviderOptions struct {
 	TopP             float64
 	FrequencyPenalty float64
 	PresencePenalty  float64
+	Model            string
 }
 
 // DefaultOptions returns the default provider options
@@ -64,5 +65,12 @@ func WithFrequencyPenalty(penalty float64) Option {
 func WithPresencePenalty(penalty float64) Option {
 	return func(o *ProviderOptions) {
 		o.PresencePenalty = penalty
+	}
+}
+
+// WithModel sets the model to use
+func WithModel(model string) Option {
+	return func(o *ProviderOptions) {
+		o.Model = model
 	}
 }

@@ -201,6 +201,180 @@ func TestStringValidation(t *testing.T) {
 	})
 }
 
+func TestDateTimeValidation(t *testing.T) {
+	// Test schema with date-time format
+	schema := &domain.Schema{
+		Type: "object",
+		Properties: map[string]domain.Property{
+			"timestamp": {
+				Type:   "string",
+				Format: "date-time",
+			},
+		},
+		Required: []string{"timestamp"},
+	}
+
+	validator := NewValidator()
+
+	// Valid date-time format
+	t.Run("valid date-time format", func(t *testing.T) {
+		input := `{"timestamp": "2023-05-01T14:30:00Z"}`
+		result, err := validator.Validate(schema, input)
+
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if !result.Valid {
+			t.Errorf("Expected valid result, got validation errors: %v", result.Errors)
+		}
+	})
+
+	// Valid date-time with decimal seconds
+	t.Run("valid date-time with decimal seconds", func(t *testing.T) {
+		input := `{"timestamp": "2023-05-01T14:30:00.123Z"}`
+		result, err := validator.Validate(schema, input)
+
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if !result.Valid {
+			t.Errorf("Expected valid result, got validation errors: %v", result.Errors)
+		}
+	})
+
+	// Valid date-time with timezone offset
+	t.Run("valid date-time with timezone offset", func(t *testing.T) {
+		input := `{"timestamp": "2023-05-01T14:30:00+01:00"}`
+		result, err := validator.Validate(schema, input)
+
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if !result.Valid {
+			t.Errorf("Expected valid result, got validation errors: %v", result.Errors)
+		}
+	})
+
+	// Invalid date-time format
+	t.Run("invalid date-time format", func(t *testing.T) {
+		input := `{"timestamp": "2023-05-01 14:30:00"}`
+		result, err := validator.Validate(schema, input)
+
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Valid {
+			t.Errorf("Expected invalid result for incorrect date-time format")
+		}
+		if !containsError(result.Errors, "timestamp", "valid ISO8601") {
+			t.Errorf("Expected date-time format error for 'timestamp', got: %v", result.Errors)
+		}
+	})
+
+	// Missing timezone in date-time
+	t.Run("invalid date-time - missing timezone", func(t *testing.T) {
+		input := `{"timestamp": "2023-05-01T14:30:00"}`
+		result, err := validator.Validate(schema, input)
+
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Valid {
+			t.Errorf("Expected invalid result for date-time without timezone")
+		}
+		if !containsError(result.Errors, "timestamp", "valid ISO8601") {
+			t.Errorf("Expected date-time format error for 'timestamp', got: %v", result.Errors)
+		}
+	})
+}
+
+func TestURIValidation(t *testing.T) {
+	// Test schema with URI format
+	schema := &domain.Schema{
+		Type: "object",
+		Properties: map[string]domain.Property{
+			"website": {
+				Type:   "string",
+				Format: "uri",
+			},
+		},
+		Required: []string{"website"},
+	}
+
+	validator := NewValidator()
+
+	// Valid HTTP URI
+	t.Run("valid http URI", func(t *testing.T) {
+		input := `{"website": "http://example.com"}`
+		result, err := validator.Validate(schema, input)
+
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if !result.Valid {
+			t.Errorf("Expected valid result, got validation errors: %v", result.Errors)
+		}
+	})
+
+	// Valid HTTPS URI with path and query
+	t.Run("valid https URI with path and query", func(t *testing.T) {
+		input := `{"website": "https://example.com/path/to/resource?query=param"}`
+		result, err := validator.Validate(schema, input)
+
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if !result.Valid {
+			t.Errorf("Expected valid result, got validation errors: %v", result.Errors)
+		}
+	})
+
+	// Valid FTP URI
+	t.Run("valid ftp URI", func(t *testing.T) {
+		input := `{"website": "ftp://files.example.com"}`
+		result, err := validator.Validate(schema, input)
+
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if !result.Valid {
+			t.Errorf("Expected valid result, got validation errors: %v", result.Errors)
+		}
+	})
+
+	// Invalid URI - missing scheme
+	t.Run("invalid URI - missing scheme", func(t *testing.T) {
+		input := `{"website": "example.com"}`
+		result, err := validator.Validate(schema, input)
+
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Valid {
+			t.Errorf("Expected invalid result for URI without scheme")
+		}
+		if !containsError(result.Errors, "website", "valid URI") {
+			t.Errorf("Expected URI format error for 'website', got: %v", result.Errors)
+		}
+	})
+
+	// Invalid URI - unsupported scheme
+	t.Run("invalid URI - unsupported scheme", func(t *testing.T) {
+		input := `{"website": "file:///path/to/file"}`
+		result, err := validator.Validate(schema, input)
+
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Valid {
+			t.Errorf("Expected invalid result for URI with unsupported scheme")
+		}
+		if !containsError(result.Errors, "website", "valid URI") {
+			t.Errorf("Expected URI format error for 'website', got: %v", result.Errors)
+		}
+	})
+}
+
 func TestNumberValidation(t *testing.T) {
 	// Test schema with number constraints
 	schema := &domain.Schema{

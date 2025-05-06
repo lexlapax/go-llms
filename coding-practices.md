@@ -372,7 +372,7 @@ import (
     "regexp"
     "strings"
     
-    "github.com/yourusername/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 // DefaultValidator implements schema validation
@@ -443,8 +443,8 @@ import (
     "encoding/json"
     "fmt"
     
-    "github.com/yourusername/go-llms/pkg/llm/domain"
-    "github.com/yourusername/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/llm/domain"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 // OpenAIProvider implements the Provider interface for OpenAI
@@ -569,7 +569,7 @@ package reflection
 import (
     "reflect"
     
-    "github.com/yourusername/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 // GenerateSchema creates a schema from a Go struct
@@ -645,7 +645,7 @@ package provider
 import (
     "context"
     
-    "github.com/yourusername/go-llms/pkg/llm/domain"
+    "github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
 // MockProvider implements the Provider interface for testing
@@ -699,11 +699,11 @@ package main
 import (
     "context"
     "fmt"
-    "log"
+    "log/slog"
     
-    "github.com/yourusername/go-llms/pkg/llm/provider"
-    "github.com/yourusername/go-llms/pkg/schema/domain"
-    "github.com/yourusername/go-llms/pkg/schema/validation"
+    "github.com/lexlapax/go-llms/pkg/llm/provider"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/schema/validation"
 )
 
 func main() {
@@ -726,7 +726,8 @@ func main() {
     
     result, err := llmProvider.GenerateWithSchema(context.Background(), prompt, schema)
     if err != nil {
-        log.Fatalf("Error: %v", err)
+        slog.Error("Failed to generate with schema", "error", err)
+        return
     }
     
     // Use the validated result
@@ -749,11 +750,11 @@ package main
 import (
     "context"
     "fmt"
-    "log"
+    "log/slog"
     
-    "github.com/yourusername/go-llms/pkg/agent"
-    "github.com/yourusername/go-llms/pkg/llm/provider"
-    "github.com/yourusername/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/agent"
+    "github.com/lexlapax/go-llms/pkg/llm/provider"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 // WeatherResponse defines the schema for weather data
@@ -788,7 +789,8 @@ func main() {
         outputSchema,
     )
     if err != nil {
-        log.Fatalf("Error: %v", err)
+        slog.Error("Failed to run agent", "error", err)
+        return
     }
     
     // Use the result
@@ -819,9 +821,9 @@ package main
 import (
     "encoding/json"
     "fmt"
-    "log"
+    "log/slog"
     
-    "github.com/yourusername/go-llms/pkg/schema/adapter/reflection"
+    "github.com/lexlapax/go-llms/pkg/schema/adapter/reflection"
 )
 
 // Person defines a struct for a person
@@ -845,13 +847,15 @@ func main() {
     // Generate schema from Go struct
     schema, err := reflection.GenerateSchema(Person{})
     if err != nil {
-        log.Fatalf("Error generating schema: %v", err)
+        slog.Error("Failed to generate schema", "error", err)
+        return
     }
     
     // Convert schema to JSON
     schemaJSON, err := json.MarshalIndent(schema, "", "  ")
     if err != nil {
-        log.Fatalf("Error marshaling schema: %v", err)
+        slog.Error("Failed to marshal schema", "error", err)
+        return
     }
     
     fmt.Println(string(schemaJSON))

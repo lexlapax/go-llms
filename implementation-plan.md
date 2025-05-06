@@ -169,7 +169,7 @@ import (
     "encoding/json"
     "fmt"
     
-    "github.com/yourusername/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 // DefaultValidator implements schema validation
@@ -210,7 +210,7 @@ import (
     "reflect"
     "strings"
     
-    "github.com/yourusername/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 // GenerateSchema creates a schema from a Go struct
@@ -333,8 +333,8 @@ import (
     "encoding/json"
     "fmt"
     
-    "github.com/yourusername/go-llms/pkg/llm/domain"
-    "github.com/yourusername/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/llm/domain"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 // OpenAIProvider implements the Provider interface for OpenAI
@@ -373,7 +373,7 @@ package provider
 import (
     "context"
     
-    "github.com/yourusername/go-llms/pkg/llm/domain"
+    "github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
 // MockProvider implements the Provider interface for testing
@@ -425,7 +425,7 @@ package provider
 import (
     "context"
     
-    "github.com/yourusername/go-llms/pkg/llm/domain"
+    "github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
 // AnthropicProvider implements the Provider interface for Anthropic
@@ -469,8 +469,8 @@ import (
     "encoding/json"
     "fmt"
     
-    "github.com/yourusername/go-llms/pkg/schema/domain"
-    "github.com/yourusername/go-llms/pkg/schema/validation"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/schema/validation"
 )
 
 // StructuredProcessor handles processing of structured LLM outputs
@@ -514,7 +514,7 @@ import (
     "encoding/json"
     "fmt"
     
-    "github.com/yourusername/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 // EnhancePromptWithSchema adds schema information to a prompt
@@ -548,8 +548,8 @@ import (
     "fmt"
     "reflect"
     
-    "github.com/yourusername/go-llms/pkg/agent/domain"
-    "github.com/yourusername/go-llms/pkg/schema/adapter/reflection"
+    "github.com/lexlapax/go-llms/pkg/agent/domain"
+    "github.com/lexlapax/go-llms/pkg/schema/adapter/reflection"
 )
 
 // BaseTool provides a foundation for tool implementations
@@ -631,8 +631,8 @@ import (
     "context"
     "fmt"
     
-    "github.com/yourusername/go-llms/pkg/agent/domain"
-    "github.com/yourusername/go-llms/pkg/llm/domain"
+    "github.com/lexlapax/go-llms/pkg/agent/domain"
+    "github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
 // Agent[D, O] is a generic agent that handles dependencies and outputs
@@ -686,18 +686,18 @@ package workflow
 
 import (
     "context"
-    "log"
+    "log/slog"
     
-    "github.com/yourusername/go-llms/pkg/llm/domain"
+    "github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
 // LoggingHook implements Hook for logging
 type LoggingHook struct {
-    logger *log.Logger
+    logger *slog.Logger
 }
 
 // NewLoggingHook creates a new logging hook
-func NewLoggingHook(logger *log.Logger) *LoggingHook {
+func NewLoggingHook(logger *slog.Logger) *LoggingHook {
     return &LoggingHook{
         logger: logger,
     }
@@ -717,10 +717,10 @@ package main
 import (
     "context"
     "fmt"
-    "log"
+    "log/slog"
     
-    "github.com/yourusername/go-llms/pkg/llm/provider"
-    "github.com/yourusername/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/llm/provider"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 func main() {
@@ -743,7 +743,8 @@ func main() {
     
     result, err := llmProvider.GenerateWithSchema(context.Background(), prompt, schema)
     if err != nil {
-        log.Fatalf("Error: %v", err)
+        slog.Error("Failed to generate with schema", "error", err)
+        return
     }
     
     // Use the validated result
@@ -762,12 +763,12 @@ package main
 import (
     "context"
     "fmt"
-    "log"
+    "log/slog"
     
-    "github.com/yourusername/go-llms/pkg/agent/tools"
-    "github.com/yourusername/go-llms/pkg/agent/workflow"
-    "github.com/yourusername/go-llms/pkg/llm/provider"
-    "github.com/yourusername/go-llms/pkg/schema/domain"
+    "github.com/lexlapax/go-llms/pkg/agent/tools"
+    "github.com/lexlapax/go-llms/pkg/agent/workflow"
+    "github.com/lexlapax/go-llms/pkg/llm/provider"
+    "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 // Implementation of a more complex agent example...
