@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go build:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "Bash(go test:*)",
+      "WebFetch(domain:pkg.go.dev)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(go get:*)",
+      "Bash(go doc:*)",
+      "Bash(go run:*)",
+      "Bash(./go-llms help)",
+      "Bash(./go-llms:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:openrouter.ai)",
+      "Bash(ls:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(make:*)",
+      "Bash(tests/test_*.go)",
+      "Bash(mv:*)",
+      "Bash(touch:*)",
+      "Bash(find:*)",
+      "Bash(go mod init:*)"
+    ],
+    "deny": []
+  }
+}

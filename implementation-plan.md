@@ -21,7 +21,7 @@ go-llms/
 
 2. Initialize Go module:
 ```bash
-go mod init github.com/yourusername/go-llms
+go mod init github.com/lexlapax/go-llms
 ```
 
 3. Create initial README.md with project goals and architecture overview
