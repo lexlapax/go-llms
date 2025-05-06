@@ -88,29 +88,45 @@ When working on this project, follow these Go coding standards:
 
 ## Available Commands
 
-For development, use these commands:
+A Makefile has been created for this project. Use these commands:
 
 ```
-go mod init github.com/yourusername/go-llms   # Initialize module (already done)
-go mod tidy                                   # Clean up dependencies
-go test ./...                                 # Run all tests
-go test -v ./pkg/schema/...                   # Run tests for schema package
-go test -bench=. ./...                        # Run benchmarks
-go run examples/simple/main.go                # Run example
+make help              # Show all available commands
+make all               # Build and test everything
+make build             # Build the main binary
+make test              # Run all tests with race detection and coverage
+make test-pkg          # Run tests for a specific package (e.g., make test-pkg PKG=schema/validation)
+make test-verbose      # Run all tests with verbose output
+make test-func         # Run a specific test function (e.g., make test-func PKG=schema/validation FUNC=TestArrayValidation)
+make benchmark         # Run benchmarks
+make benchmark-pkg     # Run benchmarks for a specific package
+make coverage          # Generate test coverage report
+make coverage-pkg      # Generate test coverage for a specific package
+make lint              # Run linters
+make fmt               # Format Go code
+make vet               # Run Go vet
+make example           # Build a specific example (e.g., make example EXAMPLE=simple)
+make clean             # Clean build artifacts
 ```
 
 ## Current Implementation Status
 
-The project is in the initial setup phase. Follow the implementation steps in order:
+The project has made significant progress. Here's what has been completed:
 
-1. First, create the project structure
-2. Implement core domain interfaces
-3. Implement schema validation
-4. Add LLM providers
-5. Build agent and tool systems
+1. ✅ Project structure and setup
+2. ✅ Core domain interfaces for schema validation, LLM providers, and agents
+3. ✅ Schema validation implementation (with TDD)
+4. ✅ Schema generation from Go structs 
+5. ✅ Type coercion system
+6. ✅ Mock provider for testing
+7. ✅ OpenAI provider implementation
+8. ✅ Anthropic provider implementation
+9. ✅ Build system via Makefile
 
 ## Next Steps
 
-- Initialize the project structure
-- Define core interfaces for schema validation, LLM providers, and agents
-- Start implementing the schema validation system using TDD
+- Implement structured output processor
+- Implement prompt enhancement for structured outputs
+- Build agent and tool systems
+- Create example applications
+- Add integration tests
