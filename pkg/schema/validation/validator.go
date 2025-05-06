@@ -258,20 +258,20 @@ func (v *DefaultValidator) validateArray(path string, schema *domain.Schema, dat
 		Required:    itemSchema.Required,
 		Description: itemSchema.Description,
 	}
-	
+
 	// Apply additional constraints from the item schema
-	if itemSchema.Minimum != nil || itemSchema.Maximum != nil || 
-	   itemSchema.MinLength != nil || itemSchema.MaxLength != nil || 
-	   itemSchema.Pattern != "" || itemSchema.Format != "" || 
-	   len(itemSchema.Enum) > 0 || itemSchema.Items != nil {
-		
+	if itemSchema.Minimum != nil || itemSchema.Maximum != nil ||
+		itemSchema.MinLength != nil || itemSchema.MaxLength != nil ||
+		itemSchema.Pattern != "" || itemSchema.Format != "" ||
+		len(itemSchema.Enum) > 0 || itemSchema.Items != nil {
+
 		if subSchema.Properties == nil {
 			subSchema.Properties = make(map[string]domain.Property)
 		}
-		
+
 		// Create a property with constraints
 		prop := domain.Property{}
-		
+
 		// Copy numeric constraints
 		if itemSchema.Minimum != nil {
 			prop.Minimum = itemSchema.Minimum
@@ -279,7 +279,7 @@ func (v *DefaultValidator) validateArray(path string, schema *domain.Schema, dat
 		if itemSchema.Maximum != nil {
 			prop.Maximum = itemSchema.Maximum
 		}
-		
+
 		// Copy string constraints
 		if itemSchema.MinLength != nil {
 			prop.MinLength = itemSchema.MinLength
@@ -296,12 +296,12 @@ func (v *DefaultValidator) validateArray(path string, schema *domain.Schema, dat
 		if itemSchema.Format != "" {
 			prop.Format = itemSchema.Format
 		}
-		
+
 		// Copy nested array constraints
 		if itemSchema.Items != nil {
 			prop.Items = itemSchema.Items
 		}
-		
+
 		// Add the property
 		subSchema.Properties[""] = prop
 	}

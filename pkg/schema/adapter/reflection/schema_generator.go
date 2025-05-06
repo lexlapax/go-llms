@@ -23,33 +23,33 @@ func intPtr(v int) *int {
 // GenerateSchema creates a schema from a Go struct
 func GenerateSchema(obj interface{}) (*domain.Schema, error) {
 	t := reflect.TypeOf(obj)
-	
+
 	// Handle pointers
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
-	
+
 	// Only handle structs
 	if t.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("schema generation only supports structs, got %s", t.Kind())
 	}
-	
+
 	schema := &domain.Schema{
 		Type:       "object",
 		Properties: make(map[string]domain.Property),
 	}
-	
+
 	var required []string
-	
+
 	// Process each field
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
-		
+
 		// Skip unexported fields
 		if !field.IsExported() {
 			continue
 		}
-		
+
 		// Get JSON field name or use struct field name
 		jsonTag := field.Tag.Get("json")
 		name := field.Name
@@ -67,40 +67,40 @@ func GenerateSchema(obj interface{}) (*domain.Schema, error) {
 				}
 			}
 		}
-		
+
 		// Create property
 		prop, err := generateProperty(field)
 		if err != nil {
 			return nil, fmt.Errorf("error generating property for field %s: %w", field.Name, err)
 		}
-		
+
 		schema.Properties[name] = prop
-		
+
 		// Check if required
 		if tag := field.Tag.Get("validate"); strings.Contains(tag, "required") && !omitempty {
 			required = append(required, name)
 		}
 	}
-	
+
 	if len(required) > 0 {
 		schema.Required = required
 	}
-	
+
 	return schema, nil
 }
 
 // generateProperty creates a property from a struct field
 func generateProperty(field reflect.StructField) (domain.Property, error) {
 	prop := domain.Property{}
-	
+
 	// Set description if available
 	if desc := field.Tag.Get("description"); desc != "" {
 		prop.Description = desc
 	}
-	
+
 	// Map Go types to JSON Schema types
 	t := field.Type
-	
+
 	// Handle pointers
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -109,35 +109,35 @@ func generateProperty(field reflect.StructField) (domain.Property, error) {
 	switch t.Kind() {
 	case reflect.String:
 		prop.Type = "string"
-		
+
 		// Handle string formats
 		if format := field.Tag.Get("format"); format != "" {
 			prop.Format = format
 		}
-		
+
 		// Handle email validation
 		if validateTag := field.Tag.Get("validate"); strings.Contains(validateTag, "email") {
 			prop.Format = "email"
 		}
-		
+
 		// Handle pattern
 		if pattern := field.Tag.Get("pattern"); pattern != "" {
 			prop.Pattern = pattern
 		}
-		
+
 		// Handle min/max length
 		if minLength := field.Tag.Get("minLength"); minLength != "" {
 			if min, err := strconv.Atoi(minLength); err == nil {
 				prop.MinLength = intPtr(min)
 			}
 		}
-		
+
 		if maxLength := field.Tag.Get("maxLength"); maxLength != "" {
 			if max, err := strconv.Atoi(maxLength); err == nil {
 				prop.MaxLength = intPtr(max)
 			}
 		}
-		
+
 		// Handle enum values from validate tag
 		if validateTag := field.Tag.Get("validate"); strings.Contains(validateTag, "oneof=") {
 			for _, part := range strings.Split(validateTag, ",") {
@@ -148,14 +148,14 @@ func generateProperty(field reflect.StructField) (domain.Property, error) {
 				}
 			}
 		}
-		
+
 	case reflect.Bool:
 		prop.Type = "boolean"
-		
+
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		prop.Type = "integer"
-		
+
 		// Handle min/max from validate tag
 		validateTag := field.Tag.Get("validate")
 		for _, part := range strings.Split(validateTag, ",") {
@@ -169,10 +169,10 @@ func generateProperty(field reflect.StructField) (domain.Property, error) {
 				}
 			}
 		}
-		
+
 	case reflect.Float32, reflect.Float64:
 		prop.Type = "number"
-		
+
 		// Handle min/max from validate tag
 		validateTag := field.Tag.Get("validate")
 		for _, part := range strings.Split(validateTag, ",") {
@@ -186,19 +186,19 @@ func generateProperty(field reflect.StructField) (domain.Property, error) {
 				}
 			}
 		}
-		
+
 	case reflect.Slice, reflect.Array:
 		prop.Type = "array"
-		
+
 		// Create items schema based on slice element type
 		elemType := t.Elem()
 		var elemProp domain.Property
-		
+
 		// Handle pointer element type
 		if elemType.Kind() == reflect.Ptr {
 			elemType = elemType.Elem()
 		}
-		
+
 		switch elemType.Kind() {
 		case reflect.String:
 			elemProp = domain.Property{Type: "string"}
@@ -220,7 +220,7 @@ func generateProperty(field reflect.StructField) (domain.Property, error) {
 				if err != nil {
 					return prop, fmt.Errorf("error generating schema for slice element: %w", err)
 				}
-				
+
 				elemProp = domain.Property{
 					Type:       "object",
 					Properties: elemSchema.Properties,
@@ -230,9 +230,9 @@ func generateProperty(field reflect.StructField) (domain.Property, error) {
 		default:
 			elemProp = domain.Property{Type: "string"} // Default to string for unknown types
 		}
-		
+
 		prop.Items = &elemProp
-		
+
 	case reflect.Struct:
 		// Handle special cases
 		if t == reflect.TypeOf(time.Time{}) {
@@ -245,32 +245,24 @@ func generateProperty(field reflect.StructField) (domain.Property, error) {
 			if err != nil {
 				return prop, fmt.Errorf("error generating schema for nested struct: %w", err)
 			}
-			
+
 			prop.Type = "object"
 			prop.Properties = structSchema.Properties
 			prop.Required = structSchema.Required
 		}
-		
+
 	case reflect.Map:
 		// Handle maps as objects with additional properties
 		prop.Type = "object"
-		
-		// Get the value type for the map
-		valueType := t.Elem()
-		
-		// Handle pointer value type
-		if valueType.Kind() == reflect.Ptr {
-			valueType = valueType.Elem()
-		}
-		
-		// Set additionalProperties flag
+
+		// Set additionalProperties flag for maps
 		boolTrue := true
 		prop.AdditionalProperties = &boolTrue
-		
+
 	default:
 		// For unknown types, default to string
 		prop.Type = "string"
 	}
-	
+
 	return prop, nil
 }

@@ -7,11 +7,11 @@ import (
 
 // TestPerson is a struct for testing schema generation
 type TestPerson struct {
-	Name        string   `json:"name" validate:"required" description:"Person's full name"`
-	Age         int      `json:"age" validate:"min=0,max=120" description:"Age in years"`
-	Email       string   `json:"email" validate:"required,email" description:"Email address"`
-	IsActive    bool     `json:"isActive" description:"Whether the person is active"`
-	Tags        []string `json:"tags" description:"Tags associated with the person"`
+	Name        string    `json:"name" validate:"required" description:"Person's full name"`
+	Age         int       `json:"age" validate:"min=0,max=120" description:"Age in years"`
+	Email       string    `json:"email" validate:"required,email" description:"Email address"`
+	IsActive    bool      `json:"isActive" description:"Whether the person is active"`
+	Tags        []string  `json:"tags" description:"Tags associated with the person"`
 	BirthDate   time.Time `json:"birthDate" format:"date-time" description:"Date of birth"`
 	PhoneNumber string    `json:"phoneNumber,omitempty" pattern:"^\\d{3}-\\d{3}-\\d{4}$" description:"Phone number in xxx-xxx-xxxx format"`
 }
@@ -26,8 +26,8 @@ type TestAddress struct {
 
 // TestNestedPerson is a struct with nested fields for testing
 type TestNestedPerson struct {
-	Name    string      `json:"name" validate:"required" description:"Person's full name"`
-	Address TestAddress `json:"address" validate:"required" description:"Residential address"`
+	Name    string       `json:"name" validate:"required" description:"Person's full name"`
+	Address TestAddress  `json:"address" validate:"required" description:"Residential address"`
 	Work    *TestAddress `json:"work,omitempty" description:"Work address"`
 }
 
@@ -164,7 +164,7 @@ func TestGenerateSchema(t *testing.T) {
 				t.Errorf("Expected 'status' to have 3 enum values, got %d", len(prop.Enum))
 			}
 			hasActive := false
-			hasInactive := false 
+			hasInactive := false
 			hasPending := false
 			for _, e := range prop.Enum {
 				switch e {

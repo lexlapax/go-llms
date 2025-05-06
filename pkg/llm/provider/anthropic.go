@@ -198,7 +198,7 @@ func (p *AnthropicProvider) GenerateMessage(ctx context.Context, messages []doma
 func (p *AnthropicProvider) GenerateWithSchema(ctx context.Context, prompt string, schema *schemaDomain.Schema, options ...domain.Option) (interface{}, error) {
 	// Build a prompt that includes the schema
 	enhancedPrompt := enhancePromptWithAnthropicSchema(prompt, schema)
-	
+
 	// Generate response
 	response, err := p.Generate(ctx, enhancedPrompt, options...)
 	if err != nil {
@@ -317,7 +317,7 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 
 	// Create a response stream
 	tokenCh := make(chan domain.Token)
-	
+
 	// Start a goroutine to read the stream
 	go func() {
 		defer resp.Body.Close()
@@ -340,7 +340,7 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 
 			// Extract the data part
 			data := strings.TrimPrefix(line, "data: ")
-			
+
 			// Skip empty data lines
 			if data == "" || data == "[DONE]" {
 				continue

@@ -122,11 +122,43 @@ The project has made significant progress. Here's what has been completed:
 7. ✅ OpenAI provider implementation
 8. ✅ Anthropic provider implementation
 9. ✅ Build system via Makefile
+10. ✅ Structured output processor
+11. ✅ Prompt enhancement for structured outputs
+12. ✅ Example applications
+13. ✅ Code quality improvements (fixed linting issues)
+
+## Examples
+
+Two example applications are provided:
+
+1. **Simple Example** - Demonstrates core features with mock providers
+   - Basic generation
+   - Structured generation with schemas
+   - Streaming responses
+   - Processing raw outputs
+   - Prompt enhancement
+
+2. **Anthropic Example** - Shows integration with Anthropic Claude
+   - Text generation
+   - Message-based conversation
+   - Structured recipe generation
+   - Response streaming
+
+Run examples:
+```bash
+# Build and run the simple example
+make example EXAMPLE=simple
+./bin/simple
+
+# Build and run the Anthropic example (requires API key)
+export ANTHROPIC_API_KEY=your_api_key_here
+make example EXAMPLE=anthropic
+./bin/anthropic
+```
 
 ## Next Steps
 
-- Implement structured output processor
-- Implement prompt enhancement for structured outputs
-- Build agent and tool systems
-- Create example applications
+- Implement tool system
+- Create context for dependency injection
+- Build agent system
 - Add integration tests

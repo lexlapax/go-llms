@@ -1,0 +1,115 @@
+// Package processor implements structured output processing functionality
+package processor
+
+import (
+	"encoding/json"
+	"fmt"
+	"regexp"
+	"strings"
+
+	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/structured/domain"
+)
+
+// StructuredProcessor handles processing of structured LLM outputs
+type StructuredProcessor struct {
+	validator schemaDomain.Validator
+}
+
+// NewStructuredProcessor creates a new structured processor
+func NewStructuredProcessor(validator schemaDomain.Validator) domain.Processor {
+	return &StructuredProcessor{
+		validator: validator,
+	}
+}
+
+// Process processes a raw output string against a schema
+func (p *StructuredProcessor) Process(schema *schemaDomain.Schema, output string) (interface{}, error) {
+	// Extract JSON from the output
+	jsonStr := extractJSON(output)
+	if jsonStr == "" {
+		// Try to extract from code blocks
+		jsonStr = extractJSONFromCodeBlock(output)
+	}
+
+	if jsonStr == "" {
+		return nil, fmt.Errorf("no valid JSON found in the output")
+	}
+
+	// Parse the JSON
+	var result interface{}
+	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+	}
+
+	// Validate against the schema
+	validationResult, err := p.validator.Validate(schema, jsonStr)
+	if err != nil {
+		return nil, fmt.Errorf("validation error: %w", err)
+	}
+
+	if !validationResult.Valid {
+		errorDetails := strings.Join(validationResult.Errors, ", ")
+		return nil, fmt.Errorf("output does not conform to schema: %s", errorDetails)
+	}
+
+	return result, nil
+}
+
+// ProcessTyped processes a raw output string against a schema and maps to a target type
+func (p *StructuredProcessor) ProcessTyped(schema *schemaDomain.Schema, output string, target interface{}) error {
+	// Check if target is a pointer
+	if target == nil {
+		return fmt.Errorf("target cannot be nil")
+	}
+
+	// Extract and validate JSON from the output
+	result, err := p.Process(schema, output)
+	if err != nil {
+		return err
+	}
+
+	// Convert the result to JSON
+	jsonBytes, err := json.Marshal(result)
+	if err != nil {
+		return fmt.Errorf("failed to marshal validated result: %w", err)
+	}
+
+	// Unmarshal into the target type
+	if err := json.Unmarshal(jsonBytes, target); err != nil {
+		return fmt.Errorf("failed to unmarshal into target type: %w", err)
+	}
+
+	return nil
+}
+
+// extractJSON attempts to find and extract JSON from a string
+func extractJSON(s string) string {
+	// Look for JSON object between curly braces
+	objectPattern := regexp.MustCompile(`\{(?:[^{}]|(?:\{[^{}]*\}))*\}`)
+	if match := objectPattern.FindString(s); match != "" {
+		return match
+	}
+
+	// Look for JSON array between square brackets
+	arrayPattern := regexp.MustCompile(`\[(?:[^\[\]]|(?:\[[^\[\]]*\]))*\]`)
+	if match := arrayPattern.FindString(s); match != "" {
+		return match
+	}
+
+	return ""
+}
+
+// extractJSONFromCodeBlock extracts JSON from code blocks like ```json ... ```
+func extractJSONFromCodeBlock(s string) string {
+	// Match code blocks with or without language specifier
+	codeBlockPattern := regexp.MustCompile("```(?:json)?\\s*([\\s\\S]*?)\\s*```")
+	matches := codeBlockPattern.FindStringSubmatch(s)
+
+	if len(matches) > 1 {
+		// Further extract JSON from the code block
+		return extractJSON(matches[1])
+	}
+
+	return ""
+}

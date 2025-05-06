@@ -107,18 +107,18 @@ func TestAnthropicProvider(t *testing.T) {
 
 	t.Run("Generate with options", func(t *testing.T) {
 		provider := NewAnthropicProvider("test-api-key", "claude-3-sonnet-20240229", WithAnthropicBaseURL(mockServer.URL))
-		
+
 		// Set custom options
 		options := []domain.Option{
 			domain.WithTemperature(0.2),
 			domain.WithMaxTokens(100),
 		}
-		
+
 		response, err := provider.Generate(ctx, "Tell me a joke", options...)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		
+
 		expected := "This is a test response from the Anthropic API."
 		if response != expected {
 			t.Errorf("Expected response '%s', got '%s'", expected, response)
@@ -248,29 +248,29 @@ func TestAnthropicProvider(t *testing.T) {
 
 	t.Run("GenerateWithSchema", func(t *testing.T) {
 		provider := NewAnthropicProvider("test-api-key", "claude-3-sonnet-20240229", WithAnthropicBaseURL(schemaServer.URL))
-		
+
 		// Define a simple schema
 		schema := &schemaDomain.Schema{
 			Type: "object",
 			Properties: map[string]schemaDomain.Property{
-				"name": {Type: "string", Description: "Person's name"},
-				"age": {Type: "integer", Description: "Person's age"},
+				"name":  {Type: "string", Description: "Person's name"},
+				"age":   {Type: "integer", Description: "Person's age"},
 				"email": {Type: "string", Format: "email", Description: "Person's email"},
 			},
 			Required: []string{"name", "email"},
 		}
-		
+
 		result, err := provider.GenerateWithSchema(ctx, "Generate a person", schema)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		
+
 		// Check result is a map
 		resultMap, ok := result.(map[string]interface{})
 		if !ok {
 			t.Fatalf("Expected map result, got %T", result)
 		}
-		
+
 		// Check required fields
 		name, hasName := resultMap["name"]
 		if !hasName {
@@ -280,7 +280,7 @@ func TestAnthropicProvider(t *testing.T) {
 		if !ok || nameStr != "John Doe" {
 			t.Errorf("Expected name 'John Doe', got '%v'", name)
 		}
-		
+
 		age, hasAge := resultMap["age"]
 		if !hasAge {
 			t.Error("Expected 'age' field in result")
@@ -288,7 +288,7 @@ func TestAnthropicProvider(t *testing.T) {
 		if age != float64(30) {
 			t.Errorf("Expected age 30, got '%v'", age)
 		}
-		
+
 		email, hasEmail := resultMap["email"]
 		if !hasEmail {
 			t.Error("Expected 'email' field in result")

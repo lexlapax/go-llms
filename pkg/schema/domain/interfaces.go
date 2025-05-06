@@ -38,7 +38,7 @@ type ValidationResult struct {
 type Validator interface {
 	// Validate checks if data conforms to the schema
 	Validate(schema *Schema, data string) (*ValidationResult, error)
-	
+
 	// ValidateStruct validates a Go struct against a schema
 	ValidateStruct(schema *Schema, obj interface{}) (*ValidationResult, error)
 }
@@ -47,10 +47,10 @@ type Validator interface {
 type SchemaRepository interface {
 	// Get retrieves a schema by ID
 	Get(id string) (*Schema, error)
-	
+
 	// Save stores a schema
 	Save(id string, schema *Schema) error
-	
+
 	// Delete removes a schema
 	Delete(id string) error
 }

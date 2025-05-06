@@ -20,8 +20,8 @@ func intPtr(v int) *int {
 // Helper function to check if an error array contains a specific error
 func containsError(errors []string, field, errType string) bool {
 	for _, err := range errors {
-		if strings.Contains(strings.ToLower(err), strings.ToLower(field)) && 
-		   strings.Contains(strings.ToLower(err), strings.ToLower(errType)) {
+		if strings.Contains(strings.ToLower(err), strings.ToLower(field)) &&
+			strings.Contains(strings.ToLower(err), strings.ToLower(errType)) {
 			return true
 		}
 	}

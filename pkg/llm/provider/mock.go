@@ -124,7 +124,7 @@ func NewMockProvider() *MockProvider {
 				}
 				return result, nil
 			}
-			
+
 			// Default for non-object schemas
 			return map[string]interface{}{"result": "mock response"}, nil
 		},
@@ -191,19 +191,19 @@ func GenerateJSONResponse(schema *schemaDomain.Schema) (string, error) {
 	if schema == nil {
 		return `{"result": "This is a mock response"}`, nil
 	}
-	
+
 	// Create mock data based on the schema
 	mockData, err := generateMockData(schema)
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Convert to JSON
 	jsonData, err := json.Marshal(mockData)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal mock data: %w", err)
 	}
-	
+
 	return string(jsonData), nil
 }
 
@@ -220,7 +220,7 @@ func generateMockData(schema *schemaDomain.Schema) (interface{}, error) {
 			obj[name] = value
 		}
 		return obj, nil
-		
+
 	case "array":
 		if schema.Properties != nil && schema.Properties[""].Items != nil {
 			// Create a mock array with items of the specified type
@@ -233,19 +233,19 @@ func generateMockData(schema *schemaDomain.Schema) (interface{}, error) {
 			return []interface{}{itemValue, itemValue}, nil
 		}
 		return []interface{}{}, nil
-		
+
 	case "string":
 		return "mock_string", nil
-		
+
 	case "integer":
 		return 42, nil
-		
+
 	case "number":
 		return 42.5, nil
-		
+
 	case "boolean":
 		return true, nil
-		
+
 	default:
 		return "mock_default", nil
 	}
@@ -264,7 +264,7 @@ func generateMockValue(prop *schemaDomain.Property) (interface{}, error) {
 			obj[name] = value
 		}
 		return obj, nil
-		
+
 	case "array":
 		if prop.Items != nil {
 			// Create a mock array with items of the specified type
@@ -276,7 +276,7 @@ func generateMockValue(prop *schemaDomain.Property) (interface{}, error) {
 			return []interface{}{itemValue, itemValue}, nil
 		}
 		return []interface{}{}, nil
-		
+
 	case "string":
 		if prop.Format == "email" {
 			return "user@example.com", nil
@@ -292,7 +292,7 @@ func generateMockValue(prop *schemaDomain.Property) (interface{}, error) {
 			return prop.Enum[0], nil
 		}
 		return "mock_string", nil
-		
+
 	case "integer":
 		if prop.Minimum != nil && prop.Maximum != nil {
 			// Return a value between min and max
@@ -309,7 +309,7 @@ func generateMockValue(prop *schemaDomain.Property) (interface{}, error) {
 			return int(*prop.Maximum) - 1, nil
 		}
 		return 42, nil
-		
+
 	case "number":
 		if prop.Minimum != nil && prop.Maximum != nil {
 			// Return a value between min and max
@@ -326,10 +326,10 @@ func generateMockValue(prop *schemaDomain.Property) (interface{}, error) {
 			return *prop.Maximum - 1.0, nil
 		}
 		return 42.5, nil
-		
+
 	case "boolean":
 		return true, nil
-		
+
 	default:
 		return "mock_default", nil
 	}

@@ -177,7 +177,7 @@ func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.
 func (p *OpenAIProvider) GenerateWithSchema(ctx context.Context, prompt string, schema *schemaDomain.Schema, options ...domain.Option) (interface{}, error) {
 	// Build a prompt that includes the schema
 	enhancedPrompt := enhancePromptWithSchema(prompt, schema)
-	
+
 	// Generate response
 	response, err := p.Generate(ctx, enhancedPrompt, options...)
 	if err != nil {
@@ -278,7 +278,7 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 
 	// Create a response stream
 	tokenCh := make(chan domain.Token)
-	
+
 	// Start a goroutine to read the stream
 	go func() {
 		defer resp.Body.Close()
@@ -309,7 +309,7 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 
 			// Extract the data part
 			data := strings.TrimPrefix(line, "data: ")
-			
+
 			// Check for end of stream
 			if data == "[DONE]" {
 				return
@@ -394,19 +394,19 @@ func extractJSON(s string) string {
 	// Look for JSON object between curly braces
 	startIdx := strings.Index(s, "{")
 	endIdx := strings.LastIndex(s, "}")
-	
+
 	if startIdx >= 0 && endIdx > startIdx {
 		return s[startIdx : endIdx+1]
 	}
-	
+
 	// Look for JSON array between square brackets
 	startIdx = strings.Index(s, "[")
 	endIdx = strings.LastIndex(s, "]")
-	
+
 	if startIdx >= 0 && endIdx > startIdx {
 		return s[startIdx : endIdx+1]
 	}
-	
+
 	// No JSON found
 	return ""
 }
