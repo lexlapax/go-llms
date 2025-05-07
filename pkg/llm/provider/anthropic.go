@@ -25,6 +25,8 @@ type AnthropicProvider struct {
 	model      string
 	baseURL    string
 	httpClient *http.Client
+	// Optimization: cache for converted messages
+	messageCache *MessageCache
 }
 
 // AnthropicOption configures the Anthropic provider
@@ -47,10 +49,11 @@ func WithAnthropicHTTPClient(client *http.Client) AnthropicOption {
 // NewAnthropicProvider creates a new Anthropic provider
 func NewAnthropicProvider(apiKey, model string, options ...AnthropicOption) *AnthropicProvider {
 	provider := &AnthropicProvider{
-		apiKey:     apiKey,
-		model:      model,
-		baseURL:    defaultAnthropicBaseURL,
-		httpClient: http.DefaultClient,
+		apiKey:      apiKey,
+		model:       model,
+		baseURL:     defaultAnthropicBaseURL,
+		httpClient:  http.DefaultClient,
+		messageCache: NewMessageCache(),
 	}
 
 	for _, option := range options {
@@ -72,60 +75,126 @@ func (p *AnthropicProvider) Generate(ctx context.Context, prompt string, options
 	return response.Content, nil
 }
 
-// GenerateMessage produces text from a list of messages
+// ConvertMessagesToAnthropicFormat converts domain messages to Anthropic format
+// Optimized version with caching and reduced allocations
+// This method is exported for benchmarking purposes
+func (p *AnthropicProvider) ConvertMessagesToAnthropicFormat(messages []domain.Message) ([]map[string]interface{}, string) {
+	// Check cache first
+	cacheKey := GenerateMessagesKey(messages)
+	if cachedResult, found := p.messageCache.Get(cacheKey); found {
+		result := cachedResult.(map[string]interface{})
+		return result["messages"].([]map[string]interface{}), result["system"].(string)
+	}
+	
+	// Pre-allocate the slice with reasonable capacity
+	// Anthropic handles system messages separately, so capacity is potentially less
+	anthMessages := make([]map[string]interface{}, 0, len(messages))
+	var systemMessage string
+	
+	// Fast path for single message
+	if len(messages) == 1 {
+		if messages[0].Role == domain.RoleSystem {
+			systemMessage = messages[0].Content
+			// Cache and return
+			result := map[string]interface{}{
+				"messages": anthMessages,
+				"system":   systemMessage,
+			}
+			p.messageCache.Set(cacheKey, result)
+			return anthMessages, systemMessage
+		} else {
+			message := make(map[string]interface{}, 2)
+			message["role"] = string(messages[0].Role)
+			message["content"] = messages[0].Content
+			anthMessages = append(anthMessages, message)
+			
+			// Cache and return
+			result := map[string]interface{}{
+				"messages": anthMessages,
+				"system":   systemMessage,
+			}
+			p.messageCache.Set(cacheKey, result)
+			return anthMessages, systemMessage
+		}
+	}
+	
+	// Process all messages
+	for _, msg := range messages {
+		if msg.Role == domain.RoleSystem {
+			// Anthropic handles system message separately
+			systemMessage = msg.Content
+		} else {
+			// Regular message (user or assistant)
+			message := make(map[string]interface{}, 2)
+			message["role"] = string(msg.Role)
+			message["content"] = msg.Content
+			anthMessages = append(anthMessages, message)
+		}
+	}
+	
+	// Cache the result - store both the messages and system prompt
+	result := map[string]interface{}{
+		"messages": anthMessages,
+		"system":   systemMessage,
+	}
+	p.messageCache.Set(cacheKey, result)
+	
+	return anthMessages, systemMessage
+}
+
+// buildAnthropicRequestBody creates a request body for the Anthropic API
+func (p *AnthropicProvider) buildAnthropicRequestBody(
+	messages []map[string]interface{},
+	systemMessage string,
+	options *domain.ProviderOptions,
+) map[string]interface{} {
+	// Pre-allocate the map with the right capacity (standard fields + possible options)
+	// We need at least model and messages, plus potential options
+	requestBody := make(map[string]interface{}, 6)
+	
+	// Add required fields
+	requestBody["model"] = p.model
+	requestBody["messages"] = messages
+	
+	// Add system message if present
+	if systemMessage != "" {
+		requestBody["system"] = systemMessage
+	}
+	
+	// Add temperature if it differs from default
+	if options.Temperature != 0.7 {
+		requestBody["temperature"] = options.Temperature
+	}
+	
+	// Always add max_tokens - Anthropic requires this field
+	requestBody["max_tokens"] = options.MaxTokens
+	
+	// Add top_p if it differs from default
+	if options.TopP != 1.0 {
+		requestBody["top_p"] = options.TopP
+	}
+	
+	// Add stop sequences if provided
+	if len(options.StopSequences) > 0 {
+		requestBody["stop_sequences"] = options.StopSequences
+	}
+	
+	return requestBody
+}
+
+// GenerateMessage produces text from a list of messages - optimized version
 func (p *AnthropicProvider) GenerateMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
 	// Apply options
 	providerOptions := domain.DefaultOptions()
 	for _, option := range options {
 		option(providerOptions)
 	}
-
-	// Convert domain messages to Anthropic messages format
-	anthMessages := make([]map[string]interface{}, 0, len(messages))
-	var systemMessage string
-
-	for _, msg := range messages {
-		if msg.Role == domain.RoleSystem {
-			// Anthropic handles system message separately
-			systemMessage = msg.Content
-		} else {
-			anthMessages = append(anthMessages, map[string]interface{}{
-				"role":    string(msg.Role),
-				"content": msg.Content,
-			})
-		}
-	}
-
-	// Prepare request body
-	requestBody := map[string]interface{}{
-		"model":    p.model,
-		"messages": anthMessages,
-	}
-
-	// Add system message if present
-	if systemMessage != "" {
-		requestBody["system"] = systemMessage
-	}
-
-	// Add temperature if provided
-	if providerOptions.Temperature != 0 {
-		requestBody["temperature"] = providerOptions.Temperature
-	}
-
-	// Add max tokens if provided
-	if providerOptions.MaxTokens != 0 {
-		requestBody["max_tokens"] = providerOptions.MaxTokens
-	}
-
-	// Add top p if provided
-	if providerOptions.TopP != 0 {
-		requestBody["top_p"] = providerOptions.TopP
-	}
-
-	// Add stop sequences if provided
-	if len(providerOptions.StopSequences) > 0 {
-		requestBody["stop_sequences"] = providerOptions.StopSequences
-	}
+	
+	// Convert messages to Anthropic format - optimized with caching
+	anthMessages, systemMessage := p.ConvertMessagesToAnthropicFormat(messages)
+	
+	// Build request body - optimized with pre-allocation
+	requestBody := p.buildAnthropicRequestBody(anthMessages, systemMessage, providerOptions)
 
 	// Marshal request body
 	requestJSON, err := json.Marshal(requestBody)
@@ -237,53 +306,14 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 		option(providerOptions)
 	}
 
-	// Convert domain messages to Anthropic messages format
-	anthMessages := make([]map[string]interface{}, 0, len(messages))
-	var systemMessage string
-
-	for _, msg := range messages {
-		if msg.Role == domain.RoleSystem {
-			// Anthropic handles system message separately
-			systemMessage = msg.Content
-		} else {
-			anthMessages = append(anthMessages, map[string]interface{}{
-				"role":    string(msg.Role),
-				"content": msg.Content,
-			})
-		}
-	}
-
-	// Prepare request body
-	requestBody := map[string]interface{}{
-		"model":    p.model,
-		"messages": anthMessages,
-		"stream":   true, // Important for streaming
-	}
-
-	// Add system message if present
-	if systemMessage != "" {
-		requestBody["system"] = systemMessage
-	}
-
-	// Add temperature if provided
-	if providerOptions.Temperature != 0 {
-		requestBody["temperature"] = providerOptions.Temperature
-	}
-
-	// Add max tokens if provided
-	if providerOptions.MaxTokens != 0 {
-		requestBody["max_tokens"] = providerOptions.MaxTokens
-	}
-
-	// Add top p if provided
-	if providerOptions.TopP != 0 {
-		requestBody["top_p"] = providerOptions.TopP
-	}
-
-	// Add stop sequences if provided
-	if len(providerOptions.StopSequences) > 0 {
-		requestBody["stop_sequences"] = providerOptions.StopSequences
-	}
+	// Convert messages to Anthropic format - optimized with caching
+	anthMessages, systemMessage := p.ConvertMessagesToAnthropicFormat(messages)
+	
+	// Build request body - optimized with pre-allocation
+	requestBody := p.buildAnthropicRequestBody(anthMessages, systemMessage, providerOptions)
+	
+	// Add streaming flag
+	requestBody["stream"] = true
 
 	// Marshal request body
 	requestJSON, err := json.Marshal(requestBody)

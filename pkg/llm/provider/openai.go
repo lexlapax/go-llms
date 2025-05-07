@@ -25,6 +25,8 @@ type OpenAIProvider struct {
 	model      string
 	baseURL    string
 	httpClient *http.Client
+	// Optimization: cache for converted messages
+	messageCache *MessageCache
 }
 
 // OpenAIOption configures the OpenAI provider
@@ -47,10 +49,11 @@ func WithHTTPClient(client *http.Client) OpenAIOption {
 // NewOpenAIProvider creates a new OpenAI provider
 func NewOpenAIProvider(apiKey, model string, options ...OpenAIOption) *OpenAIProvider {
 	provider := &OpenAIProvider{
-		apiKey:     apiKey,
-		model:      model,
-		baseURL:    defaultBaseURL,
-		httpClient: http.DefaultClient,
+		apiKey:      apiKey,
+		model:       model,
+		baseURL:     defaultBaseURL,
+		httpClient:  http.DefaultClient,
+		messageCache: NewMessageCache(),
 	}
 
 	for _, option := range options {
@@ -72,24 +75,39 @@ func (p *OpenAIProvider) Generate(ctx context.Context, prompt string, options ..
 	return response.Content, nil
 }
 
-// GenerateMessage produces text from a list of messages
-func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
-	// Apply options
-	providerOptions := domain.DefaultOptions()
-	for _, option := range options {
-		option(providerOptions)
+// ConvertMessagesToOpenAIFormat converts domain messages to OpenAI format
+// Optimized version with caching and reduced allocations
+// This method is exported for benchmarking purposes
+func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message) []map[string]interface{} {
+	// Check cache first
+	cacheKey := GenerateMessagesKey(messages)
+	if cachedMessages, found := p.messageCache.Get(cacheKey); found {
+		return cachedMessages.([]map[string]interface{})
 	}
-
-	// Convert domain messages to OpenAI messages
+	
+	// Pre-allocate the slice with exact capacity
 	oaiMessages := make([]map[string]interface{}, 0, len(messages))
+	
+	// Fast path for simple cases: single message or system+user
+	if len(messages) == 1 {
+		message := make(map[string]interface{}, 2)
+		message["role"] = string(messages[0].Role)
+		message["content"] = messages[0].Content
+		
+		result := []map[string]interface{}{message}
+		p.messageCache.Set(cacheKey, result)
+		return result
+	}
+	
+	// Find the last assistant message index (used for tool message handling)
 	var lastAssistantIdx int = -1
-
 	for i, msg := range messages {
 		if msg.Role == domain.RoleAssistant {
 			lastAssistantIdx = i
 		}
 	}
-
+	
+	// Process all messages
 	for i, msg := range messages {
 		// Special handling for tool messages - they must follow an assistant message with tool_calls
 		if msg.Role == domain.RoleTool {
@@ -97,63 +115,106 @@ func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.
 			// we need to convert it to a different format or skip it
 			if lastAssistantIdx == -1 || i == 0 || messages[i-1].Role != domain.RoleAssistant {
 				// Convert to user message instead as a fallback
-				oaiMessages = append(oaiMessages, map[string]interface{}{
-					"role":    string(domain.RoleUser),
-					"content": fmt.Sprintf("Tool result: %s", msg.Content),
-				})
+				message := make(map[string]interface{}, 2)
+				message["role"] = string(domain.RoleUser)
+				message["content"] = "Tool result: " + msg.Content
+				oaiMessages = append(oaiMessages, message)
 			} else {
 				// This is a valid tool message following an assistant
-				oaiMessages = append(oaiMessages, map[string]interface{}{
-					"role":         string(msg.Role),
-					"content":      msg.Content,
-					"tool_call_id": fmt.Sprintf("call_%d", i), // Generate a tool call ID
-				})
+				message := make(map[string]interface{}, 3)
+				message["role"] = string(msg.Role)
+				message["content"] = msg.Content
+				message["tool_call_id"] = "call_" + string(rune(i))
+				oaiMessages = append(oaiMessages, message)
 			}
 		} else if msg.Role == domain.RoleAssistant && i < len(messages)-1 && messages[i+1].Role == domain.RoleTool {
 			// This assistant message is followed by a tool message, add tool_calls
-			oaiMessages = append(oaiMessages, map[string]interface{}{
-				"role":    string(msg.Role),
-				"content": msg.Content,
-				"tool_calls": []map[string]interface{}{
-					{
-						"id":   fmt.Sprintf("call_%d", i+1),
-						"type": "function",
-						"function": map[string]interface{}{
-							"name":      "generic_tool",
-							"arguments": "{}",
-						},
-					},
-				},
-			})
+			message := make(map[string]interface{}, 3)
+			message["role"] = string(msg.Role)
+			message["content"] = msg.Content
+			
+			// Create a single tool call
+			functionMap := make(map[string]interface{}, 2)
+			functionMap["name"] = "generic_tool"
+			functionMap["arguments"] = "{}"
+			
+			toolCall := make(map[string]interface{}, 3)
+			toolCall["id"] = "call_" + string(rune(i+1))
+			toolCall["type"] = "function"
+			toolCall["function"] = functionMap
+			
+			toolCalls := []map[string]interface{}{toolCall}
+			message["tool_calls"] = toolCalls
+			
+			oaiMessages = append(oaiMessages, message)
 		} else {
 			// Regular message
-			oaiMessages = append(oaiMessages, map[string]interface{}{
-				"role":    string(msg.Role),
-				"content": msg.Content,
-			})
+			message := make(map[string]interface{}, 2)
+			message["role"] = string(msg.Role)
+			message["content"] = msg.Content
+			oaiMessages = append(oaiMessages, message)
 		}
 	}
+	
+	// Cache the result
+	p.messageCache.Set(cacheKey, oaiMessages)
+	return oaiMessages
+}
 
-	// Prepare request body
-	requestBody := map[string]interface{}{
-		"model":       p.model,
-		"messages":    oaiMessages,
-		"temperature": providerOptions.Temperature,
-		"max_tokens":  providerOptions.MaxTokens,
-		"top_p":       providerOptions.TopP,
+// buildOpenAIRequestBody creates a request body for the OpenAI API
+func (p *OpenAIProvider) buildOpenAIRequestBody(
+	messages []map[string]interface{}, 
+	options *domain.ProviderOptions,
+) map[string]interface{} {
+	// Pre-allocate the map with the right capacity (standard fields + possible options)
+	requestBody := make(map[string]interface{}, 8)
+	
+	// Add required fields
+	requestBody["model"] = p.model
+	requestBody["messages"] = messages
+	
+	// Add common options if they're not default values
+	if options.Temperature != 0.7 {
+		requestBody["temperature"] = options.Temperature
 	}
+	
+	if options.MaxTokens != 1024 {
+		requestBody["max_tokens"] = options.MaxTokens
+	}
+	
+	if options.TopP != 1.0 {
+		requestBody["top_p"] = options.TopP
+	}
+	
+	// Add optional fields only if they have values
+	if len(options.StopSequences) > 0 {
+		requestBody["stop"] = options.StopSequences
+	}
+	
+	if options.FrequencyPenalty != 0 {
+		requestBody["frequency_penalty"] = options.FrequencyPenalty
+	}
+	
+	if options.PresencePenalty != 0 {
+		requestBody["presence_penalty"] = options.PresencePenalty
+	}
+	
+	return requestBody
+}
 
-	if len(providerOptions.StopSequences) > 0 {
-		requestBody["stop"] = providerOptions.StopSequences
+// GenerateMessage produces text from a list of messages - optimized version
+func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
+	// Apply options - reuse the same options object for all requests
+	providerOptions := domain.DefaultOptions()
+	for _, option := range options {
+		option(providerOptions)
 	}
-
-	if providerOptions.FrequencyPenalty != 0 {
-		requestBody["frequency_penalty"] = providerOptions.FrequencyPenalty
-	}
-
-	if providerOptions.PresencePenalty != 0 {
-		requestBody["presence_penalty"] = providerOptions.PresencePenalty
-	}
+	
+	// Convert messages to OpenAI format - optimized with caching
+	oaiMessages := p.ConvertMessagesToOpenAIFormat(messages)
+	
+	// Build request body - optimized with pre-allocation
+	requestBody := p.buildOpenAIRequestBody(oaiMessages, providerOptions)
 
 	// Marshal request body
 	requestJSON, err := json.Marshal(requestBody)
@@ -261,36 +322,14 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 		option(providerOptions)
 	}
 
-	// Convert domain messages to OpenAI messages
-	oaiMessages := make([]map[string]string, len(messages))
-	for i, msg := range messages {
-		oaiMessages[i] = map[string]string{
-			"role":    string(msg.Role),
-			"content": msg.Content,
-		}
-	}
-
-	// Prepare request body
-	requestBody := map[string]interface{}{
-		"model":       p.model,
-		"messages":    oaiMessages,
-		"temperature": providerOptions.Temperature,
-		"max_tokens":  providerOptions.MaxTokens,
-		"top_p":       providerOptions.TopP,
-		"stream":      true, // Important for streaming
-	}
-
-	if len(providerOptions.StopSequences) > 0 {
-		requestBody["stop"] = providerOptions.StopSequences
-	}
-
-	if providerOptions.FrequencyPenalty != 0 {
-		requestBody["frequency_penalty"] = providerOptions.FrequencyPenalty
-	}
-
-	if providerOptions.PresencePenalty != 0 {
-		requestBody["presence_penalty"] = providerOptions.PresencePenalty
-	}
+	// Convert messages to OpenAI format - optimized with caching
+	oaiMessages := p.ConvertMessagesToOpenAIFormat(messages)
+	
+	// Build request body - optimized with pre-allocation
+	requestBody := p.buildOpenAIRequestBody(oaiMessages, providerOptions)
+	
+	// Add streaming flag
+	requestBody["stream"] = true
 
 	// Marshal request body
 	requestJSON, err := json.Marshal(requestBody)
