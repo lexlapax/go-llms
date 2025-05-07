@@ -7,15 +7,6 @@ import (
 	"github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// Helper function for creating float pointers
-func float64Ptr(v float64) *float64 {
-	return &v
-}
-
-// Helper function for creating int pointers
-func intPtr(v int) *int {
-	return &v
-}
 
 // Helper function to check if an error array contains a specific error
 func containsError(errors []string, field, errType string) bool {

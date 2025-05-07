@@ -4,7 +4,6 @@ package processor
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
@@ -25,12 +24,8 @@ func NewStructuredProcessor(validator schemaDomain.Validator) domain.Processor {
 
 // Process processes a raw output string against a schema
 func (p *StructuredProcessor) Process(schema *schemaDomain.Schema, output string) (interface{}, error) {
-	// Extract JSON from the output
-	jsonStr := extractJSON(output)
-	if jsonStr == "" {
-		// Try to extract from code blocks
-		jsonStr = extractJSONFromCodeBlock(output)
-	}
+	// Extract JSON from the output using our optimized extractor
+	jsonStr := ExtractJSON(output)
 
 	if jsonStr == "" {
 		return nil, fmt.Errorf("no valid JSON found in the output")
@@ -97,33 +92,4 @@ func (p *StructuredProcessor) ToJSON(obj interface{}) (string, error) {
 	return string(jsonBytes), nil
 }
 
-// extractJSON attempts to find and extract JSON from a string
-func extractJSON(s string) string {
-	// Look for JSON object between curly braces
-	objectPattern := regexp.MustCompile(`\{(?:[^{}]|(?:\{[^{}]*\}))*\}`)
-	if match := objectPattern.FindString(s); match != "" {
-		return match
-	}
-
-	// Look for JSON array between square brackets
-	arrayPattern := regexp.MustCompile(`\[(?:[^\[\]]|(?:\[[^\[\]]*\]))*\]`)
-	if match := arrayPattern.FindString(s); match != "" {
-		return match
-	}
-
-	return ""
-}
-
-// extractJSONFromCodeBlock extracts JSON from code blocks like ```json ... ```
-func extractJSONFromCodeBlock(s string) string {
-	// Match code blocks with or without language specifier
-	codeBlockPattern := regexp.MustCompile("```(?:json)?\\s*([\\s\\S]*?)\\s*```")
-	matches := codeBlockPattern.FindStringSubmatch(s)
-
-	if len(matches) > 1 {
-		// Further extract JSON from the code block
-		return extractJSON(matches[1])
-	}
-
-	return ""
-}
+// Legacy extraction functions are replaced by the optimized ExtractJSON

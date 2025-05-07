@@ -36,7 +36,7 @@ func TestLiveEndToEndAgentAnthropic(t *testing.T) {
 	agent.WithHook(metricsHook)
 
 	// Add date and calculator tools
-	agent.AddTool(tools.NewTool(
+	agent.AddTool(tools.NewOptimizedToolFixed(
 		"get_current_date",
 		"Get the current date",
 		func() map[string]string {
@@ -54,7 +54,7 @@ func TestLiveEndToEndAgentAnthropic(t *testing.T) {
 	))
 
 	// Add a calculator tool for multiply
-	agent.AddTool(tools.NewTool(
+	agent.AddTool(tools.NewOptimizedToolFixed(
 		"multiply",
 		"Multiply two numbers",
 		func(params struct {

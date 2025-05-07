@@ -735,7 +735,7 @@ func main() {
         Required: []string{"name", "email"},
     }
     
-    // Create an LLM provider
+    // Create an LLM provider with the modern gpt-4o model
     llmProvider := provider.NewOpenAIProvider("your-api-key", "gpt-4o")
     
     // Generate structured output

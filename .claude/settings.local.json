@@ -25,7 +25,8 @@
       "Bash(find:*)",
       "Bash(go mod init:*)",
       "WebFetch(domain:ai.pydantic.dev)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

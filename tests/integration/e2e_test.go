@@ -118,7 +118,7 @@ Do not try to calculate or determine dates yourself - use the provided tools.`)
 	agent.WithHook(metricsHook)
 
 	// Add date and calculator tools
-	agent.AddTool(tools.NewTool(
+	agent.AddTool(tools.NewOptimizedToolFixed(
 		"get_current_date",
 		"Get the current date",
 		func() map[string]string {
@@ -136,7 +136,7 @@ Do not try to calculate or determine dates yourself - use the provided tools.`)
 	))
 
 	// Add a calculator tool for multiply
-	agent.AddTool(tools.NewTool(
+	agent.AddTool(tools.NewOptimizedToolFixed(
 		"multiply",
 		"Multiply two numbers",
 		func(params struct {

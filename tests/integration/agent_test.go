@@ -25,7 +25,7 @@ func TestEndToEndAgent(t *testing.T) {
 	agent.SetSystemPrompt("You are a helpful assistant that can answer questions and use tools.")
 
 	// Create a calculator tool
-	calculatorTool := tools.NewTool(
+	calculatorTool := tools.NewOptimizedToolFixed(
 		"calculator",
 		"Perform arithmetic calculations",
 		func(params map[string]interface{}) (interface{}, error) {
@@ -249,7 +249,7 @@ func TestAgentWithMultipleTools(t *testing.T) {
 	// Create a set of test tools
 
 	// Calculator tool
-	calculatorTool := tools.NewTool(
+	calculatorTool := tools.NewOptimizedToolFixed(
 		"calculator",
 		"Perform arithmetic calculations",
 		func(params map[string]interface{}) (interface{}, error) {
@@ -306,7 +306,7 @@ func TestAgentWithMultipleTools(t *testing.T) {
 	)
 
 	// Weather tool
-	weatherTool := tools.NewTool(
+	weatherTool := tools.NewOptimizedToolFixed(
 		"weather",
 		"Get the weather for a location",
 		func(params map[string]interface{}) (interface{}, error) {

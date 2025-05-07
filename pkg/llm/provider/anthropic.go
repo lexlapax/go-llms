@@ -12,6 +12,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/structured/processor"
 )
 
 const (
@@ -205,8 +206,8 @@ func (p *AnthropicProvider) GenerateWithSchema(ctx context.Context, prompt strin
 		return nil, fmt.Errorf("failed to generate response: %w", err)
 	}
 
-	// Try to extract JSON from the response
-	jsonStr := extractJSON(response)
+	// Try to extract JSON from the response using optimized extractor
+	jsonStr := processor.ExtractJSON(response)
 	if jsonStr == "" {
 		return nil, fmt.Errorf("response does not contain valid JSON")
 	}

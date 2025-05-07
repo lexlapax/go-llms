@@ -31,7 +31,7 @@ TEST_FLAGS=-v -race -coverprofile=coverage.out -covermode=atomic
 DEP_FLAGS=-v
 
 # Commands
-.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples examples-all test-integration test-integration-mock
+.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg profile-cpu profile-mem profile-block coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples examples-all test-integration test-integration-mock
 
 # Default target
 all: clean test build
@@ -127,6 +127,7 @@ test-func:
 # Run benchmarks
 benchmark:
 	$(GOTEST) -bench=. -benchmem ./...
+	$(GOTEST) -bench=. -benchmem ./benchmarks/...
 
 # Run benchmarks for a specific package (usage: make benchmark-pkg PKG=schema/validation)
 benchmark-pkg:
@@ -135,6 +136,21 @@ benchmark-pkg:
 		exit 1; \
 	fi
 	$(GOTEST) -bench=. -benchmem ./$(PACKAGE_DIR)/$(PKG)
+
+# Profile CPU usage (creates cpu.prof)
+profile-cpu:
+	$(GOTEST) -bench=. -benchmem -cpuprofile=cpu.prof ./benchmarks/...
+	@echo "View profile with: go tool pprof cpu.prof"
+
+# Profile memory usage (creates mem.prof)
+profile-mem:
+	$(GOTEST) -bench=. -benchmem -memprofile=mem.prof ./benchmarks/...
+	@echo "View profile with: go tool pprof mem.prof"
+
+# Profile blocking operations (creates block.prof)
+profile-block:
+	$(GOTEST) -bench=. -benchmem -blockprofile=block.prof ./benchmarks/...
+	@echo "View profile with: go tool pprof block.prof"
 
 # Generate test coverage
 coverage: test
@@ -217,6 +233,12 @@ help:
 	@echo "                        (usage: make test-race-pkg PKG=schema/validation)"
 	@echo "  make test-short       Run only short tests"
 	@echo "  make test-short-pkg   Run only short tests for a specific package"
+	@echo "  make benchmark       Run all benchmarks"
+	@echo "  make benchmark-pkg   Run benchmarks for a specific package"
+	@echo "                        (usage: make benchmark-pkg PKG=schema/validation)"
+	@echo "  make profile-cpu     Run benchmarks with CPU profiling"
+	@echo "  make profile-mem     Run benchmarks with memory profiling"
+	@echo "  make profile-block   Run benchmarks with block profiling for concurrency issues"
 	@echo "                        (usage: make test-short-pkg PKG=schema/validation)"
 	@echo "  make test-func        Run a specific test function"
 	@echo "                        (usage: make test-func PKG=schema/validation FUNC=TestArrayValidation)"

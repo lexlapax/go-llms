@@ -12,6 +12,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/structured/processor"
 )
 
 const (
@@ -229,8 +230,8 @@ func (p *OpenAIProvider) GenerateWithSchema(ctx context.Context, prompt string, 
 		return nil, fmt.Errorf("failed to generate response: %w", err)
 	}
 
-	// Try to extract JSON from the response
-	jsonStr := extractJSON(response)
+	// Try to extract JSON from the response using optimized extractor
+	jsonStr := processor.ExtractJSON(response) 
 	if jsonStr == "" {
 		return nil, fmt.Errorf("response does not contain valid JSON")
 	}
@@ -434,24 +435,4 @@ Output only valid JSON without any explanations, markdown code blocks, or any ot
 	return enhancedPrompt
 }
 
-// extractJSON attempts to find and extract JSON from a string
-func extractJSON(s string) string {
-	// Look for JSON object between curly braces
-	startIdx := strings.Index(s, "{")
-	endIdx := strings.LastIndex(s, "}")
-
-	if startIdx >= 0 && endIdx > startIdx {
-		return s[startIdx : endIdx+1]
-	}
-
-	// Look for JSON array between square brackets
-	startIdx = strings.Index(s, "[")
-	endIdx = strings.LastIndex(s, "]")
-
-	if startIdx >= 0 && endIdx > startIdx {
-		return s[startIdx : endIdx+1]
-	}
-
-	// No JSON found
-	return ""
-}
+// Note: extractJSON has been replaced with processor.ExtractJSON for better performance and reliability
