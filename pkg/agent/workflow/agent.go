@@ -122,7 +122,83 @@ func (a *DefaultAgent) run(ctx context.Context, input string, schema *sdomain.Sc
 			return finalResponse, nil
 		}
 
-		// Check for tool calls
+		// First check for multiple tool calls (OpenAI format)
+		toolCalls, multiParams, shouldCallMultipleTools := a.extractMultipleToolCalls(resp.Content)
+
+		if shouldCallMultipleTools && len(toolCalls) > 0 {
+			// Process each tool call and collect results
+			var allToolsOutput strings.Builder
+			allToolsOutput.WriteString("Tool results:\n")
+
+			// Track if any tool calls were successful
+			toolCallsMade := 0
+
+			for i, toolName := range toolCalls {
+				// Find the requested tool
+				tool, found := a.tools[toolName]
+				if !found {
+					// Tool not found, append error message
+					allToolsOutput.WriteString(fmt.Sprintf("Error: Tool '%s' not found. Available tools: %s\n",
+						toolName, strings.Join(a.getToolNames(), ", ")))
+					continue
+				}
+
+				toolCallsMade++
+				params := multiParams[i]
+
+				// Call hooks before tool call
+				a.notifyBeforeToolCall(ctx, toolName, params)
+
+				// Execute the tool
+				toolResult, toolErr := tool.Execute(ctx, params)
+
+				// Call hooks after tool call
+				a.notifyAfterToolCall(ctx, toolName, toolResult, toolErr)
+
+				// Format the result
+				var toolRespContent string
+				if toolErr != nil {
+					toolRespContent = fmt.Sprintf("Error: %v", toolErr)
+				} else {
+					// Convert tool result to string
+					switch v := toolResult.(type) {
+					case string:
+						toolRespContent = v
+					case nil:
+						toolRespContent = "Tool executed successfully with no output"
+					default:
+						jsonBytes, err := json.Marshal(toolResult)
+						if err != nil {
+							toolRespContent = fmt.Sprintf("%v", toolResult)
+						} else {
+							toolRespContent = string(jsonBytes)
+						}
+					}
+				}
+
+				// Add this tool's result to the combined output
+				allToolsOutput.WriteString(fmt.Sprintf("Tool '%s' result: %s\n\n", toolName, toolRespContent))
+			}
+
+			// If we processed at least one tool, continue the conversation
+			if toolCallsMade > 0 {
+				// Add the assistant message and all tool results
+				messages = append(messages, ldomain.Message{
+					Role:    ldomain.RoleAssistant,
+					Content: resp.Content,
+				})
+
+				// Add tool results as user message for compatibility
+				messages = append(messages, ldomain.Message{
+					Role:    ldomain.RoleUser,
+					Content: allToolsOutput.String(),
+				})
+
+				continue
+			}
+		}
+
+		// Fall back to legacy single tool call extraction if multiple tools weren't found
 		toolCall, params, shouldCallTool := a.extractToolCall(resp.Content)
 		if !shouldCallTool {
 			// No tool call, just return the response content
@@ -139,9 +215,11 @@ func (a *DefaultAgent) run(ctx context.Context, input string, schema *sdomain.Sc
 				Role:    ldomain.RoleAssistant,
 				Content: resp.Content,
 			})
+
+			// Use user role instead of tool role for better OpenAI compatibility
 			messages = append(messages, ldomain.Message{
-				Role:    ldomain.RoleTool,
-				Content: errMsg,
+				Role:    ldomain.RoleUser,
+				Content: fmt.Sprintf("Tool error: %s", errMsg),
 			})
 			continue
 		}
@@ -182,9 +260,11 @@ func (a *DefaultAgent) run(ctx context.Context, input string, schema *sdomain.Sc
 			Role:    ldomain.RoleAssistant,
 			Content: resp.Content,
 		})
+
+		// Use user role instead of tool role for better OpenAI compatibility
 		messages = append(messages, ldomain.Message{
-			Role:    ldomain.RoleTool,
-			Content: toolRespContent,
+			Role:    ldomain.RoleUser,
+			Content: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent),
 		})
 	}
 
@@ -197,8 +277,104 @@ func (a *DefaultAgent) run(ctx context.Context, input string, schema *sdomain.Sc
 	return "Agent reached maximum iterations without final result", nil
 }
 
+// extractMultipleToolCalls extracts multiple tool calls from response content
+// This is used for the OpenAI format where multiple tools can be called at once
+func (a *DefaultAgent) extractMultipleToolCalls(content string) ([]string, []interface{}, bool) {
+	var toolNames []string
+	var paramsArray []interface{}
+
+	// Parse as OpenAI format
+	var openaiResp struct {
+		ToolCalls []struct {
+			ID       string `json:"id"`
+			Type     string `json:"type"`
+			Function struct {
+				Name      string `json:"name"`
+				Arguments string `json:"arguments"`
+			} `json:"function"`
+		} `json:"tool_calls"`
+	}
+
+	// Try to parse the content as OpenAI format
+	if err := json.Unmarshal([]byte(content), &openaiResp); err == nil && len(openaiResp.ToolCalls) > 0 {
+		for _, toolCall := range openaiResp.ToolCalls {
+			if toolCall.Function.Name != "" {
+				// Parse the arguments JSON
+				var params interface{}
+				if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &params); err == nil {
+					toolNames = append(toolNames, toolCall.Function.Name)
+					paramsArray = append(paramsArray, params)
+				} else {
+					// If JSON parsing fails, use the raw arguments string
+					toolNames = append(toolNames, toolCall.Function.Name)
+					paramsArray = append(paramsArray, toolCall.Function.Arguments)
+				}
+			}
+		}
+
+		if len(toolNames) > 0 {
+			return toolNames, paramsArray, true
+		}
+	}
+
+	// Look for JSON blocks in markdown that might contain OpenAI format
+	jsonBlocks := extractJSONBlocks(content)
+	for _, block := range jsonBlocks {
+		if err := json.Unmarshal([]byte(block), &openaiResp); err == nil && len(openaiResp.ToolCalls) > 0 {
+			for _, toolCall := range openaiResp.ToolCalls {
+				if toolCall.Function.Name != "" {
+					// Parse the arguments JSON
+					var params interface{}
+					if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &params); err == nil {
+						toolNames = append(toolNames, toolCall.Function.Name)
+						paramsArray = append(paramsArray, params)
+					} else {
+						// If JSON parsing fails, use the raw arguments string
+						toolNames = append(toolNames, toolCall.Function.Name)
+						paramsArray = append(paramsArray, toolCall.Function.Arguments)
+					}
+				}
+			}
+
+			if len(toolNames) > 0 {
+				return toolNames, paramsArray, true
+			}
+		}
+	}
+
+	return nil, nil, false
+}
+
 // extractToolCall attempts to identify a tool call in the response content
 func (a *DefaultAgent) extractToolCall(content string) (string, interface{}, bool) {
+	// Check for OpenAI format first (which includes tool_calls array)
+	var openaiResp struct {
+		ToolCalls []struct {
+			ID       string `json:"id"`
+			Type     string `json:"type"`
+			Function struct {
+				Name      string `json:"name"`
+				Arguments string `json:"arguments"`
+			} `json:"function"`
+		} `json:"tool_calls"`
+	}
+
+	// Try to parse full content as OpenAI format first
+	if err := json.Unmarshal([]byte(content), &openaiResp); err == nil && len(openaiResp.ToolCalls) > 0 {
+		// Use the first tool call
+		toolCall := openaiResp.ToolCalls[0]
+		if toolCall.Function.Name != "" {
+			// Parse the arguments JSON
+			var params interface{}
+			if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &params); err == nil {
+				return toolCall.Function.Name, params, true
+			}
+			// Even if JSON parsing fails, return the tool name and raw arguments
+			return toolCall.Function.Name, toolCall.Function.Arguments, true
+		}
+	}
+
+	// Continue with previous implementation
 	// Simple parse function that looks for patterns like:
 	// {"tool": "tool_name", "params": {...}}
 	// or
@@ -221,6 +397,32 @@ func (a *DefaultAgent) extractToolCall(content string) (string, interface{}, boo
 	for _, block := range jsonBlocks {
 		if json.Unmarshal([]byte(block), &toolCall) == nil && toolCall.Tool != "" {
 			return toolCall.Tool, toolCall.Params, true
+		}
+
+		// Try OpenAI format within JSON blocks
+		var blockOpenAIResp struct {
+			ToolCalls []struct {
+				ID       string `json:"id"`
+				Type     string `json:"type"`
+				Function struct {
+					Name      string `json:"name"`
+					Arguments string `json:"arguments"`
+				} `json:"function"`
+			} `json:"tool_calls"`
+		}
+
+		if err := json.Unmarshal([]byte(block), &blockOpenAIResp); err == nil && len(blockOpenAIResp.ToolCalls) > 0 {
+			// Use the first tool call
+			toolCall := blockOpenAIResp.ToolCalls[0]
+			if toolCall.Function.Name != "" {
+				// Parse the arguments JSON
+				var params interface{}
+				if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &params); err == nil {
+					return toolCall.Function.Name, params, true
+				}
+				// Even if JSON parsing fails, return the tool name and raw arguments
+				return toolCall.Function.Name, toolCall.Function.Arguments, true
+			}
 		}
 	}
 
@@ -325,20 +527,27 @@ func (a *DefaultAgent) getToolNames() []string {
 func (a *DefaultAgent) createInitialMessages(input string) []ldomain.Message {
 	var messages []ldomain.Message
 
-	// Add system message if provided
+	// Create system message, combining prompt and tool descriptions
+	var systemContent string
 	if a.systemPrompt != "" {
-		messages = append(messages, ldomain.Message{
-			Role:    ldomain.RoleSystem,
-			Content: a.systemPrompt,
-		})
+		systemContent = a.systemPrompt
 	}
 
 	// Add available tools to system prompt if any
 	if len(a.tools) > 0 {
 		toolsDesc := a.getToolsDescription()
+		if systemContent != "" {
+			systemContent += "\n\n" + toolsDesc
+		} else {
+			systemContent = toolsDesc
+		}
+	}
+
+	// Add the combined system message if non-empty
+	if systemContent != "" {
 		messages = append(messages, ldomain.Message{
 			Role:    ldomain.RoleSystem,
-			Content: toolsDesc,
+			Content: systemContent,
 		})
 	}
 
@@ -360,6 +569,9 @@ func (a *DefaultAgent) getToolsDescription() string {
 	var builder strings.Builder
 	builder.WriteString("You have access to the following tools:\n\n")
 
+	// Also build OpenAI-style tool definitions for the model
+	var toolDefinitions []map[string]interface{}
+
 	for name, tool := range a.tools {
 		builder.WriteString(fmt.Sprintf("Tool: %s\n", name))
 		builder.WriteString(fmt.Sprintf("Description: %s\n", tool.Description()))
@@ -371,13 +583,48 @@ func (a *DefaultAgent) getToolsDescription() string {
 			if err == nil {
 				builder.WriteString(fmt.Sprintf("Parameters: %s\n", string(paramSchemaJSON)))
 			}
+
+			// Add to OpenAI-style tool definitions
+			toolDefinitions = append(toolDefinitions, map[string]interface{}{
+				"type": "function",
+				"function": map[string]interface{}{
+					"name":        name,
+					"description": tool.Description(),
+					"parameters":  schema,
+				},
+			})
+		} else {
+			// Add minimal tool definition if no schema is available
+			toolDefinitions = append(toolDefinitions, map[string]interface{}{
+				"type": "function",
+				"function": map[string]interface{}{
+					"name":        name,
+					"description": tool.Description(),
+					"parameters": map[string]interface{}{
+						"type":       "object",
+						"properties": map[string]interface{}{},
+					},
+				},
+			})
 		}
 
 		builder.WriteString("\n")
 	}
 
-	builder.WriteString("\nTo use a tool, respond with:\n")
+	builder.WriteString("\nTo use a tool, respond with one of these formats:\n")
 	builder.WriteString("```json\n{\"tool\": \"tool_name\", \"params\": {...}}\n```\n")
+	builder.WriteString("\nOR\n\n")
+	builder.WriteString("```json\n{\"tool_calls\": [{\"function\": {\"name\": \"tool_name\", \"arguments\": \"{...}\"}]}\n```\n")
+
+	// Add OpenAI-style tool definitions as JSON
+	if len(toolDefinitions) > 0 {
+		toolDefsJSON, err := json.MarshalIndent(toolDefinitions, "", "  ")
+		if err == nil {
+			builder.WriteString("\nTool definitions in OpenAI format:\n```json\n")
+			builder.Write(toolDefsJSON)
+			builder.WriteString("\n```\n")
+		}
+	}
 
 	return builder.String()
 }

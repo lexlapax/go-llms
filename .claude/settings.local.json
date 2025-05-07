@@ -23,7 +23,9 @@
       "Bash(mv:*)",
       "Bash(touch:*)",
       "Bash(find:*)",
-      "Bash(go mod init:*)"
+      "Bash(go mod init:*)",
+      "WebFetch(domain:ai.pydantic.dev)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

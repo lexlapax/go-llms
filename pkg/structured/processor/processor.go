@@ -83,6 +83,20 @@ func (p *StructuredProcessor) ProcessTyped(schema *schemaDomain.Schema, output s
 	return nil
 }
 
+// ToJSON converts an object to a JSON string
+func (p *StructuredProcessor) ToJSON(obj interface{}) (string, error) {
+	if obj == nil {
+		return "", fmt.Errorf("object cannot be nil")
+	}
+
+	jsonBytes, err := json.Marshal(obj)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal object to JSON: %w", err)
+	}
+
+	return string(jsonBytes), nil
+}
+
 // extractJSON attempts to find and extract JSON from a string
 func extractJSON(s string) string {
 	// Look for JSON object between curly braces

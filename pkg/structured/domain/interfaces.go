@@ -12,6 +12,9 @@ type Processor interface {
 
 	// ProcessTyped processes a raw output string against a schema and maps it to a specific type
 	ProcessTyped(schema *schemaDomain.Schema, output string, target interface{}) error
+
+	// ToJSON converts an object to a JSON string
+	ToJSON(obj interface{}) (string, error)
 }
 
 // PromptEnhancer defines the contract for enhancing prompts with schema information

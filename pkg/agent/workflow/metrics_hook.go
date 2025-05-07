@@ -175,6 +175,19 @@ func (h *MetricsHook) Reset() {
 	h.toolTimes = make(map[string][]time.Duration)
 }
 
+// NotifyToolCall manually increments the tool call counter for testing purposes
+func (h *MetricsHook) NotifyToolCall(tool string, _ interface{}) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.toolCalls++
+
+	// Also record a dummy tool time for completeness
+	if _, exists := h.toolTimes[tool]; !exists {
+		h.toolTimes[tool] = make([]time.Duration, 0)
+	}
+	h.toolTimes[tool] = append(h.toolTimes[tool], time.Millisecond)
+}
+
 // Helper functions for storing metrics context values
 type metricsContextKey string
 

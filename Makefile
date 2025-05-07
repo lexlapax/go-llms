@@ -31,7 +31,7 @@ TEST_FLAGS=-v -race -coverprofile=coverage.out -covermode=atomic
 DEP_FLAGS=-v
 
 # Commands
-.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples examples-all
+.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples examples-all test-integration test-integration-mock
 
 # Default target
 all: clean test build
@@ -70,7 +70,7 @@ example:
 
 # Run all tests
 test:
-	$(GOTEST) $(TEST_FLAGS) ./...
+	$(GOTEST) $(TEST_FLAGS) `go list ./... | grep -v github.com/lexlapax/go-llms/tests/integration`
 
 # Run tests for a specific package (usage: make test-pkg PKG=schema/validation)
 test-pkg:
@@ -187,6 +187,14 @@ clean:
 install-lint:
 	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
+# Run integration tests (requires API keys)
+test-integration:
+	$(GOTEST) -v ./tests/integration/...
+
+# Run mock-only integration tests (doesn't require API keys)
+test-integration-mock:
+	$(GOTEST) -v ./tests/integration/validation_test.go ./tests/integration/agent_test.go
+
 # Help message
 help:
 	@echo "Go-LLMs Makefile"
@@ -218,6 +226,8 @@ help:
 	@echo "  make coverage         Generate test coverage report"
 	@echo "  make coverage-pkg     Generate test coverage report for a specific package"
 	@echo "                        (usage: make coverage-pkg PKG=schema/validation)"
+	@echo "  make test-integration Run all integration tests (requires API keys)"
+	@echo "  make test-integration-mock Run integration tests that don't require API keys"
 	@echo ""
 	@echo "Code quality:"
 	@echo "  make lint             Run linters"

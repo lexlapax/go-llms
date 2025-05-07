@@ -80,11 +80,56 @@ func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.
 	}
 
 	// Convert domain messages to OpenAI messages
-	oaiMessages := make([]map[string]string, len(messages))
+	oaiMessages := make([]map[string]interface{}, 0, len(messages))
+	var lastAssistantIdx int = -1
+
 	for i, msg := range messages {
-		oaiMessages[i] = map[string]string{
-			"role":    string(msg.Role),
-			"content": msg.Content,
+		if msg.Role == domain.RoleAssistant {
+			lastAssistantIdx = i
+		}
+	}
+
+	for i, msg := range messages {
+		// Special handling for tool messages - they must follow an assistant message with tool_calls
+		if msg.Role == domain.RoleTool {
+			// If this is a tool message without a preceding assistant message with tool_calls,
+			// we need to convert it to a different format or skip it
+			if lastAssistantIdx == -1 || i == 0 || messages[i-1].Role != domain.RoleAssistant {
+				// Convert to user message instead as a fallback
+				oaiMessages = append(oaiMessages, map[string]interface{}{
+					"role":    string(domain.RoleUser),
+					"content": fmt.Sprintf("Tool result: %s", msg.Content),
+				})
+			} else {
+				// This is a valid tool message following an assistant
+				oaiMessages = append(oaiMessages, map[string]interface{}{
+					"role":         string(msg.Role),
+					"content":      msg.Content,
+					"tool_call_id": fmt.Sprintf("call_%d", i), // Generate a tool call ID
+				})
+			}
+		} else if msg.Role == domain.RoleAssistant && i < len(messages)-1 && messages[i+1].Role == domain.RoleTool {
+			// This assistant message is followed by a tool message, add tool_calls
+			oaiMessages = append(oaiMessages, map[string]interface{}{
+				"role":    string(msg.Role),
+				"content": msg.Content,
+				"tool_calls": []map[string]interface{}{
+					{
+						"id":   fmt.Sprintf("call_%d", i+1),
+						"type": "function",
+						"function": map[string]interface{}{
+							"name":      "generic_tool",
+							"arguments": "{}",
+						},
+					},
+				},
+			})
+		} else {
+			// Regular message
+			oaiMessages = append(oaiMessages, map[string]interface{}{
+				"role":    string(msg.Role),
+				"content": msg.Content,
+			})
 		}
 	}
 
