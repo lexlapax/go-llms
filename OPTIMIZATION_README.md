@@ -1,6 +1,6 @@
 # Go-LLMs Performance Optimization
 
-This document describes the performance optimizations implemented in the Go-LLMs library as part of the Phase 7 (Performance Optimization and Refinement) work.
+> **HISTORICAL DOCUMENT**: This document describes the performance optimizations implemented in the Go-LLMs library as part of Phase 7 (Performance Optimization and Refinement). The API examples referring to "Optimized" functions are outdated as these optimized implementations are now the standard throughout the library. The optimization techniques described remain relevant.
 
 ## 1. JSON Extraction Optimization
 
@@ -72,48 +72,20 @@ The parameter cache provides:
 
 All common tools (WebFetch, ExecuteCommand, ReadFile, WriteFile) have optimized versions available that use the new implementation.
 
-## Usage
+## Usage (Historical - Outdated)
 
-To use the optimized tools, replace:
+> **Note**: The examples below are obsolete. The optimized implementations are now the default versions. Just use `NewTool` and standard tool functions like `WebFetch()`.
 
-```go
-tool := tools.NewTool(
-    "multiply",
-    "Multiply two numbers",
-    func(params struct {
-        A float64 `json:"a"`
-        B float64 `json:"b"`
-    }) (map[string]interface{}, error) {
-        // Function implementation
-    },
-    paramSchema,
-)
-```
-
-With:
+Historical example showing the previous distinction:
 
 ```go
-tool := tools.NewOptimizedTool(
-    "multiply",
-    "Multiply two numbers",
-    func(params struct {
-        A float64 `json:"a"`
-        B float64 `json:"b"`
-    }) (map[string]interface{}, error) {
-        // Same function implementation
-    },
-    paramSchema,
-)
-```
+// Previously, there was a distinction between standard and optimized implementations:
+standardTool := tools.NewTool(...)
+optimizedTool := tools.NewOptimizedTool(...) // This function no longer exists
 
-For common tools, use the optimized versions:
-
-```go
-// Instead of:
-webFetchTool := tools.WebFetch()
-
-// Use:
-webFetchTool := tools.OptimizedWebFetch()
+// Today, just use the standard tools which contain the optimized implementation:
+tool := tools.NewTool(...) // Already uses the optimized implementation internally
+webFetchTool := tools.WebFetch() // Already uses the optimized implementation internally
 ```
 
 ## 3. Schema Validation Optimization
@@ -174,23 +146,22 @@ go test -bench=. ./benchmarks/json_extractor_bench_test.go -benchmem
 go test -bench=. ./benchmarks/optimized_schema_bench_test.go -benchmem
 ```
 
-## Usage - Optimized Schema Validation
+## Usage - Schema Validation (Historical - Outdated)
 
-To use the optimized schema validator, replace:
+> **Note**: The examples below are obsolete. The optimized validator implementation is now the default.
 
-```go
-validator := validation.NewValidator()
-result, err := validator.Validate(schema, jsonData)
-```
-
-With:
+Historical example showing the previous distinction:
 
 ```go
-validator := validation.NewOptimizedValidator()
-result, err := validator.Validate(schema, jsonData)
+// Previously, there was a distinction between standard and optimized validators:
+standardValidator := validation.NewValidator() // Original implementation 
+optimizedValidator := validation.NewOptimizedValidator() // This function no longer exists
+
+// Today, just use the standard validator which contains the optimized implementation:
+validator := validation.NewValidator() // Already uses the optimized implementation internally
 ```
 
-The optimized validator is particularly beneficial for:
+The validator's optimizations are particularly beneficial for:
 - Validating complex schemas with many constraints
 - Validating strings with patterns or formats
 - Validating data with validation errors

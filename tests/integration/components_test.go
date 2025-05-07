@@ -11,11 +11,12 @@ import (
 	"github.com/lexlapax/go-llms/pkg/schema/validation"
 )
 
-// TestOptimizedComponentsIntegration tests that optimized components
-// work together correctly in realistic usage scenarios
-func TestOptimizedComponentsIntegration(t *testing.T) {
-	// Create optimized validator
-	validator := validation.NewOptimizedValidator()
+// TestComponentsIntegration tests that components work together correctly
+// in realistic usage scenarios. This test was previously called TestOptimizedComponentsIntegration
+// but since the optimized implementations are now the standard implementation, it's been renamed.
+func TestComponentsIntegration(t *testing.T) {
+	// Create validator
+	validator := validation.NewValidator()
 
 	// Create schema for user info
 	userSchema := &sdomain.Schema{
@@ -72,8 +73,8 @@ func TestOptimizedComponentsIntegration(t *testing.T) {
 		return name + " (" + email + ") is " + fmt.Sprintf("%d", age) + " years old" + tags, nil
 	}
 
-	// Create optimized tool with the user processing function
-	userTool := tools.NewOptimizedTool("processUser", "Process user information", processUser, userSchema)
+	// Create tool with the user processing function
+	userTool := tools.NewTool("processUser", "Process user information", processUser, userSchema)
 
 	// Test with valid user data
 	t.Run("ValidUserData", func(t *testing.T) {
@@ -125,9 +126,9 @@ func TestOptimizedComponentsIntegration(t *testing.T) {
 
 	// Test integration between validator and tool
 	t.Run("SimpleIntegration", func(t *testing.T) {
-		// Create a composite function that uses both optimized validator and tool
+		// Create a composite function that uses both validator and tool
 		validateAndProcess := func(jsonData string) (string, error) {
-			// First validate with the optimized validator
+			// First validate with the validator
 			validationResult, err := validator.Validate(userSchema, jsonData)
 			if err != nil {
 				return "", err

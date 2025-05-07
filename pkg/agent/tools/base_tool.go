@@ -6,172 +6,383 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
+	"sync"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// BaseTool provides a foundation for tool implementations
-type BaseTool struct {
+// Tool provides an optimized implementation of tools with reduced allocations
+type Tool struct {
 	name        string
 	description string
 	fn          interface{}
 	paramSchema *sdomain.Schema
+
+	// Pre-computed type information
+	fnType        reflect.Type
+	fnValue       reflect.Value
+	numArgs       int
+	hasContext    bool
+	nonContextArg int
+	
+	// Cache for commonly used values to reduce allocations
+	argsPool      sync.Pool
 }
 
 // NewTool creates a new tool from a function
+// This implementation includes optimizations for better performance:
+// - Pre-computes type information at creation time
+// - Uses object pooling to reduce GC pressure
+// - Implements fast paths for common type conversions
+// - Caches struct field information for improved parameter mapping
 func NewTool(name, description string, fn interface{}, paramSchema *sdomain.Schema) domain.Tool {
-	return &BaseTool{
-		name:        name,
-		description: description,
-		fn:          fn,
-		paramSchema: paramSchema,
+	fnValue := reflect.ValueOf(fn)
+	if fnValue.Kind() != reflect.Func {
+		panic("tool function must be a function")
 	}
+
+	fnType := fnValue.Type()
+	numArgs := fnType.NumIn()
+	
+	// Determine if the function accepts context as first argument
+	hasContext := numArgs > 0 && fnType.In(0).Implements(reflect.TypeOf((*context.Context)(nil)).Elem())
+	
+	// Calculate index of the first non-context argument
+	nonContextArg := 0
+	if hasContext {
+		nonContextArg = 1
+	}
+
+	tool := &Tool{
+		name:          name,
+		description:   description,
+		fn:            fn,
+		paramSchema:   paramSchema,
+		fnType:        fnType,
+		fnValue:       fnValue,
+		numArgs:       numArgs,
+		hasContext:    hasContext,
+		nonContextArg: nonContextArg,
+	}
+
+	// Initialize argument pool
+	tool.argsPool = sync.Pool{
+		New: func() interface{} {
+			return make([]reflect.Value, numArgs)
+		},
+	}
+
+	return tool
 }
 
 // Name returns the tool's name
-func (t *BaseTool) Name() string {
+func (t *Tool) Name() string {
 	return t.name
 }
 
 // Description provides information about the tool
-func (t *BaseTool) Description() string {
+func (t *Tool) Description() string {
 	return t.description
 }
 
 // ParameterSchema returns the schema for the tool parameters
-func (t *BaseTool) ParameterSchema() *sdomain.Schema {
+func (t *Tool) ParameterSchema() *sdomain.Schema {
 	return t.paramSchema
 }
 
 // Execute runs the tool with parameters
-func (t *BaseTool) Execute(ctx context.Context, params interface{}) (interface{}, error) {
-	// Get the function value
-	fnValue := reflect.ValueOf(t.fn)
-	if fnValue.Kind() != reflect.Func {
-		return nil, fmt.Errorf("not a function")
+func (t *Tool) Execute(ctx context.Context, params interface{}) (interface{}, error) {
+	// Get an arguments slice from the pool
+	args := t.argsPool.Get().([]reflect.Value)
+	defer t.argsPool.Put(args)
+
+	// If function expects a context, set it as the first argument
+	if t.hasContext {
+		args[0] = reflect.ValueOf(ctx)
 	}
 
-	// Check if we have params
+	// Check if we need parameters
 	if params == nil {
-		// If the function takes no arguments, call it directly
-		if fnValue.Type().NumIn() == 0 {
-			return callFunction(fnValue, nil)
+		// If the function takes no arguments (besides potentially context), call it directly
+		if t.nonContextArg >= t.numArgs {
+			return t.callFunction(args)
 		}
 		return nil, fmt.Errorf("function requires parameters but none provided")
 	}
 
-	// Convert params to appropriate argument types
-	args, err := prepareArguments(ctx, fnValue, params)
+	// Handle parameter preparation with optimized path
+	err := t.prepareArguments(ctx, params, args)
 	if err != nil {
 		return nil, fmt.Errorf("error preparing arguments: %w", err)
 	}
 
 	// Call the function
-	return callFunction(fnValue, args)
+	return t.callFunction(args)
 }
 
 // prepareArguments converts the params to the appropriate argument types for the function
-func prepareArguments(ctx context.Context, fnValue reflect.Value, params interface{}) ([]reflect.Value, error) {
-	fnType := fnValue.Type()
-	numArgs := fnType.NumIn()
-	args := make([]reflect.Value, numArgs)
-
-	// Check if the function expects a context
-	startIdx := 0
-
-	if numArgs > 0 && fnType.In(0).Implements(reflect.TypeOf((*context.Context)(nil)).Elem()) {
-		args[0] = reflect.ValueOf(ctx)
-		startIdx = 1
-	}
-
+func (t *Tool) prepareArguments(ctx context.Context, params interface{}, args []reflect.Value) error {
 	// If no more arguments needed besides context, we're done
-	if startIdx >= numArgs {
-		return args, nil
+	if t.nonContextArg >= t.numArgs {
+		return nil
 	}
 
 	// Handle the params based on what was provided
 	paramsValue := reflect.ValueOf(params)
 
-	// If params is a map and function expects a struct, try to map fields
-	if paramsValue.Kind() == reflect.Map && fnType.In(startIdx).Kind() == reflect.Struct {
-		structVal := reflect.New(fnType.In(startIdx)).Elem()
-		if err := mapToStruct(paramsValue, structVal); err != nil {
-			return nil, err
+	// Handle slice parameters specially for functions taking multiple arguments
+	if paramsValue.Kind() == reflect.Slice && t.numArgs-t.nonContextArg == paramsValue.Len() {
+		// Directly assign each slice element to each function argument
+		for i := 0; i < paramsValue.Len(); i++ {
+			argIndex := t.nonContextArg + i
+			argValue := paramsValue.Index(i)
+			
+			// Try to convert if needed
+			if argValue.Type().AssignableTo(t.fnType.In(argIndex)) {
+				args[argIndex] = argValue
+			} else if convertedValue, ok := optimizedConvertValue(argValue, t.fnType.In(argIndex)); ok {
+				args[argIndex] = convertedValue
+			} else {
+				return fmt.Errorf("unable to convert slice parameter at index %d to function argument type", i)
+			}
 		}
-		args[startIdx] = structVal
-		return args, nil
+		return nil
+	}
+
+	// If params is a map and function expects a struct, try to map fields
+	if paramsValue.Kind() == reflect.Map && t.fnType.In(t.nonContextArg).Kind() == reflect.Struct {
+		targetType := t.fnType.In(t.nonContextArg)
+		structVal := reflect.New(targetType).Elem()
+		
+		// Use the cached field info to map values
+		fields := globalParamCache.getStructFields(targetType)
+		
+		for _, field := range fields {
+			if !field.isExported {
+				continue // Skip unexported fields
+			}
+			
+			// Try to find the field in the map by both the struct field name and JSON name
+			var mapFieldValue reflect.Value
+			
+			jsonKeyValue := reflect.ValueOf(field.jsonName)
+			mapFieldValue = paramsValue.MapIndex(jsonKeyValue)
+			
+			if !mapFieldValue.IsValid() {
+				nameKeyValue := reflect.ValueOf(field.name)
+				mapFieldValue = paramsValue.MapIndex(nameKeyValue)
+			}
+			
+			if !mapFieldValue.IsValid() {
+				continue // Skip fields not found in the map
+			}
+			
+			// Get the field value and ensure we can set it
+			fieldValue := structVal.Field(field.index)
+			if !fieldValue.CanSet() {
+				continue
+			}
+			
+			// Try to convert and set the value (using optimized conversion)
+			convertedValue, ok := optimizedConvertValue(mapFieldValue, field.fieldType)
+			if ok {
+				fieldValue.Set(convertedValue)
+			}
+		}
+		
+		args[t.nonContextArg] = structVal
+		return nil
 	}
 
 	// If params can be directly assigned to the function's argument type
-	if startIdx < numArgs && paramsValue.Type().AssignableTo(fnType.In(startIdx)) {
-		args[startIdx] = paramsValue
-		return args, nil
+	if t.nonContextArg < t.numArgs && paramsValue.Type().AssignableTo(t.fnType.In(t.nonContextArg)) {
+		args[t.nonContextArg] = paramsValue
+		return nil
 	}
 
 	// Try to convert the value
-	if startIdx < numArgs {
-		if convertedValue, ok := convertValue(paramsValue, fnType.In(startIdx)); ok {
-			args[startIdx] = convertedValue
-			return args, nil
+	if t.nonContextArg < t.numArgs {
+		if convertedValue, ok := optimizedConvertValue(paramsValue, t.fnType.In(t.nonContextArg)); ok {
+			args[t.nonContextArg] = convertedValue
+			return nil
 		}
 	}
 
-	return nil, fmt.Errorf("unable to convert parameters to function argument types")
+	return fmt.Errorf("unable to convert parameters to function argument types")
 }
 
-// mapToStruct maps values from a map to a struct
-func mapToStruct(mapValue, structValue reflect.Value) error {
-	if mapValue.Kind() != reflect.Map || structValue.Kind() != reflect.Struct {
-		return fmt.Errorf("expected map and struct, got %s and %s", mapValue.Kind(), structValue.Kind())
+// optimizedConvertValue attempts to convert a value to the target type
+// This version is optimized to reduce allocations
+func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflect.Value, bool) {
+	// Special handling for interface{} type
+	if value.Type().Kind() == reflect.Interface && !value.IsNil() {
+		// Extract the actual value from the interface
+		return optimizedConvertValue(value.Elem(), targetType)
 	}
 
-	for i := 0; i < structValue.NumField(); i++ {
-		field := structValue.Type().Field(i)
-		fieldName := field.Name
-
-		// Check for json tag
-		if jsonTag := field.Tag.Get("json"); jsonTag != "" {
-			// Split the tag by comma to handle options like omitempty
-			parts := reflect.StructTag(jsonTag).Get("json")
-			if parts != "" {
-				fieldName = parts
-			}
-		}
-
-		// Look up the field in the map
-		mapFieldValue := mapValue.MapIndex(reflect.ValueOf(fieldName))
-		if !mapFieldValue.IsValid() {
-			// Try case-insensitive lookup
-			for _, key := range mapValue.MapKeys() {
-				if key.Kind() == reflect.String &&
-					strings.EqualFold(key.String(), fieldName) {
-					mapFieldValue = mapValue.MapIndex(key)
-					break
-				}
-			}
-		}
-
-		if !mapFieldValue.IsValid() {
-			continue // Skip fields not found in the map
-		}
-
-		fieldValue := structValue.Field(i)
-		if !fieldValue.CanSet() {
-			continue // Skip unexported fields
-		}
-
-		// Try to convert and set the value
-		if convertedValue, ok := convertValue(mapFieldValue, fieldValue.Type()); ok {
-			fieldValue.Set(convertedValue)
+	// Fast path: if directly assignable, return as is
+	if value.Type().AssignableTo(targetType) {
+		return value, true
+	}
+	
+	// Check if conversion is possible (using cache)
+	if !globalParamCache.canConvert(value.Type(), targetType) {
+		// Skip cache check for complex types like slices, as the cache may not have them
+		if targetType.Kind() != reflect.Slice && targetType.Kind() != reflect.Array {
+			// But don't return false yet - try conversion anyway
 		}
 	}
 
-	return nil
+	// Handle basic type conversions with optimized paths
+	switch targetType.Kind() {
+	case reflect.String:
+		// Fast path for string conversion
+		switch value.Kind() {
+		case reflect.String:
+			return value, true
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return reflect.ValueOf(strconv.FormatInt(value.Int(), 10)), true
+		case reflect.Float32, reflect.Float64:
+			return reflect.ValueOf(strconv.FormatFloat(value.Float(), 'f', -1, 64)), true
+		case reflect.Bool:
+			return reflect.ValueOf(strconv.FormatBool(value.Bool())), true
+		default:
+			return reflect.ValueOf(fmt.Sprintf("%v", value.Interface())), true
+		}
+		
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		// Fast path for int conversion
+		switch value.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return reflect.ValueOf(value.Int()).Convert(targetType), true
+		case reflect.Float32, reflect.Float64:
+			return reflect.ValueOf(int64(value.Float())).Convert(targetType), true
+		case reflect.String:
+			if i, err := strconv.ParseInt(value.String(), 10, 64); err == nil {
+				return reflect.ValueOf(i).Convert(targetType), true
+			}
+		case reflect.Bool:
+			if value.Bool() {
+				return reflect.ValueOf(int64(1)).Convert(targetType), true
+			}
+			return reflect.ValueOf(int64(0)).Convert(targetType), true
+		}
+		
+	case reflect.Float32, reflect.Float64:
+		// Fast path for float conversion
+		switch value.Kind() {
+		case reflect.Float32, reflect.Float64:
+			return reflect.ValueOf(value.Float()).Convert(targetType), true
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return reflect.ValueOf(float64(value.Int())).Convert(targetType), true
+		case reflect.String:
+			if f, err := strconv.ParseFloat(value.String(), 64); err == nil {
+				return reflect.ValueOf(f).Convert(targetType), true
+			}
+		case reflect.Bool:
+			if value.Bool() {
+				return reflect.ValueOf(float64(1.0)).Convert(targetType), true
+			}
+			return reflect.ValueOf(float64(0.0)).Convert(targetType), true
+		}
+		
+	case reflect.Bool:
+		// Fast path for bool conversion
+		switch value.Kind() {
+		case reflect.Bool:
+			return value, true
+		case reflect.String:
+			if b, err := strconv.ParseBool(value.String()); err == nil {
+				return reflect.ValueOf(b), true
+			}
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return reflect.ValueOf(value.Int() != 0), true
+		case reflect.Float32, reflect.Float64:
+			return reflect.ValueOf(value.Float() != 0), true
+		}
+        
+    // Handle slice conversions
+    case reflect.Slice, reflect.Array:
+        if value.Kind() == reflect.Slice || value.Kind() == reflect.Array {
+            elemType := targetType.Elem()
+            length := value.Len()
+            result := reflect.MakeSlice(targetType, length, length)
+            
+            for i := 0; i < length; i++ {
+                elemValue := value.Index(i)
+                convertedElem, ok := optimizedConvertValue(elemValue, elemType)
+                if !ok {
+                    return reflect.Value{}, false
+                }
+                result.Index(i).Set(convertedElem)
+            }
+            return result, true
+        }
+	}
+
+	// Try direct conversion for numeric types
+	if isNumericType(targetType) && isNumericType(value.Type()) {
+		// Try to convert using reflection
+		if value.Type().ConvertibleTo(targetType) {
+			return value.Convert(targetType), true
+		}
+	}
+	
+	// Use string as intermediate conversion
+	if value.Type().Kind() != reflect.String && value.Type().ConvertibleTo(reflect.TypeOf("")) {
+		// Convert to string first
+		strVal := value.Convert(reflect.TypeOf("")).Interface().(string)
+		
+		// Then try to convert from string to target type
+		switch targetType.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if i, err := strconv.ParseInt(strVal, 10, 64); err == nil {
+				return reflect.ValueOf(i).Convert(targetType), true
+			}
+		case reflect.Float32, reflect.Float64:
+			if f, err := strconv.ParseFloat(strVal, 64); err == nil {
+				return reflect.ValueOf(f).Convert(targetType), true
+			}
+		case reflect.Bool:
+			if b, err := strconv.ParseBool(strVal); err == nil {
+				return reflect.ValueOf(b), true
+			}
+		}
+	}
+
+	// Handle map conversions
+    if targetType.Kind() == reflect.Map && value.Kind() == reflect.Map {
+        keyType := targetType.Key()
+        elemType := targetType.Elem()
+        result := reflect.MakeMap(targetType)
+        
+        for _, key := range value.MapKeys() {
+            if convertedKey, ok := optimizedConvertValue(key, keyType); ok {
+                if convertedValue, ok := optimizedConvertValue(value.MapIndex(key), elemType); ok {
+                    result.SetMapIndex(convertedKey, convertedValue)
+                }
+            }
+        }
+        return result, true
+    }
+
+	// Fall back to original method for compatibility
+	return convertValue(value, targetType)
 }
 
-// convertValue attempts to convert a value to the target type
+// isNumericType checks if the type is a numeric type
+func isNumericType(t reflect.Type) bool {
+	switch t.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
+		return true
+	}
+	return false
+}
+
+// convertValue attempts to convert a value to the target type (fallback method)
 func convertValue(value reflect.Value, targetType reflect.Type) (reflect.Value, bool) {
 	// If directly assignable, return as is
 	if value.Type().AssignableTo(targetType) {
@@ -264,9 +475,9 @@ func convertValue(value reflect.Value, targetType reflect.Type) (reflect.Value, 
 }
 
 // callFunction calls the function with the provided arguments
-func callFunction(fnValue reflect.Value, args []reflect.Value) (interface{}, error) {
+func (t *Tool) callFunction(args []reflect.Value) (interface{}, error) {
 	// Call the function
-	results := fnValue.Call(args)
+	results := t.fnValue.Call(args)
 
 	// Check the results
 	if len(results) == 0 {
@@ -287,3 +498,4 @@ func callFunction(fnValue reflect.Value, args []reflect.Value) (interface{}, err
 
 	return result, err
 }
+

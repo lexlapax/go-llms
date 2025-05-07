@@ -12,8 +12,8 @@ import (
 var intPtr = testutils.IntPtr
 var float64Ptr = testutils.Float64Ptr
 
-// BenchmarkStringValidationComparison compares original vs optimized validators with string validation
-func BenchmarkStringValidationComparison(b *testing.B) {
+// BenchmarkStringValidation benchmarks string validation performance
+func BenchmarkStringValidation(b *testing.B) {
 	schema := &schemaDomain.Schema{
 		Type: "object",
 		Properties: map[string]schemaDomain.Property{
@@ -46,31 +46,18 @@ func BenchmarkStringValidationComparison(b *testing.B) {
 		"category": "A"
 	}`
 
-	b.Run("Original", func(b *testing.B) {
-		validator := validation.NewValidator()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := validator.Validate(schema, validJSON)
-			if err != nil {
-				b.Fatal(err)
-			}
+	validator := validation.NewValidator()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := validator.Validate(schema, validJSON)
+		if err != nil {
+			b.Fatal(err)
 		}
-	})
-
-	b.Run("Optimized", func(b *testing.B) {
-		validator := validation.NewOptimizedValidator()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := validator.Validate(schema, validJSON)
-			if err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
+	}
 }
 
-// BenchmarkNestedObjectValidationComparison compares original vs optimized validators with nested objects
-func BenchmarkNestedObjectValidationComparison(b *testing.B) {
+// BenchmarkNestedObjectValidation benchmarks nested object validation performance
+func BenchmarkNestedObjectValidation(b *testing.B) {
 	schema := &schemaDomain.Schema{
 		Type: "object",
 		Properties: map[string]schemaDomain.Property{
@@ -137,31 +124,18 @@ func BenchmarkNestedObjectValidationComparison(b *testing.B) {
 		]
 	}`
 
-	b.Run("Original", func(b *testing.B) {
-		validator := validation.NewValidator()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := validator.Validate(schema, validJSON)
-			if err != nil {
-				b.Fatal(err)
-			}
+	validator := validation.NewValidator()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := validator.Validate(schema, validJSON)
+		if err != nil {
+			b.Fatal(err)
 		}
-	})
-
-	b.Run("Optimized", func(b *testing.B) {
-		validator := validation.NewOptimizedValidator()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := validator.Validate(schema, validJSON)
-			if err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
+	}
 }
 
-// BenchmarkArrayValidationComparison compares original vs optimized validators with arrays
-func BenchmarkArrayValidationComparison(b *testing.B) {
+// BenchmarkArrayValidation benchmarks array validation performance
+func BenchmarkArrayValidation(b *testing.B) {
 	schema := &schemaDomain.Schema{
 		Type: "object",
 		Properties: map[string]schemaDomain.Property{
@@ -210,30 +184,17 @@ func BenchmarkArrayValidationComparison(b *testing.B) {
 		]
 	}`
 
-	b.Run("Original", func(b *testing.B) {
-		validator := validation.NewValidator()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := validator.Validate(schema, validJSON)
-			if err != nil {
-				b.Fatal(err)
-			}
+	validator := validation.NewValidator()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := validator.Validate(schema, validJSON)
+		if err != nil {
+			b.Fatal(err)
 		}
-	})
-
-	b.Run("Optimized", func(b *testing.B) {
-		validator := validation.NewOptimizedValidator()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_, err := validator.Validate(schema, validJSON)
-			if err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
+	}
 }
 
-// BenchmarkValidationWithErrors compares validators handling validation errors
+// BenchmarkValidationWithErrors benchmarks validation with errors
 func BenchmarkValidationWithErrors(b *testing.B) {
 	schema := &schemaDomain.Schema{
 		Type: "object",
@@ -261,33 +222,17 @@ func BenchmarkValidationWithErrors(b *testing.B) {
 		"email": "not-an-email"
 	}`
 
-	b.Run("Original", func(b *testing.B) {
-		validator := validation.NewValidator()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			result, err := validator.Validate(schema, invalidJSON)
-			if err != nil {
-				b.Fatal(err)
-			}
-			if result.Valid {
-				b.Fatal("expected validation to fail")
-			}
+	validator := validation.NewValidator()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		result, err := validator.Validate(schema, invalidJSON)
+		if err != nil {
+			b.Fatal(err)
 		}
-	})
-
-	b.Run("Optimized", func(b *testing.B) {
-		validator := validation.NewOptimizedValidator()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			result, err := validator.Validate(schema, invalidJSON)
-			if err != nil {
-				b.Fatal(err)
-			}
-			if result.Valid {
-				b.Fatal("expected validation to fail")
-			}
+		if result.Valid {
+			b.Fatal("expected validation to fail")
 		}
-	})
+	}
 }
 
 // BenchmarkRepeatedValidation tests validators with repeated validations (caching benefit)
@@ -308,29 +253,14 @@ func BenchmarkRepeatedValidation(b *testing.B) {
 		`{"name": "David", "age": 40}`,
 	}
 
-	b.Run("Original", func(b *testing.B) {
-		validator := validation.NewValidator()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			// Alternate between different JSONs to test caching
-			jsonStr := validJSONs[i%len(validJSONs)]
-			_, err := validator.Validate(schema, jsonStr)
-			if err != nil {
-				b.Fatal(err)
-			}
+	validator := validation.NewValidator()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Alternate between different JSONs to test caching
+		jsonStr := validJSONs[i%len(validJSONs)]
+		_, err := validator.Validate(schema, jsonStr)
+		if err != nil {
+			b.Fatal(err)
 		}
-	})
-
-	b.Run("Optimized", func(b *testing.B) {
-		validator := validation.NewOptimizedValidator()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			// Alternate between different JSONs to test caching
-			jsonStr := validJSONs[i%len(validJSONs)]
-			_, err := validator.Validate(schema, jsonStr)
-			if err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
+	}
 }

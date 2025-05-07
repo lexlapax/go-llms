@@ -5,20 +5,48 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// DefaultValidator implements schema validation
-type DefaultValidator struct{}
+// RegexCache stores compiled regular expressions to avoid recompilation
+var RegexCache = sync.Map{}
 
-// NewValidator creates a new validator
-func NewValidator() *DefaultValidator {
-	return &DefaultValidator{}
+// Validator implements schema validation with performance enhancements
+type Validator struct {
+	// errorBufferPool provides reusable string buffers for errors
+	errorBufferPool sync.Pool
+
+	// validationResultPool provides reusable validation results
+	validationResultPool sync.Pool
+}
+
+// NewValidator creates a new validator with performance enhancements
+// This function returns a validator with improved performance through 
+// object pooling, regex caching, and efficient validation paths.
+func NewValidator() *Validator {
+	v := &Validator{
+		errorBufferPool: sync.Pool{
+			New: func() interface{} {
+				// Preallocate a slice with reasonable capacity to avoid reallocation
+				return make([]string, 0, 8)
+			},
+		},
+		validationResultPool: sync.Pool{
+			New: func() interface{} {
+				return &domain.ValidationResult{
+					Valid:  true,
+					Errors: make([]string, 0, 8),
+				}
+			},
+		},
+	}
+	return v
 }
 
 // Validate validates a JSON string against a schema
-func (v *DefaultValidator) Validate(schema *domain.Schema, jsonStr string) (*domain.ValidationResult, error) {
+func (v *Validator) Validate(schema *domain.Schema, jsonStr string) (*domain.ValidationResult, error) {
 	var data interface{}
 
 	// Parse JSON
@@ -26,22 +54,32 @@ func (v *DefaultValidator) Validate(schema *domain.Schema, jsonStr string) (*dom
 		return nil, fmt.Errorf("invalid JSON: %w", err)
 	}
 
+	// Get a validation result from the pool
+	result := v.validationResultPool.Get().(*domain.ValidationResult)
+	result.Valid = true
+	result.Errors = result.Errors[:0] // Reset the errors slice but keep capacity
+
+	// Get an error buffer from the pool
+	errors := v.errorBufferPool.Get().([]string)
+	errors = errors[:0] // Reset slice but keep capacity
+
 	// Validate against schema
-	result := &domain.ValidationResult{Valid: true}
-	errors := v.validateValue("", schema, data)
+	errors = v.validateValue("", schema, data, errors)
 
 	if len(errors) > 0 {
 		result.Valid = false
-		result.Errors = errors
+		result.Errors = append(result.Errors, errors...) // Copy errors to result
 	}
+
+	// Return the error buffer to the pool
+	v.errorBufferPool.Put(errors)
 
 	return result, nil
 }
 
 // ValidateStruct validates a Go struct against a schema
-func (v *DefaultValidator) ValidateStruct(schema *domain.Schema, obj interface{}) (*domain.ValidationResult, error) {
-	// Convert struct to map first using reflection
-	// For now, we'll use JSON marshaling as a simple implementation
+func (v *Validator) ValidateStruct(schema *domain.Schema, obj interface{}) (*domain.ValidationResult, error) {
+	// Convert struct to map first using JSON marshaling
 	jsonData, err := json.Marshal(obj)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal struct: %w", err)
@@ -51,53 +89,60 @@ func (v *DefaultValidator) ValidateStruct(schema *domain.Schema, obj interface{}
 }
 
 // validateValue validates a value against a schema
-func (v *DefaultValidator) validateValue(path string, schema *domain.Schema, data interface{}) []string {
-	var errors []string
-
-	// Validate type first
-	if schema.Type != "" {
-		if typeErr := v.validateType(path, schema.Type, data); typeErr != "" {
-			errors = append(errors, typeErr)
-			// If type is wrong, don't proceed with further validation
-			return errors
-		}
+func (v *Validator) validateValue(path string, schema *domain.Schema, data interface{}, errors []string) []string {
+	// Fast path for nil schema or empty type
+	if schema == nil || schema.Type == "" {
+		return errors
 	}
 
-	// Based on the schema type, validate the appropriate constraints
+	// Validate type first with fast simple type checks
+	typeError := v.validateType(path, schema.Type, data)
+	if typeError != "" {
+		errors = append(errors, typeError)
+		// If type is wrong, don't proceed with further validation
+		return errors
+	}
+
+	// Type-based validation with specific handling for each type
 	switch schema.Type {
 	case "object":
-		errors = append(errors, v.validateObject(path, schema, data)...)
+		errors = v.validateObject(path, schema, data, errors)
 	case "array":
-		errors = append(errors, v.validateArray(path, schema, data)...)
+		errors = v.validateArray(path, schema, data, errors)
 	case "string":
-		errors = append(errors, v.validateString(path, schema, data)...)
+		errors = v.validateString(path, schema, data, errors)
 	case "integer", "number":
-		errors = append(errors, v.validateNumber(path, schema, data)...)
-	case "boolean":
-		// No additional validation needed for booleans
+		errors = v.validateNumber(path, schema, data, errors)
 	}
 
 	return errors
 }
 
 // validateType validates the type of a value
-func (v *DefaultValidator) validateType(path string, expectedType string, value interface{}) string {
+func (v *Validator) validateType(path string, expectedType string, value interface{}) string {
 	displayPath := path
 	if displayPath == "" {
 		displayPath = "value"
 	}
 
+	// Fast path for nil values
+	if value == nil {
+		return fmt.Sprintf("%s is null but expected %s", displayPath, expectedType)
+	}
+
+	// Use type switches for more efficient type checking
 	switch expectedType {
 	case "string":
 		if _, ok := value.(string); !ok {
 			return fmt.Sprintf("%s must be a string", displayPath)
 		}
 	case "integer":
-		if _, ok := value.(float64); !ok {
+		num, ok := value.(float64)
+		if !ok {
 			return fmt.Sprintf("%s must be an integer", displayPath)
 		}
-		// In JSON, all numbers are float64, so check if it's a whole number
-		if float64(int(value.(float64))) != value.(float64) {
+		// Fast integer check
+		if float64(int(num)) != num {
 			return fmt.Sprintf("%s must be an integer (no decimal part)", displayPath)
 		}
 	case "number":
@@ -122,109 +167,60 @@ func (v *DefaultValidator) validateType(path string, expectedType string, value 
 }
 
 // validateObject validates an object against a schema
-func (v *DefaultValidator) validateObject(path string, schema *domain.Schema, data interface{}) []string {
-	var errors []string
+func (v *Validator) validateObject(path string, schema *domain.Schema, data interface{}, errors []string) []string {
 	obj, ok := data.(map[string]interface{})
 	if !ok {
 		// This should never happen as we already validated the type
 		return errors
 	}
 
-	// Check required properties
-	for _, req := range schema.Required {
-		if _, exists := obj[req]; !exists {
-			propPath := req
-			if path != "" {
-				propPath = path + "." + req
+	// Check required properties - fast path with direct iteration
+	if len(schema.Required) > 0 {
+		for _, req := range schema.Required {
+			if _, exists := obj[req]; !exists {
+				propPath := req
+				if path != "" {
+					propPath = path + "." + req
+				}
+				errors = append(errors, fmt.Sprintf("property %s is required", propPath))
 			}
-			errors = append(errors, fmt.Sprintf("property %s is required", propPath))
 		}
 	}
 
-	// Validate each property against its schema
-	for name, propSchema := range schema.Properties {
-		propPath := name
-		if path != "" {
-			propPath = path + "." + name
-		}
+	// Only validate defined properties
+	if schema.Properties != nil {
+		for name, prop := range schema.Properties {
+			if value, exists := obj[name]; exists {
+				propPath := name
+				if path != "" {
+					propPath = path + "." + name
+				}
 
-		if value, exists := obj[name]; exists {
-			// Create a sub-schema for the property
-			subSchema := &domain.Schema{
-				Type:        propSchema.Type,
-				Properties:  propSchema.Properties,
-				Required:    propSchema.Required,
-				Description: propSchema.Description,
-			}
+				// Create a schema for this property
+				subSchema := &domain.Schema{
+					Type:        prop.Type,
+					Properties:  prop.Properties,
+					Required:    prop.Required,
+					Description: prop.Description,
+				}
 
-			// Copy constraints to sub-schema
-			if propSchema.Minimum != nil {
-				if subSchema.Properties == nil {
-					subSchema.Properties = make(map[string]domain.Property)
+				// For simple constraint validations in string, number, etc.
+				// we need to handle the constraints in a special way
+				if prop.MinLength != nil || prop.MaxLength != nil || prop.Pattern != "" || 
+				   len(prop.Enum) > 0 || prop.Format != "" || prop.Minimum != nil ||
+				   prop.Maximum != nil || prop.Items != nil {
+					
+					// Create a copy of the property in the schema's Properties map
+					// to handle constraints in the validateX methods
+					if subSchema.Properties == nil {
+						subSchema.Properties = map[string]domain.Property{}
+					}
+					subSchema.Properties[""] = prop
 				}
-				prop := domain.Property{Minimum: propSchema.Minimum}
-				subSchema.Properties[""] = prop
-			}
-			if propSchema.Maximum != nil {
-				if subSchema.Properties == nil {
-					subSchema.Properties = make(map[string]domain.Property)
-				}
-				prop := subSchema.Properties[""]
-				prop.Maximum = propSchema.Maximum
-				subSchema.Properties[""] = prop
-			}
-			if propSchema.MinLength != nil {
-				if subSchema.Properties == nil {
-					subSchema.Properties = make(map[string]domain.Property)
-				}
-				prop := subSchema.Properties[""]
-				prop.MinLength = propSchema.MinLength
-				subSchema.Properties[""] = prop
-			}
-			if propSchema.MaxLength != nil {
-				if subSchema.Properties == nil {
-					subSchema.Properties = make(map[string]domain.Property)
-				}
-				prop := subSchema.Properties[""]
-				prop.MaxLength = propSchema.MaxLength
-				subSchema.Properties[""] = prop
-			}
-			if propSchema.Pattern != "" {
-				if subSchema.Properties == nil {
-					subSchema.Properties = make(map[string]domain.Property)
-				}
-				prop := subSchema.Properties[""]
-				prop.Pattern = propSchema.Pattern
-				subSchema.Properties[""] = prop
-			}
-			if len(propSchema.Enum) > 0 {
-				if subSchema.Properties == nil {
-					subSchema.Properties = make(map[string]domain.Property)
-				}
-				prop := subSchema.Properties[""]
-				prop.Enum = propSchema.Enum
-				subSchema.Properties[""] = prop
-			}
-			if propSchema.Format != "" {
-				if subSchema.Properties == nil {
-					subSchema.Properties = make(map[string]domain.Property)
-				}
-				prop := subSchema.Properties[""]
-				prop.Format = propSchema.Format
-				subSchema.Properties[""] = prop
-			}
-			if propSchema.Items != nil {
-				if subSchema.Properties == nil {
-					subSchema.Properties = make(map[string]domain.Property)
-				}
-				prop := subSchema.Properties[""]
-				prop.Items = propSchema.Items
-				subSchema.Properties[""] = prop
-			}
 
-			// Validate the property value
-			propErrors := v.validateValue(propPath, subSchema, value)
-			errors = append(errors, propErrors...)
+				// Validate the property value
+				errors = v.validateValue(propPath, subSchema, value, errors)
+			}
 		}
 	}
 
@@ -232,93 +228,62 @@ func (v *DefaultValidator) validateObject(path string, schema *domain.Schema, da
 }
 
 // validateArray validates an array against a schema
-func (v *DefaultValidator) validateArray(path string, schema *domain.Schema, data interface{}) []string {
-	var errors []string
+func (v *Validator) validateArray(path string, schema *domain.Schema, data interface{}, errors []string) []string {
 	arr, ok := data.([]interface{})
 	if !ok {
 		// This should never happen as we already validated the type
 		return errors
 	}
 
-	// If schema.Properties is empty or schema.Properties[""] is not set
-	if schema.Properties == nil {
+	// Get the items schema if available
+	var itemsSchema *domain.Schema
+	if schema.Properties != nil {
+		if prop, exists := schema.Properties[""]; exists && prop.Items != nil {
+			items := prop.Items
+			itemsSchema = &domain.Schema{
+				Type:        items.Type,
+				Properties:  items.Properties,
+				Required:    items.Required,
+				Description: items.Description,
+			}
+
+			// Inherit constraints from the item schema if needed
+			if items.MinLength != nil || items.MaxLength != nil || items.Pattern != "" || 
+			   len(items.Enum) > 0 || items.Format != "" || items.Minimum != nil ||
+			   items.Maximum != nil || items.Items != nil {
+				
+				if itemsSchema.Properties == nil {
+					itemsSchema.Properties = map[string]domain.Property{}
+				}
+				itemsSchema.Properties[""] = *items
+			}
+		}
+	}
+
+	// If no items schema, nothing to validate
+	if itemsSchema == nil {
 		return errors
 	}
 
-	itemsProp, exists := schema.Properties[""]
-	if !exists || itemsProp.Items == nil {
-		return errors
+	// Cache the path prefix for better performance
+	pathPrefix := path
+	if pathPrefix != "" {
+		pathPrefix = pathPrefix + "["
+	} else {
+		pathPrefix = "["
 	}
 
-	// Get the schema for array items
-	itemSchema := itemsProp.Items
-	subSchema := &domain.Schema{
-		Type:        itemSchema.Type,
-		Properties:  itemSchema.Properties,
-		Required:    itemSchema.Required,
-		Description: itemSchema.Description,
-	}
-
-	// Apply additional constraints from the item schema
-	if itemSchema.Minimum != nil || itemSchema.Maximum != nil ||
-		itemSchema.MinLength != nil || itemSchema.MaxLength != nil ||
-		itemSchema.Pattern != "" || itemSchema.Format != "" ||
-		len(itemSchema.Enum) > 0 || itemSchema.Items != nil {
-
-		if subSchema.Properties == nil {
-			subSchema.Properties = make(map[string]domain.Property)
-		}
-
-		// Create a property with constraints
-		prop := domain.Property{}
-
-		// Copy numeric constraints
-		if itemSchema.Minimum != nil {
-			prop.Minimum = itemSchema.Minimum
-		}
-		if itemSchema.Maximum != nil {
-			prop.Maximum = itemSchema.Maximum
-		}
-
-		// Copy string constraints
-		if itemSchema.MinLength != nil {
-			prop.MinLength = itemSchema.MinLength
-		}
-		if itemSchema.MaxLength != nil {
-			prop.MaxLength = itemSchema.MaxLength
-		}
-		if itemSchema.Pattern != "" {
-			prop.Pattern = itemSchema.Pattern
-		}
-		if len(itemSchema.Enum) > 0 {
-			prop.Enum = itemSchema.Enum
-		}
-		if itemSchema.Format != "" {
-			prop.Format = itemSchema.Format
-		}
-
-		// Copy nested array constraints
-		if itemSchema.Items != nil {
-			prop.Items = itemSchema.Items
-		}
-
-		// Add the property
-		subSchema.Properties[""] = prop
-	}
-
-	// Validate each item in the array
+	// Validate each item
 	for i, item := range arr {
-		itemPath := fmt.Sprintf("%s[%d]", path, i)
-		itemErrors := v.validateValue(itemPath, subSchema, item)
-		errors = append(errors, itemErrors...)
+		itemPath := fmt.Sprintf("%s%d]", pathPrefix, i)
+		errors = v.validateValue(itemPath, itemsSchema, item, errors)
 	}
 
 	return errors
 }
 
 // validateString validates a string against constraints
-func (v *DefaultValidator) validateString(path string, schema *domain.Schema, data interface{}) []string {
-	var errors []string
+func (v *Validator) validateString(path string, schema *domain.Schema, data interface{}, errors []string) []string {
 	str, ok := data.(string)
 	if !ok {
 		// This should never happen as we already validated the type
@@ -330,14 +295,13 @@ func (v *DefaultValidator) validateString(path string, schema *domain.Schema, da
 		displayPath = "value"
 	}
 
-	// Get string constraints
+	// Get string constraints from the special "" property
 	var minLength, maxLength *int
 	var pattern, format string
 	var enum []string
 
 	if schema.Properties != nil {
-		prop, exists := schema.Properties[""]
-		if exists {
+		if prop, exists := schema.Properties[""]; exists {
 			minLength = prop.MinLength
 			maxLength = prop.MaxLength
 			pattern = prop.Pattern
@@ -346,27 +310,38 @@ func (v *DefaultValidator) validateString(path string, schema *domain.Schema, da
 		}
 	}
 
-	// Validate min length
+	// Validate min length - fast path
 	if minLength != nil && len(str) < *minLength {
 		errors = append(errors, fmt.Sprintf("%s must be at least %d characters long", displayPath, *minLength))
 	}
 
-	// Validate max length
+	// Validate max length - fast path
 	if maxLength != nil && len(str) > *maxLength {
 		errors = append(errors, fmt.Sprintf("%s must be no more than %d characters long", displayPath, *maxLength))
 	}
 
-	// Validate pattern
+	// Validate pattern using regex cache
 	if pattern != "" {
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			errors = append(errors, fmt.Sprintf("invalid pattern: %s", pattern))
-		} else if !re.MatchString(str) {
+		// Get or compile the regex
+		var re *regexp.Regexp
+		if cached, found := RegexCache.Load(pattern); found {
+			re = cached.(*regexp.Regexp)
+		} else {
+			var err error
+			re, err = regexp.Compile(pattern)
+			if err != nil {
+				errors = append(errors, fmt.Sprintf("invalid pattern: %s", pattern))
+				return errors
+			}
+			RegexCache.Store(pattern, re)
+		}
+
+		if !re.MatchString(str) {
 			errors = append(errors, fmt.Sprintf("%s must match pattern: %s", displayPath, pattern))
 		}
 	}
 
-	// Validate enum
+	// Validate enum with efficient loop
 	if len(enum) > 0 {
 		valid := false
 		for _, enumValue := range enum {
@@ -380,33 +355,60 @@ func (v *DefaultValidator) validateString(path string, schema *domain.Schema, da
 		}
 	}
 
-	// Validate format
+	// Validate format with cached regex patterns
 	if format != "" {
 		switch format {
 		case "email":
 			emailPattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-			re, err := regexp.Compile(emailPattern)
-			if err != nil {
-				errors = append(errors, fmt.Sprintf("invalid email pattern: %v", err))
-			} else if !re.MatchString(str) {
+			var re *regexp.Regexp
+			if cached, found := RegexCache.Load(emailPattern); found {
+				re = cached.(*regexp.Regexp)
+			} else {
+				var err error
+				re, err = regexp.Compile(emailPattern)
+				if err != nil {
+					errors = append(errors, fmt.Sprintf("invalid email pattern: %v", err))
+					return errors
+				}
+				RegexCache.Store(emailPattern, re)
+			}
+			if !re.MatchString(str) {
 				errors = append(errors, fmt.Sprintf("%s must be a valid email address", displayPath))
 			}
 		case "date-time":
 			// Simplified ISO8601 date-time validation
 			dateTimePattern := `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$`
-			re, err := regexp.Compile(dateTimePattern)
-			if err != nil {
-				errors = append(errors, fmt.Sprintf("invalid date-time pattern: %v", err))
-			} else if !re.MatchString(str) {
+			var re *regexp.Regexp
+			if cached, found := RegexCache.Load(dateTimePattern); found {
+				re = cached.(*regexp.Regexp)
+			} else {
+				var err error
+				re, err = regexp.Compile(dateTimePattern)
+				if err != nil {
+					errors = append(errors, fmt.Sprintf("invalid date-time pattern: %v", err))
+					return errors
+				}
+				RegexCache.Store(dateTimePattern, re)
+			}
+			if !re.MatchString(str) {
 				errors = append(errors, fmt.Sprintf("%s must be a valid ISO8601 date-time", displayPath))
 			}
 		case "uri":
 			// Simplified URI validation
 			uriPattern := `^(https?|ftp)://[^\s/$.?#].[^\s]*$`
-			re, err := regexp.Compile(uriPattern)
-			if err != nil {
-				errors = append(errors, fmt.Sprintf("invalid URI pattern: %v", err))
-			} else if !re.MatchString(str) {
+			var re *regexp.Regexp
+			if cached, found := RegexCache.Load(uriPattern); found {
+				re = cached.(*regexp.Regexp)
+			} else {
+				var err error
+				re, err = regexp.Compile(uriPattern)
+				if err != nil {
+					errors = append(errors, fmt.Sprintf("invalid URI pattern: %v", err))
+					return errors
+				}
+				RegexCache.Store(uriPattern, re)
+			}
+			if !re.MatchString(str) {
 				errors = append(errors, fmt.Sprintf("%s must be a valid URI", displayPath))
 			}
 		default:
@@ -418,8 +420,7 @@ func (v *DefaultValidator) validateString(path string, schema *domain.Schema, da
 }
 
 // validateNumber validates a number against constraints
-func (v *DefaultValidator) validateNumber(path string, schema *domain.Schema, data interface{}) []string {
-	var errors []string
+func (v *Validator) validateNumber(path string, schema *domain.Schema, data interface{}, errors []string) []string {
 	num, ok := data.(float64)
 	if !ok {
 		// This should never happen as we already validated the type
@@ -435,22 +436,23 @@ func (v *DefaultValidator) validateNumber(path string, schema *domain.Schema, da
 	var minimum, maximum *float64
 
 	if schema.Properties != nil {
-		prop, exists := schema.Properties[""]
-		if exists {
+		if prop, exists := schema.Properties[""]; exists {
 			minimum = prop.Minimum
 			maximum = prop.Maximum
 		}
 	}
 
-	// Validate minimum
+	// Validate minimum - fast path
 	if minimum != nil && num < *minimum {
 		errors = append(errors, fmt.Sprintf("%s must be at least %g", displayPath, *minimum))
 	}
 
-	// Validate maximum
+	// Validate maximum - fast path
 	if maximum != nil && num > *maximum {
 		errors = append(errors, fmt.Sprintf("%s must be at most %g", displayPath, *maximum))
 	}
 
 	return errors
 }
+
+

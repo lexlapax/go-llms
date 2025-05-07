@@ -1,5 +1,7 @@
 # Performance Optimization Notes
 
+> **HISTORICAL DOCUMENT**: This document captures observations and recommendations from before optimizations were implemented. All recommended optimizations have been completed and are now the standard implementation in the library.
+
 Based on benchmark results, we've identified several areas for optimization in the Go-LLMs library.
 
 ## Key Insights and Recommendations

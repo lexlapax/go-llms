@@ -97,6 +97,10 @@ type WebFetchResult struct {
 }
 
 // WebFetch creates a tool for fetching web content
+// This function is optimized for better performance through:
+// - Using pre-computed type information
+// - Object pooling for arguments
+// - Efficient parameter conversion
 func WebFetch() domain.Tool {
 	return NewTool(
 		"web_fetch",
@@ -144,6 +148,10 @@ type ExecuteCommandResult struct {
 }
 
 // ExecuteCommand creates a tool for executing shell commands
+// This function is optimized for better performance through:
+// - Using pre-computed type information
+// - Object pooling for arguments
+// - Efficient parameter conversion
 func ExecuteCommand() domain.Tool {
 	return NewTool(
 		"execute_command",
@@ -190,6 +198,10 @@ type ReadFileResult struct {
 }
 
 // ReadFile creates a tool for reading files
+// This function is optimized for better performance through:
+// - Using pre-computed type information
+// - Object pooling for arguments
+// - Efficient parameter conversion
 func ReadFile() domain.Tool {
 	return NewTool(
 		"read_file",
@@ -220,6 +232,10 @@ type WriteFileResult struct {
 }
 
 // WriteFile creates a tool for writing files
+// This function is optimized for better performance through:
+// - Using pre-computed type information
+// - Object pooling for arguments
+// - Efficient parameter conversion
 func WriteFile() domain.Tool {
 	return NewTool(
 		"write_file",
@@ -237,3 +253,4 @@ func WriteFile() domain.Tool {
 		WriteFileParamSchema,
 	)
 }
+

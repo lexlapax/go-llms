@@ -9,12 +9,13 @@ import (
 	"github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// TestValidatorEquivalence tests that both validator implementations
-// produce equivalent results for the same inputs
+// TestValidatorEquivalence tests that validator instances produce consistent results
+// This test was originally used to compare optimized and unoptimized implementations,
+// but now tests that multiple instances of the same (optimized) validator behave identically
 func TestValidatorEquivalence(t *testing.T) {
-	// Create both validator types
-	originalValidator := NewValidator()
-	optimizedValidator := NewOptimizedValidator()
+	// Create two instances of the validator to ensure they behave consistently
+	validator1 := NewValidator()
+	validator2 := NewValidator()
 
 	// Define a set of test cases covering various schema types and validations
 	testCases := []struct {
@@ -479,54 +480,54 @@ func TestValidatorEquivalence(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Run original validator
-			origResult, origErr := originalValidator.Validate(tc.schema, tc.json)
-			if origErr != nil {
-				t.Fatalf("Original validator error: %v", origErr)
+			// Run first validator
+			validator1Result, validator1Err := validator1.Validate(tc.schema, tc.json)
+			if validator1Err != nil {
+				t.Fatalf("Validator 1 error: %v", validator1Err)
 			}
 
-			// Run optimized validator
-			optResult, optErr := optimizedValidator.Validate(tc.schema, tc.json)
-			if optErr != nil {
-				t.Fatalf("Optimized validator error: %v", optErr)
+			// Run second validator
+			validator2Result, validator2Err := validator2.Validate(tc.schema, tc.json)
+			if validator2Err != nil {
+				t.Fatalf("Validator 2 error: %v", validator2Err)
 			}
 
 			// Test validity result matches expected
-			if origResult.Valid != tc.valid {
-				t.Errorf("Original validator: expected valid=%v, got %v", tc.valid, origResult.Valid)
+			if validator1Result.Valid != tc.valid {
+				t.Errorf("Validator 1: expected valid=%v, got %v", tc.valid, validator1Result.Valid)
 			}
-			if optResult.Valid != tc.valid {
-				t.Errorf("Optimized validator: expected valid=%v, got %v", tc.valid, optResult.Valid)
+			if validator2Result.Valid != tc.valid {
+				t.Errorf("Validator 2: expected valid=%v, got %v", tc.valid, validator2Result.Valid)
 			}
 
 			// Test that both validators gave the same validity result
-			if origResult.Valid != optResult.Valid {
-				t.Errorf("Validators disagree: original=%v, optimized=%v", origResult.Valid, optResult.Valid)
+			if validator1Result.Valid != validator2Result.Valid {
+				t.Errorf("Validators disagree: validator1=%v, validator2=%v", validator1Result.Valid, validator2Result.Valid)
 			}
 
 			// If invalid, check that both validators report errors
 			if !tc.valid {
-				if len(origResult.Errors) == 0 {
-					t.Error("Original validator: expected errors, got none")
+				if len(validator1Result.Errors) == 0 {
+					t.Error("Validator 1: expected errors, got none")
 				}
-				if len(optResult.Errors) == 0 {
-					t.Error("Optimized validator: expected errors, got none")
+				if len(validator2Result.Errors) == 0 {
+					t.Error("Validator 2: expected errors, got none")
 				}
 
 				// Check for equivalent error content (exact messages may differ)
-				for _, origErr := range origResult.Errors {
-					// For each original error, check if optimized has a similar one
+				for _, v1Err := range validator1Result.Errors {
+					// For each error from validator 1, check if validator 2 has a similar one
 					found := false
-					for _, optErr := range optResult.Errors {
+					for _, v2Err := range validator2Result.Errors {
 						// Check if they contain the same property references and error types
-						if errorsEquivalent(origErr, optErr) {
+						if errorsEquivalent(v1Err, v2Err) {
 							found = true
 							break
 						}
 					}
 					if !found {
-						t.Errorf("Original error not matched in optimized: %s", origErr)
-						t.Errorf("Optimized errors: %v", optResult.Errors)
+						t.Errorf("Validator 1 error not matched in validator 2: %s", v1Err)
+						t.Errorf("Validator 2 errors: %v", validator2Result.Errors)
 					}
 				}
 			}
@@ -534,9 +535,10 @@ func TestValidatorEquivalence(t *testing.T) {
 	}
 }
 
-// TestMemoryReuse tests that the optimized validator properly reuses memory
+// TestMemoryReuse tests that the validator properly reuses memory
+// This verifies that the optimized validator's memory pooling works correctly
 func TestMemoryReuse(t *testing.T) {
-	validator := NewOptimizedValidator()
+	validator := NewValidator()
 	
 	// Schema for validation
 	schema := &domain.Schema{
@@ -599,11 +601,12 @@ func TestMemoryReuse(t *testing.T) {
 }
 
 // TestRegexCache tests that the regex cache is working
+// This verifies that the optimized validator's regex pattern caching works correctly
 func TestRegexCache(t *testing.T) {
 	// Clear the regex cache
 	RegexCache = sync.Map{}
 	
-	validator := NewOptimizedValidator()
+	validator := NewValidator()
 	
 	// Schema with patterns
 	schema := &domain.Schema{
@@ -748,7 +751,7 @@ func containsAny(s string, terms ...string) bool {
 
 // TestFormatValidation specifically tests format validation
 func TestFormatValidation(t *testing.T) {
-	validator := NewOptimizedValidator()
+	validator := NewValidator()
 	
 	// Test scenarios for each format
 	testCases := []struct {

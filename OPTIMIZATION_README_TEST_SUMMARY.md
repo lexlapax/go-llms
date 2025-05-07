@@ -1,6 +1,6 @@
 # Optimization Test Summary
 
-This document summarizes the comprehensive testing implemented for the optimized components in the Go-LLMs library.
+> **HISTORICAL DOCUMENT**: This document summarizes the comprehensive testing implemented for the optimized components in the Go-LLMs library. Some test names and file references are outdated as the optimized implementations are now the standard. The testing methodology and coverage details remain relevant.
 
 ## 1. Unit Tests for Optimized Tool Implementation
 

@@ -6,7 +6,7 @@ import (
 )
 
 // Coerce attempts to convert a value to the expected type
-func (v *DefaultValidator) Coerce(targetType string, value interface{}) (interface{}, bool) {
+func (v *Validator) Coerce(targetType string, value interface{}) (interface{}, bool) {
 	switch targetType {
 	case "string":
 		return coerceToString(value)

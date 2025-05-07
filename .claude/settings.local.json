@@ -26,7 +26,12 @@
       "Bash(go mod init:*)",
       "WebFetch(domain:ai.pydantic.dev)",
       "Bash(sed:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(pkg/schema/validation/optimized_validator_test.go )",
+      "Bash(pkg/agent/tools/optimized_tool_benchmark_test.go )",
+      "Bash(pkg/agent/tools/optimized_tool_edge_test.go )",
+      "Bash(pkg/agent/tools/optimized_tool_fixed.go )",
+      "Bash(pkg/agent/tools/optimized_tool_test.go)"
     ],
     "deny": []
   }
