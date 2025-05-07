@@ -31,7 +31,7 @@ TEST_FLAGS=-v -race -coverprofile=coverage.out -covermode=atomic
 DEP_FLAGS=-v
 
 # Commands
-.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg profile-cpu profile-mem profile-block coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples examples-all test-integration test-integration-mock
+.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg profile-cpu profile-mem profile-block coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples examples-all test-integration test-integration-mock test-cmd test-examples
 
 # Default target
 all: clean test build
@@ -211,6 +211,26 @@ test-integration:
 test-integration-mock:
 	$(GOTEST) -v ./tests/integration/validation_test.go ./tests/integration/agent_test.go
 
+# Test the command line client
+test-cmd:
+	$(GOTEST) -v ./$(CMD_DIR)
+
+# Test a specific example (usage: make test-examples EXAMPLE=simple)
+test-examples:
+	@if [ -z "$(EXAMPLE)" ]; then \
+		echo "Testing all examples..."; \
+		for dir in $(CMD_DIR)/$(EXAMPLES_DIR)/*/; do \
+			if [ -d "$$dir" ]; then \
+				name=$$(basename $$dir); \
+				echo "Testing example: $$name"; \
+				$(GOTEST) -v ./$(CMD_DIR)/$(EXAMPLES_DIR)/$$name; \
+			fi; \
+		done; \
+	else \
+		echo "Testing example: $(EXAMPLE)"; \
+		$(GOTEST) -v ./$(CMD_DIR)/$(EXAMPLES_DIR)/$(EXAMPLE); \
+	fi
+
 # Help message
 help:
 	@echo "Go-LLMs Makefile"
@@ -250,6 +270,8 @@ help:
 	@echo "                        (usage: make coverage-pkg PKG=schema/validation)"
 	@echo "  make test-integration Run all integration tests (requires API keys)"
 	@echo "  make test-integration-mock Run integration tests that don't require API keys"
+	@echo "  make test-cmd         Test the command line client"
+	@echo "  make test-examples    Test all examples (or specific with EXAMPLE=name)"
 	@echo ""
 	@echo "Code quality:"
 	@echo "  make lint             Run linters"
