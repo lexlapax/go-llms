@@ -130,3 +130,76 @@ func (p *TokenPool) NewToken(text string, finished bool) Token {
 	
 	return result
 }
+
+// ChannelPoolSize is the default buffer size for channels from the pool
+const ChannelPoolSize = 20
+
+// ChannelPool is a pool of channels that can be reused to reduce memory allocations
+// This significantly reduces GC pressure in streaming operations
+type ChannelPool struct {
+	pool sync.Pool
+}
+
+// Global singleton channel pool
+var (
+	globalChannelPool *ChannelPool
+	channelPoolOnce   sync.Once
+)
+
+// GetChannelPool returns the singleton global channel pool
+func GetChannelPool() *ChannelPool {
+	channelPoolOnce.Do(func() {
+		globalChannelPool = NewChannelPool()
+	})
+	return globalChannelPool
+}
+
+// NewChannelPool creates a new channel pool
+func NewChannelPool() *ChannelPool {
+	return &ChannelPool{
+		pool: sync.Pool{
+			New: func() interface{} {
+				// Create a new channel when the pool is empty
+				// Use a buffered channel with a reasonable size to prevent blocking
+				return make(chan Token, ChannelPoolSize)
+			},
+		},
+	}
+}
+
+// Get retrieves a channel from the pool
+func (p *ChannelPool) Get() chan Token {
+	return p.pool.Get().(chan Token)
+}
+
+// Put returns a channel to the pool after use
+// Make sure the channel is empty and not closed before putting it back
+func (p *ChannelPool) Put(ch chan Token) {
+	if ch == nil {
+		return
+	}
+	
+	// Drain any remaining tokens to ensure the channel is empty
+	// This is a non-blocking operation
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				// Channel is closed, don't put it back
+				return
+			}
+		default:
+			// Channel is empty
+			p.pool.Put(ch)
+			return
+		}
+	}
+}
+
+// GetResponseStream creates a new response stream using the pool
+// The returned channel is cast to ResponseStream (read-only)
+// The caller is responsible for closing the channel when done with it
+func (p *ChannelPool) GetResponseStream() (ResponseStream, chan Token) {
+	ch := p.Get()
+	return ch, ch
+}

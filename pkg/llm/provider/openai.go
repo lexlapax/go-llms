@@ -366,13 +366,15 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 		return nil, fmt.Errorf("API error: status code %d", resp.StatusCode)
 	}
 
-	// Create a response stream
-	tokenCh := make(chan domain.Token)
+	// Get a channel from the pool
+	responseStream, tokenCh := domain.GetChannelPool().GetResponseStream()
 
 	// Start a goroutine to read the stream
 	go func() {
 		defer resp.Body.Close()
 		defer close(tokenCh)
+		// Return the channel to the pool when done
+		// Note: Put will avoid putting closed channels back
 
 		reader := bufio.NewReader(resp.Body)
 		for {
@@ -455,7 +457,7 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 		}
 	}()
 
-	return tokenCh, nil
+	return responseStream, nil
 }
 
 // enhancePromptWithSchema adds schema information to a prompt

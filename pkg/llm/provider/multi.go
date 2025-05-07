@@ -145,12 +145,15 @@ func (mp *MultiProvider) Stream(ctx context.Context, prompt string, options ...d
 	// This approach is more straightforward for streaming responses
 	selectedProviderIdx := mp.selectProviderForStreaming()
 	
-	// Create a response channel that we'll return
-	responseCh := make(chan domain.Token, 10)
+	// Get a channel from the pool
+	responseStream, responseCh := domain.GetChannelPool().GetResponseStream()
 	
 	// Start the stream in a goroutine
 	go func() {
 		defer cancel() // Ensure the context is canceled when we're done
+			// We're not returning the channel to the pool here because:
+			// 1. close(responseCh) will be called, making the channel unusable for reuse
+			// 2. The channel pool's Put method checks if the channel is closed and won't reuse it
 		
 		// Try the selected provider first
 		stream, err := mp.providers[selectedProviderIdx].Provider.Stream(ctx, prompt, options...)
@@ -193,7 +196,7 @@ func (mp *MultiProvider) Stream(ctx context.Context, prompt string, options ...d
 		close(responseCh)
 	}()
 	
-	return responseCh, nil
+	return responseStream, nil
 }
 
 // StreamMessage streams responses from a list of messages
@@ -208,12 +211,15 @@ func (mp *MultiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 	// For streaming, we select the provider upfront rather than aggregating results
 	selectedProviderIdx := mp.selectProviderForStreaming()
 	
-	// Create a response channel that we'll return
-	responseCh := make(chan domain.Token, 10)
+	// Get a channel from the pool
+	responseStream, responseCh := domain.GetChannelPool().GetResponseStream()
 	
 	// Start the stream in a goroutine
 	go func() {
 		defer cancel() // Ensure the context is canceled when we're done
+			// We're not returning the channel to the pool here because:
+			// 1. close(responseCh) will be called, making the channel unusable for reuse
+			// 2. The channel pool's Put method checks if the channel is closed and won't reuse it
 		
 		// Try the selected provider first
 		stream, err := mp.providers[selectedProviderIdx].Provider.StreamMessage(ctx, messages, options...)
@@ -256,7 +262,7 @@ func (mp *MultiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 		close(responseCh)
 	}()
 	
-	return responseCh, nil
+	return responseStream, nil
 }
 
 // Helper methods for concurrent operations
