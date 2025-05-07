@@ -184,11 +184,11 @@ func TestDefaultAgent_Run(t *testing.T) {
 
 // TestDefaultAgent_ToolCall tests the agent's tool call handling
 func TestDefaultAgent_ToolCall(t *testing.T) {
-	// Create an agent instance to test extractToolCall
+	// Create an agent instance to test ExtractToolCall
 	agent := &DefaultAgent{}
 
 	// Test JSON format in message content
-	tool, _, shouldCall := agent.extractToolCall(`{"tool": "calculator", "params": {"expression": "2+2"}}`)
+	tool, _, shouldCall := agent.ExtractToolCall(`{"tool": "calculator", "params": {"expression": "2+2"}}`)
 	if !shouldCall {
 		t.Errorf("Expected shouldCall to be true for JSON format")
 	}
@@ -197,7 +197,7 @@ func TestDefaultAgent_ToolCall(t *testing.T) {
 	}
 
 	// Test JSON in code block
-	tool, _, shouldCall = agent.extractToolCall("I need to use the calculator.\n\n```json\n{\"tool\": \"calculator\", \"params\": {\"expression\": \"2+2\"}}\n```")
+	tool, _, shouldCall = agent.ExtractToolCall("I need to use the calculator.\n\n```json\n{\"tool\": \"calculator\", \"params\": {\"expression\": \"2+2\"}}\n```")
 	if !shouldCall {
 		t.Errorf("Expected shouldCall to be true for code block format")
 	}
@@ -299,7 +299,7 @@ func TestDefaultAgent_Hooks(t *testing.T) {
 	}
 }
 
-// TestDefaultAgent_ExtractToolCall tests the extractToolCall method
+// TestDefaultAgent_ExtractToolCall tests the ExtractToolCall method
 func TestDefaultAgent_ExtractToolCall(t *testing.T) {
 	agent := &DefaultAgent{}
 
@@ -342,7 +342,7 @@ func TestDefaultAgent_ExtractToolCall(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tool, params, shouldCall := agent.extractToolCall(tt.content)
+			tool, params, shouldCall := agent.ExtractToolCall(tt.content)
 
 			if shouldCall != tt.shouldCall {
 				t.Errorf("Expected shouldCall to be %v, got %v", tt.shouldCall, shouldCall)

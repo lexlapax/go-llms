@@ -123,10 +123,40 @@ Optimized: 500403 ops/s, 2383 ns/op,  2684 B/op,  39 allocs/op
 
 Planned future optimizations include:
 
-1. Improving agent context initialization
 2. Adding fast paths for LLM provider message handling
 3. Optimizing prompt processing and template expansion
 4. Adding more extensive caching for repeated operations
+
+## 4. Agent Workflow Optimizations
+
+### Problem
+The agent workflow implementation had several inefficient patterns, particularly in message creation, tool description generation, and tool call extraction, leading to excessive memory allocations and slower performance.
+
+### Solution
+- Implemented caching for tool descriptions and tool names
+- Pre-allocated message buffer to reduce GC pressure
+- Added fast paths for common JSON patterns in tool call extraction
+- Optimized string handling with string builders and pre-allocation
+- Enhanced JSON block extraction with better pattern recognition
+- Added special handling for different content formats
+
+### Results
+Based on benchmark testing:
+
+```
+Initial Message Creation:
+Optimized:    2,329,345 ops/s,   502.2 ns/op,  2,040 B/op,   9 allocs/op
+Unoptimized:    106,285 ops/s, 11,546.0 ns/op, 13,816 B/op, 114 allocs/op
+```
+
+- **~95% reduction** in execution time for initial message creation
+- **~85% reduction** in memory allocations
+- **~92% reduction** in allocation operations
+
+Tool Call Extraction improvements vary by pattern:
+- Text format extraction: ~33% speedup, ~43% reduction in allocations
+- Markdown code block extraction: ~29% speedup, ~44% reduction in allocations
+- JSON block extraction: ~9% speedup, ~18% reduction in allocations
 
 ## Benchmarking
 
@@ -144,6 +174,12 @@ go test -bench=. ./benchmarks/json_extractor_bench_test.go -benchmem
 
 # Run schema validation benchmarks
 go test -bench=. ./benchmarks/optimized_schema_bench_test.go -benchmem
+
+# Run agent context initialization benchmarks
+go test -bench=BenchmarkAgentContextInit ./benchmarks/... -benchmem
+
+# Run agent tool call extraction benchmarks
+go test -bench=BenchmarkAgentToolExtraction ./benchmarks/... -benchmem
 ```
 
 ## Usage - Schema Validation (Historical - Outdated)
