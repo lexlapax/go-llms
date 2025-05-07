@@ -30,7 +30,7 @@ func TestOpenAIProvider(t *testing.T) {
 				"id": "chatcmpl-123",
 				"object": "chat.completion",
 				"created": 1677652288,
-				"model": "gpt-3.5-turbo",
+				"model": "gpt-4o",
 				"choices": [{
 					"index": 0,
 					"message": {
@@ -75,20 +75,20 @@ func TestOpenAIProvider(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("NewOpenAIProvider", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-3.5-turbo", WithBaseURL(mockServer.URL))
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(mockServer.URL))
 		if provider == nil {
 			t.Fatal("Expected non-nil provider")
 		}
 		if provider.apiKey != "test-api-key" {
 			t.Errorf("Expected API key 'test-api-key', got '%s'", provider.apiKey)
 		}
-		if provider.model != "gpt-3.5-turbo" {
-			t.Errorf("Expected model 'gpt-3.5-turbo', got '%s'", provider.model)
+		if provider.model != "gpt-4o" {
+			t.Errorf("Expected model 'gpt-4o', got '%s'", provider.model)
 		}
 	})
 
 	t.Run("Generate", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-3.5-turbo", WithBaseURL(mockServer.URL))
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(mockServer.URL))
 		response, err := provider.Generate(ctx, "Tell me a joke")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -100,7 +100,7 @@ func TestOpenAIProvider(t *testing.T) {
 	})
 
 	t.Run("GenerateMessage", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-3.5-turbo", WithBaseURL(mockServer.URL))
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(mockServer.URL))
 		messages := []domain.Message{
 			{Role: domain.RoleSystem, Content: "You are a helpful assistant"},
 			{Role: domain.RoleUser, Content: "Tell me a joke"},
@@ -116,7 +116,7 @@ func TestOpenAIProvider(t *testing.T) {
 	})
 
 	t.Run("Invalid API key", func(t *testing.T) {
-		provider := NewOpenAIProvider("invalid-key", "gpt-3.5-turbo", WithBaseURL(mockServer.URL))
+		provider := NewOpenAIProvider("invalid-key", "gpt-4o", WithBaseURL(mockServer.URL))
 		_, err := provider.Generate(ctx, "Tell me a joke")
 		if err == nil {
 			t.Fatal("Expected error for invalid API key, got nil")
@@ -124,7 +124,7 @@ func TestOpenAIProvider(t *testing.T) {
 	})
 
 	t.Run("Generate with options", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-3.5-turbo", WithBaseURL(mockServer.URL))
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(mockServer.URL))
 
 		// Set custom options
 		options := []domain.Option{
@@ -165,18 +165,18 @@ func TestOpenAIProvider(t *testing.T) {
 		w.Header().Set("Connection", "keep-alive")
 
 		// Simulate a streaming response
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-3.5-turbo\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"This \"},\"finish_reason\":null}]}\n\n")
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-3.5-turbo\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"is \"},\"finish_reason\":null}]}\n\n")
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-3.5-turbo\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"a \"},\"finish_reason\":null}]}\n\n")
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-3.5-turbo\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"streaming \"},\"finish_reason\":null}]}\n\n")
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-3.5-turbo\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"response.\"},\"finish_reason\":null}]}\n\n")
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-3.5-turbo\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n")
+		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"This \"},\"finish_reason\":null}]}\n\n")
+		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"is \"},\"finish_reason\":null}]}\n\n")
+		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"a \"},\"finish_reason\":null}]}\n\n")
+		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"streaming \"},\"finish_reason\":null}]}\n\n")
+		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"response.\"},\"finish_reason\":null}]}\n\n")
+		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n")
 		fmt.Fprint(w, "data: [DONE]\n\n")
 	}))
 	defer streamServer.Close()
 
 	t.Run("Stream", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-3.5-turbo", WithBaseURL(streamServer.URL))
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(streamServer.URL))
 		stream, err := provider.Stream(ctx, "Tell me a joke")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -213,7 +213,7 @@ func TestOpenAIProvider(t *testing.T) {
 	})
 
 	t.Run("StreamMessage", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-3.5-turbo", WithBaseURL(streamServer.URL))
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(streamServer.URL))
 		messages := []domain.Message{
 			{Role: domain.RoleSystem, Content: "You are a helpful assistant"},
 			{Role: domain.RoleUser, Content: "Tell me a joke"},
@@ -255,7 +255,7 @@ func TestOpenAIProvider(t *testing.T) {
 			"id": "chatcmpl-123",
 			"object": "chat.completion",
 			"created": 1677652288,
-			"model": "gpt-3.5-turbo",
+			"model": "gpt-4o",
 			"choices": [{
 				"index": 0,
 				"message": {
@@ -274,7 +274,7 @@ func TestOpenAIProvider(t *testing.T) {
 	defer schemaServer.Close()
 
 	t.Run("GenerateWithSchema", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-3.5-turbo", WithBaseURL(schemaServer.URL))
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(schemaServer.URL))
 
 		// Define a simple schema
 		schema := &schemaDomain.Schema{

@@ -38,7 +38,7 @@ func main() {
 	// Create the Anthropic provider
 	anthropicProvider := provider.NewAnthropicProvider(
 		apiKey,
-		"claude-3-sonnet-20240229",
+		"claude-3-5-sonnet-latest",
 	)
 
 	// Create structured processor components

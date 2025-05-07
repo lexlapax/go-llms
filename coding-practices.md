@@ -719,7 +719,7 @@ func main() {
     }
     
     // Create an LLM provider
-    llmProvider := provider.NewOpenAIProvider("your-api-key", "gpt-4")
+    llmProvider := provider.NewOpenAIProvider("your-api-key", "gpt-4o")
     
     // Generate structured output
     prompt := "Generate information about a person including their name, age, and email."
@@ -766,7 +766,7 @@ type WeatherResponse struct {
 
 func main() {
     // Create an LLM provider
-    llmProvider := provider.NewOpenAIProvider("your-api-key", "gpt-4")
+    llmProvider := provider.NewOpenAIProvider("your-api-key", "gpt-4o")
     
     // Create an agent
     weatherAgent := agent.NewAgent(llmProvider).

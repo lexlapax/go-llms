@@ -22,7 +22,7 @@ func TestProviderIntegration(t *testing.T) {
 		}
 
 		// Create an OpenAI provider
-		openai := provider.NewOpenAIProvider(apiKey, "gpt-3.5-turbo")
+		openai := provider.NewOpenAIProvider(apiKey, "gpt-4o")
 
 		// Test simple generation
 		t.Run("Generate", func(t *testing.T) {
@@ -110,7 +110,7 @@ func TestProviderIntegration(t *testing.T) {
 		}
 
 		// Create an Anthropic provider
-		anthropic := provider.NewAnthropicProvider(apiKey, "claude-3-sonnet-20240229")
+		anthropic := provider.NewAnthropicProvider(apiKey, "claude-3-5-sonnet-latest")
 
 		// Test simple generation
 		t.Run("Generate", func(t *testing.T) {

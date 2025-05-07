@@ -1,0 +1,54 @@
+time=2025-05-06T19:36:56.038-07:00 level=INFO msg="Generating response" emoji=🤔
+time=2025-05-06T19:36:56.038-07:00 level=INFO msg="Message count" count=2
+time=2025-05-06T19:36:59.137-07:00 level=INFO msg="Response generated" emoji=✅
+time=2025-05-06T19:36:59.137-07:00 level=INFO msg="Response content" content="To find the current year, I'll use the \"get_curren..."
+time=2025-05-06T19:36:59.137-07:00 level=INFO msg="Calling tool" tool=get_current_date emoji=🔧
+time=2025-05-06T19:36:59.137-07:00 level=DEBUG msg="Tool parameters" params=""
+time=2025-05-06T19:36:59.137-07:00 level=INFO msg="Tool executed successfully" tool=get_current_date emoji=✅
+time=2025-05-06T19:36:59.137-07:00 level=DEBUG msg="Tool result" result="map[date:2025-05-06 day:6 days_in_month:31 days_in..."
+time=2025-05-06T19:36:59.137-07:00 level=INFO msg="Generating response" emoji=🤔
+time=2025-05-06T19:36:59.137-07:00 level=INFO msg="Message count" count=4
+time=2025-05-06T19:37:02.153-07:00 level=INFO msg="Response generated" emoji=✅
+time=2025-05-06T19:37:02.153-07:00 level=INFO msg="Response content" content="The current year is 2025.\n\nNow, let's proceed with..."
+time=2025-05-06T19:37:02.154-07:00 level=INFO msg="Calling tool" tool=calculator emoji=🔧
+time=2025-05-06T19:37:02.154-07:00 level=DEBUG msg="Tool parameters" params="expression: 25*42"
+time=2025-05-06T19:37:02.154-07:00 level=INFO msg="Tool executed successfully" tool=calculator emoji=✅
+time=2025-05-06T19:37:02.154-07:00 level=DEBUG msg="Tool result" result="map[expression:25*42 result:1050 success:true]"
+time=2025-05-06T19:37:02.154-07:00 level=INFO msg="Generating response" emoji=🤔
+time=2025-05-06T19:37:02.154-07:00 level=INFO msg="Message count" count=6
+time=2025-05-06T19:37:03.306-07:00 level=INFO msg="Response generated" emoji=✅
+time=2025-05-06T19:37:03.306-07:00 level=INFO msg="Response content" content="The result of the calculation 25 * 42 is 1050."
+time=2025-05-06T19:37:03.307-07:00 level=INFO msg="Generating response" emoji=🤔
+time=2025-05-06T19:37:03.307-07:00 level=INFO msg="Message count" count=2
+time=2025-05-06T19:37:09.224-07:00 level=INFO msg="Response generated" emoji=✅
+time=2025-05-06T19:37:09.224-07:00 level=INFO msg="Response content" content="To answer your questions, I will need to use 3 too..."
+time=2025-05-06T19:37:09.224-07:00 level=INFO msg="Calling tool" tool=get_current_date emoji=🔧
+time=2025-05-06T19:37:09.224-07:00 level=DEBUG msg="Tool parameters" params=""
+time=2025-05-06T19:37:09.225-07:00 level=INFO msg="Tool executed successfully" tool=get_current_date emoji=✅
+time=2025-05-06T19:37:09.225-07:00 level=DEBUG msg="Tool result" result="map[date:2025-05-06 day:6 days_in_month:31 days_in..."
+time=2025-05-06T19:37:09.225-07:00 level=INFO msg="Generating response" emoji=🤔
+time=2025-05-06T19:37:09.225-07:00 level=INFO msg="Message count" count=4
+time=2025-05-06T19:37:10.954-07:00 level=INFO msg="Response generated" emoji=✅
+time=2025-05-06T19:37:10.954-07:00 level=INFO msg="Response content" content="The current date is Tuesday, May 6, 2025 and the c..."
+time=2025-05-06T19:37:10.957-07:00 level=INFO msg="Generating response" emoji=🤔
+time=2025-05-06T19:37:10.957-07:00 level=INFO msg="Message count" count=2
+time=2025-05-06T19:37:16.967-07:00 level=INFO msg="Response generated" emoji=✅
+time=2025-05-06T19:37:16.967-07:00 level=INFO msg="Response content" content="Sure, let's break this down into two steps. First,..."
+time=2025-05-06T19:37:16.967-07:00 level=INFO msg="Calling tool" tool=read_file emoji=🔧
+time=2025-05-06T19:37:16.967-07:00 level=DEBUG msg="Tool parameters" params="path: /var/folders/nc/r_sc..."
+time=2025-05-06T19:37:16.968-07:00 level=INFO msg="Tool executed successfully" tool=read_file emoji=✅
+time=2025-05-06T19:37:16.968-07:00 level=DEBUG msg="Tool result" result="map[content:This is a test file.\nIt contains two l..."
+time=2025-05-06T19:37:16.968-07:00 level=INFO msg="Generating response" emoji=🤔
+time=2025-05-06T19:37:16.968-07:00 level=INFO msg="Message count" count=4
+time=2025-05-06T19:37:21.595-07:00 level=INFO msg="Response generated" emoji=✅
+time=2025-05-06T19:37:21.596-07:00 level=INFO msg="Response content" content="Great, now that we have the content of the file, l..."
+time=2025-05-06T19:37:21.596-07:00 level=INFO msg="Calling tool" tool=write_file emoji=🔧
+time=2025-05-06T19:37:21.596-07:00 level=DEBUG msg="Tool parameters" params="content: This is a test file...., path: /var/folders/nc/r_sc..."
+time=2025-05-06T19:37:21.597-07:00 level=INFO msg="Tool executed successfully" tool=write_file emoji=✅
+time=2025-05-06T19:37:21.597-07:00 level=DEBUG msg="Tool result" result="map[bytes:77 modified:2025-05-06T19:37:21-07:00 pa..."
+time=2025-05-06T19:37:21.597-07:00 level=INFO msg="Generating response" emoji=🤔
+time=2025-05-06T19:37:21.597-07:00 level=INFO msg="Message count" count=6
+time=2025-05-06T19:37:25.540-07:00 level=INFO msg="Response generated" emoji=✅
+time=2025-05-06T19:37:25.541-07:00 level=INFO msg="Response content" content="Great, the file has been successfully modified. Th..."
+time=2025-05-06T19:37:25.542-07:00 level=INFO msg="Generating response" emoji=🤔
+time=2025-05-06T19:37:25.542-07:00 level=INFO msg="Message count" count=2

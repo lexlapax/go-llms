@@ -418,7 +418,7 @@ func (db *DatabaseConn) CustomerBalance(id int, includePending bool) (float64, e
 
 func main() {
     // Create an OpenAI model
-    model := goagent.NewOpenAIModel("gpt-4", "your-api-key")
+    model := goagent.NewOpenAIModel("gpt-4o", "your-api-key")
     
     // Create an agent
     agent := goagent.NewAgent[SupportDeps, SupportOutput](
