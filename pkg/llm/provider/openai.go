@@ -277,7 +277,8 @@ func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.
 		return domain.Response{}, fmt.Errorf("API returned no choices")
 	}
 
-	return domain.Response{Content: openAIResp.Choices[0].Message.Content}, nil
+	// Use the response pool to reduce allocations
+	return domain.GetResponsePool().NewResponse(openAIResp.Choices[0].Message.Content), nil
 }
 
 // GenerateWithSchema produces structured output conforming to a schema
@@ -429,7 +430,7 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 				select {
 				case <-ctx.Done():
 					return
-				case tokenCh <- domain.Token{Text: "", Finished: true}:
+				case tokenCh <- domain.GetTokenPool().NewToken("", true):
 					return
 				}
 			}
@@ -439,11 +440,11 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 				continue
 			}
 
-			// Send the token
+			// Send the token - use token pool to reduce allocations
 			select {
 			case <-ctx.Done():
 				return
-			case tokenCh <- domain.Token{Text: content, Finished: false}:
+			case tokenCh <- domain.GetTokenPool().NewToken(content, false):
 				// Sent successfully
 			}
 		}

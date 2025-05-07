@@ -261,7 +261,8 @@ func (p *AnthropicProvider) GenerateMessage(ctx context.Context, messages []doma
 		}
 	}
 
-	return domain.Response{Content: responseContent}, nil
+	// Use the response pool to reduce allocations
+	return domain.GetResponsePool().NewResponse(responseContent), nil
 }
 
 // GenerateWithSchema produces structured output conforming to a schema
@@ -399,11 +400,11 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 				}
 
 				if deltaEvent.Delta.Type == "text_delta" && deltaEvent.Delta.Text != "" {
-					// Send the token
+					// Send the token - use token pool to reduce allocations
 					select {
 					case <-ctx.Done():
 						return
-					case tokenCh <- domain.Token{Text: deltaEvent.Delta.Text, Finished: false}:
+					case tokenCh <- domain.GetTokenPool().NewToken(deltaEvent.Delta.Text, false):
 						// Sent successfully
 					}
 				}
@@ -418,20 +419,20 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 				}
 
 				if stopEvent.Delta.StopReason != "" {
-					// Send final token
+					// Send final token - use token pool to reduce allocations
 					select {
 					case <-ctx.Done():
 						return
-					case tokenCh <- domain.Token{Text: "", Finished: true}:
+					case tokenCh <- domain.GetTokenPool().NewToken("", true):
 						return
 					}
 				}
 			case "message_stop":
-				// Send final token if not already sent
+				// Send final token if not already sent - use token pool to reduce allocations
 				select {
 				case <-ctx.Done():
 					return
-				case tokenCh <- domain.Token{Text: "", Finished: true}:
+				case tokenCh <- domain.GetTokenPool().NewToken("", true):
 					return
 				}
 			}
@@ -441,7 +442,7 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 		select {
 		case <-ctx.Done():
 			return
-		case tokenCh <- domain.Token{Text: "", Finished: true}:
+		case tokenCh <- domain.GetTokenPool().NewToken("", true):
 			// Sent successfully
 		}
 	}()
@@ -449,7 +450,7 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 	return tokenCh, nil
 }
 
-// enhancePromptWithSchema is shared with OpenAI provider
+// enhancePromptWithAnthropicSchema is shared with OpenAI provider
 // Consider extracting to a common utility package
 func enhancePromptWithAnthropicSchema(prompt string, schema *schemaDomain.Schema) string {
 	// Convert schema to JSON
