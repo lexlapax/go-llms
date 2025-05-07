@@ -31,7 +31,7 @@ TEST_FLAGS=-v -race -coverprofile=coverage.out -covermode=atomic
 DEP_FLAGS=-v
 
 # Commands
-.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg profile-cpu profile-mem profile-block coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples examples-all test-integration test-integration-mock test-cmd test-examples
+.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg profile-cpu profile-mem profile-block coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples example examples-all test-integration test-integration-mock test-cmd test-examples
 
 # Default target
 all: clean test build
@@ -53,6 +53,9 @@ examples-all:
 	else \
 		echo "No examples found in $(CMD_DIR)/$(EXAMPLES_DIR)"; \
 	fi
+
+# Alias for examples-all for better discoverability
+examples: examples-all
 
 # Build a specific example (usage: make example EXAMPLE=simple)
 example:
@@ -238,8 +241,9 @@ help:
 	@echo "Usage:"
 	@echo "  make all              Build and test everything"
 	@echo "  make build            Build the main binary"
+	@echo "  make examples         Build all example binaries"
 	@echo "  make example          Build a specific example (usage: make example EXAMPLE=simple)"
-	@echo "  make examples-all     Build all example binaries"
+	@echo "  make examples-all     Same as 'make examples'"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test             Run all tests with race detection and coverage"

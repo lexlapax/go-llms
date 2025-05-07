@@ -3,6 +3,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -47,24 +48,27 @@ type fallbackResult struct {
 	structured  interface{}
 	err         error
 	elapsedTime time.Duration
+	weight      float64 // Provider weight, used for weighted consensus
 }
 
 // MultiProvider implements domain.Provider interface and distributes operations
 // across multiple underlying providers with fallback and selection strategies
 type MultiProvider struct {
-	providers        []ProviderWeight
-	selectionStrat   SelectionStrategy
-	defaultTimeout   time.Duration
-	primaryProvider  int // Index of primary provider for StrategyPrimary
+	providers         []ProviderWeight
+	selectionStrat    SelectionStrategy
+	defaultTimeout    time.Duration
+	primaryProvider   int // Index of primary provider for StrategyPrimary
+	consensusConfig   consensusConfig // Configuration for consensus algorithms
 }
 
 // NewMultiProvider creates a new provider that distributes operations across multiple providers
 func NewMultiProvider(providers []ProviderWeight, strategy SelectionStrategy) *MultiProvider {
 	// Default timeout of 30 seconds
 	return &MultiProvider{
-		providers:      providers,
-		selectionStrat: strategy,
-		defaultTimeout: 30 * time.Second,
+		providers:       providers,
+		selectionStrat:  strategy,
+		defaultTimeout:  30 * time.Second,
+		consensusConfig: defaultConsensusConfig(),
 	}
 }
 
@@ -79,6 +83,26 @@ func (mp *MultiProvider) WithPrimaryProvider(index int) *MultiProvider {
 	if index >= 0 && index < len(mp.providers) {
 		mp.primaryProvider = index
 	}
+	return mp
+}
+
+// WithConsensusStrategy sets the consensus strategy to use
+func (mp *MultiProvider) WithConsensusStrategy(strategy ConsensusStrategy) *MultiProvider {
+	mp.consensusConfig.Strategy = strategy
+	return mp
+}
+
+// WithSimilarityThreshold sets the similarity threshold for ConsensusSimilarity strategy
+// The threshold should be between 0.0 and 1.0, with higher values requiring more similarity
+func (mp *MultiProvider) WithSimilarityThreshold(threshold float64) *MultiProvider {
+	// Ensure threshold is within valid range
+	if threshold < 0.0 {
+		threshold = 0.0
+	}
+	if threshold > 1.0 {
+		threshold = 1.0
+	}
+	mp.consensusConfig.SimilarityThreshold = threshold
 	return mp
 }
 
@@ -293,6 +317,7 @@ func (mp *MultiProvider) concurrentGenerate(ctx context.Context, prompt string, 
 				content:     content,
 				err:         err,
 				elapsedTime: elapsed,
+				weight:      providerWeight.Weight,
 			}
 		}(i, pw)
 	}
@@ -338,6 +363,7 @@ func (mp *MultiProvider) concurrentGenerateMessage(ctx context.Context, messages
 				response:    response,
 				err:         err,
 				elapsedTime: elapsed,
+				weight:      providerWeight.Weight,
 			}
 		}(i, pw)
 	}
@@ -383,6 +409,7 @@ func (mp *MultiProvider) concurrentGenerateWithSchema(ctx context.Context, promp
 				structured:  result,
 				err:         err,
 				elapsedTime: elapsed,
+				weight:      providerWeight.Weight,
 			}
 		}(i, pw)
 	}
@@ -466,8 +493,11 @@ func (mp *MultiProvider) selectTextResult(results []fallbackResult) (string, err
 		}
 		
 	case StrategyConsensus:
-		// For now, just return the most common successful response
-		// In the future, this could be more sophisticated
+		// Set the global consensus configuration to use our settings
+		// This allows the selectConsensusTextResult to use our configuration
+		globalConsensusConfig = &mp.consensusConfig
+		
+		// Use enhanced consensus algorithms
 		return selectConsensusTextResult(results)
 	}
 	
@@ -512,8 +542,11 @@ func (mp *MultiProvider) selectMessageResult(results []fallbackResult) (domain.R
 		}
 		
 	case StrategyConsensus:
-		// For now, implement a simple consensus mechanism
-		// Future versions could be more sophisticated
+		// Set the global consensus configuration to use our settings
+		// This allows the selectConsensusTextResult to use our configuration
+		globalConsensusConfig = &mp.consensusConfig
+		
+		// Use enhanced consensus algorithms for message responses
 		responsePool := domain.GetResponsePool()
 		consensusText, err := selectConsensusTextResult(results)
 		if err != nil {
@@ -563,16 +596,90 @@ func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (inter
 		}
 		
 	case StrategyConsensus:
-		// For structured results, consensus is complex and depends on the schema
-		// For now, fallback to just returning the first successful one
+		// Set the global consensus configuration to use our settings
+		// This allows the selectConsensusTextResult to use our configuration
+		globalConsensusConfig = &mp.consensusConfig
+		
+		// For structured results, we need specialized handling based on schema types
+		// Optimized implementation: use similarity-based grouping on JSON representations
+		// and return the most common structure
+		
+		// Pre-allocate with estimated capacity to avoid resizing
+		structuredResults := make([]string, 0, len(results))
+		structuredMap := make(map[string]interface{}, len(results))
+		
+		// Convert structured results to JSON strings for comparison
 		for _, result := range results {
-			if result.err == nil {
+			if result.err == nil && result.structured != nil {
+				// Convert to JSON for comparison
+				jsonBytes, err := json.Marshal(result.structured)
+				if err == nil {
+					jsonStr := string(jsonBytes)
+					structuredResults = append(structuredResults, jsonStr)
+					structuredMap[jsonStr] = result.structured
+				}
+			}
+		}
+		
+		// Fast path: If we only have one structured result, return it immediately
+		if len(structuredResults) == 1 {
+			return structuredMap[structuredResults[0]], nil
+		}
+		
+		// If we have multiple structured results, find the most common one
+		if len(structuredResults) > 0 {
+			// Create fallback results for text-based consensus algorithms
+			// Pre-allocate with exact capacity
+			textResults := make([]fallbackResult, len(structuredResults))
+			
+			// Create a map from JSON string to original result index for faster lookups
+			jsonToResultIndex := make(map[string]int, len(results))
+			for i, r := range results {
+				if r.err == nil && r.structured != nil {
+					jsonBytes, jsonErr := json.Marshal(r.structured)
+					if jsonErr == nil {
+						jsonToResultIndex[string(jsonBytes)] = i
+					}
+				}
+			}
+			
+			// Populate text results with efficient lookups
+			for i, jsonStr := range structuredResults {
+				// Initialize with default values
+				textResults[i] = fallbackResult{
+					content: jsonStr,
+					err:     nil,
+					weight:  1.0, // Default weight
+				}
+				
+				// If we can find the original result, use its metadata
+				if origIndex, ok := jsonToResultIndex[jsonStr]; ok {
+					origResult := results[origIndex]
+					textResults[i].weight = origResult.weight
+					textResults[i].elapsedTime = origResult.elapsedTime
+					textResults[i].provider = origResult.provider
+				}
+			}
+			
+			// Use consensus algorithms to find the most common structure
+			consensusJSON, err := selectConsensusTextResult(textResults)
+			if err == nil && consensusJSON != "" {
+				// Return the structured object matching the consensus JSON
+				if structured, ok := structuredMap[consensusJSON]; ok {
+					return structured, nil
+				}
+			}
+		}
+		
+		// Fallback to the first successful result if consensus fails
+		for _, result := range results {
+			if result.err == nil && result.structured != nil {
 				return result.structured, nil
 			}
 		}
 	}
 	
-	// If we get here, all providers failed
+	// If we get here, all providers failed or returned nil
 	var errMsg string
 	for _, result := range results {
 		if result.err != nil {
@@ -634,8 +741,9 @@ func sortResultsByTime(results []fallbackResult) {
 	}
 }
 
-// selectConsensusTextResult implements a basic consensus strategy for text results
-func selectConsensusTextResult(results []fallbackResult) (string, error) {
+// legacy_selectConsensusTextResult is the original implementation kept for reference
+// This function is no longer used as the implementation has moved to consensus.go
+func legacy_selectConsensusTextResult(results []fallbackResult) (string, error) {
 	// Count successful results to see if we have any
 	successCount := 0
 	for _, result := range results {
@@ -648,8 +756,7 @@ func selectConsensusTextResult(results []fallbackResult) (string, error) {
 		return "", ErrNoSuccessfulCalls
 	}
 	
-	// For now, just return the first successful one as a simple implementation
-	// Future implementations could compare semantic similarity or use other consensus algorithms
+	// Just return the first successful one as a simple implementation
 	for _, result := range results {
 		if result.err == nil {
 			return result.content, nil

@@ -18,6 +18,8 @@ type MockProvider struct {
 	streamFunc             func(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error)
 	streamMessageFunc      func(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.ResponseStream, error)
 	generateWithSchemaFunc func(ctx context.Context, prompt string, schema *schemaDomain.Schema, options ...domain.Option) (interface{}, error)
+	// Predefined responses for testing
+	predefinedResponses map[string]string
 }
 
 // NewMockProvider creates a new mock provider with default implementations
@@ -183,6 +185,30 @@ func (p *MockProvider) WithStreamFunc(f func(ctx context.Context, prompt string,
 // WithStreamMessageFunc sets a custom stream message function
 func (p *MockProvider) WithStreamMessageFunc(f func(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.ResponseStream, error)) *MockProvider {
 	p.streamMessageFunc = f
+	return p
+}
+
+// WithPredefinedResponses sets predefined responses for specific prompts
+func (p *MockProvider) WithPredefinedResponses(responses map[string]string) *MockProvider {
+	// Initialize the map if it's nil
+	if p.predefinedResponses == nil {
+		p.predefinedResponses = make(map[string]string)
+	}
+	
+	// Copy the responses
+	for prompt, response := range responses {
+		p.predefinedResponses[prompt] = response
+	}
+	
+	// Override the generateFunc to use predefined responses
+	p.generateFunc = func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+		if response, ok := p.predefinedResponses[prompt]; ok {
+			return response, nil
+		}
+		// Fallback to default response
+		return "This is a default mock response", nil
+	}
+	
 	return p
 }
 

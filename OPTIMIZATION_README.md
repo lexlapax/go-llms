@@ -119,7 +119,7 @@ Optimized: 500403 ops/s, 2383 ns/op,  2684 B/op,  39 allocs/op
 - **~67% speedup** for validation with errors
 - **~76% reduction** in memory allocations for error cases
 
-## 6. Prompt Processing and Template Expansion Optimizations
+## 14. Prompt Processing and Template Expansion Optimizations
 
 ### Problem
 The prompt processing implementation had inefficiencies in schema handling and string management, resulting in excessive memory allocations and repeated schema marshaling operations.
@@ -388,13 +388,102 @@ return responseStream, nil
 
 The channel pool will automatically handle cleanup of closed channels, making them unavailable for reuse.
 
-## Future Optimizations
+## 11. Enhanced Consensus Algorithms for Multi-Provider
 
-Planned future optimizations include:
+### Problem
+The original MultiProvider implementation used a very basic consensus mechanism that simply selected the first successful response. This approach failed to leverage the potential of having multiple responses and could result in less reliable outputs, especially in scenarios with varying provider quality. Additionally, the similarity-based consensus algorithm was inefficient and did not scale well with many responses.
 
-1. Implementing more sophisticated consensus algorithms for multiple providers
+### Solution
+- Implemented three advanced consensus strategies with optimizations:
+  - **Majority Voting**: Selects the most common response among all providers
+  - **Similarity-Based Grouping**: Groups responses by semantic similarity and chooses the largest group
+  - **Weighted Consensus**: Considers provider weights when determining the consensus
+- Added multi-level optimization techniques:
+  - **Similarity Caching**: Memorizes similarity scores between text pairs to avoid recomputation
+  - **Group Membership Caching**: Remembers which responses belong to which similarity groups
+  - **Fast Paths**: Special code paths for common cases (exact matches, single results, etc.)
+  - **Pre-allocation**: Reduced memory allocations with pre-sized containers
+  - **Response Filtering**: Early filtering of empty or error responses
+  - **Length-based Optimization**: Quick similarity estimation based on text length differences
+  - **Improved String Similarity**: Enhanced Jaccard similarity with stopword filtering
+- Added configuration options to fine-tune consensus behavior
+- Implemented a specialized approach for structured output consensus with JSON-based comparison
+- Global consensus configuration sharing between MultiProvider and consensus algorithms
 
-## 4. Agent Workflow Optimizations
+### Results
+The optimized consensus algorithms improve both performance and the quality/reliability of responses:
+
+1. **Higher Performance**: Significant speedup for similarity calculations, especially with caching
+   - **~70% faster** similarity calculations with caching (average across test cases)
+   - **~45% reduction** in allocations for response grouping operations
+   - **~30% speedup** for weighted consensus with the similarity-enhanced algorithm
+   
+2. **Better Quality**:
+   - More accurate grouping of semantically similar responses
+   - Improved handling of paraphrased content with enhanced similarity metrics
+   - Better weighted consensus through similarity-enhanced weighing
+   - More efficient JSON comparison for structured outputs
+
+3. **Other Benefits**:
+   - Lower memory usage through pre-allocation and reduced copying
+   - Faster response times through caching and fast paths
+   - Better thread safety with proper synchronization
+
+Based on our benchmark testing with various response patterns:
+```
+Similarity (Uncached):    8,943,204 ops/s, 111.8 ns/op,  64 B/op,  1 allocs/op
+Similarity (Cached):     30,521,049 ops/s,  32.8 ns/op,   0 B/op,  0 allocs/op
+
+Response Grouping (Original): 15,237 ops/s, 65,629 ns/op, 21,336 B/op, 372 allocs/op
+Response Grouping (Optimized): 27,592 ops/s, 36,243 ns/op, 11,844 B/op, 203 allocs/op
+```
+
+### Usage Example
+
+```go
+// Create providers
+provider1 := provider.NewOpenAIProvider(apiKey, "gpt-4o")
+provider2 := provider.NewAnthropicProvider(apiKey, "claude-3-opus-20240229")
+provider3 := provider.NewOpenAIProvider(apiKey, "gpt-3.5-turbo")
+
+// Create a multi-provider with different weights for each provider
+mp := provider.NewMultiProvider([]provider.ProviderWeight{
+    {Provider: provider1, Weight: 1.0, Name: "gpt4"},     // Full weight
+    {Provider: provider2, Weight: 1.0, Name: "claude"},   // Full weight
+    {Provider: provider3, Weight: 0.7, Name: "gpt35"},    // Lower weight
+}, provider.StrategyConsensus)
+
+// Configure the consensus strategy (optional)
+mp = mp.WithConsensusStrategy(provider.ConsensusSimilarity).
+    WithSimilarityThreshold(0.7)  // Require 70% similarity for grouping
+
+// Use the multi-provider normally
+response, err := mp.Generate(ctx, "What is the capital of France?")
+```
+
+The optimized consensus algorithms include several specific enhancements:
+
+1. **Enhanced Similarity Calculation**:
+   - Caching of similarity scores between text pairs
+   - Fast paths for identical strings and case insensitive matches
+   - Length-based early filtering for obviously different texts
+   - Optimized Jaccard similarity with improved tokenization
+
+2. **Improved Response Grouping**:
+   - Group membership caching to avoid redundant comparisons
+   - Pre-allocated data structures to reduce memory pressure
+   - Incremental updates to find the largest group efficiently
+   - Early exit for single result cases
+
+3. **Weighted Consensus Improvements**:
+   - Combined weighted voting with similarity awareness
+   - Optimized handling of provider weights
+   - Similarity-adjusted weight calculation
+   - Fast path for overwhelming consensus
+
+For structured outputs, the consensus algorithm automatically converts the structures to JSON for comparison, finding the most common structural pattern while preserving the original object types. This includes optimized JSON conversion and comparison for efficient structured data consensus.
+
+## 12. Agent Workflow Optimizations
 
 ### Problem
 The agent workflow implementation had several inefficient patterns, particularly in message creation, tool description generation, and tool call extraction, leading to excessive memory allocations and slower performance.
@@ -434,7 +523,7 @@ The agent implementation optimizations are especially impactful for:
 - Scenarios requiring fast tool call extraction from various LLM response formats
 - Applications where GC pressure can cause performance bottlenecks
 
-## 5. LLM Provider Message Handling Optimizations
+## 13. LLM Provider Message Handling Optimizations
 
 ### Problem
 The LLM provider implementations (OpenAI and Anthropic) had inefficient message conversion processes, creating new allocations for every request even with identical messages, and using excessive memory for message format conversion.

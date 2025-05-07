@@ -129,8 +129,11 @@ func main() {
 
 	fmt.Printf("Using %s provider with model: %s\n", providerName, modelName)
 
-	// Create an agent
-	agent := workflow.NewAgent(llmProvider)
+	// Create advanced optimized agent (CachedAgent with all optimizations enabled)
+	cachedAgent := workflow.NewCachedAgent(llmProvider)
+	
+	// Use the Agent interface for compatibility
+	var agent agentDomain.Agent = cachedAgent
 
 	// Configure the agent
 	agent.SetSystemPrompt(`You are a helpful assistant with access to various tools.
@@ -182,6 +185,10 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 
 	// Display metrics after the first run
 	displayMetrics(metricsHook)
+	
+	// Display cache metrics
+	displayCacheMetrics(cachedAgent)
+	
 	metricsHook.Reset() // Reset for next example
 
 	// Example 2: Multiple tools in one response
@@ -199,40 +206,112 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 
 	// Display metrics after the second run
 	displayMetrics(metricsHook)
+	
+	// Display cache metrics
+	displayCacheMetrics(cachedAgent)
+	
 	metricsHook.Reset()
 
-	// Example 3: File operations example
-	fmt.Println("\n=== Example 3: File Operations ===")
+	// Example 3: Parallel tool execution example
+	fmt.Println("\n=== Example 3: Parallel Tool Execution ===")
 	
-	// Create a temporary file for testing
+	// Create multiple temporary files for testing parallel operations
 	tempDir := os.TempDir()
-	tempFile := filepath.Join(tempDir, "go-llms-agent-test.txt")
-	os.WriteFile(tempFile, []byte("This is a test file.\nIt contains two lines."), 0644)
-	defer os.Remove(tempFile) // Clean up after the example
+	tempFiles := []string{
+		filepath.Join(tempDir, "go-llms-agent-test1.txt"),
+		filepath.Join(tempDir, "go-llms-agent-test2.txt"),
+		filepath.Join(tempDir, "go-llms-agent-test3.txt"),
+	}
 	
-	// Read the file, modify it, write it back
-	prompt := fmt.Sprintf("Please read the file %s, then modify it to add a third line saying 'This line was added by the agent.', and write it back.", tempFile)
-	fmt.Println("Running file operation chaining...")
+	// Create the files with different content
+	os.WriteFile(tempFiles[0], []byte("This is file 1.\nIt contains information about tools."), 0644)
+	os.WriteFile(tempFiles[1], []byte("This is file 2.\nIt contains information about agents."), 0644)
+	os.WriteFile(tempFiles[2], []byte("This is file 3.\nIt contains information about providers."), 0644)
 	
+	// Clean up files when done
+	defer func() {
+		for _, file := range tempFiles {
+			os.Remove(file)
+		}
+	}()
+	
+	// Prepare a prompt that requires multiple operations in parallel
+	prompt := fmt.Sprintf("Please perform these operations in parallel:\n"+
+		"1. Read file %s and extract the key topic.\n"+
+		"2. Read file %s and extract the key topic.\n"+
+		"3. Read file %s and extract the key topic.\n"+
+		"4. Calculate 25 * 42.\n"+
+		"5. Get the current date.\n"+
+		"Summarize all results together.", tempFiles[0], tempFiles[1], tempFiles[2])
+	
+	fmt.Println("Running parallel tool operations...")
+	
+	// Start timing for parallel execution
+	startTime := time.Now()
 	result, err = agent.Run(ctx, prompt)
+	duration := time.Since(startTime)
+	
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
 		fmt.Println("\nResult:")
 		fmt.Println(result)
-		
-		// Verify the file was changed
-		content, _ := os.ReadFile(tempFile)
-		fmt.Println("\nUpdated file content:")
-		fmt.Println(string(content))
+		fmt.Printf("\nTotal execution time: %v\n", duration)
 	}
 	
 	// Display metrics
 	displayMetrics(metricsHook)
+	
+	// Display cache metrics
+	displayCacheMetrics(cachedAgent)
+	
 	metricsHook.Reset()
 	
-	// Example 4: Complex analysis with schema
-	fmt.Println("\n=== Example 4: Structured Output with Schema ===")
+	// Example 4: Demonstrate caching with repeated queries
+	fmt.Println("\n=== Example 4: Caching with Repeated Queries ===")
+	
+	// Ensure caching is enabled
+	cachedAgent.EnableCaching(true)
+	fmt.Println("Response caching is enabled")
+	
+	// Define a query that will be repeated
+	repeatedQuery := "What's 25 * 42 and what's the current year?"
+	
+	// First run - should hit the provider
+	fmt.Println("\nFirst run of repeated query (should miss cache):")
+	startTime1 := time.Now()
+	result1, err := agent.Run(ctx, repeatedQuery)
+	duration1 := time.Since(startTime1)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	} else {
+		fmt.Println("\nResult (first run):")
+		fmt.Println(result1)
+		fmt.Printf("Duration: %v\n", duration1)
+	}
+	
+	// Second run - should hit the cache
+	fmt.Println("\nSecond run of identical query (should hit cache):")
+	startTime2 := time.Now()
+	result2, err := agent.Run(ctx, repeatedQuery)
+	duration2 := time.Since(startTime2)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	} else {
+		fmt.Println("\nResult (second run):")
+		fmt.Println(result2)
+		fmt.Printf("Duration: %v\n", duration2)
+		
+		// Display cache hit metrics
+		if cachedAgent, ok := agent.(*workflow.CachedAgent); ok {
+			stats := cachedAgent.GetCacheStats()
+			fmt.Printf("\nCache hits: %d, Misses: %d\n", stats["hits"], stats["misses"])
+			fmt.Printf("Time saved: approximately %v\n", duration1-duration2)
+		}
+	}
+	
+	// Example 5: Complex analysis with schema
+	fmt.Println("\n=== Example 5: Structured Output with Schema ===")
 	
 	// Define a schema for analysis results
 	analysisSchema := &schemaDomain.Schema{
@@ -285,6 +364,12 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 	
 	// Display metrics and reset
 	displayMetrics(metricsHook)
+	
+	// Display cache metrics (for CachedAgent)
+	if cachedAgent, ok := agent.(*workflow.CachedAgent); ok {
+		displayCacheMetrics(cachedAgent)
+	}
+	
 	customHook.PrintSummary()
 }
 
@@ -311,6 +396,30 @@ func displayMetrics(hook *workflow.MetricsHook) {
 			fmt.Printf("%-20s | %-8d | %-12.2f | %-12.2f | %-12.2f\n",
 				tool, stats.Calls, stats.AverageTimeMs, stats.FastestCallMs, stats.SlowestCallMs)
 		}
+	}
+}
+
+// displayCacheMetrics displays statistics from the response cache
+func displayCacheMetrics(agent *workflow.CachedAgent) {
+	stats := agent.GetCacheStats()
+	
+	fmt.Println("\nCache Metrics:")
+	fmt.Println("===================")
+	fmt.Printf("Cache hits:           %d\n", stats["hits"])
+	fmt.Printf("Cache misses:         %d\n", stats["misses"])
+	
+	// Calculate and display hit ratio
+	hitRatio, _ := stats["hit_ratio"].(float64)
+	fmt.Printf("Hit ratio:            %.2f%%\n", hitRatio*100)
+	
+	fmt.Printf("Stored responses:     %d\n", stats["stored_responses"])
+	fmt.Printf("Evicted responses:    %d\n", stats["evicted_responses"])
+	fmt.Printf("Current cache size:   %d\n", stats["cache_size"])
+	fmt.Printf("Cache capacity:       %d\n", stats["config"].(map[string]interface{})["capacity"])
+	
+	// Display average response time saved
+	if avgSaved, ok := stats["avg_response_saving_ms"].(int64); ok && avgSaved > 0 {
+		fmt.Printf("Avg time saved:       %d ms/request\n", avgSaved)
 	}
 }
 
