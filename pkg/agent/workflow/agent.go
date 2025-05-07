@@ -406,6 +406,20 @@ func (a *DefaultAgent) processOpenAIToolCalls(
 	toolNames []string,
 	paramsArray []interface{},
 ) ([]string, []interface{}, bool) {
+	// Estimate count of valid tools for pre-allocation
+	validCount := 0
+	for _, toolCall := range toolCalls {
+		if toolCall.Function.Name != "" {
+			validCount++
+		}
+	}
+	
+	// Pre-allocate result slices to exact size if empty
+	if len(toolNames) == 0 && validCount > 0 {
+		toolNames = make([]string, 0, validCount)
+		paramsArray = make([]interface{}, 0, validCount)
+	}
+	
 	// Process each tool call
 	for _, toolCall := range toolCalls {
 		if toolCall.Function.Name == "" {
@@ -421,16 +435,13 @@ func (a *DefaultAgent) processOpenAIToolCalls(
 			if err := json.Unmarshal([]byte(args), &params); err == nil {
 				toolNames = append(toolNames, toolCall.Function.Name)
 				paramsArray = append(paramsArray, params)
-			} else {
-				// If JSON parsing fails, use the raw arguments string
-				toolNames = append(toolNames, toolCall.Function.Name)
-				paramsArray = append(paramsArray, args)
+				continue
 			}
-		} else {
-			// Not JSON, use as is
-			toolNames = append(toolNames, toolCall.Function.Name)
-			paramsArray = append(paramsArray, args)
 		}
+		
+		// If JSON parsing fails or it's not JSON, use the raw arguments string
+		toolNames = append(toolNames, toolCall.Function.Name)
+		paramsArray = append(paramsArray, args)
 	}
 
 	if len(toolNames) > 0 {
