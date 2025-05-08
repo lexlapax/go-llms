@@ -8,7 +8,7 @@
 
 ## Examples
 - [x] Add dedicated example for multi-provider with Consensus strategy
-- [ ] Create example showing hooks for monitoring and metrics collection
+- [x] Create example showing hooks for monitoring and metrics collection
 - [ ] Add example demonstrating schema generation from Go structs
 
 ## Testing & Performance
