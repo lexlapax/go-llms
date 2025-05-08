@@ -6,7 +6,8 @@
 - [x] Add detailed examples showing usage patterns for each component
 - [x] Add detailed documentation README for the command line client
 - [x] Document error handling patterns and best practices
-- [ ] Create architecture diagrams for README
+- [x] Create architecture diagrams for README
+- [ ] Consolidate documentation and make sure it's consistent
 
 ## Examples
 - [x] Add dedicated example for multi-provider with Consensus strategy
@@ -25,10 +26,10 @@
 - [x] Enhance the schema validation with more advanced features
 
 ## Documentation for Performance Optimization
-- [ ] Document memory pooling strategies used
-- [ ] Explain sync.Pool implementations and best practices
-- [ ] Detail caching mechanisms and when they're applied
-- [ ] Document concurrency patterns and thread safety
+- [x] Document memory pooling strategies used
+- [x] Explain sync.Pool implementations and best practices
+- [x] Detail caching mechanisms and when they're applied
+- [x] Document concurrency patterns and thread safety
 
 ## Error Handling
 - [x] Ensure error handling consistency across all providers

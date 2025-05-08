@@ -330,7 +330,16 @@ See the `cmd/examples/` directory for more comprehensive examples.
 
 ## Documentation
 
+### API Documentation
+
 For detailed API documentation, see the [API Reference](docs/API_REFERENCE.md).
+
+### Technical Documentation
+
+- [Performance Optimization Strategies](docs/PERFORMANCE_OPTIMIZATION.md) - Overview of memory pooling, caching, and concurrency patterns
+- [Sync.Pool Implementation Guide](docs/SYNC_POOL_GUIDE.md) - Deep dive into object pooling best practices
+- [Caching Mechanisms](docs/CACHING_MECHANISMS.md) - Detailed explanation of caching strategies
+- [Concurrency Patterns](docs/CONCURRENCY_PATTERNS.md) - Thread safety, streaming, and parallel execution patterns
 
 ## Development Status
 
