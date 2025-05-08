@@ -25,7 +25,7 @@ func NewSchemaCache() *SchemaCache {
 func (c *SchemaCache) Get(key uint64) ([]byte, bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
-	
+
 	value, ok := c.cache[key]
 	return value, ok
 }
@@ -34,7 +34,7 @@ func (c *SchemaCache) Get(key uint64) ([]byte, bool) {
 func (c *SchemaCache) Set(key uint64, value []byte) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	
+
 	c.cache[key] = value
 }
 
@@ -42,7 +42,7 @@ func (c *SchemaCache) Set(key uint64, value []byte) {
 func (c *SchemaCache) Clear() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	
+
 	// If the cache is already large, allocate a new one with the same capacity
 	if len(c.cache) > 10 {
 		c.cache = make(map[uint64][]byte, len(c.cache))
@@ -58,15 +58,15 @@ func (c *SchemaCache) Clear() {
 // This is used for cache lookups to avoid repeated JSON marshaling
 func GenerateSchemaKey(schema *schemaDomain.Schema) uint64 {
 	hasher := fnv.New64()
-	
+
 	// Add schema type to hash
 	hasher.Write([]byte(schema.Type))
-	
+
 	// Add required fields to hash
 	for _, req := range schema.Required {
 		hasher.Write([]byte(req))
 	}
-	
+
 	// Add properties to hash (keys and types are the most important for uniqueness)
 	for k, prop := range schema.Properties {
 		hasher.Write([]byte(k))
@@ -74,10 +74,10 @@ func GenerateSchemaKey(schema *schemaDomain.Schema) uint64 {
 		// Add description to hash
 		hasher.Write([]byte(prop.Description))
 	}
-	
+
 	// Add title and description to hash
 	hasher.Write([]byte(schema.Title))
 	hasher.Write([]byte(schema.Description))
-	
+
 	return hasher.Sum64()
 }

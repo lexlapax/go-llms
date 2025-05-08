@@ -21,7 +21,7 @@ func BenchmarkChannelPooling(b *testing.B) {
 			ch := make(chan domain.Token, 20)
 			go func() {
 				defer close(ch)
-				
+
 				// Simulate streaming tokens at intervals
 				for j := 0; j < numTokens; j++ {
 					select {
@@ -31,14 +31,14 @@ func BenchmarkChannelPooling(b *testing.B) {
 					}
 				}
 			}()
-			
+
 			// Consume all tokens
 			for token := range ch {
 				_ = token // Just consume the token
 			}
 		}
 	})
-	
+
 	// Benchmark with pooling
 	b.Run("StreamingWithPool", func(b *testing.B) {
 		pool := domain.GetChannelPool()
@@ -47,7 +47,7 @@ func BenchmarkChannelPooling(b *testing.B) {
 			_, ch := pool.GetResponseStream()
 			go func() {
 				defer close(ch)
-				
+
 				// Simulate streaming tokens at intervals
 				for j := 0; j < numTokens; j++ {
 					select {
@@ -57,29 +57,29 @@ func BenchmarkChannelPooling(b *testing.B) {
 					}
 				}
 			}()
-			
+
 			// Consume all tokens
 			for token := range ch {
 				_ = token // Just consume the token
 			}
 		}
 	})
-	
+
 	// Benchmark high-throughput scenario with many streams
 	const numStreams = 100
-	
+
 	b.Run("MultipleStreamsWithoutPool", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			ctx, cancel := context.WithTimeout(context.Background(), simulationDuration*3)
-			
+
 			// Create multiple streams
 			streams := make([]chan domain.Token, numStreams)
 			for j := 0; j < numStreams; j++ {
 				streams[j] = make(chan domain.Token, 20)
 				go func(ch chan domain.Token) {
 					defer close(ch)
-					
+
 					// Stream fewer tokens in the high-throughput scenario
 					for k := 0; k < 10; k++ {
 						select {
@@ -90,24 +90,24 @@ func BenchmarkChannelPooling(b *testing.B) {
 					}
 				}(streams[j])
 			}
-			
+
 			// Consume all streams
 			for _, stream := range streams {
 				for range stream {
 					// Just consume
 				}
 			}
-			
+
 			cancel()
 		}
 	})
-	
+
 	b.Run("MultipleStreamsWithPool", func(b *testing.B) {
 		pool := domain.GetChannelPool()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			ctx, cancel := context.WithTimeout(context.Background(), simulationDuration*3)
-			
+
 			// Create multiple streams
 			streams := make([]chan domain.Token, numStreams)
 			for j := 0; j < numStreams; j++ {
@@ -115,7 +115,7 @@ func BenchmarkChannelPooling(b *testing.B) {
 				streams[j] = ch
 				go func(ch chan domain.Token) {
 					defer close(ch)
-					
+
 					// Stream fewer tokens in the high-throughput scenario
 					for k := 0; k < 10; k++ {
 						select {
@@ -126,38 +126,38 @@ func BenchmarkChannelPooling(b *testing.B) {
 					}
 				}(ch)
 			}
-			
+
 			// Consume all streams
 			for _, stream := range streams {
 				for range stream {
 					// Just consume
 				}
 			}
-			
+
 			cancel()
 		}
 	})
-	
+
 	// Benchmark realistic streaming scenario with token pools
 	b.Run("RealisticStreamingWithoutPooling", func(b *testing.B) {
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			ch := make(chan domain.Token, 20)
-			
+
 			go func() {
 				defer close(ch)
-				
+
 				tokens := []string{
 					"The", " quick", " brown", " fox", " jumps", " over", " the", " lazy", " dog", ".",
 				}
-				
+
 				for j, text := range tokens {
 					token := domain.Token{
 						Text:     text,
 						Finished: j == len(tokens)-1,
 					}
-					
+
 					select {
 					case ch <- token:
 					case <-time.After(simulationDuration):
@@ -165,7 +165,7 @@ func BenchmarkChannelPooling(b *testing.B) {
 					}
 				}
 			}()
-			
+
 			// Accumulate tokens
 			var fullText string
 			for token := range ch {
@@ -173,25 +173,25 @@ func BenchmarkChannelPooling(b *testing.B) {
 			}
 		}
 	})
-	
+
 	b.Run("RealisticStreamingWithPooling", func(b *testing.B) {
 		channelPool := domain.GetChannelPool()
 		tokenPool := domain.GetTokenPool()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			_, ch := channelPool.GetResponseStream()
-			
+
 			go func() {
 				defer close(ch)
-				
+
 				tokens := []string{
 					"The", " quick", " brown", " fox", " jumps", " over", " the", " lazy", " dog", ".",
 				}
-				
+
 				for j, text := range tokens {
 					token := tokenPool.NewToken(text, j == len(tokens)-1)
-					
+
 					select {
 					case ch <- token:
 					case <-time.After(simulationDuration):
@@ -199,7 +199,7 @@ func BenchmarkChannelPooling(b *testing.B) {
 					}
 				}
 			}()
-			
+
 			// Accumulate tokens
 			var fullText string
 			for token := range ch {

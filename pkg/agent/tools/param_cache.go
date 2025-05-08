@@ -77,11 +77,11 @@ func (c *parameterTypeCache) getStructFields(structType reflect.Type) []fieldInf
 
 	// Debug information (commented for performance)
 	/*
-	fmt.Printf("DEBUG: Struct type %v fields:\n", structType)
-	for _, f := range fields {
-		fmt.Printf("  Field: %s, JSON: %s, Index: %d, Exported: %v\n", 
-			f.name, f.jsonName, f.index, f.isExported)
-	}
+		fmt.Printf("DEBUG: Struct type %v fields:\n", structType)
+		for _, f := range fields {
+			fmt.Printf("  Field: %s, JSON: %s, Index: %d, Exported: %v\n",
+				f.name, f.jsonName, f.index, f.isExported)
+		}
 	*/
 
 	// Cache and return

@@ -54,11 +54,11 @@ type fallbackResult struct {
 // MultiProvider implements domain.Provider interface and distributes operations
 // across multiple underlying providers with fallback and selection strategies
 type MultiProvider struct {
-	providers         []ProviderWeight
-	selectionStrat    SelectionStrategy
-	defaultTimeout    time.Duration
-	primaryProvider   int // Index of primary provider for StrategyPrimary
-	consensusConfig   consensusConfig // Configuration for consensus algorithms
+	providers       []ProviderWeight
+	selectionStrat  SelectionStrategy
+	defaultTimeout  time.Duration
+	primaryProvider int             // Index of primary provider for StrategyPrimary
+	consensusConfig consensusConfig // Configuration for consensus algorithms
 }
 
 // NewMultiProvider creates a new provider that distributes operations across multiple providers
@@ -116,8 +116,14 @@ func (mp *MultiProvider) Generate(ctx context.Context, prompt string, options ..
 	ctx, cancel := applyTimeoutFromContext(ctx, mp.defaultTimeout)
 	defer cancel()
 
+	// Use sequential execution for primary strategy to ensure deterministic results
+	if mp.selectionStrat == StrategyPrimary {
+		return mp.sequentialGenerateForPrimary(ctx, prompt, options)
+	}
+
+	// Use concurrent execution for other strategies
 	results := mp.concurrentGenerate(ctx, prompt, options)
-	
+
 	// Apply selection strategy
 	return mp.selectTextResult(results)
 }
@@ -132,8 +138,14 @@ func (mp *MultiProvider) GenerateMessage(ctx context.Context, messages []domain.
 	ctx, cancel := applyTimeoutFromContext(ctx, mp.defaultTimeout)
 	defer cancel()
 
+	// Use sequential execution for primary strategy to ensure deterministic results
+	if mp.selectionStrat == StrategyPrimary {
+		return mp.sequentialGenerateMessageForPrimary(ctx, messages, options)
+	}
+
+	// Use concurrent execution for other strategies
 	results := mp.concurrentGenerateMessage(ctx, messages, options)
-	
+
 	// Apply selection strategy
 	return mp.selectMessageResult(results)
 }
@@ -148,8 +160,14 @@ func (mp *MultiProvider) GenerateWithSchema(ctx context.Context, prompt string, 
 	ctx, cancel := applyTimeoutFromContext(ctx, mp.defaultTimeout)
 	defer cancel()
 
+	// Use sequential execution for primary strategy to ensure deterministic results
+	if mp.selectionStrat == StrategyPrimary {
+		return mp.sequentialGenerateWithSchemaForPrimary(ctx, prompt, schema, options)
+	}
+
+	// Use concurrent execution for other strategies
 	results := mp.concurrentGenerateWithSchema(ctx, prompt, schema, options)
-	
+
 	// Apply selection strategy
 	return mp.selectStructuredResult(results)
 }
@@ -164,21 +182,21 @@ func (mp *MultiProvider) Stream(ctx context.Context, prompt string, options ...d
 
 	// Apply the configured timeout if not overridden in the context
 	ctx, cancel := applyTimeoutFromContext(ctx, mp.defaultTimeout)
-	
+
 	// For streaming, we select the provider upfront rather than aggregating results
 	// This approach is more straightforward for streaming responses
 	selectedProviderIdx := mp.selectProviderForStreaming()
-	
+
 	// Get a channel from the pool
 	responseStream, responseCh := domain.GetChannelPool().GetResponseStream()
-	
+
 	// Start the stream in a goroutine
 	go func() {
 		defer cancel() // Ensure the context is canceled when we're done
-			// We're not returning the channel to the pool here because:
-			// 1. close(responseCh) will be called, making the channel unusable for reuse
-			// 2. The channel pool's Put method checks if the channel is closed and won't reuse it
-		
+		// We're not returning the channel to the pool here because:
+		// 1. close(responseCh) will be called, making the channel unusable for reuse
+		// 2. The channel pool's Put method checks if the channel is closed and won't reuse it
+
 		// Try the selected provider first
 		stream, err := mp.providers[selectedProviderIdx].Provider.Stream(ctx, prompt, options...)
 		if err == nil {
@@ -186,13 +204,13 @@ func (mp *MultiProvider) Stream(ctx context.Context, prompt string, options ...d
 			mp.forwardStream(ctx, stream, responseCh)
 			return
 		}
-		
+
 		// If the primary fails, try each provider in order
 		for i, pw := range mp.providers {
 			if i == selectedProviderIdx {
 				continue // Skip the one we already tried
 			}
-			
+
 			// Check if the context was canceled
 			select {
 			case <-ctx.Done():
@@ -200,7 +218,7 @@ func (mp *MultiProvider) Stream(ctx context.Context, prompt string, options ...d
 				return
 			default:
 			}
-			
+
 			stream, err := pw.Provider.Stream(ctx, prompt, options...)
 			if err == nil {
 				// Forward tokens from the provider to our response channel
@@ -208,7 +226,7 @@ func (mp *MultiProvider) Stream(ctx context.Context, prompt string, options ...d
 				return
 			}
 		}
-		
+
 		// If all providers failed, send an error token
 		select {
 		case <-ctx.Done():
@@ -219,7 +237,7 @@ func (mp *MultiProvider) Stream(ctx context.Context, prompt string, options ...d
 		}
 		close(responseCh)
 	}()
-	
+
 	return responseStream, nil
 }
 
@@ -231,20 +249,20 @@ func (mp *MultiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 
 	// Apply the configured timeout if not overridden in the context
 	ctx, cancel := applyTimeoutFromContext(ctx, mp.defaultTimeout)
-	
+
 	// For streaming, we select the provider upfront rather than aggregating results
 	selectedProviderIdx := mp.selectProviderForStreaming()
-	
+
 	// Get a channel from the pool
 	responseStream, responseCh := domain.GetChannelPool().GetResponseStream()
-	
+
 	// Start the stream in a goroutine
 	go func() {
 		defer cancel() // Ensure the context is canceled when we're done
-			// We're not returning the channel to the pool here because:
-			// 1. close(responseCh) will be called, making the channel unusable for reuse
-			// 2. The channel pool's Put method checks if the channel is closed and won't reuse it
-		
+		// We're not returning the channel to the pool here because:
+		// 1. close(responseCh) will be called, making the channel unusable for reuse
+		// 2. The channel pool's Put method checks if the channel is closed and won't reuse it
+
 		// Try the selected provider first
 		stream, err := mp.providers[selectedProviderIdx].Provider.StreamMessage(ctx, messages, options...)
 		if err == nil {
@@ -252,13 +270,13 @@ func (mp *MultiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 			mp.forwardStream(ctx, stream, responseCh)
 			return
 		}
-		
+
 		// If the primary fails, try each provider in order
 		for i, pw := range mp.providers {
 			if i == selectedProviderIdx {
 				continue // Skip the one we already tried
 			}
-			
+
 			// Check if the context was canceled
 			select {
 			case <-ctx.Done():
@@ -266,7 +284,7 @@ func (mp *MultiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 				return
 			default:
 			}
-			
+
 			stream, err := pw.Provider.StreamMessage(ctx, messages, options...)
 			if err == nil {
 				// Forward tokens from the provider to our response channel
@@ -274,7 +292,7 @@ func (mp *MultiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 				return
 			}
 		}
-		
+
 		// If all providers failed, send an error token
 		select {
 		case <-ctx.Done():
@@ -285,7 +303,7 @@ func (mp *MultiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 		}
 		close(responseCh)
 	}()
-	
+
 	return responseStream, nil
 }
 
@@ -295,22 +313,22 @@ func (mp *MultiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 func (mp *MultiProvider) concurrentGenerate(ctx context.Context, prompt string, options []domain.Option) []fallbackResult {
 	resultCh := make(chan fallbackResult, len(mp.providers))
 	var wg sync.WaitGroup
-	
+
 	// Launch a goroutine for each provider
 	for i, pw := range mp.providers {
 		wg.Add(1)
 		go func(idx int, providerWeight ProviderWeight) {
 			defer wg.Done()
-			
+
 			providerName := providerWeight.Name
 			if providerName == "" {
 				providerName = fmt.Sprintf("provider_%d", idx)
 			}
-			
+
 			startTime := time.Now()
 			content, err := providerWeight.Provider.Generate(ctx, prompt, options...)
 			elapsed := time.Since(startTime)
-			
+
 			// Send result regardless of error status
 			resultCh <- fallbackResult{
 				provider:    providerName,
@@ -321,19 +339,19 @@ func (mp *MultiProvider) concurrentGenerate(ctx context.Context, prompt string, 
 			}
 		}(i, pw)
 	}
-	
+
 	// Close the channel when all providers have completed
 	go func() {
 		wg.Wait()
 		close(resultCh)
 	}()
-	
+
 	// Collect all results
 	var results []fallbackResult
 	for result := range resultCh {
 		results = append(results, result)
 	}
-	
+
 	return results
 }
 
@@ -341,22 +359,22 @@ func (mp *MultiProvider) concurrentGenerate(ctx context.Context, prompt string, 
 func (mp *MultiProvider) concurrentGenerateMessage(ctx context.Context, messages []domain.Message, options []domain.Option) []fallbackResult {
 	resultCh := make(chan fallbackResult, len(mp.providers))
 	var wg sync.WaitGroup
-	
+
 	// Launch a goroutine for each provider
 	for i, pw := range mp.providers {
 		wg.Add(1)
 		go func(idx int, providerWeight ProviderWeight) {
 			defer wg.Done()
-			
+
 			providerName := providerWeight.Name
 			if providerName == "" {
 				providerName = fmt.Sprintf("provider_%d", idx)
 			}
-			
+
 			startTime := time.Now()
 			response, err := providerWeight.Provider.GenerateMessage(ctx, messages, options...)
 			elapsed := time.Since(startTime)
-			
+
 			// Send result regardless of error status
 			resultCh <- fallbackResult{
 				provider:    providerName,
@@ -367,19 +385,19 @@ func (mp *MultiProvider) concurrentGenerateMessage(ctx context.Context, messages
 			}
 		}(i, pw)
 	}
-	
+
 	// Close the channel when all providers have completed
 	go func() {
 		wg.Wait()
 		close(resultCh)
 	}()
-	
+
 	// Collect all results
 	var results []fallbackResult
 	for result := range resultCh {
 		results = append(results, result)
 	}
-	
+
 	return results
 }
 
@@ -387,22 +405,22 @@ func (mp *MultiProvider) concurrentGenerateMessage(ctx context.Context, messages
 func (mp *MultiProvider) concurrentGenerateWithSchema(ctx context.Context, prompt string, schema *schemaDomain.Schema, options []domain.Option) []fallbackResult {
 	resultCh := make(chan fallbackResult, len(mp.providers))
 	var wg sync.WaitGroup
-	
+
 	// Launch a goroutine for each provider
 	for i, pw := range mp.providers {
 		wg.Add(1)
 		go func(idx int, providerWeight ProviderWeight) {
 			defer wg.Done()
-			
+
 			providerName := providerWeight.Name
 			if providerName == "" {
 				providerName = fmt.Sprintf("provider_%d", idx)
 			}
-			
+
 			startTime := time.Now()
 			result, err := providerWeight.Provider.GenerateWithSchema(ctx, prompt, schema, options...)
 			elapsed := time.Since(startTime)
-			
+
 			// Send result regardless of error status
 			resultCh <- fallbackResult{
 				provider:    providerName,
@@ -413,19 +431,19 @@ func (mp *MultiProvider) concurrentGenerateWithSchema(ctx context.Context, promp
 			}
 		}(i, pw)
 	}
-	
+
 	// Close the channel when all providers have completed
 	go func() {
 		wg.Wait()
 		close(resultCh)
 	}()
-	
+
 	// Collect all results
 	var results []fallbackResult
 	for result := range resultCh {
 		results = append(results, result)
 	}
-	
+
 	return results
 }
 
@@ -443,7 +461,7 @@ func (mp *MultiProvider) forwardStream(ctx context.Context, sourceStream domain.
 				close(destCh)
 				return
 			}
-			
+
 			// Forward the token to the destination
 			select {
 			case <-ctx.Done():
@@ -467,7 +485,7 @@ func (mp *MultiProvider) selectTextResult(results []fallbackResult) (string, err
 	if len(results) == 0 {
 		return "", ErrNoSuccessfulCalls
 	}
-	
+
 	switch mp.selectionStrat {
 	case StrategyFastest:
 		// Sort by time and return the first successful one
@@ -477,30 +495,30 @@ func (mp *MultiProvider) selectTextResult(results []fallbackResult) (string, err
 				return result.content, nil
 			}
 		}
-	
+
 	case StrategyPrimary:
 		// Try primary provider first, then fall back
 		primaryIdx := mp.primaryProvider
 		if primaryIdx >= 0 && primaryIdx < len(results) && results[primaryIdx].err == nil {
 			return results[primaryIdx].content, nil
 		}
-		
+
 		// Primary failed, try others
 		for _, result := range results {
 			if result.err == nil {
 				return result.content, nil
 			}
 		}
-		
+
 	case StrategyConsensus:
 		// Set the global consensus configuration to use our settings
 		// This allows the selectConsensusTextResult to use our configuration
 		globalConsensusConfig = &mp.consensusConfig
-		
+
 		// Use enhanced consensus algorithms
 		return selectConsensusTextResult(results)
 	}
-	
+
 	// If we get here, all providers failed
 	var errMsg string
 	for _, result := range results {
@@ -516,7 +534,7 @@ func (mp *MultiProvider) selectMessageResult(results []fallbackResult) (domain.R
 	if len(results) == 0 {
 		return domain.Response{}, ErrNoSuccessfulCalls
 	}
-	
+
 	switch mp.selectionStrat {
 	case StrategyFastest:
 		// Sort by time and return the first successful one
@@ -526,26 +544,26 @@ func (mp *MultiProvider) selectMessageResult(results []fallbackResult) (domain.R
 				return result.response, nil
 			}
 		}
-	
+
 	case StrategyPrimary:
 		// Try primary provider first, then fall back
 		primaryIdx := mp.primaryProvider
 		if primaryIdx >= 0 && primaryIdx < len(results) && results[primaryIdx].err == nil {
 			return results[primaryIdx].response, nil
 		}
-		
+
 		// Primary failed, try others
 		for _, result := range results {
 			if result.err == nil {
 				return result.response, nil
 			}
 		}
-		
+
 	case StrategyConsensus:
 		// Set the global consensus configuration to use our settings
 		// This allows the selectConsensusTextResult to use our configuration
 		globalConsensusConfig = &mp.consensusConfig
-		
+
 		// Use enhanced consensus algorithms for message responses
 		responsePool := domain.GetResponsePool()
 		consensusText, err := selectConsensusTextResult(results)
@@ -554,7 +572,7 @@ func (mp *MultiProvider) selectMessageResult(results []fallbackResult) (domain.R
 		}
 		return responsePool.NewResponse(consensusText), nil
 	}
-	
+
 	// If we get here, all providers failed
 	var errMsg string
 	for _, result := range results {
@@ -570,7 +588,7 @@ func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (inter
 	if len(results) == 0 {
 		return nil, ErrNoSuccessfulCalls
 	}
-	
+
 	switch mp.selectionStrat {
 	case StrategyFastest:
 		// Sort by time and return the first successful one
@@ -580,34 +598,34 @@ func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (inter
 				return result.structured, nil
 			}
 		}
-	
+
 	case StrategyPrimary:
 		// Try primary provider first, then fall back
 		primaryIdx := mp.primaryProvider
 		if primaryIdx >= 0 && primaryIdx < len(results) && results[primaryIdx].err == nil {
 			return results[primaryIdx].structured, nil
 		}
-		
+
 		// Primary failed, try others
 		for _, result := range results {
 			if result.err == nil {
 				return result.structured, nil
 			}
 		}
-		
+
 	case StrategyConsensus:
 		// Set the global consensus configuration to use our settings
 		// This allows the selectConsensusTextResult to use our configuration
 		globalConsensusConfig = &mp.consensusConfig
-		
+
 		// For structured results, we need specialized handling based on schema types
 		// Optimized implementation: use similarity-based grouping on JSON representations
 		// and return the most common structure
-		
+
 		// Pre-allocate with estimated capacity to avoid resizing
 		structuredResults := make([]string, 0, len(results))
 		structuredMap := make(map[string]interface{}, len(results))
-		
+
 		// Convert structured results to JSON strings for comparison
 		for _, result := range results {
 			if result.err == nil && result.structured != nil {
@@ -620,18 +638,18 @@ func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (inter
 				}
 			}
 		}
-		
+
 		// Fast path: If we only have one structured result, return it immediately
 		if len(structuredResults) == 1 {
 			return structuredMap[structuredResults[0]], nil
 		}
-		
+
 		// If we have multiple structured results, find the most common one
 		if len(structuredResults) > 0 {
 			// Create fallback results for text-based consensus algorithms
 			// Pre-allocate with exact capacity
 			textResults := make([]fallbackResult, len(structuredResults))
-			
+
 			// Create a map from JSON string to original result index for faster lookups
 			jsonToResultIndex := make(map[string]int, len(results))
 			for i, r := range results {
@@ -642,7 +660,7 @@ func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (inter
 					}
 				}
 			}
-			
+
 			// Populate text results with efficient lookups
 			for i, jsonStr := range structuredResults {
 				// Initialize with default values
@@ -651,7 +669,7 @@ func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (inter
 					err:     nil,
 					weight:  1.0, // Default weight
 				}
-				
+
 				// If we can find the original result, use its metadata
 				if origIndex, ok := jsonToResultIndex[jsonStr]; ok {
 					origResult := results[origIndex]
@@ -660,7 +678,7 @@ func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (inter
 					textResults[i].provider = origResult.provider
 				}
 			}
-			
+
 			// Use consensus algorithms to find the most common structure
 			consensusJSON, err := selectConsensusTextResult(textResults)
 			if err == nil && consensusJSON != "" {
@@ -670,7 +688,7 @@ func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (inter
 				}
 			}
 		}
-		
+
 		// Fallback to the first successful result if consensus fails
 		for _, result := range results {
 			if result.err == nil && result.structured != nil {
@@ -678,7 +696,7 @@ func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (inter
 			}
 		}
 	}
-	
+
 	// If we get here, all providers failed or returned nil
 	var errMsg string
 	for _, result := range results {
@@ -716,14 +734,14 @@ func applyTimeoutFromContext(ctx context.Context, defaultTimeout time.Duration) 
 		// No deadline, apply our default timeout
 		return context.WithTimeout(ctx, defaultTimeout)
 	}
-	
+
 	// Context already has a deadline, use that
 	timeRemaining := time.Until(deadline)
 	if timeRemaining <= 0 {
 		// Deadline already passed, use a minimal timeout
 		return context.WithTimeout(ctx, 1*time.Millisecond)
 	}
-	
+
 	// Return the original context with a cancel function
 	childCtx, cancel := context.WithCancel(ctx)
 	return childCtx, cancel
@@ -741,28 +759,5 @@ func sortResultsByTime(results []fallbackResult) {
 	}
 }
 
-// legacy_selectConsensusTextResult is the original implementation kept for reference
-// This function is no longer used as the implementation has moved to consensus.go
-func legacy_selectConsensusTextResult(results []fallbackResult) (string, error) {
-	// Count successful results to see if we have any
-	successCount := 0
-	for _, result := range results {
-		if result.err == nil {
-			successCount++
-		}
-	}
-	
-	if successCount == 0 {
-		return "", ErrNoSuccessfulCalls
-	}
-	
-	// Just return the first successful one as a simple implementation
-	for _, result := range results {
-		if result.err == nil {
-			return result.content, nil
-		}
-	}
-	
-	// Shouldn't get here due to success count check, but just in case
-	return "", ErrNoSuccessfulCalls
-}
+// The legacy_selectConsensusTextResult function has been removed
+// as the implementation has moved to consensus.go

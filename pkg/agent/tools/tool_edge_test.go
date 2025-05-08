@@ -17,9 +17,9 @@ func TestToolEdgeCases(t *testing.T) {
 		noParamFunc := func() string {
 			return "success"
 		}
-		
+
 		tool := NewTool("noParams", "Test tool with no params", noParamFunc, nil)
-		
+
 		// Execute with nil params should succeed
 		result, err := tool.Execute(context.Background(), nil)
 		if err != nil {
@@ -29,15 +29,15 @@ func TestToolEdgeCases(t *testing.T) {
 			t.Errorf("Expected 'success', got %v", result)
 		}
 	})
-	
+
 	t.Run("RequiredParamsButNil", func(t *testing.T) {
 		// A function that requires parameters
 		paramFunc := func(name string) string {
 			return "Hello, " + name
 		}
-		
+
 		tool := NewTool("withParams", "Test tool with params", paramFunc, nil)
-		
+
 		// Execute with nil params should fail
 		_, err := tool.Execute(context.Background(), nil)
 		if err == nil {
@@ -52,20 +52,20 @@ func TestToolEdgeCases(t *testing.T) {
 			Name string `json:"name"`
 			Age  int    `json:"age"`
 		}
-		
+
 		userFunc := func(params UserParams) string {
 			return fmt.Sprintf("%s is %d years old", params.Name, params.Age)
 		}
-		
+
 		tool := NewTool("userTool", "Tool for user info", userFunc, nil)
-		
+
 		// Test with completely wrong type
 		wrongType := 123
 		_, err := tool.Execute(context.Background(), wrongType)
 		if err == nil {
 			t.Errorf("Expected error with wrong parameter type")
 		}
-		
+
 		// Test with partial match (map missing a field)
 		partialMap := map[string]interface{}{
 			"name": "John",
@@ -80,7 +80,7 @@ func TestToolEdgeCases(t *testing.T) {
 			t.Errorf("Expected default age of 0, got: %v", result)
 		}
 	})
-	
+
 	// Test with schema validation
 	t.Run("SchemaValidation", func(t *testing.T) {
 		// Define a schema for parameters
@@ -100,7 +100,7 @@ func TestToolEdgeCases(t *testing.T) {
 			},
 			Required: []string{"name"},
 		}
-		
+
 		// Function using the parameters
 		userFunc := func(params struct {
 			Name string `json:"name"`
@@ -108,9 +108,9 @@ func TestToolEdgeCases(t *testing.T) {
 		}) string {
 			return fmt.Sprintf("%s is %d years old", params.Name, params.Age)
 		}
-		
+
 		tool := NewTool("userTool", "Tool for user info", userFunc, schema)
-		
+
 		// Valid parameters
 		validParams := map[string]interface{}{
 			"name": "John",
@@ -123,11 +123,11 @@ func TestToolEdgeCases(t *testing.T) {
 		if result != "John is 30 years old" {
 			t.Errorf("Expected 'John is 30 years old', got %v", result)
 		}
-		
+
 		// Note: Schema validation isn't fully implemented in this tool yet,
 		// but this test case demonstrates how it would be used
 	})
-	
+
 	// Test function receiving map[string]interface{}
 	t.Run("MapParameter", func(t *testing.T) {
 		// Function that directly accepts a map
@@ -137,9 +137,9 @@ func TestToolEdgeCases(t *testing.T) {
 			}
 			return "Hello, unknown"
 		}
-		
+
 		tool := NewTool("mapTool", "Tool accepting map", mapFunc, nil)
-		
+
 		// Test with map
 		mapParam := map[string]interface{}{
 			"name": "John",
@@ -153,7 +153,7 @@ func TestToolEdgeCases(t *testing.T) {
 			t.Errorf("Expected 'Hello, John', got %v", result)
 		}
 	})
-	
+
 	// Test complex type conversions
 	t.Run("ComplexTypeConversions", func(t *testing.T) {
 		// Function taking various types
@@ -166,14 +166,14 @@ func TestToolEdgeCases(t *testing.T) {
 			return fmt.Sprintf("int: %d, float: %.1f, string: %s, bool: %t",
 				params.IntValue, params.FloatValue, params.StringValue, params.BoolValue)
 		}
-		
+
 		tool := NewTool("conversionTool", "Tool with type conversions", conversionFunc, nil)
-		
+
 		// Test with various string representations that should be converted
 		strParams := map[string]interface{}{
 			"int":    "42",
 			"float":  "3.14",
-			"string": 123,       // number to string
+			"string": 123, // number to string
 			"bool":   "true",
 		}
 		result, err := tool.Execute(context.Background(), strParams)
@@ -184,13 +184,13 @@ func TestToolEdgeCases(t *testing.T) {
 		if result != expected {
 			t.Errorf("Expected '%s', got '%v'", expected, result)
 		}
-		
+
 		// Test with mixed number types
 		numParams := map[string]interface{}{
-			"int":    42.0,      // float to int
-			"float":  3,         // int to float
+			"int":    42.0, // float to int
+			"float":  3,    // int to float
 			"string": "hello",
-			"bool":   1,         // number to bool
+			"bool":   1, // number to bool
 		}
 		result, err = tool.Execute(context.Background(), numParams)
 		if err != nil {
@@ -201,7 +201,7 @@ func TestToolEdgeCases(t *testing.T) {
 			t.Errorf("Expected '%s', got '%v'", expected, result)
 		}
 	})
-	
+
 	// Test error handling
 	t.Run("ErrorHandling", func(t *testing.T) {
 		// Function that returns an error
@@ -211,9 +211,9 @@ func TestToolEdgeCases(t *testing.T) {
 			}
 			return "success", nil
 		}
-		
+
 		tool := NewTool("errorTool", "Tool that may return error", errorFunc, nil)
-		
+
 		// Test without error
 		result, err := tool.Execute(context.Background(), false)
 		if err != nil {
@@ -222,7 +222,7 @@ func TestToolEdgeCases(t *testing.T) {
 		if result != "success" {
 			t.Errorf("Expected 'success', got %v", result)
 		}
-		
+
 		// Test with error
 		_, err = tool.Execute(context.Background(), true)
 		if err == nil {

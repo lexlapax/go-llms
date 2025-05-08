@@ -19,21 +19,21 @@ func createMockMultiProvider() *provider.MultiProvider {
 		}
 		return "Default response", nil
 	})
-	
+
 	mp2 := provider.NewMockProvider().WithGenerateFunc(func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
 		if prompt == "What is the capital of France?" {
 			return "Paris is the capital city of France.", nil
 		}
 		return "Default response", nil
 	})
-	
+
 	mp3 := provider.NewMockProvider().WithGenerateFunc(func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
 		if prompt == "What is the capital of France?" {
 			return "France's capital is Paris.", nil
 		}
 		return "Default response", nil
 	})
-	
+
 	// Create a MultiProvider with all 3 providers
 	return provider.NewMultiProvider([]provider.ProviderWeight{
 		{Provider: mp1, Weight: 1.0, Name: "mock1"},
@@ -43,12 +43,12 @@ func createMockMultiProvider() *provider.MultiProvider {
 }
 
 func BenchmarkMultiProviderWithConsensus(b *testing.B) {
-	
+
 	// Test with various strategies and multiple inputs
 	testCases := []struct {
-		name     string
-		setupFn  func() *provider.MultiProvider
-		inputs   []string  // Different inputs to test with
+		name    string
+		setupFn func() *provider.MultiProvider
+		inputs  []string // Different inputs to test with
 	}{
 		{
 			name: "Fastest",
@@ -111,15 +111,15 @@ func BenchmarkMultiProviderWithConsensus(b *testing.B) {
 				mp1 := provider.NewMockProvider().WithPredefinedResponses(map[string]string{
 					"What is the capital of France?": "The capital of France is Paris.",
 				})
-				
+
 				mp2 := provider.NewMockProvider().WithPredefinedResponses(map[string]string{
 					"What is the capital of France?": "Paris is the capital city of France.",
 				})
-				
+
 				mp3 := provider.NewMockProvider().WithPredefinedResponses(map[string]string{
 					"What is the capital of France?": "France's capital is Paris.",
 				})
-				
+
 				// Create weighted providers
 				return provider.NewMultiProvider([]provider.ProviderWeight{
 					{Provider: mp1, Weight: 1.0, Name: "mock1"},
@@ -144,11 +144,11 @@ func BenchmarkMultiProviderWithConsensus(b *testing.B) {
 			},
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		b.Run(tc.name, func(b *testing.B) {
 			mp := tc.setupFn()
-			
+
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				// For the combined test, cycle through all strategies
@@ -163,11 +163,11 @@ func BenchmarkMultiProviderWithConsensus(b *testing.B) {
 						mp.WithConsensusStrategy(provider.ConsensusWeighted)
 					}
 				}
-				
+
 				// For tests with multiple inputs, rotate through them
 				inputIdx := i % len(tc.inputs)
 				input := tc.inputs[inputIdx]
-				
+
 				_, _ = mp.Generate(context.Background(), input)
 			}
 		})

@@ -108,15 +108,15 @@ func TestExtractJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ExtractJSON(tt.input)
-			
+
 			if tt.isEmpty && result != "" {
 				t.Errorf("Expected empty result, got: %s", result)
 			}
-			
+
 			if !tt.isEmpty && result == "" {
 				t.Errorf("Expected non-empty result, got empty string")
 			}
-			
+
 			if !tt.isEmpty && result != tt.expected {
 				t.Errorf("Expected %s, got %s", tt.expected, result)
 			}

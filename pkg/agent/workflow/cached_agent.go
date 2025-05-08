@@ -8,6 +8,7 @@ import (
 	"hash/fnv"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
@@ -19,56 +20,68 @@ import (
 // CachedAgent extends MultiAgent with response caching capabilities
 // It's designed to avoid redundant LLM API calls for repeated or similar requests
 type CachedAgent struct {
-	MultiAgent
-	
+	// Embed DefaultAgent directly to avoid copying MultiAgent's sync.Map
+	DefaultAgent
+
+	// MultiAgent components we need (we'll initialize these manually)
+	multiProviderMetrics *MultiProviderMetrics
+	providerContextCache sync.Map
+
 	// Response cache for storing and retrieving LLM responses
 	responseCache *ResponseCache
-	
+
 	// Configuration for caching behavior
 	cacheConfig CacheConfig
-	
+
 	// Cache statistics for monitoring
 	cacheStats CacheStats
+}
+
+// executeMultipleToolsParallel delegates to MultiAgent's implementation
+func (a *CachedAgent) executeMultipleToolsParallel(ctx context.Context, toolNames []string, paramsArray []interface{}) (string, error) {
+	// Create a MultiAgent instance to delegate to
+	multiAgent := &MultiAgent{DefaultAgent: a.DefaultAgent}
+	return multiAgent.executeMultipleToolsParallel(ctx, toolNames, paramsArray)
 }
 
 // CacheConfig holds configuration for the cache behavior
 type CacheConfig struct {
 	// Whether to enable caching (can be toggled at runtime)
 	Enabled bool
-	
+
 	// Maximum time to keep a cached entry
 	TTL time.Duration
-	
+
 	// Maximum number of entries in the cache
 	Capacity int
-	
+
 	// Whether to use fuzzy matching for cache lookups
 	// If true, will match similar queries even if not exactly the same
 	FuzzyMatching bool
-	
+
 	// Threshold for fuzzy matching (0.0-1.0)
 	FuzzyThreshold float64
-	
+
 	// Whether to share cache across all agent instances
 	UseGlobalCache bool
 }
 
 // CacheStats tracks cache performance metrics
 type CacheStats struct {
-	Hits                 int
-	Misses               int
-	StoredResponses      int
-	EvictedResponses     int
-	FuzzyMatchSuccesses  int
-	FuzzyMatchFailures   int
+	Hits                    int
+	Misses                  int
+	StoredResponses         int
+	EvictedResponses        int
+	FuzzyMatchSuccesses     int
+	FuzzyMatchFailures      int
 	AverageResponseSavingMs int64
-	LastCacheCleanup     time.Time
+	LastCacheCleanup        time.Time
 }
 
 // NewCachedAgent creates a new agent with caching capabilities
 func NewCachedAgent(provider ldomain.Provider) *CachedAgent {
 	multiAgent := NewMultiAgent(provider)
-	
+
 	// Default cache configuration
 	config := CacheConfig{
 		Enabled:        true,
@@ -78,20 +91,28 @@ func NewCachedAgent(provider ldomain.Provider) *CachedAgent {
 		FuzzyThreshold: 0.85,
 		UseGlobalCache: false,
 	}
-	
+
 	var cache *ResponseCache
 	if config.UseGlobalCache {
 		cache = GetGlobalResponseCache()
 	} else {
 		cache = NewResponseCache(config.Capacity, config.TTL)
 	}
-	
-	return &CachedAgent{
-		MultiAgent:    *multiAgent,
+
+	// Create a new CachedAgent without copying the MultiAgent struct
+	// This avoids copying the sync.Map which contains a sync.noCopy
+	agent := &CachedAgent{
 		responseCache: cache,
 		cacheConfig:   config,
 		cacheStats:    CacheStats{LastCacheCleanup: time.Now()},
 	}
+	
+	// Embed the MultiAgent using pointer semantics
+	agent.DefaultAgent = multiAgent.DefaultAgent
+	agent.multiProviderMetrics = multiAgent.multiProviderMetrics
+	agent.providerContextCache = sync.Map{} // Create a new sync.Map instead of copying
+	
+	return agent
 }
 
 // Run executes the agent with given inputs
@@ -131,23 +152,23 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 		if a.modelName != "" {
 			modelOption = append(modelOption, ldomain.WithModel(a.modelName))
 		}
-		
+
 		var cachedResponse ldomain.Response
 		var cacheHit bool
-		
+
 		if a.cacheConfig.FuzzyMatching {
 			cachedResponse, cacheHit = a.getFuzzyMatchFromCache(messages, modelOption)
 		} else {
 			cachedResponse, cacheHit = a.responseCache.Get(messages, modelOption)
 		}
-		
+
 		if cacheHit {
 			// We found a cached response, use it
 			a.cacheStats.Hits++
-			
+
 			// Process cached response for tool calls
 			toolCalls, multiParams, shouldCallMultipleTools := a.ExtractMultipleToolCalls(cachedResponse.Content)
-			
+
 			if shouldCallMultipleTools && len(toolCalls) > 0 {
 				// Process tool calls in parallel
 				toolResponses, err := a.executeMultipleToolsParallel(ctx, toolCalls, multiParams)
@@ -157,36 +178,36 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 						Role:    ldomain.RoleAssistant,
 						Content: cachedResponse.Content,
 					})
-					
+
 					// Add tool results
 					messages = append(messages, ldomain.Message{
 						Role:    ldomain.RoleUser,
 						Content: toolResponses,
 					})
-					
+
 					// Continue with a new generation for the tool results
 					// This generation is NOT cached to ensure we get fresh results
 					var options []ldomain.Option
 					if a.modelName != "" {
 						options = append(options, ldomain.WithModel(a.modelName))
 					}
-					
+
 					// Call hooks before generate
 					a.notifyBeforeGenerate(ctx, messages)
-					
+
 					resp, genErr := a.llmProvider.GenerateMessage(ctx, messages, options...)
-					
+
 					// Call hooks after generate
 					a.notifyAfterGenerate(ctx, resp, genErr)
-					
+
 					if genErr != nil {
 						return nil, fmt.Errorf("LLM generation failed after tool calls: %w", genErr)
 					}
-					
+
 					return resp.Content, nil
 				}
 			}
-			
+
 			// Check for single tool call
 			toolCall, params, shouldCallTool := a.ExtractToolCall(cachedResponse.Content)
 			if shouldCallTool {
@@ -195,13 +216,13 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 				if found {
 					// Call hooks before tool call
 					a.notifyBeforeToolCall(ctx, toolCall, params)
-					
+
 					// Execute the tool
 					toolResult, toolErr := tool.Execute(ctx, params)
-					
+
 					// Call hooks after tool call
 					a.notifyAfterToolCall(ctx, toolCall, toolResult, toolErr)
-					
+
 					// Format tool result
 					var toolRespContent string
 					if toolErr != nil {
@@ -221,37 +242,37 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 							}
 						}
 					}
-					
+
 					// Add messages and generate a response
 					messages = append(messages, ldomain.Message{
 						Role:    ldomain.RoleAssistant,
 						Content: cachedResponse.Content,
 					})
-					
+
 					messages = append(messages, ldomain.Message{
 						Role:    ldomain.RoleUser,
 						Content: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent),
 					})
-					
+
 					// Generate final response - NOT cached
 					var options []ldomain.Option
 					if a.modelName != "" {
 						options = append(options, ldomain.WithModel(a.modelName))
 					}
-					
+
 					// Call hooks
 					a.notifyBeforeGenerate(ctx, messages)
 					finalResp, finalErr := a.llmProvider.GenerateMessage(ctx, messages, options...)
 					a.notifyAfterGenerate(ctx, finalResp, finalErr)
-					
+
 					if finalErr != nil {
 						return nil, fmt.Errorf("LLM generation failed after tool call: %w", finalErr)
 					}
-					
+
 					return finalResp.Content, nil
 				}
 			}
-			
+
 			// If no tool calls or tool not found, just return the cached response
 			return cachedResponse.Content, nil
 		} else {
@@ -276,7 +297,7 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 		var resp ldomain.Response
 		var genErr error
 		startTime := time.Now()
-		
+
 		if schema != nil {
 			// If we have a schema, use structured generation
 			var result interface{}
@@ -293,7 +314,7 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 				options = append(options, ldomain.WithModel(a.modelName))
 			}
 			resp, genErr = a.llmProvider.GenerateMessage(ctx, messages, options...)
-			
+
 			// Cache the response if generation was successful and caching is enabled
 			if genErr == nil && a.cacheConfig.Enabled && i == 0 {
 				// Only cache the first response (not follow-up responses after tool calls)
@@ -304,7 +325,7 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 				}
 				a.responseCache.Set(messages, options, resp, modelName)
 				a.cacheStats.StoredResponses++
-				
+
 				// Track time saved for future cache hits
 				a.cacheStats.AverageResponseSavingMs = (a.cacheStats.AverageResponseSavingMs + time.Since(startTime).Milliseconds()) / 2
 			}
@@ -331,18 +352,18 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 			if err != nil {
 				return nil, fmt.Errorf("error executing tools: %w", err)
 			}
-			
+
 			// Add the assistant message and tool results
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleAssistant,
 				Content: resp.Content,
 			})
-			
+
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleUser,
 				Content: toolResponses,
 			})
-			
+
 			continue
 		}
 
@@ -359,7 +380,7 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 			// Tool not found, append error message and continue
 			errMsg := fmt.Sprintf("Tool '%s' not found. Available tools: %s",
 				toolCall, strings.Join(a.getToolNames(), ", "))
-			
+
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleAssistant,
 				Content: resp.Content,
@@ -431,19 +452,19 @@ func (a *CachedAgent) getFuzzyMatchFromCache(messages []ldomain.Message, options
 	if resp, found := a.responseCache.Get(messages, options); found {
 		return resp, true
 	}
-	
+
 	// If we only have system and one user message, try fuzzy matching on content
 	if len(messages) != 2 || messages[0].Role != ldomain.RoleSystem || messages[1].Role != ldomain.RoleUser {
 		return ldomain.Response{}, false
 	}
-	
+
 	// Get target message to match
 	targetMsg := messages[1].Content
 	_ = quickHash(targetMsg) // Just compute hash for future implementation
-	
+
 	// TODO: Implement proper fuzzy matching by comparing with other cached entries
 	// For now, we just use a simple message hash comparison
-	
+
 	// Cache hit not found
 	a.cacheStats.FuzzyMatchFailures++
 	return ldomain.Response{}, false
@@ -460,7 +481,7 @@ func (a *CachedAgent) cleanupCache() {
 	prevSize := a.responseCache.GetStats()["size"].(int)
 	a.responseCache.Cleanup()
 	newSize := a.responseCache.GetStats()["size"].(int)
-	
+
 	// Track evictions
 	a.cacheStats.EvictedResponses += prevSize - newSize
 	a.cacheStats.LastCacheCleanup = time.Now()
@@ -469,7 +490,7 @@ func (a *CachedAgent) cleanupCache() {
 // GetCacheStats returns statistics about the cache
 func (a *CachedAgent) GetCacheStats() map[string]interface{} {
 	stats := make(map[string]interface{})
-	
+
 	// Add our stats
 	stats["hits"] = a.cacheStats.Hits
 	stats["misses"] = a.cacheStats.Misses
@@ -483,7 +504,7 @@ func (a *CachedAgent) GetCacheStats() map[string]interface{} {
 	stats["fuzzy_match_failures"] = a.cacheStats.FuzzyMatchFailures
 	stats["avg_response_saving_ms"] = a.cacheStats.AverageResponseSavingMs
 	stats["last_cleanup"] = a.cacheStats.LastCacheCleanup.Format(time.RFC3339)
-	
+
 	// Add cache configuration
 	stats["config"] = map[string]interface{}{
 		"enabled":         a.cacheConfig.Enabled,
@@ -493,12 +514,12 @@ func (a *CachedAgent) GetCacheStats() map[string]interface{} {
 		"fuzzy_threshold": a.cacheConfig.FuzzyThreshold,
 		"global_cache":    a.cacheConfig.UseGlobalCache,
 	}
-	
+
 	// Merge with cache internals stats
 	for k, v := range a.responseCache.GetStats() {
 		stats["cache_"+k] = v
 	}
-	
+
 	return stats
 }
 
@@ -527,12 +548,12 @@ func (a *CachedAgent) ClearCache() {
 // WithModel specifies which LLM model to use
 // Override to reset context cache when model changes
 func (a *CachedAgent) WithModel(modelName string) domain.Agent {
-	// Call the parent implementation
-	a.MultiAgent.WithModel(modelName)
-	
+	// Call the parent implementation (DefaultAgent)
+	a.DefaultAgent.WithModel(modelName)
+
 	// Clear response cache since model has changed
 	a.ClearCache()
-	
+
 	return a
 }
 

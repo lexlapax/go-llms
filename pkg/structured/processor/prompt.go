@@ -38,24 +38,24 @@ func NewPromptEnhancer() domain.PromptEnhancer {
 func getSchemaJSON(schema *schemaDomain.Schema) ([]byte, error) {
 	// Get the schema cache
 	cache := getSchemaCache()
-	
+
 	// Generate a cache key for the schema
 	cacheKey := GenerateSchemaKey(schema)
-	
+
 	// Check cache first
 	if cachedJSON, found := cache.Get(cacheKey); found {
 		return cachedJSON, nil
 	}
-	
+
 	// Cache miss - marshal the schema to JSON
 	schemaJSON, err := json.MarshalIndent(schema, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal schema: %w", err)
 	}
-	
+
 	// Store in cache for future use
 	cache.Set(cacheKey, schemaJSON)
-	
+
 	return schemaJSON, nil
 }
 
@@ -70,16 +70,16 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 	// Calculate initial capacity based on input sizes to reduce allocations
 	// Start with prompt length + schema JSON length + standard text (~500 bytes)
 	initialCapacity := len(prompt) + len(schemaJSON) + 500
-	
+
 	// Account for property descriptions (est. ~50 bytes per property)
 	if schema.Type == "object" {
 		initialCapacity += len(schema.Properties) * 50
 	}
-	
+
 	// Build enhanced prompt with capacity pre-allocation
 	var enhancedPrompt strings.Builder
 	enhancedPrompt.Grow(initialCapacity)
-	
+
 	// Add the base prompt
 	enhancedPrompt.WriteString(prompt)
 	enhancedPrompt.WriteString("\n\n")
@@ -107,7 +107,7 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 		// Add descriptions for properties if available
 		if len(schema.Properties) > 0 {
 			enhancedPrompt.WriteString("4. Field descriptions:\n")
-			
+
 			// Fast path: only process properties with descriptions
 			hasDescriptions := false
 			for _, prop := range schema.Properties {
@@ -116,7 +116,7 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 					break
 				}
 			}
-			
+
 			if hasDescriptions {
 				for name, prop := range schema.Properties {
 					if prop.Description != "" {
@@ -162,20 +162,20 @@ func (p *PromptEnhancer) EnhanceWithOptions(prompt string, schema *schemaDomain.
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Calculate additional capacity needed for options
 	additionalCapacity := len(enhancedPrompt) + 100 // Base size + buffer
-	
+
 	// Estimate space for instructions
 	if instructions, ok := options["instructions"].(string); ok {
 		additionalCapacity += len(instructions) + 30
 	}
-	
+
 	// Estimate space for format
 	if format, ok := options["format"].(string); ok {
 		additionalCapacity += len(format) + 30
 	}
-	
+
 	// Estimate space for examples
 	if examples, ok := options["examples"].([]map[string]interface{}); ok {
 		// Rough estimate: 200 bytes per example

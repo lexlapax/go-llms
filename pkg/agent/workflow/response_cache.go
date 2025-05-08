@@ -16,10 +16,10 @@ import (
 
 // ResponseCacheEntry represents a cached response
 type ResponseCacheEntry struct {
-	Response    ldomain.Response
-	Timestamp   time.Time
-	UsageCount  int
-	Source      string // Description of where response came from (model, etc.)
+	Response   ldomain.Response
+	Timestamp  time.Time
+	UsageCount int
+	Source     string // Description of where response came from (model, etc.)
 }
 
 // ResponseCache provides a thread-safe cache for LLM responses
@@ -38,11 +38,11 @@ func NewResponseCache(capacity int, ttl time.Duration) *ResponseCache {
 	if capacity <= 0 {
 		capacity = 100 // Default capacity
 	}
-	
+
 	if ttl <= 0 {
 		ttl = 5 * time.Minute // Default TTL
 	}
-	
+
 	return &ResponseCache{
 		cache:    make(map[string]ResponseCacheEntry, capacity),
 		capacity: capacity,
@@ -55,21 +55,21 @@ func NewResponseCache(capacity int, ttl time.Duration) *ResponseCache {
 func (c *ResponseCache) Get(messages []ldomain.Message, options []ldomain.Option) (ldomain.Response, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	// Generate cache key from messages and options
 	key := c.generateCacheKey(messages, options)
-	
+
 	entry, found := c.cache[key]
 	if !found {
 		return ldomain.Response{}, false
 	}
-	
+
 	// Check if entry has expired
 	if time.Since(entry.Timestamp) > c.ttl {
 		// Will be cleaned up later by Cleanup method
 		return ldomain.Response{}, false
 	}
-	
+
 	// Update usage count (requires write lock)
 	c.mu.RUnlock()
 	c.mu.Lock()
@@ -77,7 +77,7 @@ func (c *ResponseCache) Get(messages []ldomain.Message, options []ldomain.Option
 	c.cache[key] = entry
 	c.mu.Unlock()
 	c.mu.RLock()
-	
+
 	return entry.Response, true
 }
 
@@ -85,15 +85,15 @@ func (c *ResponseCache) Get(messages []ldomain.Message, options []ldomain.Option
 func (c *ResponseCache) Set(messages []ldomain.Message, options []ldomain.Option, response ldomain.Response, source string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	// Clean up expired entries if cache is at capacity
 	if len(c.cache) >= c.capacity {
 		c.cleanupLocked()
 	}
-	
+
 	// Generate cache key
 	key := c.generateCacheKey(messages, options)
-	
+
 	// Update or insert entry
 	entry, found := c.cache[key]
 	if found {
@@ -118,7 +118,7 @@ func (c *ResponseCache) Set(messages []ldomain.Message, options []ldomain.Option
 func (c *ResponseCache) Invalidate(messages []ldomain.Message, options []ldomain.Option) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	key := c.generateCacheKey(messages, options)
 	delete(c.cache, key)
 }
@@ -127,7 +127,7 @@ func (c *ResponseCache) Invalidate(messages []ldomain.Message, options []ldomain
 func (c *ResponseCache) Cleanup() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.cleanupLocked()
 }
 
@@ -135,14 +135,14 @@ func (c *ResponseCache) Cleanup() {
 // that assumes the mutex is already locked
 func (c *ResponseCache) cleanupLocked() {
 	now := time.Now()
-	
+
 	// First pass: remove expired entries
 	for key, entry := range c.cache {
 		if now.Sub(entry.Timestamp) > c.ttl {
 			delete(c.cache, key)
 		}
 	}
-	
+
 	// If still over capacity, remove least recently used entries
 	if len(c.cache) > c.capacity {
 		// Convert map to slice for sorting
@@ -150,14 +150,14 @@ func (c *ResponseCache) cleanupLocked() {
 			key   string
 			entry ResponseCacheEntry
 		}, 0, len(c.cache))
-		
+
 		for k, v := range c.cache {
 			entries = append(entries, struct {
 				key   string
 				entry ResponseCacheEntry
 			}{k, v})
 		}
-		
+
 		// Sort by usage count and timestamp (older and less used first)
 		sort.Slice(entries, func(i, j int) bool {
 			// Primary sort by usage count
@@ -167,7 +167,7 @@ func (c *ResponseCache) cleanupLocked() {
 			// Secondary sort by timestamp
 			return entries[i].entry.Timestamp.Before(entries[j].entry.Timestamp)
 		})
-		
+
 		// Remove oldest entries until we're under capacity
 		for i := 0; i < len(entries) && len(c.cache) > c.capacity; i++ {
 			delete(c.cache, entries[i].key)
@@ -179,7 +179,7 @@ func (c *ResponseCache) cleanupLocked() {
 func (c *ResponseCache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.cache = make(map[string]ResponseCacheEntry, c.capacity)
 }
 
@@ -187,19 +187,19 @@ func (c *ResponseCache) Clear() {
 func (c *ResponseCache) GetStats() map[string]interface{} {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	stats := make(map[string]interface{})
 	stats["size"] = len(c.cache)
 	stats["capacity"] = c.capacity
 	stats["ttl_seconds"] = c.ttl.Seconds()
-	
+
 	// Count responses by source
 	sourceCount := make(map[string]int)
 	for _, entry := range c.cache {
 		sourceCount[entry.Source]++
 	}
 	stats["sources"] = sourceCount
-	
+
 	return stats
 }
 
@@ -214,27 +214,27 @@ func (c *ResponseCache) generateCacheKey(messages []ldomain.Message, options []l
 			"content": msg.Content,
 		})
 	}
-	
+
 	// Add options to the key if present
 	var optionsData []map[string]string
 	for _, opt := range options {
 		// Get option name and value through reflection
 		optType := fmt.Sprintf("%T", opt)
 		optStr := fmt.Sprintf("%v", opt)
-		
+
 		// Add to options data
 		optionsData = append(optionsData, map[string]string{
 			"type":  optType,
 			"value": optStr,
 		})
 	}
-	
+
 	// Create a combined structure for hashing
 	data := map[string]interface{}{
 		"messages": messageData,
 		"options":  optionsData,
 	}
-	
+
 	// Marshal to JSON and hash
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -248,7 +248,7 @@ func (c *ResponseCache) generateCacheKey(messages []ldomain.Message, options []l
 		}
 		return hashString(sb.String())
 	}
-	
+
 	return hashString(string(jsonData))
 }
 

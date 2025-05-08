@@ -15,19 +15,19 @@ import (
 func TestAgentExample(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
 	agent := workflow.NewAgent(mockProvider)
-	
+
 	// Add a calculator tool
 	agent.AddTool(testutils.CreateCalculatorTool())
-	
+
 	// Set a system prompt
 	agent.SetSystemPrompt("You are a helpful math assistant.")
-	
+
 	// Run the agent
 	result, err := agent.Run(context.Background(), "What is 2+2?")
 	if err != nil {
 		t.Fatalf("Agent failed to run: %v", err)
 	}
-	
+
 	// The result should not be empty
 	if result == "" {
 		t.Errorf("Expected non-empty result, got empty string")
@@ -38,29 +38,29 @@ func TestAgentExample(t *testing.T) {
 func TestCachedAgentExample(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
 	agent := workflow.NewCachedAgent(mockProvider)
-	
+
 	// Add a calculator tool
 	agent.AddTool(testutils.CreateCalculatorTool())
-	
+
 	// Set a system prompt
 	agent.SetSystemPrompt("You are a helpful assistant.")
-	
+
 	// Run the agent twice with the same query to test caching
 	result1, err := agent.Run(context.Background(), "What is 2+2?")
 	if err != nil {
 		t.Fatalf("First agent run failed: %v", err)
 	}
-	
+
 	result2, err := agent.Run(context.Background(), "What is 2+2?")
 	if err != nil {
 		t.Fatalf("Second agent run failed: %v", err)
 	}
-	
+
 	// Results should not be empty
 	if result1 == "" || result2 == "" {
 		t.Errorf("Expected non-empty results")
 	}
-	
+
 	// Check cache stats to verify caching worked
 	stats := agent.GetCacheStats()
 	if stats["hits"].(int) < 1 {
@@ -73,11 +73,11 @@ func TestCachedAgentExample(t *testing.T) {
 func TestMessageManagerExample(t *testing.T) {
 	// Test message manager with modest limits
 	config := workflow.MessageManagerConfig{
-		UseTokenTruncation:   true,
+		UseTokenTruncation:    true,
 		KeepAllSystemMessages: true,
 	}
 	manager := workflow.NewMessageManager(5, 500, config)
-	
+
 	// Test message management (rest of test implementation)
 	if manager.GetMessageCount() != 0 {
 		t.Errorf("Expected 0 messages initially, got %d", manager.GetMessageCount())
@@ -88,7 +88,7 @@ func TestMessageManagerExample(t *testing.T) {
 func TestToolExecutorExample(t *testing.T) {
 	// Create tool map
 	toolMap := make(map[string]domain.Tool)
-	
+
 	// Add calculator tool
 	toolMap["calculator"] = testutils.MockTool{
 		ToolName:        "calculator",
@@ -99,7 +99,7 @@ func TestToolExecutorExample(t *testing.T) {
 			}, nil
 		},
 	}
-	
+
 	// Add date tool
 	toolMap["date"] = testutils.MockTool{
 		ToolName:        "date",
@@ -110,30 +110,30 @@ func TestToolExecutorExample(t *testing.T) {
 			}, nil
 		},
 	}
-	
+
 	// Create executor
 	executor := workflow.NewToolExecutor(toolMap, 2, 1*time.Second, nil)
-	
+
 	// Execute multiple tools
 	toolNames := []string{"calculator", "date"}
 	params := []interface{}{
 		map[string]interface{}{"expression": "2+2"},
 		nil,
 	}
-	
+
 	results := executor.ExecuteToolsParallel(context.Background(), toolNames, params)
-	
+
 	// Check we have results for both tools
 	if len(results) != 2 {
 		t.Fatalf("Expected 2 results, got %d", len(results))
 	}
-	
+
 	// Calculator tool should have succeeded
 	calcResult, exists := results["calculator"]
 	if !exists || calcResult.Status != workflow.ToolStatusSuccess {
 		t.Errorf("Expected calculator success, got %v", calcResult.Status)
 	}
-	
+
 	// Date tool should have succeeded
 	dateResult, exists := results["date"]
 	if !exists || dateResult.Status != workflow.ToolStatusSuccess {

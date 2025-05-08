@@ -145,10 +145,10 @@ Do not try to calculate or determine dates yourself - use the provided tools.`)
 		}) (map[string]interface{}, error) {
 			result := params.A * params.B
 			return map[string]interface{}{
-				"result": result,
+				"result":      result,
 				"calculation": fmt.Sprintf("%g * %g = %g", params.A, params.B, result),
-				"a": params.A,
-				"b": params.B,
+				"a":           params.A,
+				"b":           params.B,
 			}, nil
 		},
 		&sdomain.Schema{
@@ -174,7 +174,7 @@ Do not try to calculate or determine dates yourself - use the provided tools.`)
 
 		// Create a test-specific context with metrics
 		ctx := workflow.WithMetrics(context.Background())
-		
+
 		// Define currentYear for later use in the test
 		currentYear := fmt.Sprintf("%d", time.Now().Year())
 
@@ -194,7 +194,7 @@ Do not try to calculate or determine dates yourself - use the provided tools.`)
 
 			// Extract JSON blocks from the response string
 			jsonBlocks := extractJSONBlocks(resultStr)
-			
+
 			var parsed bool
 			for _, jsonBlock := range jsonBlocks {
 				// For OpenAI format, check if we can parse the JSON structure
@@ -223,7 +223,7 @@ Do not try to calculate or determine dates yourself - use the provided tools.`)
 					}
 				}
 			}
-			
+
 			// If no JSON was successfully parsed
 			if !parsed {
 				t.Logf("Failed to parse tool_calls JSON from response")
@@ -239,11 +239,11 @@ Do not try to calculate or determine dates yourself - use the provided tools.`)
 			}
 
 			// Check that the result contains the calculation result or references to multiplication
-			if !strings.Contains(resultStr, "42") && 
-			   !strings.Contains(strings.ToLower(resultStr), "21 times 2") && 
-			   !strings.Contains(strings.ToLower(resultStr), "21 * 2") && 
-			   !strings.Contains(strings.ToLower(resultStr), "21*2") &&
-			   !strings.Contains(strings.ToLower(resultStr), "multiply") {
+			if !strings.Contains(resultStr, "42") &&
+				!strings.Contains(strings.ToLower(resultStr), "21 times 2") &&
+				!strings.Contains(strings.ToLower(resultStr), "21 * 2") &&
+				!strings.Contains(strings.ToLower(resultStr), "21*2") &&
+				!strings.Contains(strings.ToLower(resultStr), "multiply") {
 				t.Errorf("Expected result to contain calculation result '42' or reference to multiplication, got: %v", result)
 			}
 		}

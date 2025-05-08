@@ -131,7 +131,7 @@ func main() {
 
 	// Create advanced optimized agent (CachedAgent with all optimizations enabled)
 	cachedAgent := workflow.NewCachedAgent(llmProvider)
-	
+
 	// Use the Agent interface for compatibility
 	var agent agentDomain.Agent = cachedAgent
 
@@ -185,16 +185,16 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 
 	// Display metrics after the first run
 	displayMetrics(metricsHook)
-	
+
 	// Display cache metrics
 	displayCacheMetrics(cachedAgent)
-	
+
 	metricsHook.Reset() // Reset for next example
 
 	// Example 2: Multiple tools in one response
 	fmt.Println("\n=== Example 2: Multiple Tools in One Response ===")
 	fmt.Println("Running the agent with a query that should trigger multiple tool calls...")
-	
+
 	// Complex example - should trigger multiple tool calls
 	result, err = agent.Run(ctx, "What's the current date, what's 15 * 7, and can you fetch the title from https://example.com?")
 	if err != nil {
@@ -206,15 +206,15 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 
 	// Display metrics after the second run
 	displayMetrics(metricsHook)
-	
+
 	// Display cache metrics
 	displayCacheMetrics(cachedAgent)
-	
+
 	metricsHook.Reset()
 
 	// Example 3: Parallel tool execution example
 	fmt.Println("\n=== Example 3: Parallel Tool Execution ===")
-	
+
 	// Create multiple temporary files for testing parallel operations
 	tempDir := os.TempDir()
 	tempFiles := []string{
@@ -222,19 +222,19 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 		filepath.Join(tempDir, "go-llms-agent-test2.txt"),
 		filepath.Join(tempDir, "go-llms-agent-test3.txt"),
 	}
-	
+
 	// Create the files with different content
 	os.WriteFile(tempFiles[0], []byte("This is file 1.\nIt contains information about tools."), 0644)
 	os.WriteFile(tempFiles[1], []byte("This is file 2.\nIt contains information about agents."), 0644)
 	os.WriteFile(tempFiles[2], []byte("This is file 3.\nIt contains information about providers."), 0644)
-	
+
 	// Clean up files when done
 	defer func() {
 		for _, file := range tempFiles {
 			os.Remove(file)
 		}
 	}()
-	
+
 	// Prepare a prompt that requires multiple operations in parallel
 	prompt := fmt.Sprintf("Please perform these operations in parallel:\n"+
 		"1. Read file %s and extract the key topic.\n"+
@@ -243,14 +243,14 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 		"4. Calculate 25 * 42.\n"+
 		"5. Get the current date.\n"+
 		"Summarize all results together.", tempFiles[0], tempFiles[1], tempFiles[2])
-	
+
 	fmt.Println("Running parallel tool operations...")
-	
+
 	// Start timing for parallel execution
 	startTime := time.Now()
 	result, err = agent.Run(ctx, prompt)
 	duration := time.Since(startTime)
-	
+
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
@@ -258,25 +258,25 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 		fmt.Println(result)
 		fmt.Printf("\nTotal execution time: %v\n", duration)
 	}
-	
+
 	// Display metrics
 	displayMetrics(metricsHook)
-	
+
 	// Display cache metrics
 	displayCacheMetrics(cachedAgent)
-	
+
 	metricsHook.Reset()
-	
+
 	// Example 4: Demonstrate caching with repeated queries
 	fmt.Println("\n=== Example 4: Caching with Repeated Queries ===")
-	
+
 	// Ensure caching is enabled
 	cachedAgent.EnableCaching(true)
 	fmt.Println("Response caching is enabled")
-	
+
 	// Define a query that will be repeated
 	repeatedQuery := "What's 25 * 42 and what's the current year?"
-	
+
 	// First run - should hit the provider
 	fmt.Println("\nFirst run of repeated query (should miss cache):")
 	startTime1 := time.Now()
@@ -289,7 +289,7 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 		fmt.Println(result1)
 		fmt.Printf("Duration: %v\n", duration1)
 	}
-	
+
 	// Second run - should hit the cache
 	fmt.Println("\nSecond run of identical query (should hit cache):")
 	startTime2 := time.Now()
@@ -301,7 +301,7 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 		fmt.Println("\nResult (second run):")
 		fmt.Println(result2)
 		fmt.Printf("Duration: %v\n", duration2)
-		
+
 		// Display cache hit metrics
 		if cachedAgent, ok := agent.(*workflow.CachedAgent); ok {
 			stats := cachedAgent.GetCacheStats()
@@ -309,10 +309,10 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 			fmt.Printf("Time saved: approximately %v\n", duration1-duration2)
 		}
 	}
-	
+
 	// Example 5: Complex analysis with schema
 	fmt.Println("\n=== Example 5: Structured Output with Schema ===")
-	
+
 	// Define a schema for analysis results
 	analysisSchema := &schemaDomain.Schema{
 		Type: "object",
@@ -346,7 +346,7 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 		},
 		Required: []string{"analysis", "tools_used"},
 	}
-	
+
 	// Run a complex analysis with schema
 	result, err = agent.RunWithSchema(
 		ctx,
@@ -361,22 +361,22 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 		fmt.Println("\nStructured Result:")
 		fmt.Println(string(resultJSON))
 	}
-	
+
 	// Display metrics and reset
 	displayMetrics(metricsHook)
-	
+
 	// Display cache metrics (for CachedAgent)
 	if cachedAgent, ok := agent.(*workflow.CachedAgent); ok {
 		displayCacheMetrics(cachedAgent)
 	}
-	
+
 	customHook.PrintSummary()
 }
 
 // displayMetrics prints the metrics collected by the metrics hook
 func displayMetrics(hook *workflow.MetricsHook) {
 	metrics := hook.GetMetrics()
-	
+
 	fmt.Println("\nAgent Metrics:")
 	fmt.Println("===================")
 	fmt.Printf("Total requests:       %d\n", metrics.Requests)
@@ -385,13 +385,13 @@ func displayMetrics(hook *workflow.MetricsHook) {
 	fmt.Printf("Errors:               %d\n", metrics.ErrorCount)
 	fmt.Printf("Total tokens:         %d\n", metrics.TotalTokens)
 	fmt.Printf("Average gen time:     %.2f ms\n", metrics.AverageGenTimeMs)
-	
+
 	if len(metrics.ToolStats) > 0 {
 		fmt.Println("\nTool Statistics:")
 		fmt.Println("--------------------")
 		fmt.Printf("%-20s | %-8s | %-12s | %-12s | %-12s\n", "Tool", "Calls", "Avg Time (ms)", "Fastest (ms)", "Slowest (ms)")
 		fmt.Println(strings.Repeat("-", 78))
-		
+
 		for tool, stats := range metrics.ToolStats {
 			fmt.Printf("%-20s | %-8d | %-12.2f | %-12.2f | %-12.2f\n",
 				tool, stats.Calls, stats.AverageTimeMs, stats.FastestCallMs, stats.SlowestCallMs)
@@ -402,21 +402,21 @@ func displayMetrics(hook *workflow.MetricsHook) {
 // displayCacheMetrics displays statistics from the response cache
 func displayCacheMetrics(agent *workflow.CachedAgent) {
 	stats := agent.GetCacheStats()
-	
+
 	fmt.Println("\nCache Metrics:")
 	fmt.Println("===================")
 	fmt.Printf("Cache hits:           %d\n", stats["hits"])
 	fmt.Printf("Cache misses:         %d\n", stats["misses"])
-	
+
 	// Calculate and display hit ratio
 	hitRatio, _ := stats["hit_ratio"].(float64)
 	fmt.Printf("Hit ratio:            %.2f%%\n", hitRatio*100)
-	
+
 	fmt.Printf("Stored responses:     %d\n", stats["stored_responses"])
 	fmt.Printf("Evicted responses:    %d\n", stats["evicted_responses"])
 	fmt.Printf("Current cache size:   %d\n", stats["cache_size"])
 	fmt.Printf("Cache capacity:       %d\n", stats["config"].(map[string]interface{})["capacity"])
-	
+
 	// Display average response time saved
 	if avgSaved, ok := stats["avg_response_saving_ms"].(int64); ok && avgSaved > 0 {
 		fmt.Printf("Avg time saved:       %d ms/request\n", avgSaved)
@@ -432,16 +432,16 @@ func addTools(agent agentDomain.Agent) {
 		func() map[string]string {
 			now := time.Now()
 			return map[string]string{
-				"date":          now.Format("2006-01-02"),
-				"time":          now.Format("15:04:05"),
-				"year":          strconv.Itoa(now.Year()),
-				"month":         now.Month().String(),
-				"day":           strconv.Itoa(now.Day()),
-				"weekday":       now.Weekday().String(),
-				"timezone":      now.Location().String(),
-				"unix_epoch":    strconv.FormatInt(now.Unix(), 10),
-				"days_in_month": strconv.Itoa(daysInMonth(now.Year(), now.Month())),
-				"days_in_year":  strconv.Itoa(daysInYear(now.Year())),
+				"date":              now.Format("2006-01-02"),
+				"time":              now.Format("15:04:05"),
+				"year":              strconv.Itoa(now.Year()),
+				"month":             now.Month().String(),
+				"day":               strconv.Itoa(now.Day()),
+				"weekday":           now.Weekday().String(),
+				"timezone":          now.Location().String(),
+				"unix_epoch":        strconv.FormatInt(now.Unix(), 10),
+				"days_in_month":     strconv.Itoa(daysInMonth(now.Year(), now.Month())),
+				"days_in_year":      strconv.Itoa(daysInYear(now.Year())),
 				"days_left_in_year": strconv.Itoa(daysLeftInYear(now)),
 			}
 		},
@@ -466,7 +466,7 @@ func addTools(agent agentDomain.Agent) {
 					"error":   err.Error(),
 				}, nil
 			}
-			
+
 			return map[string]interface{}{
 				"success":    true,
 				"expression": params.Expression,
@@ -484,7 +484,7 @@ func addTools(agent agentDomain.Agent) {
 			Required: []string{"expression"},
 		},
 	))
-	
+
 	// 3. Web fetch tool
 	agent.AddTool(tools.NewTool(
 		"web_fetch",
@@ -496,7 +496,7 @@ func addTools(agent agentDomain.Agent) {
 			client := &http.Client{
 				Timeout: 30 * time.Second,
 			}
-			
+
 			// Basic validation of URL
 			if !strings.HasPrefix(params.URL, "http://") && !strings.HasPrefix(params.URL, "https://") {
 				return nil, fmt.Errorf("invalid URL: must begin with http:// or https://")
@@ -559,7 +559,7 @@ func addTools(agent agentDomain.Agent) {
 			Required: []string{"url"},
 		},
 	))
-	
+
 	// 4. Read file tool
 	agent.AddTool(tools.NewTool(
 		"read_file",
@@ -590,7 +590,7 @@ func addTools(agent agentDomain.Agent) {
 			if err != nil {
 				return nil, fmt.Errorf("error accessing file: %v", err)
 			}
-			
+
 			// Don't read directories
 			if fileInfo.IsDir() {
 				return nil, fmt.Errorf("cannot read directory, specify a file path")
@@ -622,7 +622,7 @@ func addTools(agent agentDomain.Agent) {
 			Required: []string{"path"},
 		},
 	))
-	
+
 	// 5. Write file tool
 	agent.AddTool(tools.NewTool(
 		"write_file",
@@ -662,10 +662,10 @@ func addTools(agent agentDomain.Agent) {
 			fileInfo, err := os.Stat(cleanPath)
 			if err != nil {
 				return map[string]interface{}{
-					"success":     true,
-					"path":        cleanPath,
-					"bytes":       len(params.Content),
-					"error_info":  "File written but could not get file info: " + err.Error(),
+					"success":    true,
+					"path":       cleanPath,
+					"bytes":      len(params.Content),
+					"error_info": "File written but could not get file info: " + err.Error(),
 				}, nil
 			}
 
@@ -693,7 +693,7 @@ func addTools(agent agentDomain.Agent) {
 			Required: []string{"path", "content"},
 		},
 	))
-	
+
 	// 6. Execute command tool (very limited and secure)
 	agent.AddTool(tools.NewTool(
 		"execute_command",
@@ -704,47 +704,47 @@ func addTools(agent agentDomain.Agent) {
 			// Extremely restricted command execution
 			// Only allow specific commands
 			cmd := strings.TrimSpace(params.Command)
-			
+
 			// Only allow certain commands (extreme caution for a real app!)
 			allowedCommands := map[string]bool{
 				"echo": true,
 				"ls":   true,
 				"pwd":  true,
 			}
-			
+
 			// Extract the base command (everything before first space)
 			baseCmd := cmd
 			if idx := strings.Index(cmd, " "); idx > 0 {
 				baseCmd = cmd[:idx]
 			}
-			
+
 			// Check if command is allowed
 			if !allowedCommands[baseCmd] {
 				return nil, fmt.Errorf("command not allowed for security reasons: %s", baseCmd)
 			}
-			
+
 			// Set a short timeout
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			
+
 			// Create and execute the command
 			var stdout, stderr bytes.Buffer
 			execCmd := exec.CommandContext(ctx, "sh", "-c", cmd)
 			execCmd.Stdout = &stdout
 			execCmd.Stderr = &stderr
-			
+
 			err := execCmd.Run()
-			
+
 			result := map[string]interface{}{
 				"command": cmd,
 				"stdout":  stdout.String(),
 				"stderr":  stderr.String(),
 			}
-			
+
 			if ctx.Err() == context.DeadlineExceeded {
 				return nil, fmt.Errorf("command timed out after 5 seconds")
 			}
-			
+
 			if err != nil {
 				result["success"] = false
 				result["error"] = err.Error()
@@ -752,7 +752,7 @@ func addTools(agent agentDomain.Agent) {
 				result["success"] = true
 				result["exit_code"] = 0
 			}
-			
+
 			return result, nil
 		},
 		&schemaDomain.Schema{
@@ -771,7 +771,7 @@ func addTools(agent agentDomain.Agent) {
 // Helper functions for the calculator tool
 func evaluateExpression(expr string) (float64, error) {
 	expr = strings.TrimSpace(expr)
-	
+
 	// Check for sqrt operation
 	if strings.HasPrefix(expr, "sqrt(") && strings.HasSuffix(expr, ")") {
 		numStr := expr[5 : len(expr)-1]
@@ -784,7 +784,7 @@ func evaluateExpression(expr string) (float64, error) {
 		}
 		return math.Sqrt(num), nil
 	}
-	
+
 	// Check for factorial operation
 	if strings.HasPrefix(expr, "factorial(") && strings.HasSuffix(expr, ")") {
 		numStr := expr[10 : len(expr)-1]
@@ -792,20 +792,20 @@ func evaluateExpression(expr string) (float64, error) {
 		if err != nil {
 			return 0, fmt.Errorf("invalid number for factorial: %s", numStr)
 		}
-		
+
 		// Convert to int and check if it's a positive integer
 		intNum := int(num)
 		if float64(intNum) != num || intNum < 0 {
 			return 0, fmt.Errorf("factorial only works on non-negative integers")
 		}
-		
+
 		result := 1
 		for i := 2; i <= intNum; i++ {
 			result *= i
 		}
 		return float64(result), nil
 	}
-	
+
 	// Handle basic arithmetic
 	parts := strings.Split(expr, "*")
 	if len(parts) == 2 {
@@ -888,5 +888,5 @@ func daysInYear(year int) int {
 func daysLeftInYear(now time.Time) int {
 	year := now.Year()
 	endOfYear := time.Date(year, 12, 31, 23, 59, 59, 0, now.Location())
-	return int(endOfYear.Sub(now).Hours() / 24) + 1
+	return int(endOfYear.Sub(now).Hours()/24) + 1
 }

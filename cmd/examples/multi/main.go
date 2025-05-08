@@ -80,12 +80,12 @@ func runWithMockProviders() {
 	fmt.Println("\n=== Multi-Provider Example with Simulated Providers ===")
 	fmt.Println("\nStrategy: FASTEST (returns the fastest response)")
 	fastestProvider := provider.NewMultiProvider(providers, provider.StrategyFastest)
-	
+
 	// Record start time
 	start := time.Now()
 	response, err := fastestProvider.Generate(context.Background(), "What is Go's concurrency model?")
 	elapsed := time.Since(start)
-	
+
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
@@ -97,12 +97,12 @@ func runWithMockProviders() {
 	fmt.Println("\nStrategy: PRIMARY (tries primary first, falls back to others)")
 	primaryProvider := provider.NewMultiProvider(providers, provider.StrategyPrimary).
 		WithPrimaryProvider(0) // Use slow provider as primary
-	
+
 	// Record start time
 	start = time.Now()
 	response, err = primaryProvider.Generate(context.Background(), "What is Go's concurrency model?")
 	elapsed = time.Since(start)
-	
+
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
@@ -129,16 +129,16 @@ func runWithMockProviders() {
 
 func runWithRealProviders(providers []provider.ProviderWeight) {
 	fmt.Println("\n=== Multi-Provider Example with Real Providers ===")
-	
+
 	// Create a multi-provider with the fastest strategy
 	fmt.Println("\nStrategy: FASTEST (returns the fastest response)")
 	fastestProvider := provider.NewMultiProvider(providers, provider.StrategyFastest)
-	
+
 	// Record start time
 	start := time.Now()
 	response, err := fastestProvider.Generate(context.Background(), "What is Go's concurrency model?")
 	elapsed := time.Since(start)
-	
+
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
@@ -150,12 +150,12 @@ func runWithRealProviders(providers []provider.ProviderWeight) {
 	fmt.Println("\nStrategy: PRIMARY (tries primary first, falls back to others)")
 	primaryProvider := provider.NewMultiProvider(providers, provider.StrategyPrimary).
 		WithPrimaryProvider(0)
-	
+
 	// Record start time
 	start = time.Now()
 	response, err = primaryProvider.Generate(context.Background(), "Explain the difference between goroutines and OS threads.")
 	elapsed = time.Since(start)
-	
+
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
@@ -169,11 +169,11 @@ func runWithRealProviders(providers []provider.ProviderWeight) {
 		{Role: domain.RoleSystem, Content: "You are a Go programming expert."},
 		{Role: domain.RoleUser, Content: "What are some best practices for error handling in Go?"},
 	}
-	
+
 	start = time.Now()
 	messageResponse, err := fastestProvider.GenerateMessage(context.Background(), messages)
 	elapsed = time.Since(start)
-	
+
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
@@ -190,16 +190,16 @@ func createDelayedMockProvider(delay time.Duration, prefix string) domain.Provid
 			case <-ctx.Done():
 				return "", ctx.Err()
 			case <-time.After(delay):
-				return fmt.Sprintf("[%s PROVIDER] Response after %v delay to: %s", 
+				return fmt.Sprintf("[%s PROVIDER] Response after %v delay to: %s",
 					prefix, delay, prompt), nil
 			}
 		}).WithStreamFunc(
 		func(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
 			tokenCh := make(chan domain.Token, 5)
-			
+
 			go func() {
 				defer close(tokenCh)
-				
+
 				// Wait for initial delay
 				select {
 				case <-ctx.Done():
@@ -207,7 +207,7 @@ func createDelayedMockProvider(delay time.Duration, prefix string) domain.Provid
 				case <-time.After(delay):
 					// Continue after delay
 				}
-				
+
 				// Send tokens with small delays between them
 				tokens := []string{
 					fmt.Sprintf("[%s PROVIDER] ", prefix),
@@ -215,7 +215,7 @@ func createDelayedMockProvider(delay time.Duration, prefix string) domain.Provid
 					"Second benefit: Low pause times. ",
 					"Third benefit: Concurrent collection.",
 				}
-				
+
 				for i, token := range tokens {
 					// Check for cancellation
 					select {
@@ -227,7 +227,7 @@ func createDelayedMockProvider(delay time.Duration, prefix string) domain.Provid
 					}
 				}
 			}()
-			
+
 			return tokenCh, nil
 		})
 }

@@ -255,7 +255,7 @@ func addRequestedTools(agent agentDomain.Agent, toolNames []string) {
 					client := &http.Client{
 						Timeout: 30 * time.Second,
 					}
-					
+
 					// Validate URL (basic check)
 					if !strings.HasPrefix(params.URL, "http://") && !strings.HasPrefix(params.URL, "https://") {
 						return nil, fmt.Errorf("invalid URL: must begin with http:// or https://")
@@ -282,10 +282,10 @@ func addRequestedTools(agent agentDomain.Agent, toolNames []string) {
 
 					// Return the content and metadata
 					return map[string]string{
-						"content":     string(body),
-						"status_code": strconv.Itoa(resp.StatusCode),
+						"content":      string(body),
+						"status_code":  strconv.Itoa(resp.StatusCode),
 						"content_type": resp.Header.Get("Content-Type"),
-						"url":         params.URL,
+						"url":          params.URL,
 					}, nil
 				},
 				&schemaDomain.Schema{
@@ -384,10 +384,10 @@ func addRequestedTools(agent agentDomain.Agent, toolNames []string) {
 					}
 
 					return map[string]string{
-						"success":  "true",
-						"path":     cleanPath,
-						"bytes":    strconv.Itoa(len(params.Content)),
-						"message":  "File written successfully",
+						"success": "true",
+						"path":    cleanPath,
+						"bytes":   strconv.Itoa(len(params.Content)),
+						"message": "File written successfully",
 					}, nil
 				},
 				&schemaDomain.Schema{
@@ -426,7 +426,7 @@ func addRequestedTools(agent agentDomain.Agent, toolNames []string) {
 
 					// Create command
 					cmd := exec.CommandContext(ctx, "sh", "-c", params.Command)
-					
+
 					// Capture stdout and stderr
 					var stdout, stderr bytes.Buffer
 					cmd.Stdout = &stdout
@@ -434,11 +434,11 @@ func addRequestedTools(agent agentDomain.Agent, toolNames []string) {
 
 					// Run the command
 					err := cmd.Run()
-					
+
 					// Build the response
 					result := map[string]string{
-						"stdout": stdout.String(),
-						"stderr": stderr.String(),
+						"stdout":  stdout.String(),
+						"stderr":  stderr.String(),
 						"command": params.Command,
 					}
 
@@ -506,7 +506,7 @@ func newChatCmd() *cobra.Command {
 			systemPrompt, _ := cmd.Flags().GetString("system")
 			temperature, _ := cmd.Flags().GetFloat32("temperature")
 			maxTokens, _ := cmd.Flags().GetInt("max-tokens")
-			
+
 			// Create the LLM provider based on provider type
 			var llmProvider llmDomain.Provider
 			switch providerType {
@@ -548,7 +548,7 @@ func newChatCmd() *cobra.Command {
 				if !scanner.Scan() {
 					break
 				}
-				
+
 				userInput := scanner.Text()
 				if userInput == "exit" || userInput == "quit" {
 					fmt.Println("Ending chat session")
@@ -610,7 +610,7 @@ func newCompleteCmd() *cobra.Command {
 			temperature, _ := cmd.Flags().GetFloat32("temperature")
 			maxTokens, _ := cmd.Flags().GetInt("max-tokens")
 			stream, _ := cmd.Flags().GetBool("stream")
-			
+
 			// Get the prompt - combine all args with spaces
 			prompt := strings.Join(args, " ")
 
@@ -629,7 +629,7 @@ func newCompleteCmd() *cobra.Command {
 			}
 
 			ctx := context.Background()
-			
+
 			// Set up generation options
 			options := []llmDomain.Option{
 				llmDomain.WithTemperature(float64(temperature)),
@@ -659,7 +659,7 @@ func newCompleteCmd() *cobra.Command {
 					fmt.Fprintf(os.Stderr, "Generation error: %v\n", err)
 					os.Exit(1)
 				}
-				
+
 				fmt.Println(response)
 			}
 		},
@@ -694,13 +694,13 @@ func newAgentCmd() *cobra.Command {
 			toolNames, _ := cmd.Flags().GetStringSlice("tools")
 			systemPrompt, _ := cmd.Flags().GetString("system")
 			schemaPath, _ := cmd.Flags().GetString("schema")
-			verbose, _ := cmd.Flags().GetBool("verbose") 
+			verbose, _ := cmd.Flags().GetBool("verbose")
 			// temperature is defined but not used since agent interface doesn't support setting it
 			_, _ = cmd.Flags().GetFloat32("temperature")
-			
+
 			// Get the prompt - combine all args with spaces
 			prompt := strings.Join(args, " ")
-			
+
 			// Create the LLM provider based on provider type
 			var llmProvider llmDomain.Provider
 			switch providerType {
@@ -717,17 +717,17 @@ func newAgentCmd() *cobra.Command {
 
 			// Create an agent
 			agent := workflow.NewAgent(llmProvider)
-			
+
 			// Set the model
 			agent.WithModel(modelName)
-			
+
 			// Set system prompt if provided
 			if systemPrompt != "" {
 				agent.SetSystemPrompt(systemPrompt)
 			} else {
 				agent.SetSystemPrompt("You are a helpful assistant that can answer questions and use tools when necessary.")
 			}
-			
+
 			// Set options (if we want to configure temperature, we'll have to add that method to the Agent interface)
 
 			// Add logging hook if verbose
@@ -739,20 +739,20 @@ func newAgentCmd() *cobra.Command {
 				logger = slog.New(handler)
 				agent.WithHook(workflow.NewLoggingHook(logger, workflow.LogLevelDetailed))
 			}
-			
+
 			// Add metrics hook
 			metricsHook := workflow.NewMetricsHook()
 			agent.WithHook(metricsHook)
-			
+
 			// Add the requested tools
 			addRequestedTools(agent, toolNames)
-			
+
 			// Create context with metrics
 			ctx := workflow.WithMetrics(context.Background())
 
 			var result interface{}
 			var runErr error
-			
+
 			// Run with schema if provided
 			if schemaPath != "" {
 				// Read schema file
@@ -769,24 +769,24 @@ func newAgentCmd() *cobra.Command {
 					fmt.Fprintf(os.Stderr, "Error parsing schema: %v\n", err)
 					os.Exit(1)
 				}
-				
+
 				// Run with schema
 				result, runErr = agent.RunWithSchema(ctx, prompt, &schema)
 			} else {
 				// Run without schema
 				result, runErr = agent.Run(ctx, prompt)
 			}
-			
+
 			// Handle errors
 			if runErr != nil {
 				fmt.Fprintf(os.Stderr, "Agent execution error: %v\n", runErr)
 				os.Exit(1)
 			}
-			
+
 			// Display the result
 			fmt.Println("\nAgent Result:")
 			fmt.Println("--------------")
-			
+
 			// Format the result based on type
 			switch v := result.(type) {
 			case string:
@@ -798,7 +798,7 @@ func newAgentCmd() *cobra.Command {
 				resultJSON, _ := json.MarshalIndent(result, "", "  ")
 				fmt.Println(string(resultJSON))
 			}
-			
+
 			// Display metrics if verbose
 			if verbose {
 				fmt.Println("\nMetrics:")
@@ -809,7 +809,7 @@ func newAgentCmd() *cobra.Command {
 				fmt.Printf("Errors: %d\n", metrics.ErrorCount)
 				fmt.Printf("Total tokens: %d\n", metrics.TotalTokens)
 				fmt.Printf("Average generation time: %.2f ms\n", metrics.AverageGenTimeMs)
-				
+
 				if len(metrics.ToolStats) > 0 {
 					fmt.Println("\nTool Usage:")
 					for tool, stats := range metrics.ToolStats {
@@ -820,7 +820,7 @@ func newAgentCmd() *cobra.Command {
 			}
 		},
 	}
-	
+
 	cmd.Flags().StringSliceP("tools", "t", []string{"calculator", "date"}, "Tools to enable (comma-separated, available: calculator, date, web, read_file, write_file, execute_command)")
 	cmd.Flags().StringP("system", "s", "", "System prompt for the agent")
 	cmd.Flags().StringP("schema", "S", "", "Path to output schema file")
@@ -875,7 +875,7 @@ func newStructuredCmd() *cobra.Command {
 			maxTokens, _ := cmd.Flags().GetInt("max-tokens")
 			outputFile, _ := cmd.Flags().GetString("output-file")
 			shouldValidate, _ := cmd.Flags().GetBool("validate")
-			
+
 			// Get the prompt - combine all args with spaces
 			prompt := strings.Join(args, " ")
 
@@ -906,7 +906,7 @@ func newStructuredCmd() *cobra.Command {
 			}
 
 			ctx := context.Background()
-			
+
 			// Set up generation options
 			options := []llmDomain.Option{
 				llmDomain.WithTemperature(float64(temperature)),

@@ -19,13 +19,13 @@ func BenchmarkJSONMarshal(b *testing.B) {
 
 	// Complex struct with nested fields - similar to request bodies in providers
 	complexStruct := struct {
-		Model       string                   `json:"model"`
-		Messages    []map[string]interface{} `json:"messages"`
-		Temperature float64                  `json:"temperature,omitempty"`
-		MaxTokens   int                      `json:"max_tokens,omitempty"`
-		Stream      bool                     `json:"stream,omitempty"`
-		StopSequences []string              `json:"stop,omitempty"`
-		Tools        []map[string]interface{} `json:"tools,omitempty"`
+		Model         string                   `json:"model"`
+		Messages      []map[string]interface{} `json:"messages"`
+		Temperature   float64                  `json:"temperature,omitempty"`
+		MaxTokens     int                      `json:"max_tokens,omitempty"`
+		Stream        bool                     `json:"stream,omitempty"`
+		StopSequences []string                 `json:"stop,omitempty"`
+		Tools         []map[string]interface{} `json:"tools,omitempty"`
 	}{
 		Model: "gpt-4-turbo",
 		Messages: []map[string]interface{}{
@@ -42,15 +42,15 @@ func BenchmarkJSONMarshal(b *testing.B) {
 		{
 			"index": 0,
 			"message": map[string]interface{}{
-				"role": "assistant",
-				"content": "JSON (JavaScript Object Notation) is a lightweight data interchange format that is easy for humans to read and write and easy for machines to parse and generate. Here's a comprehensive overview of JSON performance in Go...",
+				"role":          "assistant",
+				"content":       "JSON (JavaScript Object Notation) is a lightweight data interchange format that is easy for humans to read and write and easy for machines to parse and generate. Here's a comprehensive overview of JSON performance in Go...",
 				"function_call": nil,
 				"tool_calls": []map[string]interface{}{
 					{
-						"id": "call_123",
+						"id":   "call_123",
 						"type": "function",
 						"function": map[string]interface{}{
-							"name": "get_weather",
+							"name":      "get_weather",
 							"arguments": `{"location": "San Francisco", "unit": "celsius"}`,
 						},
 					},
@@ -134,7 +134,7 @@ func BenchmarkJSONMarshal(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// Benchmark optimized JSON marshaling with buffer reuse
 	b.Run("OptimizedJSON_WithBuffer_LargeStruct", func(b *testing.B) {
 		buf := &bytes.Buffer{}
@@ -147,7 +147,7 @@ func BenchmarkJSONMarshal(b *testing.B) {
 			// Don't do anything with the buffer - it will be reused
 		}
 	})
-	
+
 	// Benchmark string-optimized marshaling
 	b.Run("OptimizedJSON_ToString_LargeStruct", func(b *testing.B) {
 		b.ResetTimer()
@@ -164,7 +164,7 @@ func BenchmarkJSONMarshal(b *testing.B) {
 func BenchmarkJSONUnmarshal(b *testing.B) {
 	// Simple JSON
 	simpleJSON := []byte(`{"name":"John Doe","age":30,"email":"john@example.com"}`)
-	
+
 	// Medium JSON - typical provider request
 	mediumJSON := []byte(`{
 		"model": "gpt-4-turbo",
@@ -175,7 +175,7 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 		"temperature": 0.7,
 		"max_tokens": 1024
 	}`)
-	
+
 	// Large JSON - typical provider response
 	largeJSON := []byte(`{
 		"id": "chatcmpl-123456789",
@@ -208,7 +208,7 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 			"total_tokens": 434
 		}
 	}`)
-	
+
 	// Benchmark standard JSON unmarshaling for simple JSON
 	b.Run("StandardJSON_SimpleUnmarshal", func(b *testing.B) {
 		b.ResetTimer()
@@ -220,7 +220,7 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// Benchmark optimized JSON unmarshaling for simple JSON
 	b.Run("OptimizedJSON_SimpleUnmarshal", func(b *testing.B) {
 		b.ResetTimer()
@@ -232,7 +232,7 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// Benchmark standard JSON unmarshaling for medium JSON
 	b.Run("StandardJSON_MediumUnmarshal", func(b *testing.B) {
 		b.ResetTimer()
@@ -244,7 +244,7 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// Benchmark optimized JSON unmarshaling for medium JSON
 	b.Run("OptimizedJSON_MediumUnmarshal", func(b *testing.B) {
 		b.ResetTimer()
@@ -256,7 +256,7 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// Benchmark standard JSON unmarshaling for large JSON
 	b.Run("StandardJSON_LargeUnmarshal", func(b *testing.B) {
 		b.ResetTimer()
@@ -268,7 +268,7 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// Benchmark optimized JSON unmarshaling for large JSON
 	b.Run("OptimizedJSON_LargeUnmarshal", func(b *testing.B) {
 		b.ResetTimer()
@@ -280,7 +280,7 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// Benchmark string-optimized JSON unmarshaling
 	b.Run("OptimizedJSON_FromString_LargeUnmarshal", func(b *testing.B) {
 		jsonString := string(largeJSON)
@@ -293,7 +293,7 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// Benchmark with a specific struct type for provider requests
 	type ProviderRequest struct {
 		Model       string                   `json:"model"`
@@ -302,7 +302,7 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 		MaxTokens   int                      `json:"max_tokens,omitempty"`
 		Stream      bool                     `json:"stream,omitempty"`
 	}
-	
+
 	b.Run("StandardJSON_StructUnmarshal", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -313,7 +313,7 @@ func BenchmarkJSONUnmarshal(b *testing.B) {
 			}
 		}
 	})
-	
+
 	b.Run("OptimizedJSON_StructUnmarshal", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {

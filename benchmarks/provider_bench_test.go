@@ -1,21 +1,13 @@
 package benchmarks
 
 import (
-	"net/http"
 	"testing"
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 )
 
-// testHTTPClient is a mock HTTP client that returns a predefined response
-type testHTTPClient struct {
-	DoFunc func(req *http.Request) (*http.Response, error)
-}
-
-func (c *testHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	return c.DoFunc(req)
-}
+// Removed unused testHTTPClient
 
 // createSampleMessages creates test message arrays of different sizes
 func createSampleMessages(size int) []domain.Message {
@@ -149,7 +141,7 @@ func runOpenAIMessageConversionBenchmark(b *testing.B, p *provider.OpenAIProvide
 	for i := 0; i < b.N; i++ {
 		// Call the optimized conversion method directly
 		oaiMessages := p.ConvertMessagesToOpenAIFormat(messages)
-		
+
 		// We need to use the result to prevent the compiler from optimizing away the call
 		if len(oaiMessages) == 0 {
 			b.Fatalf("Expected non-empty oaiMessages, got empty slice")
@@ -166,7 +158,7 @@ func runAnthropicMessageConversionBenchmark(b *testing.B, p *provider.AnthropicP
 	for i := 0; i < b.N; i++ {
 		// Call the optimized conversion method directly
 		anthMessages, systemMessage := p.ConvertMessagesToAnthropicFormat(messages)
-		
+
 		// We need to use the results to prevent the compiler from optimizing away the call
 		if len(systemMessage) == 0 && len(anthMessages) == 0 {
 			b.Fatalf("Expected non-empty results, got empty data")

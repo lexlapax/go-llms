@@ -13,10 +13,12 @@ The `MultiProvider` implementation enables concurrent processing across multiple
 
 The implementation consists of the following key components:
 
-### 1. Concurrent Provider Architecture
+### 1. Provider Architecture
 
 - `MultiProvider` struct that implements the `domain.Provider` interface
-- Concurrent execution of provider methods using goroutines and channels
+- Hybrid execution model:
+  - Sequential execution for primary strategy (for deterministic behavior)
+  - Concurrent execution for fastest and consensus strategies
 - Support for all provider interface methods: `Generate`, `GenerateMessage`, `GenerateWithSchema`, `Stream`, and `StreamMessage`
 
 ```go
@@ -27,6 +29,7 @@ type MultiProvider struct {
     selectionStrat   SelectionStrategy
     defaultTimeout   time.Duration
     primaryProvider  int // Index of primary provider for StrategyPrimary
+    consensusConfig  consensusConfig // Configuration for consensus algorithms
 }
 ```
 
@@ -49,7 +52,11 @@ Three main selection strategies are provided:
 
 1. **StrategyFastest** - Returns the first successful result (fastest provider wins)
 2. **StrategyPrimary** - Uses the designated primary provider, falling back to others on failure
-3. **StrategyConsensus** - Basic implementation that will be enhanced in future versions
+   - Implemented using sequential execution for deterministic behavior
+3. **StrategyConsensus** - Enhanced implementations with multiple consensus algorithms:
+   - **ConsensusMajority** - Simple majority voting
+   - **ConsensusSimilarity** - Groups responses by similarity and chooses largest group
+   - **ConsensusWeighted** - Considers provider weights when determining consensus
 
 ### 4. Comprehensive Error Handling
 
@@ -114,9 +121,67 @@ multiProvider = multiProvider.WithTimeout(5 * time.Second)
 response, err := multiProvider.Generate(ctx, prompt)
 ```
 
+## Primary Strategy Implementation Details
+
+### Issue Fixed
+
+The `MultiProvider` implementation had a non-deterministic behavior when using the primary strategy. The issue was due to how results were collected from concurrent execution:
+
+1. Results from concurrent provider calls were collected in a non-deterministic order
+2. The `primaryIdx` was used to index into this result array, assuming results were in the same order as providers
+3. This led to inconsistent behavior in tests and real-world scenarios where the primary provider might not be selected correctly
+
+### Solution Implemented
+
+We implemented a sequential execution model specifically for the primary provider strategy:
+
+1. **Sequential Execution for Primary**
+   - Added `sequentialGenerateForPrimary`, `sequentialGenerateMessageForPrimary`, and `sequentialGenerateWithSchemaForPrimary` methods
+   - These methods execute the primary provider first, then fall back to other providers if needed
+   - This guarantees deterministic behavior for the primary strategy
+
+2. **Implementation Approach**
+   ```go
+   // sequentialGenerateForPrimary runs Generate sequentially for the primary provider strategy
+   func (mp *MultiProvider) sequentialGenerateForPrimary(ctx context.Context, prompt string, options []domain.Option) (string, error) {
+       // Try the primary provider first
+       primaryProvider := mp.providers[mp.primaryProvider]
+       content, err := primaryProvider.Provider.Generate(ctx, prompt, options...)
+       if err == nil {
+           return content, nil
+       }
+       
+       // If primary fails, try others sequentially
+       for i, pw := range mp.providers {
+           if i == mp.primaryProvider {
+               continue // Skip the primary we already tried
+           }
+           content, err := pw.Provider.Generate(ctx, prompt, options...)
+           if err == nil {
+               return content, nil
+           }
+       }
+       
+       // All providers failed
+       return "", ErrNoSuccessfulCalls
+   }
+   ```
+
+3. **Hybrid Execution Model**
+   - Primary strategy uses sequential execution for deterministic behavior
+   - Fastest and Consensus strategies continue using concurrent execution for optimal performance
+
+4. **Comprehensive Testing**
+   - Added deterministic tests with call counters to verify correct provider selection
+   - Tests verify that only the primary provider is called when it succeeds
+   - Tests also verify fallback behavior when the primary provider fails
+
+This approach ensures deterministic behavior for the primary strategy without sacrificing performance for other strategies.
+
 ## Future Enhancements
 
-1. **Enhanced Consensus Strategy** - Implement more sophisticated consensus algorithms comparing semantic similarity of responses
+1. **Enhanced Consensus Strategy** - Further refinement of the consensus algorithms for better quality
 2. **Dynamic Provider Selection** - Adjust provider selection based on historical performance
 3. **Response Quality Metrics** - Add ability to score and compare responses from different providers
 4. **Cost Optimization** - Implement strategies that balance cost and quality across different providers
+5. **Response Caching** - Add caching for primary provider to further improve performance

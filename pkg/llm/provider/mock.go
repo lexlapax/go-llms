@@ -194,12 +194,12 @@ func (p *MockProvider) WithPredefinedResponses(responses map[string]string) *Moc
 	if p.predefinedResponses == nil {
 		p.predefinedResponses = make(map[string]string)
 	}
-	
+
 	// Copy the responses
 	for prompt, response := range responses {
 		p.predefinedResponses[prompt] = response
 	}
-	
+
 	// Override the generateFunc to use predefined responses
 	p.generateFunc = func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
 		if response, ok := p.predefinedResponses[prompt]; ok {
@@ -208,7 +208,7 @@ func (p *MockProvider) WithPredefinedResponses(responses map[string]string) *Moc
 		// Fallback to default response
 		return "This is a default mock response", nil
 	}
-	
+
 	return p
 }
 

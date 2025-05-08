@@ -31,13 +31,13 @@ func ResetSimilarityCache() {
 func GetSimilarityCacheEntries() map[string]float64 {
 	globalSimilarityCache.mu.RLock()
 	defer globalSimilarityCache.mu.RUnlock()
-	
+
 	// Make a copy to avoid race conditions
 	result := make(map[string]float64, len(globalSimilarityCache.cache))
 	for k, v := range globalSimilarityCache.cache {
 		result[k] = v
 	}
-	
+
 	return result
 }
 
@@ -46,7 +46,7 @@ func GetSimilarityCacheEntries() map[string]float64 {
 // ResetGroupCache resets the global group cache for testing
 func ResetGroupCache() {
 	globalGroupCache = &groupCache{
-		groups:           make(map[string]int, 64),
+		groups:              make(map[string]int, 64),
 		similarityThreshold: 0.0, // invalid default, will be updated on first use
 	}
 }
@@ -64,6 +64,6 @@ func PublicSelectSimilarityConsensus(publicResults []FallbackResult, threshold f
 			weight:      pr.Weight,
 		}
 	}
-	
+
 	return selectSimilarityConsensus(results, threshold)
 }

@@ -46,10 +46,10 @@ func (p *ResponsePool) Put(resp *Response) {
 	if resp == nil {
 		return
 	}
-	
+
 	// Clear the Response fields before returning to the pool
 	resp.Content = ""
-	
+
 	p.pool.Put(resp)
 }
 
@@ -57,13 +57,13 @@ func (p *ResponsePool) Put(resp *Response) {
 func (p *ResponsePool) NewResponse(content string) Response {
 	resp := p.Get()
 	resp.Content = content
-	
+
 	// Create a copy to return by value (Response, not *Response)
 	result := *resp
-	
+
 	// Return the object to the pool
 	p.Put(resp)
-	
+
 	return result
 }
 
@@ -108,11 +108,11 @@ func (p *TokenPool) Put(token *Token) {
 	if token == nil {
 		return
 	}
-	
+
 	// Clear the Token fields before returning to the pool
 	token.Text = ""
 	token.Finished = false
-	
+
 	p.pool.Put(token)
 }
 
@@ -121,13 +121,13 @@ func (p *TokenPool) NewToken(text string, finished bool) Token {
 	token := p.Get()
 	token.Text = text
 	token.Finished = finished
-	
+
 	// Create a copy to return by value (Token, not *Token)
 	result := *token
-	
+
 	// Return the object to the pool
 	p.Put(token)
-	
+
 	return result
 }
 
@@ -178,7 +178,7 @@ func (p *ChannelPool) Put(ch chan Token) {
 	if ch == nil {
 		return
 	}
-	
+
 	// Drain any remaining tokens to ensure the channel is empty
 	// This is a non-blocking operation
 	for {

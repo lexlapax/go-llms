@@ -47,16 +47,16 @@ func selectConsensusTextResult(results []fallbackResult) (string, error) {
 			successfulResults = append(successfulResults, result)
 		}
 	}
-	
+
 	if len(successfulResults) == 0 {
 		return "", ErrNoSuccessfulCalls
 	}
-	
+
 	// Fast path: If only one successful response, return it immediately
 	if len(successfulResults) == 1 {
 		return successfulResults[0].content, nil
 	}
-	
+
 	// Get the current configuration from the MultiProvider
 	// We have to use the global config from multi.go since this function
 	// doesn't have direct access to the MultiProvider instance
@@ -65,7 +65,7 @@ func selectConsensusTextResult(results []fallbackResult) (string, error) {
 		defaultConfig := defaultConsensusConfig()
 		config = &defaultConfig
 	}
-	
+
 	// Apply the selected consensus strategy
 	switch config.Strategy {
 	case ConsensusMajority:
@@ -92,33 +92,33 @@ func selectMajorityConsensus(results []fallbackResult) (string, error) {
 	for _, result := range results {
 		responseCount[result.content]++
 	}
-	
+
 	// Find the most common response
 	var mostCommonResponse string
 	maxCount := 0
-	
+
 	for response, count := range responseCount {
 		if count > maxCount {
 			maxCount = count
 			mostCommonResponse = response
 		}
 	}
-	
+
 	return mostCommonResponse, nil
 }
 
 // groupCache is used to cache group memberships for similar content
 // This avoids recalculating similarity scores for repeated executions
 type groupCache struct {
-	groups            map[string]int // maps content hash to group index
-	groupRepresentatives []string    // representative content for each group
-	similarityThreshold float64      // the threshold used for this cache
-	mu                sync.RWMutex
+	groups               map[string]int // maps content hash to group index
+	groupRepresentatives []string       // representative content for each group
+	similarityThreshold  float64        // the threshold used for this cache
+	mu                   sync.RWMutex
 }
 
 // global group cache (will be reset when threshold changes)
 var globalGroupCache = &groupCache{
-	groups:           make(map[string]int, 64),
+	groups:              make(map[string]int, 64),
 	similarityThreshold: 0.0, // invalid default, will be updated on first use
 }
 
@@ -136,7 +136,7 @@ func contentHash(content string) string {
 func (c *groupCache) resetIfThresholdChanged(threshold float64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	if c.similarityThreshold != threshold {
 		// Reset cache when threshold changes
 		c.groups = make(map[string]int, 64)
@@ -149,7 +149,7 @@ func (c *groupCache) resetIfThresholdChanged(threshold float64) {
 func (c *groupCache) getGroup(content string) int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	hash := contentHash(content)
 	groupIndex, found := c.groups[hash]
 	if !found {
@@ -162,7 +162,7 @@ func (c *groupCache) getGroup(content string) int {
 func (c *groupCache) addToGroup(content string, groupIndex int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	hash := contentHash(content)
 	c.groups[hash] = groupIndex
 }
@@ -171,13 +171,13 @@ func (c *groupCache) addToGroup(content string, groupIndex int) {
 func (c *groupCache) addNewGroup(content string) int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	newGroupIndex := len(c.groupRepresentatives)
 	c.groupRepresentatives = append(c.groupRepresentatives, content)
-	
+
 	hash := contentHash(content)
 	c.groups[hash] = newGroupIndex
-	
+
 	return newGroupIndex
 }
 
@@ -185,7 +185,7 @@ func (c *groupCache) addNewGroup(content string) int {
 func (c *groupCache) getGroupRepresentative(groupIndex int) string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	if groupIndex < 0 || groupIndex >= len(c.groupRepresentatives) {
 		return "" // Invalid group index
 	}
@@ -200,30 +200,30 @@ func selectSimilarityConsensus(results []fallbackResult, similarityThreshold flo
 	if len(results) <= 2 {
 		return selectMajorityConsensus(results)
 	}
-	
+
 	// Reset the group cache if the threshold has changed
 	globalGroupCache.resetIfThresholdChanged(similarityThreshold)
-	
+
 	// Preallocate groups array with estimated capacity
 	groups := make([][]fallbackResult, 0, min(len(results), 5))
-	
+
 	// Track group counts for faster largest group lookup
 	groupCounts := make([]int, 0, 5)
-	
+
 	// Start with the first result as its own group
 	firstResult := results[0]
 	groups = append(groups, []fallbackResult{firstResult})
 	groupCounts = append(groupCounts, 1)
 	globalGroupCache.addNewGroup(firstResult.content)
-	
+
 	// Track the largest group
 	largestGroupIndex := 0
-	
+
 	// For each remaining result, check if it should join an existing group
 	for i := 1; i < len(results); i++ {
 		result := results[i]
 		foundGroup := false
-		
+
 		// Check if this content is already in the cache
 		groupIndex := globalGroupCache.getGroup(result.content)
 		if groupIndex >= 0 && groupIndex < len(groups) {
@@ -231,19 +231,19 @@ func selectSimilarityConsensus(results []fallbackResult, similarityThreshold flo
 			groups[groupIndex] = append(groups[groupIndex], result)
 			groupCounts[groupIndex]++
 			foundGroup = true
-			
+
 			// Update largest group if needed
 			if groupCounts[groupIndex] > groupCounts[largestGroupIndex] {
 				largestGroupIndex = groupIndex
 			}
 			continue
 		}
-		
+
 		// Try to add to an existing group by comparing with representatives
 		for j := range groups {
 			// Get the representative content from cache for comparison
 			representative := globalGroupCache.getGroupRepresentative(j)
-			
+
 			// Compare with the representative
 			similarity := calculateSimilarity(result.content, representative)
 			if similarity >= similarityThreshold {
@@ -251,7 +251,7 @@ func selectSimilarityConsensus(results []fallbackResult, similarityThreshold flo
 				groupCounts[j]++
 				globalGroupCache.addToGroup(result.content, j)
 				foundGroup = true
-				
+
 				// Update largest group if needed
 				if groupCounts[j] > groupCounts[largestGroupIndex] {
 					largestGroupIndex = j
@@ -259,29 +259,29 @@ func selectSimilarityConsensus(results []fallbackResult, similarityThreshold flo
 				break
 			}
 		}
-		
+
 		// If no matching group, create a new one
 		if !foundGroup {
 			newGroupIndex := len(groups)
 			groups = append(groups, []fallbackResult{result})
 			groupCounts = append(groupCounts, 1)
 			globalGroupCache.addNewGroup(result.content)
-			
+
 			// Check if this is now the largest group (unlikely but possible with singleton groups)
 			if groupCounts[newGroupIndex] > groupCounts[largestGroupIndex] {
 				largestGroupIndex = newGroupIndex
 			}
 		}
 	}
-	
+
 	// Use the largest group
 	largestGroup := groups[largestGroupIndex]
-	
+
 	// If we have a group, return the "best" response from it
 	if len(largestGroup) > 0 {
 		return selectBestFromGroup(largestGroup), nil
 	}
-	
+
 	// Fallback to first result if something went wrong
 	return results[0].content, nil
 }
@@ -297,7 +297,7 @@ func selectWeightedConsensus(results []fallbackResult) (string, error) {
 		}
 		return "", ErrNoSuccessfulCalls
 	}
-	
+
 	// If no weights are present, fall back to majority voting
 	hasWeights := false
 	for _, result := range results {
@@ -306,14 +306,14 @@ func selectWeightedConsensus(results []fallbackResult) (string, error) {
 			break
 		}
 	}
-	
+
 	if !hasWeights {
 		return selectMajorityConsensus(results)
 	}
-	
+
 	// Enhanced weighted consensus considering both exact matches and similar responses
 	// First group exactly matching responses (faster than similarity)
-	
+
 	// Group identical responses - pre-allocate with estimated capacity
 	type weightedResponse struct {
 		content       string
@@ -323,38 +323,38 @@ func selectWeightedConsensus(results []fallbackResult) (string, error) {
 		elapsedTime   float64  // Average elapsed time in milliseconds
 		similarTo     []string // For similar response tracking (used in second phase)
 	}
-	
+
 	// Pre-allocate with estimated capacity (to avoid map resizing)
 	estimatedUnique := min(len(results), 5) // Usually not more than 5 unique responses
 	weightedResponses := make(map[string]*weightedResponse, estimatedUnique)
-	
+
 	totalValidWeight := 0.0
-	
+
 	// First pass: group identical responses (exact match)
 	for _, result := range results {
 		if result.err != nil {
 			continue // Skip failed results
 		}
-		
+
 		// Skip empty responses
 		if result.content == "" {
 			continue
 		}
-		
+
 		// Default weight to 1.0 if not specified
 		weight := result.weight
 		if weight <= 0 {
 			weight = 1.0
 		}
-		
+
 		totalValidWeight += weight
-		
+
 		// Check for exact match in map
 		if wr, exists := weightedResponses[result.content]; exists {
 			wr.totalWeight += weight
 			wr.resultCount++
 			wr.providerNames = append(wr.providerNames, result.provider)
-			
+
 			// Update average elapsed time
 			resultElapsedMs := float64(result.elapsedTime.Milliseconds())
 			wr.elapsedTime = (wr.elapsedTime*float64(wr.resultCount-1) + resultElapsedMs) / float64(wr.resultCount)
@@ -369,45 +369,45 @@ func selectWeightedConsensus(results []fallbackResult) (string, error) {
 			}
 		}
 	}
-	
+
 	// If we collected no valid responses, return error
 	if len(weightedResponses) == 0 {
 		return "", ErrNoSuccessfulCalls
 	}
-	
+
 	// If we only have one unique response, return it immediately
 	if len(weightedResponses) == 1 {
 		for _, wr := range weightedResponses {
 			return wr.content, nil
 		}
 	}
-	
+
 	// Second phase: Consider similar responses for enhanced grouping
 	// Only do similarity analysis if we have multiple distinct responses
 	// and the top response doesn't have overwhelming weight
-	
+
 	// First, convert map to slice for processing
 	responses := make([]*weightedResponse, 0, len(weightedResponses))
 	for _, wr := range weightedResponses {
 		responses = append(responses, wr)
 	}
-	
+
 	// Sort by weight for quick access to top response
 	sort.Slice(responses, func(i, j int) bool {
 		return responses[i].totalWeight > responses[j].totalWeight
 	})
-	
+
 	// Check if top response has overwhelming weight (over 70%)
 	topResponse := responses[0]
 	if topResponse.totalWeight > 0.7*totalValidWeight {
 		// One response has overwhelming support, no need for similarity analysis
 		return topResponse.content, nil
 	}
-	
+
 	// Calculate similarity between responses and combine weights for similar responses
 	// Using a slightly lower threshold (0.7) for similarity than the default consensus
 	const similarityThreshold = 0.65
-	
+
 	// For each pair of responses, check similarity and potentially combine weights
 	for i := 0; i < len(responses); i++ {
 		for j := i + 1; j < len(responses); j++ {
@@ -415,19 +415,19 @@ func selectWeightedConsensus(results []fallbackResult) (string, error) {
 			if len(responses[j].similarTo) > 0 {
 				continue
 			}
-			
+
 			similarity := calculateSimilarity(responses[i].content, responses[j].content)
 			if similarity >= similarityThreshold {
 				// Mark as similar
 				responses[i].similarTo = append(responses[i].similarTo, responses[j].content)
 				responses[j].similarTo = append(responses[j].similarTo, responses[i].content)
-				
+
 				// Combine weights (add j's weight to i)
 				responses[i].totalWeight += responses[j].totalWeight * similarity
 			}
 		}
 	}
-	
+
 	// Resort after combining weights
 	sort.Slice(responses, func(i, j int) bool {
 		// If weights are very close, use result count as tiebreaker
@@ -440,7 +440,7 @@ func selectWeightedConsensus(results []fallbackResult) (string, error) {
 		}
 		return responses[i].totalWeight > responses[j].totalWeight
 	})
-	
+
 	// Return the response with the highest adjusted weight
 	return responses[0].content, nil
 }
@@ -460,11 +460,11 @@ func selectBestFromGroup(group []fallbackResult) string {
 	if len(group) == 0 {
 		return ""
 	}
-	
+
 	if len(group) == 1 {
 		return group[0].content
 	}
-	
+
 	// Sort by content length (ascending) to find the shortest non-empty response
 	sort.Slice(group, func(i, j int) bool {
 		// Skip empty responses
@@ -476,14 +476,14 @@ func selectBestFromGroup(group []fallbackResult) string {
 		}
 		return len(group[i].content) < len(group[j].content)
 	})
-	
+
 	// Return the first non-empty response
 	for _, result := range group {
 		if len(result.content) > 0 {
 			return result.content
 		}
 	}
-	
+
 	// If all are empty, return the first response
 	return group[0].content
 }
@@ -521,7 +521,7 @@ func getCacheKey(a, b string) string {
 func (c *similarityCache) Get(a, b string) (float64, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	key := getCacheKey(a, b)
 	score, found := c.cache[key]
 	return score, found
@@ -531,9 +531,9 @@ func (c *similarityCache) Get(a, b string) (float64, bool) {
 func (c *similarityCache) Set(a, b string, score float64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	key := getCacheKey(a, b)
-	
+
 	// Simple cache eviction if we exceed max entries
 	if len(c.cache) >= c.maxEntries {
 		// Remove a random entry when the cache is full
@@ -543,7 +543,7 @@ func (c *similarityCache) Set(a, b string, score float64) {
 			break
 		}
 	}
-	
+
 	c.cache[key] = score
 }
 
@@ -556,7 +556,7 @@ func calculateSimilarity(a, b string) float64 {
 	if a == b {
 		return 1.0
 	}
-	
+
 	// Very short strings can be handled directly
 	if len(a) < 5 || len(b) < 5 {
 		// For very short strings, do direct comparison to avoid overhead
@@ -566,23 +566,23 @@ func calculateSimilarity(a, b string) float64 {
 			return 1.0
 		}
 	}
-	
+
 	// Check cache first - cache lookup is fast so we can do it early
 	if score, found := globalSimilarityCache.Get(a, b); found {
 		return score
 	}
-	
+
 	// Convert to lowercase for more forgiving comparison
 	aLower := strings.ToLower(a)
 	bLower := strings.ToLower(b)
-	
+
 	// If still exact match after lowercase conversion
 	if aLower == bLower {
 		score := 1.0
 		globalSimilarityCache.Set(a, b, score)
 		return score
 	}
-	
+
 	// Length-based optimization - if the length difference is too great,
 	// the strings are likely very different
 	lenA, lenB := len(aLower), len(bLower)
@@ -592,27 +592,27 @@ func calculateSimilarity(a, b string) float64 {
 		globalSimilarityCache.Set(a, b, score)
 		return score
 	}
-	
+
 	// Pre-allocate word sets with estimated capacity
 	estimatedWords := (len(aLower) + len(bLower)) / 10 // rough estimate: 1 word per 10 chars
 	if estimatedWords < 10 {
 		estimatedWords = 10
 	}
-	
+
 	// Implement an optimized Jaccard similarity based on word overlap
 	// Pre-allocate slices to reduce allocations
 	aWords := strings.Fields(aLower)
 	bWords := strings.Fields(bLower)
-	
+
 	// Create sets of words with pre-allocation
-	aSet := make(map[string]bool, len(aWords))
+	aSet := make(map[string]bool, estimatedWords)
 	for _, word := range aWords {
 		// Filter out very common words that don't contribute much to meaning
 		if len(word) > 2 { // Skip very short words
 			aSet[word] = true
 		}
 	}
-	
+
 	// Quick check after stopword filtering
 	if len(aSet) == 0 {
 		// No meaningful words, treat as low similarity
@@ -620,28 +620,28 @@ func calculateSimilarity(a, b string) float64 {
 		globalSimilarityCache.Set(a, b, score)
 		return score
 	}
-	
-	bSet := make(map[string]bool, len(bWords))
+
+	bSet := make(map[string]bool, estimatedWords)
 	intersection := 0
-	
+
 	// Build bSet and count intersection in one pass
 	for _, word := range bWords {
 		// Skip very short words
 		if len(word) <= 2 {
 			continue
 		}
-		
+
 		// Add to set if not already there
 		if !bSet[word] {
 			bSet[word] = true
-			
+
 			// Check if in both sets
 			if aSet[word] {
 				intersection++
 			}
 		}
 	}
-	
+
 	// Quick check after stopword filtering
 	if len(bSet) == 0 {
 		// No meaningful words, treat as low similarity
@@ -649,15 +649,15 @@ func calculateSimilarity(a, b string) float64 {
 		globalSimilarityCache.Set(a, b, score)
 		return score
 	}
-	
+
 	// Find union size
 	union := len(aSet) + len(bSet) - intersection
-	
+
 	// Calculate Jaccard similarity
 	if union == 0 {
 		return 0.0
 	}
-	
+
 	// Store in cache
 	score := float64(intersection) / float64(union)
 	globalSimilarityCache.Set(a, b, score)

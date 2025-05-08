@@ -49,9 +49,9 @@ func BenchmarkPromptProcessing(b *testing.B) {
 			"email":    {Type: "string", Description: "Primary email address", Format: "email"},
 			"verified": {Type: "boolean", Description: "Whether the account is verified"},
 			"tags": {
-				Type: "array", 
+				Type:        "array",
 				Description: "List of tags",
-				Items: &schemaDomain.Property{Type: "string"},
+				Items:       &schemaDomain.Property{Type: "string"},
 			},
 			"contact": {
 				Type: "object",
@@ -152,9 +152,9 @@ func BenchmarkPromptProcessing(b *testing.B) {
 			"format":       "a complete profile",
 			"examples": []map[string]interface{}{
 				{
-					"name":  "John Doe",
-					"age":   30,
-					"email": "john.doe@example.com",
+					"name":        "John Doe",
+					"age":         30,
+					"email":       "john.doe@example.com",
 					"phoneNumber": "555-1234",
 					"address": map[string]string{
 						"street":  "123 Main St",

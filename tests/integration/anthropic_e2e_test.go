@@ -67,15 +67,15 @@ func TestLiveEndToEndAgentAnthropic(t *testing.T) {
 				// Use the values from the prompt: 21 * 2
 				a, b = 21, 2
 			}
-			
+
 			result := a * b
-			
+
 			// Return a more explicit structure to ensure the LLM gets the result clearly
 			return map[string]interface{}{
-				"result": result,
+				"result":      result,
 				"calculation": fmt.Sprintf("%g * %g = %g", a, b, result),
-				"a": a,
-				"b": b,
+				"a":           a,
+				"b":           b,
 			}, nil
 		},
 		&sdomain.Schema{
@@ -125,15 +125,15 @@ func TestLiveEndToEndAgentAnthropic(t *testing.T) {
 		// Different API versions might respond differently
 		if !strings.Contains(resultStr, "42") {
 			t.Logf("Note: Result doesn't contain calculation result '42': %v", result)
-			
+
 			// Instead, let's manually verify if the agent engaged with the tools
 			// This test might be flaky because different Anthropic model versions or API behavior could change
 			// For CI environments, we'll skip the strict check
-			if os.Getenv("CI") == "" && 
-			   !strings.Contains(resultStr, "multiply") && 
-			   !strings.Contains(resultStr, "21") && 
-			   !strings.Contains(resultStr, "times 2") && 
-			   !strings.Contains(resultStr, "calculation") {
+			if os.Getenv("CI") == "" &&
+				!strings.Contains(resultStr, "multiply") &&
+				!strings.Contains(resultStr, "21") &&
+				!strings.Contains(resultStr, "times 2") &&
+				!strings.Contains(resultStr, "calculation") {
 				t.Logf("Warning: Agent result doesn't seem to reference the multiplication task")
 				// Don't fail the test, as this might be due to API response changes
 				// t.Errorf("Agent result doesn't seem to reference the multiplication task")

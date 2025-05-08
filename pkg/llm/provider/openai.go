@@ -49,10 +49,10 @@ func WithHTTPClient(client *http.Client) OpenAIOption {
 // NewOpenAIProvider creates a new OpenAI provider
 func NewOpenAIProvider(apiKey, model string, options ...OpenAIOption) *OpenAIProvider {
 	provider := &OpenAIProvider{
-		apiKey:      apiKey,
-		model:       model,
-		baseURL:     defaultBaseURL,
-		httpClient:  http.DefaultClient,
+		apiKey:       apiKey,
+		model:        model,
+		baseURL:      defaultBaseURL,
+		httpClient:   http.DefaultClient,
 		messageCache: NewMessageCache(),
 	}
 
@@ -84,21 +84,21 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 	if cachedMessages, found := p.messageCache.Get(cacheKey); found {
 		return cachedMessages.([]map[string]interface{})
 	}
-	
+
 	// Pre-allocate the slice with exact capacity
 	oaiMessages := make([]map[string]interface{}, 0, len(messages))
-	
+
 	// Fast path for simple cases: single message or system+user
 	if len(messages) == 1 {
 		message := make(map[string]interface{}, 2)
 		message["role"] = string(messages[0].Role)
 		message["content"] = messages[0].Content
-		
+
 		result := []map[string]interface{}{message}
 		p.messageCache.Set(cacheKey, result)
 		return result
 	}
-	
+
 	// Find the last assistant message index (used for tool message handling)
 	var lastAssistantIdx int = -1
 	for i, msg := range messages {
@@ -106,7 +106,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 			lastAssistantIdx = i
 		}
 	}
-	
+
 	// Process all messages
 	for i, msg := range messages {
 		// Special handling for tool messages - they must follow an assistant message with tool_calls
@@ -132,20 +132,20 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 			message := make(map[string]interface{}, 3)
 			message["role"] = string(msg.Role)
 			message["content"] = msg.Content
-			
+
 			// Create a single tool call
 			functionMap := make(map[string]interface{}, 2)
 			functionMap["name"] = "generic_tool"
 			functionMap["arguments"] = "{}"
-			
+
 			toolCall := make(map[string]interface{}, 3)
 			toolCall["id"] = "call_" + string(rune(i+1))
 			toolCall["type"] = "function"
 			toolCall["function"] = functionMap
-			
+
 			toolCalls := []map[string]interface{}{toolCall}
 			message["tool_calls"] = toolCalls
-			
+
 			oaiMessages = append(oaiMessages, message)
 		} else {
 			// Regular message
@@ -155,7 +155,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 			oaiMessages = append(oaiMessages, message)
 		}
 	}
-	
+
 	// Cache the result
 	p.messageCache.Set(cacheKey, oaiMessages)
 	return oaiMessages
@@ -163,42 +163,42 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 
 // buildOpenAIRequestBody creates a request body for the OpenAI API
 func (p *OpenAIProvider) buildOpenAIRequestBody(
-	messages []map[string]interface{}, 
+	messages []map[string]interface{},
 	options *domain.ProviderOptions,
 ) map[string]interface{} {
 	// Pre-allocate the map with the right capacity (standard fields + possible options)
 	requestBody := make(map[string]interface{}, 8)
-	
+
 	// Add required fields
 	requestBody["model"] = p.model
 	requestBody["messages"] = messages
-	
+
 	// Add common options if they're not default values
 	if options.Temperature != 0.7 {
 		requestBody["temperature"] = options.Temperature
 	}
-	
+
 	if options.MaxTokens != 1024 {
 		requestBody["max_tokens"] = options.MaxTokens
 	}
-	
+
 	if options.TopP != 1.0 {
 		requestBody["top_p"] = options.TopP
 	}
-	
+
 	// Add optional fields only if they have values
 	if len(options.StopSequences) > 0 {
 		requestBody["stop"] = options.StopSequences
 	}
-	
+
 	if options.FrequencyPenalty != 0 {
 		requestBody["frequency_penalty"] = options.FrequencyPenalty
 	}
-	
+
 	if options.PresencePenalty != 0 {
 		requestBody["presence_penalty"] = options.PresencePenalty
 	}
-	
+
 	return requestBody
 }
 
@@ -209,10 +209,10 @@ func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.
 	for _, option := range options {
 		option(providerOptions)
 	}
-	
+
 	// Convert messages to OpenAI format - optimized with caching
 	oaiMessages := p.ConvertMessagesToOpenAIFormat(messages)
-	
+
 	// Build request body - optimized with pre-allocation
 	requestBody := p.buildOpenAIRequestBody(oaiMessages, providerOptions)
 
@@ -296,7 +296,7 @@ func (p *OpenAIProvider) GenerateWithSchema(ctx context.Context, prompt string, 
 	}
 
 	// Try to extract JSON from the response using optimized extractor
-	jsonStr := processor.ExtractJSON(response) 
+	jsonStr := processor.ExtractJSON(response)
 	if jsonStr == "" {
 		return nil, fmt.Errorf("response does not contain valid JSON")
 	}
@@ -328,10 +328,10 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 
 	// Convert messages to OpenAI format - optimized with caching
 	oaiMessages := p.ConvertMessagesToOpenAIFormat(messages)
-	
+
 	// Build request body - optimized with pre-allocation
 	requestBody := p.buildOpenAIRequestBody(oaiMessages, providerOptions)
-	
+
 	// Add streaming flag
 	requestBody["stream"] = true
 
@@ -465,7 +465,7 @@ func enhancePromptWithSchema(prompt string, schema *schemaDomain.Schema) string 
 	// Reuse buffer for schema JSON - reduces allocations
 	var schemaBuffer bytes.Buffer
 	schemaBuffer.Grow(1024) // Pre-allocate reasonable buffer size for most schemas
-	
+
 	// Use optimized JSON marshaling with indentation
 	err := json.MarshalIndentWithBuffer(schema, &schemaBuffer, "", "  ")
 	if err != nil {
@@ -476,16 +476,16 @@ func enhancePromptWithSchema(prompt string, schema *schemaDomain.Schema) string 
 	// Build enhanced prompt
 	// Estimate the size to pre-allocate the final string builder
 	totalSize := len(prompt) + schemaBuffer.Len() + 200 // 200 for the template text
-	
+
 	var promptBuilder strings.Builder
 	promptBuilder.Grow(totalSize)
-	
+
 	promptBuilder.WriteString(prompt)
 	promptBuilder.WriteString("\n\nYou are to provide a JSON response that conforms to the following JSON schema.")
 	promptBuilder.WriteString("\nRespond ONLY with valid JSON that matches this schema:\n\n")
 	promptBuilder.Write(schemaBuffer.Bytes())
 	promptBuilder.WriteString("\n\nOutput only valid JSON without any explanations, markdown code blocks, or any other text.")
-	
+
 	return promptBuilder.String()
 }
 

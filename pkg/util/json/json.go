@@ -70,7 +70,7 @@ func MarshalIndentWithBuffer(v interface{}, buf *bytes.Buffer, prefix, indent st
 	if buf == nil {
 		return nil
 	}
-	
+
 	buf.Reset()
 	enc := jsonAPI.NewEncoder(buf)
 	enc.SetIndent(prefix, indent)
@@ -83,7 +83,7 @@ func MarshalWithBuffer(v interface{}, buf *bytes.Buffer) error {
 	if buf == nil {
 		return nil
 	}
-	
+
 	buf.Reset()
 	return jsonAPI.NewEncoder(buf).Encode(v)
 }

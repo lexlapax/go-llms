@@ -14,12 +14,12 @@ func TestJsonCompatibility(t *testing.T) {
 		target interface{}
 	}{
 		{
-			name:  "simple map",
-			value: map[string]interface{}{"name": "John", "age": 30, "active": true},
+			name:   "simple map",
+			value:  map[string]interface{}{"name": "John", "age": 30, "active": true},
 			target: &map[string]interface{}{},
 		},
 		{
-			name:  "nested map", 
+			name: "nested map",
 			value: map[string]interface{}{
 				"user": map[string]interface{}{
 					"name": "Jane",
@@ -33,8 +33,8 @@ func TestJsonCompatibility(t *testing.T) {
 			target: &map[string]interface{}{},
 		},
 		{
-			name:  "array",
-			value: []string{"apple", "banana", "cherry"},
+			name:   "array",
+			value:  []string{"apple", "banana", "cherry"},
 			target: &[]string{},
 		},
 		{
@@ -122,12 +122,12 @@ func TestBufferFunctions(t *testing.T) {
 	result := buf.Bytes()
 	// Compare with standard Marshal
 	expected, _ := json.Marshal(testData)
-	
+
 	// The encoder adds a newline at the end, so we need to adjust for that
 	if len(result) > 0 && result[len(result)-1] == '\n' {
 		result = result[:len(result)-1]
 	}
-	
+
 	if !bytes.Equal(result, expected) {
 		t.Errorf("MarshalWithBuffer result doesn't match standard Marshal:\nExpected: %s\nGot: %s", expected, result)
 	}
@@ -141,30 +141,30 @@ func TestBufferFunctions(t *testing.T) {
 
 	// Verify result
 	result = buf.Bytes()
-	
+
 	// The encoder adds a newline at the end, so we need to adjust for that
 	if len(result) > 0 && result[len(result)-1] == '\n' {
 		result = result[:len(result)-1]
 	}
-	
+
 	// Compare semantically by unmarshaling both into maps
 	var resultMap, expectedMap map[string]interface{}
-	
+
 	// Unmarshal our result
 	if err := json.Unmarshal(result, &resultMap); err != nil {
 		t.Fatalf("Failed to unmarshal result: %v", err)
 	}
-	
+
 	// Unmarshal expected
 	expected, _ = json.MarshalIndent(testData, "", "  ")
 	if err := json.Unmarshal(expected, &expectedMap); err != nil {
 		t.Fatalf("Failed to unmarshal expected: %v", err)
 	}
-	
+
 	// Compare the maps for semantic equality
 	resultJson, _ := json.Marshal(resultMap)
 	expectedJson, _ := json.Marshal(expectedMap)
-	
+
 	if !bytes.Equal(resultJson, expectedJson) {
 		t.Errorf("MarshalIndentWithBuffer result semantically differs from standard MarshalIndent")
 	}

@@ -7,7 +7,6 @@ import (
 	"github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-
 // Helper function to check if an error array contains a specific error
 func containsError(errors []string, field, errType string) bool {
 	for _, err := range errors {

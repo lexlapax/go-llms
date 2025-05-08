@@ -16,6 +16,7 @@ var RegexCache = sync.Map{}
 // Validator implements schema validation with performance enhancements
 type Validator struct {
 	// errorBufferPool provides reusable string buffers for errors
+	// Uses pointers to slices to avoid allocations during Put
 	errorBufferPool sync.Pool
 
 	// validationResultPool provides reusable validation results
@@ -23,14 +24,16 @@ type Validator struct {
 }
 
 // NewValidator creates a new validator with performance enhancements
-// This function returns a validator with improved performance through 
+// This function returns a validator with improved performance through
 // object pooling, regex caching, and efficient validation paths.
 func NewValidator() *Validator {
 	v := &Validator{
 		errorBufferPool: sync.Pool{
 			New: func() interface{} {
 				// Preallocate a slice with reasonable capacity to avoid reallocation
-				return make([]string, 0, 8)
+				// Return a pointer to avoid allocations during Put
+				slice := make([]string, 0, 8)
+				return &slice
 			},
 		},
 		validationResultPool: sync.Pool{
@@ -59,8 +62,9 @@ func (v *Validator) Validate(schema *domain.Schema, jsonStr string) (*domain.Val
 	result.Valid = true
 	result.Errors = result.Errors[:0] // Reset the errors slice but keep capacity
 
-	// Get an error buffer from the pool
-	errors := v.errorBufferPool.Get().([]string)
+	// Get an error buffer from the pool (pointer to slice)
+	errorsPtr := v.errorBufferPool.Get().(*[]string)
+	errors := *errorsPtr
 	errors = errors[:0] // Reset slice but keep capacity
 
 	// Validate against schema
@@ -71,8 +75,11 @@ func (v *Validator) Validate(schema *domain.Schema, jsonStr string) (*domain.Val
 		result.Errors = append(result.Errors, errors...) // Copy errors to result
 	}
 
+	// Update the pointer's underlying slice
+	*errorsPtr = errors
+
 	// Return the error buffer to the pool
-	v.errorBufferPool.Put(errors)
+	v.errorBufferPool.Put(errorsPtr)
 
 	return result, nil
 }
@@ -206,10 +213,10 @@ func (v *Validator) validateObject(path string, schema *domain.Schema, data inte
 
 				// For simple constraint validations in string, number, etc.
 				// we need to handle the constraints in a special way
-				if prop.MinLength != nil || prop.MaxLength != nil || prop.Pattern != "" || 
-				   len(prop.Enum) > 0 || prop.Format != "" || prop.Minimum != nil ||
-				   prop.Maximum != nil || prop.Items != nil {
-					
+				if prop.MinLength != nil || prop.MaxLength != nil || prop.Pattern != "" ||
+					len(prop.Enum) > 0 || prop.Format != "" || prop.Minimum != nil ||
+					prop.Maximum != nil || prop.Items != nil {
+
 					// Create a copy of the property in the schema's Properties map
 					// to handle constraints in the validateX methods
 					if subSchema.Properties == nil {
@@ -248,10 +255,10 @@ func (v *Validator) validateArray(path string, schema *domain.Schema, data inter
 			}
 
 			// Inherit constraints from the item schema if needed
-			if items.MinLength != nil || items.MaxLength != nil || items.Pattern != "" || 
-			   len(items.Enum) > 0 || items.Format != "" || items.Minimum != nil ||
-			   items.Maximum != nil || items.Items != nil {
-				
+			if items.MinLength != nil || items.MaxLength != nil || items.Pattern != "" ||
+				len(items.Enum) > 0 || items.Format != "" || items.Minimum != nil ||
+				items.Maximum != nil || items.Items != nil {
+
 				if itemsSchema.Properties == nil {
 					itemsSchema.Properties = map[string]domain.Property{}
 				}
@@ -454,5 +461,3 @@ func (v *Validator) validateNumber(path string, schema *domain.Schema, data inte
 
 	return errors
 }
-
-

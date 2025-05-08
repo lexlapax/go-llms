@@ -42,7 +42,7 @@ type ToolExecutor struct {
 	maxConcurrent    int
 	executionTimeout time.Duration
 	hooks            []domain.Hook
-	
+
 	// Semaphore to limit concurrent executions
 	sem chan struct{}
 	// For tracking active executions
@@ -55,11 +55,11 @@ func NewToolExecutor(tools map[string]domain.Tool, maxConcurrent int, timeout ti
 	if maxConcurrent <= 0 {
 		maxConcurrent = 5 // Default to 5 concurrent executions
 	}
-	
+
 	if timeout <= 0 {
 		timeout = 30 * time.Second // Default 30 second timeout
 	}
-	
+
 	return &ToolExecutor{
 		tools:            tools,
 		maxConcurrent:    maxConcurrent,
@@ -75,18 +75,18 @@ func (e *ToolExecutor) ExecuteToolsParallel(ctx context.Context, toolNames []str
 	if len(toolNames) == 0 {
 		return map[string]ToolResult{}
 	}
-	
+
 	// Create a context with timeout
 	execCtx, cancel := context.WithTimeout(ctx, e.executionTimeout)
 	defer cancel()
-	
+
 	// Create channels for results
 	resultCh := make(chan ToolResult, len(toolNames))
-	
+
 	// Create a mutex to protect the ctxDone flag
 	var ctxMu sync.Mutex
 	ctxDone := false
-	
+
 	// Start a goroutine to watch for context cancellation
 	go func() {
 		<-execCtx.Done()
@@ -101,19 +101,19 @@ func (e *ToolExecutor) ExecuteToolsParallel(ctx context.Context, toolNames []str
 			}
 		}
 	}()
-	
+
 	// Start goroutines for each tool
 	var wg sync.WaitGroup
 	for i, toolName := range toolNames {
 		wg.Add(1)
 		go func(idx int, name string, params interface{}) {
 			defer wg.Done()
-			
+
 			// Check if context is already cancelled before acquiring semaphore
 			ctxMu.Lock()
 			isDone := ctxDone
 			ctxMu.Unlock()
-			
+
 			if isDone {
 				resultCh <- ToolResult{
 					ToolName: name,
@@ -122,7 +122,7 @@ func (e *ToolExecutor) ExecuteToolsParallel(ctx context.Context, toolNames []str
 				}
 				return
 			}
-			
+
 			// Acquire semaphore (or fail if context is done)
 			select {
 			case e.sem <- struct{}{}:
@@ -130,7 +130,7 @@ func (e *ToolExecutor) ExecuteToolsParallel(ctx context.Context, toolNames []str
 				e.mu.Lock()
 				e.activeCount++
 				e.mu.Unlock()
-				
+
 				defer func() {
 					<-e.sem // Release semaphore
 					e.mu.Lock()
@@ -145,25 +145,25 @@ func (e *ToolExecutor) ExecuteToolsParallel(ctx context.Context, toolNames []str
 				}
 				return
 			}
-			
+
 			// Execute the tool with its own timeout
 			result := e.executeTool(execCtx, name, params)
 			resultCh <- result
 		}(i, toolName, paramsArray[i])
 	}
-	
+
 	// Wait for all goroutines to complete
 	go func() {
 		wg.Wait()
 		close(resultCh)
 	}()
-	
+
 	// Collect results
 	results := make(map[string]ToolResult, len(toolNames))
 	for result := range resultCh {
 		results[result.ToolName] = result
 	}
-	
+
 	return results
 }
 
@@ -178,7 +178,7 @@ func (e *ToolExecutor) executeTool(ctx context.Context, toolName string, params 
 			Error:    fmt.Errorf("tool not found: %s", toolName),
 		}
 	}
-	
+
 	// Convert params to map for hooks
 	var paramsMap map[string]interface{}
 	switch p := params.(type) {
@@ -201,17 +201,17 @@ func (e *ToolExecutor) executeTool(ctx context.Context, toolName string, params 
 			}
 		}
 	}
-	
+
 	// Call hooks before tool call
 	for _, hook := range e.hooks {
 		hook.BeforeToolCall(ctx, toolName, paramsMap)
 	}
-	
+
 	// Execute the tool with timeout
 	startTime := time.Now()
 	toolResult, toolErr := tool.Execute(ctx, params)
 	elapsed := time.Since(startTime)
-	
+
 	// Create result
 	result := ToolResult{
 		ToolName:    toolName,
@@ -219,18 +219,18 @@ func (e *ToolExecutor) executeTool(ctx context.Context, toolName string, params 
 		Error:       toolErr,
 		ElapsedTime: elapsed,
 	}
-	
+
 	if toolErr != nil {
 		result.Status = ToolStatusError
 	} else {
 		result.Status = ToolStatusSuccess
 	}
-	
+
 	// Call hooks after tool call
 	for _, hook := range e.hooks {
 		hook.AfterToolCall(ctx, toolName, toolResult, toolErr)
 	}
-	
+
 	return result
 }
 
@@ -238,7 +238,7 @@ func (e *ToolExecutor) executeTool(ctx context.Context, toolName string, params 
 func (e *ToolExecutor) FormatToolResults(results map[string]ToolResult) string {
 	var output strings.Builder
 	output.WriteString("Tool results:\n")
-	
+
 	for _, result := range results {
 		switch result.Status {
 		case ToolStatusNotFound:
@@ -268,7 +268,7 @@ func (e *ToolExecutor) FormatToolResults(results map[string]ToolResult) string {
 			output.WriteString(fmt.Sprintf("Tool '%s' result: %s\n\n", result.ToolName, toolRespContent))
 		}
 	}
-	
+
 	return output.String()
 }
 
@@ -293,10 +293,10 @@ func (e *ToolExecutor) SetMaxConcurrent(max int) {
 	if max <= 0 {
 		return
 	}
-	
+
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	
+
 	// If increasing concurrency, create a new semaphore
 	if max > e.maxConcurrent {
 		newSem := make(chan struct{}, max)
@@ -315,7 +315,7 @@ func (e *ToolExecutor) SetExecutionTimeout(timeout time.Duration) {
 	if timeout <= 0 {
 		return
 	}
-	
+
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.executionTimeout = timeout

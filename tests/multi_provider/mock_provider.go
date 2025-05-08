@@ -9,11 +9,11 @@ import (
 
 // MockProvider is a local mock implementation of the Provider interface for testing
 type MockProvider struct {
-	GenerateFunc          func(ctx context.Context, prompt string, options ...ldomain.Option) (string, error)
-	GenerateMessageFunc   func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.Response, error)
+	GenerateFunc           func(ctx context.Context, prompt string, options ...ldomain.Option) (string, error)
+	GenerateMessageFunc    func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.Response, error)
 	GenerateWithSchemaFunc func(ctx context.Context, prompt string, schema *sdomain.Schema, options ...ldomain.Option) (interface{}, error)
-	StreamFunc            func(ctx context.Context, prompt string, options ...ldomain.Option) (ldomain.ResponseStream, error)
-	StreamMessageFunc     func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.ResponseStream, error)
+	StreamFunc             func(ctx context.Context, prompt string, options ...ldomain.Option) (ldomain.ResponseStream, error)
+	StreamMessageFunc      func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.ResponseStream, error)
 }
 
 func (p *MockProvider) Generate(ctx context.Context, prompt string, options ...ldomain.Option) (string, error) {

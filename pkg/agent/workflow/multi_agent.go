@@ -19,10 +19,10 @@ import (
 // It's designed to work efficiently with the MultiProvider
 type MultiAgent struct {
 	DefaultAgent
-	
+
 	// Optimization: cache for provider contexts to avoid recreating in each call
 	providerContextCache sync.Map
-	
+
 	// Enhanced metrics for multi-provider operations
 	multiProviderMetrics *MultiProviderMetrics
 }
@@ -78,7 +78,7 @@ func (a *MultiAgent) run(ctx context.Context, input string, schema *sdomain.Sche
 
 	// Detect if we're using a MultiProvider
 	_, isMulti := a.llmProvider.(*provider.MultiProvider)
-	
+
 	// Pre-configure Provider with metadata when using MultiProvider
 	if isMulti {
 		// Store agent configuration in context to avoid recreating
@@ -134,7 +134,7 @@ func (a *MultiAgent) run(ctx context.Context, input string, schema *sdomain.Sche
 			if err != nil {
 				return nil, fmt.Errorf("error executing tools: %w", err)
 			}
-			
+
 			// Add the assistant message and all tool results
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleAssistant,
@@ -146,7 +146,7 @@ func (a *MultiAgent) run(ctx context.Context, input string, schema *sdomain.Sche
 				Role:    ldomain.RoleUser,
 				Content: toolResponses,
 			})
-			
+
 			continue
 		}
 
@@ -163,7 +163,7 @@ func (a *MultiAgent) run(ctx context.Context, input string, schema *sdomain.Sche
 			// Tool not found, append error message and continue
 			errMsg := fmt.Sprintf("Tool '%s' not found. Available tools: %s",
 				toolCall, strings.Join(a.getToolNames(), ", "))
-			
+
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleAssistant,
 				Content: resp.Content,
@@ -235,28 +235,28 @@ func (a *MultiAgent) executeMultipleToolsParallel(ctx context.Context, toolNames
 	if len(toolNames) == 0 {
 		return "", fmt.Errorf("no tools to execute")
 	}
-	
+
 	// Create a shared buffer for tool results
 	var allToolsOutput strings.Builder
 	allToolsOutput.WriteString("Tool results:\n")
-	
+
 	// If there's only one tool, handle it directly without goroutines
 	if len(toolNames) == 1 {
 		return a.executeSingleTool(ctx, toolNames[0], paramsArray[0], &allToolsOutput)
 	}
-	
+
 	// Track results from multiple tools
 	var wg sync.WaitGroup
 	resultsMutex := sync.Mutex{}
 	errorCount := 0
 	successCount := 0
-	
+
 	// Process each tool in parallel
 	for i, toolName := range toolNames {
 		wg.Add(1)
 		go func(idx int, name string) {
 			defer wg.Done()
-			
+
 			// Find the tool
 			tool, found := a.tools[name]
 			if !found {
@@ -267,18 +267,18 @@ func (a *MultiAgent) executeMultipleToolsParallel(ctx context.Context, toolNames
 				resultsMutex.Unlock()
 				return
 			}
-			
+
 			params := paramsArray[idx]
-			
+
 			// Call hooks before tool call
 			a.notifyBeforeToolCall(ctx, name, params)
-			
+
 			// Execute the tool
 			toolResult, toolErr := tool.Execute(ctx, params)
-			
+
 			// Call hooks after tool call
 			a.notifyAfterToolCall(ctx, name, toolResult, toolErr)
-			
+
 			// Format the result
 			var toolRespContent string
 			if toolErr != nil {
@@ -290,7 +290,7 @@ func (a *MultiAgent) executeMultipleToolsParallel(ctx context.Context, toolNames
 				resultsMutex.Lock()
 				successCount++
 				resultsMutex.Unlock()
-				
+
 				// Convert tool result to string
 				switch v := toolResult.(type) {
 				case string:
@@ -306,22 +306,22 @@ func (a *MultiAgent) executeMultipleToolsParallel(ctx context.Context, toolNames
 					}
 				}
 			}
-			
+
 			// Add this tool's result to the combined output
 			resultsMutex.Lock()
 			allToolsOutput.WriteString(fmt.Sprintf("Tool '%s' result: %s\n\n", name, toolRespContent))
 			resultsMutex.Unlock()
 		}(i, toolName)
 	}
-	
+
 	// Wait for all tools to complete
 	wg.Wait()
-	
+
 	// If all tools failed, return an error
 	if errorCount == len(toolNames) {
 		return "", fmt.Errorf("all tools failed to execute")
 	}
-	
+
 	return allToolsOutput.String(), nil
 }
 
@@ -335,16 +335,16 @@ func (a *MultiAgent) executeSingleTool(ctx context.Context, toolName string, par
 			toolName, strings.Join(a.getToolNames(), ", ")))
 		return output.String(), nil
 	}
-	
+
 	// Call hooks before tool call
 	a.notifyBeforeToolCall(ctx, toolName, params)
-	
+
 	// Execute the tool
 	toolResult, toolErr := tool.Execute(ctx, params)
-	
+
 	// Call hooks after tool call
 	a.notifyAfterToolCall(ctx, toolName, toolResult, toolErr)
-	
+
 	// Format the result
 	var toolRespContent string
 	if toolErr != nil {
@@ -365,10 +365,10 @@ func (a *MultiAgent) executeSingleTool(ctx context.Context, toolName string, par
 			}
 		}
 	}
-	
+
 	// Add this tool's result to the combined output
 	output.WriteString(fmt.Sprintf("Tool '%s' result: %s\n\n", toolName, toolRespContent))
-	
+
 	return output.String(), nil
 }
 
@@ -383,15 +383,15 @@ func (a *MultiAgent) enhanceContextForMultiProvider(ctx context.Context) context
 	if cachedCtx, found := a.providerContextCache.Load(ctx); found {
 		return cachedCtx.(context.Context)
 	}
-	
+
 	// Create agent configuration to share with providers
 	agentConfig := map[string]interface{}{
-		"system_prompt": a.systemPrompt,
-		"model_name":    a.modelName,
-		"tool_count":    len(a.tools),
+		"system_prompt":            a.systemPrompt,
+		"model_name":               a.modelName,
+		"tool_count":               len(a.tools),
 		"cached_tool_descriptions": a.cachedToolsDescription,
 	}
-	
+
 	// Add a tool schema cache to avoid regenerating JSON schemas
 	toolSchemas := make(map[string]interface{}, len(a.tools))
 	for name, tool := range a.tools {
@@ -401,49 +401,27 @@ func (a *MultiAgent) enhanceContextForMultiProvider(ctx context.Context) context
 		}
 	}
 	agentConfig["tool_schemas"] = toolSchemas
-	
+
 	// Add the configuration to the context
 	enhancedCtx := context.WithValue(ctx, providerAgentKey, agentConfig)
-	
+
 	// Store in cache for future use
 	a.providerContextCache.Store(ctx, enhancedCtx)
-	
+
 	return enhancedCtx
 }
 
-// updateMetrics updates the multi-provider metrics
-func (a *MultiAgent) updateMetrics(providerName string, latencyMs int64, usedConsensus bool, consensusSuccess bool) {
-	a.multiProviderMetrics.mu.Lock()
-	defer a.multiProviderMetrics.mu.Unlock()
-	
-	// Update provider latency
-	if _, exists := a.multiProviderMetrics.providerLatencies[providerName]; !exists {
-		a.multiProviderMetrics.providerLatencies[providerName] = make([]int64, 0, 10)
-	}
-	a.multiProviderMetrics.providerLatencies[providerName] = append(
-		a.multiProviderMetrics.providerLatencies[providerName], latencyMs)
-	
-	// Update consensus metrics if applicable
-	if usedConsensus {
-		if consensusSuccess {
-			a.multiProviderMetrics.consensusHits++
-		} else {
-			a.multiProviderMetrics.consensusMisses++
-		}
-	} else {
-		a.multiProviderMetrics.fallbackCount++
-	}
-}
+// Removed unused updateMetrics function
 
 // WithModel specifies which LLM model to use
 // Override to reset context cache when model changes
 func (a *MultiAgent) WithModel(modelName string) domain.Agent {
 	// First call the parent implementation to set the model
 	a.DefaultAgent.WithModel(modelName)
-	
+
 	// Reset the context cache since model has changed
 	a.providerContextCache = sync.Map{}
-	
+
 	return a
 }
 
@@ -452,10 +430,10 @@ func (a *MultiAgent) WithModel(modelName string) domain.Agent {
 func (a *MultiAgent) AddTool(tool domain.Tool) domain.Agent {
 	// First call the parent implementation to add the tool
 	a.DefaultAgent.AddTool(tool)
-	
+
 	// Reset the context cache since tools have changed
 	a.providerContextCache = sync.Map{}
-	
+
 	return a
 }
 
@@ -464,10 +442,10 @@ func (a *MultiAgent) AddTool(tool domain.Tool) domain.Agent {
 func (a *MultiAgent) SetSystemPrompt(prompt string) domain.Agent {
 	// First call the parent implementation to set the prompt
 	a.DefaultAgent.SetSystemPrompt(prompt)
-	
+
 	// Reset the context cache since system prompt has changed
 	a.providerContextCache = sync.Map{}
-	
+
 	return a
 }
 
@@ -475,21 +453,21 @@ func (a *MultiAgent) SetSystemPrompt(prompt string) domain.Agent {
 func (a *MultiAgent) GetMultiProviderMetrics() map[string]interface{} {
 	a.multiProviderMetrics.mu.Lock()
 	defer a.multiProviderMetrics.mu.Unlock()
-	
+
 	metrics := make(map[string]interface{})
-	
+
 	// Add consensus metrics
 	metrics["consensus_hits"] = a.multiProviderMetrics.consensusHits
 	metrics["consensus_misses"] = a.multiProviderMetrics.consensusMisses
 	metrics["fallback_count"] = a.multiProviderMetrics.fallbackCount
-	
+
 	// Calculate average latency per provider
 	providerAvgLatency := make(map[string]float64)
 	for provider, latencies := range a.multiProviderMetrics.providerLatencies {
 		if len(latencies) == 0 {
 			continue
 		}
-		
+
 		total := int64(0)
 		for _, latency := range latencies {
 			total += latency
@@ -497,6 +475,6 @@ func (a *MultiAgent) GetMultiProviderMetrics() map[string]interface{} {
 		providerAvgLatency[provider] = float64(total) / float64(len(latencies))
 	}
 	metrics["provider_latencies"] = providerAvgLatency
-	
+
 	return metrics
 }

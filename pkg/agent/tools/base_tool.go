@@ -25,9 +25,9 @@ type Tool struct {
 	numArgs       int
 	hasContext    bool
 	nonContextArg int
-	
+
 	// Cache for commonly used values to reduce allocations
-	argsPool      sync.Pool
+	argsPool sync.Pool
 }
 
 // NewTool creates a new tool from a function
@@ -44,10 +44,10 @@ func NewTool(name, description string, fn interface{}, paramSchema *sdomain.Sche
 
 	fnType := fnValue.Type()
 	numArgs := fnType.NumIn()
-	
+
 	// Determine if the function accepts context as first argument
 	hasContext := numArgs > 0 && fnType.In(0).Implements(reflect.TypeOf((*context.Context)(nil)).Elem())
-	
+
 	// Calculate index of the first non-context argument
 	nonContextArg := 0
 	if hasContext {
@@ -66,10 +66,11 @@ func NewTool(name, description string, fn interface{}, paramSchema *sdomain.Sche
 		nonContextArg: nonContextArg,
 	}
 
-	// Initialize argument pool
+	// Initialize argument pool with pointer to slice for efficient pooling
 	tool.argsPool = sync.Pool{
 		New: func() interface{} {
-			return make([]reflect.Value, numArgs)
+			slice := make([]reflect.Value, numArgs)
+			return &slice // Return pointer to avoid allocations on pool.Put
 		},
 	}
 
@@ -94,8 +95,15 @@ func (t *Tool) ParameterSchema() *sdomain.Schema {
 // Execute runs the tool with parameters
 func (t *Tool) Execute(ctx context.Context, params interface{}) (interface{}, error) {
 	// Get an arguments slice from the pool
-	args := t.argsPool.Get().([]reflect.Value)
-	defer t.argsPool.Put(args)
+	argsPtr := t.argsPool.Get().(*[]reflect.Value)
+	args := *argsPtr
+	defer func() {
+		// Clear the slice before returning it to the pool
+		for i := range args {
+			args[i] = reflect.Value{}
+		}
+		t.argsPool.Put(argsPtr)
+	}()
 
 	// If function expects a context, set it as the first argument
 	if t.hasContext {
@@ -137,7 +145,7 @@ func (t *Tool) prepareArguments(ctx context.Context, params interface{}, args []
 		for i := 0; i < paramsValue.Len(); i++ {
 			argIndex := t.nonContextArg + i
 			argValue := paramsValue.Index(i)
-			
+
 			// Try to convert if needed
 			if argValue.Type().AssignableTo(t.fnType.In(argIndex)) {
 				args[argIndex] = argValue
@@ -154,43 +162,43 @@ func (t *Tool) prepareArguments(ctx context.Context, params interface{}, args []
 	if paramsValue.Kind() == reflect.Map && t.fnType.In(t.nonContextArg).Kind() == reflect.Struct {
 		targetType := t.fnType.In(t.nonContextArg)
 		structVal := reflect.New(targetType).Elem()
-		
+
 		// Use the cached field info to map values
 		fields := globalParamCache.getStructFields(targetType)
-		
+
 		for _, field := range fields {
 			if !field.isExported {
 				continue // Skip unexported fields
 			}
-			
+
 			// Try to find the field in the map by both the struct field name and JSON name
 			var mapFieldValue reflect.Value
-			
+
 			jsonKeyValue := reflect.ValueOf(field.jsonName)
 			mapFieldValue = paramsValue.MapIndex(jsonKeyValue)
-			
+
 			if !mapFieldValue.IsValid() {
 				nameKeyValue := reflect.ValueOf(field.name)
 				mapFieldValue = paramsValue.MapIndex(nameKeyValue)
 			}
-			
+
 			if !mapFieldValue.IsValid() {
 				continue // Skip fields not found in the map
 			}
-			
+
 			// Get the field value and ensure we can set it
 			fieldValue := structVal.Field(field.index)
 			if !fieldValue.CanSet() {
 				continue
 			}
-			
+
 			// Try to convert and set the value (using optimized conversion)
 			convertedValue, ok := optimizedConvertValue(mapFieldValue, field.fieldType)
 			if ok {
 				fieldValue.Set(convertedValue)
 			}
 		}
-		
+
 		args[t.nonContextArg] = structVal
 		return nil
 	}
@@ -225,14 +233,14 @@ func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflec
 	if value.Type().AssignableTo(targetType) {
 		return value, true
 	}
-	
+
 	// Check if conversion is possible (using cache)
-	if !globalParamCache.canConvert(value.Type(), targetType) {
-		// Skip cache check for complex types like slices, as the cache may not have them
-		if targetType.Kind() != reflect.Slice && targetType.Kind() != reflect.Array {
-			// But don't return false yet - try conversion anyway
-		}
-	}
+	// Skip this check for complex types as the cache may be incomplete
+	canConvert := globalParamCache.canConvert(value.Type(), targetType)
+	_ = canConvert // We use this later for cache updates
+	
+	// Note: We continue with conversion attempts regardless of canConvert result,
+	// as the conversion logic below might handle cases not in the cache
 
 	// Handle basic type conversions with optimized paths
 	switch targetType.Kind() {
@@ -250,7 +258,7 @@ func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflec
 		default:
 			return reflect.ValueOf(fmt.Sprintf("%v", value.Interface())), true
 		}
-		
+
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		// Fast path for int conversion
 		switch value.Kind() {
@@ -268,7 +276,7 @@ func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflec
 			}
 			return reflect.ValueOf(int64(0)).Convert(targetType), true
 		}
-		
+
 	case reflect.Float32, reflect.Float64:
 		// Fast path for float conversion
 		switch value.Kind() {
@@ -286,7 +294,7 @@ func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflec
 			}
 			return reflect.ValueOf(float64(0.0)).Convert(targetType), true
 		}
-		
+
 	case reflect.Bool:
 		// Fast path for bool conversion
 		switch value.Kind() {
@@ -301,24 +309,24 @@ func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflec
 		case reflect.Float32, reflect.Float64:
 			return reflect.ValueOf(value.Float() != 0), true
 		}
-        
-    // Handle slice conversions
-    case reflect.Slice, reflect.Array:
-        if value.Kind() == reflect.Slice || value.Kind() == reflect.Array {
-            elemType := targetType.Elem()
-            length := value.Len()
-            result := reflect.MakeSlice(targetType, length, length)
-            
-            for i := 0; i < length; i++ {
-                elemValue := value.Index(i)
-                convertedElem, ok := optimizedConvertValue(elemValue, elemType)
-                if !ok {
-                    return reflect.Value{}, false
-                }
-                result.Index(i).Set(convertedElem)
-            }
-            return result, true
-        }
+
+	// Handle slice conversions
+	case reflect.Slice, reflect.Array:
+		if value.Kind() == reflect.Slice || value.Kind() == reflect.Array {
+			elemType := targetType.Elem()
+			length := value.Len()
+			result := reflect.MakeSlice(targetType, length, length)
+
+			for i := 0; i < length; i++ {
+				elemValue := value.Index(i)
+				convertedElem, ok := optimizedConvertValue(elemValue, elemType)
+				if !ok {
+					return reflect.Value{}, false
+				}
+				result.Index(i).Set(convertedElem)
+			}
+			return result, true
+		}
 	}
 
 	// Try direct conversion for numeric types
@@ -328,12 +336,12 @@ func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflec
 			return value.Convert(targetType), true
 		}
 	}
-	
+
 	// Use string as intermediate conversion
 	if value.Type().Kind() != reflect.String && value.Type().ConvertibleTo(reflect.TypeOf("")) {
 		// Convert to string first
 		strVal := value.Convert(reflect.TypeOf("")).Interface().(string)
-		
+
 		// Then try to convert from string to target type
 		switch targetType.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -352,20 +360,20 @@ func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflec
 	}
 
 	// Handle map conversions
-    if targetType.Kind() == reflect.Map && value.Kind() == reflect.Map {
-        keyType := targetType.Key()
-        elemType := targetType.Elem()
-        result := reflect.MakeMap(targetType)
-        
-        for _, key := range value.MapKeys() {
-            if convertedKey, ok := optimizedConvertValue(key, keyType); ok {
-                if convertedValue, ok := optimizedConvertValue(value.MapIndex(key), elemType); ok {
-                    result.SetMapIndex(convertedKey, convertedValue)
-                }
-            }
-        }
-        return result, true
-    }
+	if targetType.Kind() == reflect.Map && value.Kind() == reflect.Map {
+		keyType := targetType.Key()
+		elemType := targetType.Elem()
+		result := reflect.MakeMap(targetType)
+
+		for _, key := range value.MapKeys() {
+			if convertedKey, ok := optimizedConvertValue(key, keyType); ok {
+				if convertedValue, ok := optimizedConvertValue(value.MapIndex(key), elemType); ok {
+					result.SetMapIndex(convertedKey, convertedValue)
+				}
+			}
+		}
+		return result, true
+	}
 
 	// Fall back to original method for compatibility
 	return convertValue(value, targetType)
@@ -498,4 +506,3 @@ func (t *Tool) callFunction(args []reflect.Value) (interface{}, error) {
 
 	return result, err
 }
-

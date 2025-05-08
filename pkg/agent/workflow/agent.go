@@ -26,12 +26,12 @@ type UnoptimizedDefaultAgent struct {
 
 // DefaultAgent implements the Agent interface with optimizations
 type DefaultAgent struct {
-	llmProvider      ldomain.Provider
-	tools            map[string]domain.Tool
-	hooks            []domain.Hook
-	systemPrompt     string
-	modelName        string
-	
+	llmProvider  ldomain.Provider
+	tools        map[string]domain.Tool
+	hooks        []domain.Hook
+	systemPrompt string
+	modelName    string
+
 	// Optimization: cache tool descriptions to avoid regeneration
 	cachedToolsDescription string
 	// Optimization: cache tool names to avoid regeneration
@@ -53,9 +53,9 @@ func NewUnoptimizedAgent(provider ldomain.Provider) *UnoptimizedDefaultAgent {
 // NewAgent creates a new agent with an LLM provider
 func NewAgent(provider ldomain.Provider) *DefaultAgent {
 	return &DefaultAgent{
-		llmProvider:   provider,
-		tools:         make(map[string]domain.Tool),
-		hooks:         make([]domain.Hook, 0),
+		llmProvider: provider,
+		tools:       make(map[string]domain.Tool),
+		hooks:       make([]domain.Hook, 0),
 		// Pre-allocate message buffer with capacity for efficiency
 		messageBuffer: make([]ldomain.Message, 0, 10),
 	}
@@ -382,7 +382,7 @@ func (a *DefaultAgent) ExtractMultipleToolCalls(content string) ([]string, []int
 		for _, block := range jsonBlocks {
 			// Clear openaiResp to reuse it
 			openaiResp.ToolCalls = openaiResp.ToolCalls[:0]
-			
+
 			if err := json.Unmarshal([]byte(block), &openaiResp); err == nil && len(openaiResp.ToolCalls) > 0 {
 				return a.processOpenAIToolCalls(openaiResp.ToolCalls, toolNames, paramsArray)
 			}
@@ -413,22 +413,22 @@ func (a *DefaultAgent) processOpenAIToolCalls(
 			validCount++
 		}
 	}
-	
+
 	// Pre-allocate result slices to exact size if empty
 	if len(toolNames) == 0 && validCount > 0 {
 		toolNames = make([]string, 0, validCount)
 		paramsArray = make([]interface{}, 0, validCount)
 	}
-	
+
 	// Process each tool call
 	for _, toolCall := range toolCalls {
 		if toolCall.Function.Name == "" {
 			continue // Skip tool calls without names
 		}
-		
+
 		// Parse the arguments JSON
 		var params interface{}
-		
+
 		// Optimization: Only try to parse as JSON if the argument starts with '{' or '['
 		args := toolCall.Function.Arguments
 		if len(args) > 0 && (args[0] == '{' || args[0] == '[') {
@@ -438,7 +438,7 @@ func (a *DefaultAgent) processOpenAIToolCalls(
 				continue
 			}
 		}
-		
+
 		// If JSON parsing fails or it's not JSON, use the raw arguments string
 		toolNames = append(toolNames, toolCall.Function.Name)
 		paramsArray = append(paramsArray, args)
@@ -447,7 +447,7 @@ func (a *DefaultAgent) processOpenAIToolCalls(
 	if len(toolNames) > 0 {
 		return toolNames, paramsArray, true
 	}
-	
+
 	return nil, nil, false
 }
 
@@ -460,20 +460,20 @@ func (a *DefaultAgent) ExtractToolCall(content string) (string, interface{}, boo
 		Name      string `json:"name"`
 		Arguments string `json:"arguments"`
 	}
-	
+
 	type toolCallStruct struct {
 		ID       string         `json:"id"`
 		Type     string         `json:"type"`
 		Function functionStruct `json:"function"`
 	}
-	
+
 	// Fast path: check if content could be JSON
 	if len(content) > 0 && (content[0] == '{' || content[0] == '[') {
 		// Try OpenAI format first
 		var openaiResp struct {
 			ToolCalls []toolCallStruct `json:"tool_calls"`
 		}
-		
+
 		// Try to parse full content as OpenAI format first
 		if err := json.Unmarshal([]byte(content), &openaiResp); err == nil && len(openaiResp.ToolCalls) > 0 {
 			// Use the first tool call
@@ -492,7 +492,7 @@ func (a *DefaultAgent) ExtractToolCall(content string) (string, interface{}, boo
 				return toolCall.Function.Name, toolCall.Function.Arguments, true
 			}
 		}
-		
+
 		// Try simple tool call format
 		var toolCall struct {
 			Tool   string      `json:"tool"`
@@ -516,17 +516,17 @@ func (a *DefaultAgent) ExtractToolCall(content string) (string, interface{}, boo
 				if len(block) < 5 {
 					continue
 				}
-				
+
 				// Try simple tool call format first (most common)
 				var toolCall struct {
 					Tool   string      `json:"tool"`
 					Params interface{} `json:"params"`
 				}
-				
+
 				if json.Unmarshal([]byte(block), &toolCall) == nil && toolCall.Tool != "" {
 					return toolCall.Tool, toolCall.Params, true
 				}
-				
+
 				// Try OpenAI format within JSON blocks
 				var blockOpenAIResp struct {
 					ToolCalls []struct {
@@ -561,10 +561,10 @@ func (a *DefaultAgent) ExtractToolCall(content string) (string, interface{}, boo
 	}
 
 	// Optimization: Only do text-based extraction if necessary (contains "tool:" or "params:")
-	if strings.Contains(strings.ToLower(content), "tool:") || 
-	   strings.Contains(strings.ToLower(content), "params:") || 
-	   strings.Contains(strings.ToLower(content), "parameters:") {
-		
+	if strings.Contains(strings.ToLower(content), "tool:") ||
+		strings.Contains(strings.ToLower(content), "params:") ||
+		strings.Contains(strings.ToLower(content), "parameters:") {
+
 		// Fallback to simple text-based extraction
 		// Pre-allocate with estimated capacity for typical cases
 		lines := strings.Split(content, "\n")
@@ -574,7 +574,7 @@ func (a *DefaultAgent) ExtractToolCall(content string) (string, interface{}, boo
 
 		for _, line := range lines {
 			trimmedLine := strings.TrimSpace(line)
-			
+
 			// Check for tool name
 			lowerLine := strings.ToLower(trimmedLine)
 			if strings.HasPrefix(lowerLine, "tool:") {
@@ -633,10 +633,10 @@ func extractJSONBlocks(content string) []string {
 
 	// Pre-allocate for expected number of blocks (3 is a reasonable default)
 	blocks := make([]string, 0, 3)
-	
+
 	// Calculate the maximum capacity needed based on content size
 	estimatedSize := len(content)
-	
+
 	// Pre-allocate string builder to reduce allocations
 	var blockBuilder strings.Builder
 	lines := strings.Split(content, "\n")
@@ -675,7 +675,7 @@ func extractJSONBlocks(content string) []string {
 						strings.HasPrefix(trimmedLine, "```bash") ||
 						strings.HasPrefix(trimmedLine, "```sql") ||
 						strings.HasPrefix(trimmedLine, "```typescript")
-						
+
 					if !isNonJsonFormat {
 						inBlock = true
 						jsonBlockMarker = false
@@ -691,11 +691,11 @@ func extractJSONBlocks(content string) []string {
 		// Check for block end
 		if inBlock && trimmedLine == "```" {
 			inBlock = false
-			
+
 			// Only add non-empty blocks
 			if blockBuilder.Len() > 0 {
 				blockContent := blockBuilder.String()
-				
+
 				// Only add if it's a JSON block or is valid JSON
 				if jsonBlockMarker || isValidJSON(blockContent) {
 					blocks = append(blocks, blockContent)
@@ -723,12 +723,12 @@ func isValidJSON(s string) bool {
 	if len(s) < 2 {
 		return false
 	}
-	
+
 	// Must start with { or [
 	if s[0] != '{' && s[0] != '[' {
 		return false
 	}
-	
+
 	var js interface{}
 	return json.Unmarshal([]byte(s), &js) == nil
 }
@@ -739,13 +739,13 @@ func (a *DefaultAgent) getToolNames() []string {
 	if a.cachedToolNames != nil {
 		return a.cachedToolNames
 	}
-	
+
 	// Pre-allocate slice with the right capacity
 	names := make([]string, 0, len(a.tools))
 	for name := range a.tools {
 		names = append(names, name)
 	}
-	
+
 	// Cache for future use
 	a.cachedToolNames = names
 	return names
@@ -755,7 +755,7 @@ func (a *DefaultAgent) getToolNames() []string {
 func (a *DefaultAgent) createInitialMessages(input string) []ldomain.Message {
 	// Reset message buffer to reuse it
 	a.messageBuffer = a.messageBuffer[:0]
-	
+
 	// Create system message, combining prompt and tool descriptions
 	var systemContent string
 	if a.systemPrompt != "" {
@@ -1249,7 +1249,7 @@ func (a *DefaultAgent) getToolsDescription() string {
 	// Estimate the size for pre-allocation (reduce allocations)
 	// Base estimate: 500 characters for standard text + ~200 per tool
 	estimatedSize := 500 + (len(a.tools) * 200)
-	
+
 	var builder strings.Builder
 	// Pre-allocate builder capacity to reduce allocations
 	builder.Grow(estimatedSize)
@@ -1303,7 +1303,7 @@ func (a *DefaultAgent) getToolsDescription() string {
 		"```json\n{\"tool\": \"tool_name\", \"params\": {...}}\n```\n" +
 		"\nOR\n\n" +
 		"```json\n{\"tool_calls\": [{\"function\": {\"name\": \"tool_name\", \"arguments\": \"{...}\"}]}\n```\n"
-	
+
 	builder.WriteString(usageInstructions)
 
 	// Add OpenAI-style tool definitions as JSON

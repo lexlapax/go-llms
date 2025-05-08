@@ -539,7 +539,7 @@ func TestValidatorEquivalence(t *testing.T) {
 // This verifies that the optimized validator's memory pooling works correctly
 func TestMemoryReuse(t *testing.T) {
 	validator := NewValidator()
-	
+
 	// Schema for validation
 	schema := &domain.Schema{
 		Type: "object",
@@ -549,10 +549,10 @@ func TestMemoryReuse(t *testing.T) {
 		},
 		Required: []string{"name", "age"},
 	}
-	
+
 	// Valid JSON
 	validJSON := `{"name": "John", "age": 30}`
-	
+
 	// First validation should succeed
 	result1, err := validator.Validate(schema, validJSON)
 	if err != nil {
@@ -561,10 +561,10 @@ func TestMemoryReuse(t *testing.T) {
 	if !result1.Valid {
 		t.Errorf("Expected valid result for first validation")
 	}
-	
+
 	// Invalid JSON (missing required field)
 	invalidJSON := `{"name": "Jane"}`
-	
+
 	// Second validation should fail
 	result2, err := validator.Validate(schema, invalidJSON)
 	if err != nil {
@@ -576,7 +576,7 @@ func TestMemoryReuse(t *testing.T) {
 	if len(result2.Errors) == 0 {
 		t.Errorf("Expected errors for second validation")
 	}
-	
+
 	// Check if the first result was modified (it shouldn't be)
 	if !result1.Valid {
 		t.Errorf("First result was modified incorrectly")
@@ -584,7 +584,7 @@ func TestMemoryReuse(t *testing.T) {
 	if len(result1.Errors) > 0 {
 		t.Errorf("First result errors were modified incorrectly: %v", result1.Errors)
 	}
-	
+
 	// Validate a third time
 	result3, err := validator.Validate(schema, validJSON)
 	if err != nil {
@@ -593,7 +593,7 @@ func TestMemoryReuse(t *testing.T) {
 	if !result3.Valid {
 		t.Errorf("Expected valid result for third validation")
 	}
-	
+
 	// Second result should still show invalid
 	if result2.Valid {
 		t.Errorf("Second result was modified incorrectly")
@@ -605,9 +605,9 @@ func TestMemoryReuse(t *testing.T) {
 func TestRegexCache(t *testing.T) {
 	// Clear the regex cache
 	RegexCache = sync.Map{}
-	
+
 	validator := NewValidator()
-	
+
 	// Schema with patterns
 	schema := &domain.Schema{
 		Type: "object",
@@ -623,23 +623,23 @@ func TestRegexCache(t *testing.T) {
 		},
 		Required: []string{"username", "email"},
 	}
-	
+
 	// Valid JSON
 	validJSON := `{"username": "john_doe", "email": "john@example.com"}`
-	
+
 	// First validation should populate the cache
 	_, err := validator.Validate(schema, validJSON)
 	if err != nil {
 		t.Fatalf("Validation failed: %v", err)
 	}
-	
+
 	// Check that patterns are in cache
 	count := 0
 	RegexCache.Range(func(key, value interface{}) bool {
 		count++
 		return true
 	})
-	
+
 	if count == 0 {
 		t.Errorf("Expected items in regex cache, found none")
 	}
@@ -650,16 +650,16 @@ func errorsEquivalent(err1, err2 string) bool {
 	// Normalize both error strings
 	err1Lower := strings.ToLower(strings.TrimSpace(err1))
 	err2Lower := strings.ToLower(strings.TrimSpace(err2))
-	
+
 	// If the normalized strings are identical, they're equivalent
 	if err1Lower == err2Lower {
 		return true
 	}
-	
+
 	// Extract property names from both errors
 	prop1 := extractPropertyName(err1Lower)
 	prop2 := extractPropertyName(err2Lower)
-	
+
 	// If both errors have property names, they should match
 	if prop1 != "" && prop2 != "" {
 		if prop1 != prop2 {
@@ -668,26 +668,26 @@ func errorsEquivalent(err1, err2 string) bool {
 		}
 		// Property names match, now check error types
 	}
-	
+
 	// Check if both errors contain the same validation term
 	validationTerms := []string{
 		"required", "missing", "string", "integer", "number", "boolean", "object", "array",
 		"minimum", "maximum", "minlength", "maxlength", "pattern", "format", "enum",
 	}
-	
+
 	// For each validation term, check if both errors contain it
 	for _, term := range validationTerms {
 		if strings.Contains(err1Lower, term) && strings.Contains(err2Lower, term) {
 			return true
 		}
 	}
-	
+
 	// Special case for "must be" patterns that might differ in formatting
 	if strings.Contains(err1Lower, "must be") && strings.Contains(err2Lower, "must be") {
 		// Both errors are about constraints, likely the same one
 		return true
 	}
-	
+
 	// If both errors contain numeric values (especially for min/max constraints)
 	containsNumber1 := containsNumeric(err1Lower)
 	containsNumber2 := containsNumeric(err2Lower)
@@ -698,7 +698,7 @@ func errorsEquivalent(err1, err2 string) bool {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -712,20 +712,20 @@ func extractPropertyName(err string) string {
 			return word
 		}
 	}
-	
+
 	// Also check for the first word that might be a property name
 	for _, word := range words {
 		// Skip common error terms
-		if word == "property" || word == "field" || word == "is" || 
-		   word == "must" || word == "be" || word == "a" || word == "an" ||
-		   word == "the" || word == "required" || word == "missing" {
+		if word == "property" || word == "field" || word == "is" ||
+			word == "must" || word == "be" || word == "a" || word == "an" ||
+			word == "the" || word == "required" || word == "missing" {
 			continue
 		}
-		
+
 		// The first word that's not a common term might be the property name
 		return word
 	}
-	
+
 	return ""
 }
 
@@ -739,20 +739,12 @@ func containsNumeric(s string) bool {
 	return false
 }
 
-// containsAny checks if a string contains any of the given terms
-func containsAny(s string, terms ...string) bool {
-	for _, term := range terms {
-		if strings.Contains(strings.ToLower(s), term) {
-			return true
-		}
-	}
-	return false
-}
+// Removed unused containsAny function
 
 // TestFormatValidation specifically tests format validation
 func TestFormatValidation(t *testing.T) {
 	validator := NewValidator()
-	
+
 	// Test scenarios for each format
 	testCases := []struct {
 		format  string
@@ -802,7 +794,7 @@ func TestFormatValidation(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("Format_%s", tc.format), func(t *testing.T) {
 			// Schema with the format
@@ -816,7 +808,7 @@ func TestFormatValidation(t *testing.T) {
 				},
 				Required: []string{"value"},
 			}
-			
+
 			// Test valid values
 			for i, val := range tc.valid {
 				jsonStr := fmt.Sprintf(`{"value": "%s"}`, val)
@@ -826,11 +818,11 @@ func TestFormatValidation(t *testing.T) {
 					continue
 				}
 				if !result.Valid {
-					t.Errorf("Expected valid for '%s' format with '%s', got invalid: %v", 
+					t.Errorf("Expected valid for '%s' format with '%s', got invalid: %v",
 						tc.format, val, result.Errors)
 				}
 			}
-			
+
 			// Test invalid values
 			for i, val := range tc.invalid {
 				jsonStr := fmt.Sprintf(`{"value": "%s"}`, val)
@@ -840,7 +832,7 @@ func TestFormatValidation(t *testing.T) {
 					continue
 				}
 				if result.Valid {
-					t.Errorf("Expected invalid for '%s' format with '%s', got valid", 
+					t.Errorf("Expected invalid for '%s' format with '%s', got valid",
 						tc.format, val)
 				}
 			}

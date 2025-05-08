@@ -6,9 +6,7 @@ import (
 )
 
 var (
-	// Pre-compiled regex patterns for JSON extraction
-	jsonObjectRegex  = regexp.MustCompile(`(?s)\{.*\}`)
-	jsonArrayRegex   = regexp.MustCompile(`(?s)\[.*\]`)
+	// Pre-compiled regex pattern for JSON extraction in markdown code blocks
 	markdownCodeRegex = regexp.MustCompile("```(?:json)?\\s*([\\s\\S]*?)```")
 )
 
@@ -32,7 +30,7 @@ func ExtractJSON(s string) string {
 			}
 		}
 	}
-	
+
 	// Fast path: Try to find the first complete JSON array in the string
 	if startIdx := strings.Index(s, "["); startIdx >= 0 {
 		// Find the matching closing bracket by counting opening/closing brackets
@@ -49,7 +47,7 @@ func ExtractJSON(s string) string {
 			}
 		}
 	}
-	
+
 	// Check for markdown code blocks (common in LLM responses)
 	if strings.Contains(s, "```") {
 		if matches := markdownCodeRegex.FindStringSubmatch(s); len(matches) > 1 {
@@ -61,7 +59,7 @@ func ExtractJSON(s string) string {
 			}
 		}
 	}
-	
+
 	// Fallback to more expensive methods for complex cases
 	return manualExtractJSON(s)
 }
@@ -73,18 +71,4 @@ func manualExtractJSON(s string) string {
 	return ""
 }
 
-// isBalanced checks if braces/brackets are balanced in a string
-func isBalanced(s string, openChar, closeChar byte) bool {
-	level := 0
-	for i := 0; i < len(s); i++ {
-		if s[i] == openChar {
-			level++
-		} else if s[i] == closeChar {
-			level--
-			if level < 0 {
-				return false // Unbalanced
-			}
-		}
-	}
-	return level == 0 // True if balanced
-}
+// Removed unused isBalanced function

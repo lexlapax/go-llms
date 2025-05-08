@@ -46,9 +46,9 @@ func BenchmarkAgentContextInit(b *testing.B) {
 				Required: []string{"a", "b"},
 			},
 		)
-		
+
 		webFetchTool := tools.WebFetch()
-		
+
 		return mathTool, webFetchTool
 	}
 
@@ -56,21 +56,21 @@ func BenchmarkAgentContextInit(b *testing.B) {
 	b.Run("OptimizedInitialMessages", func(b *testing.B) {
 		// Create mock provider
 		mockProvider := provider.NewMockProvider()
-		
+
 		// Create tools
 		mathTool, webFetchTool := createTools()
-		
+
 		// Create agent with tools
 		agent := workflow.NewAgent(mockProvider)
 		agent.SetSystemPrompt("You are a helpful assistant.")
 		agent.AddTool(mathTool)
 		agent.AddTool(webFetchTool)
 		agent.WithHook(messageHook)
-		
+
 		// Test context
 		ctx := context.Background()
 		input := "Can you help me with a calculation?"
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			// Clear previous messages
@@ -84,21 +84,21 @@ func BenchmarkAgentContextInit(b *testing.B) {
 	b.Run("UnoptimizedInitialMessages", func(b *testing.B) {
 		// Create mock provider
 		mockProvider := provider.NewMockProvider()
-		
+
 		// Create tools
 		mathTool, webFetchTool := createTools()
-		
+
 		// Create unoptimized agent with tools
 		agent := workflow.NewUnoptimizedAgent(mockProvider)
 		agent.SetSystemPrompt("You are a helpful assistant.")
 		agent.AddTool(mathTool)
 		agent.AddTool(webFetchTool)
 		agent.WithHook(messageHook)
-		
+
 		// Test context
 		ctx := context.Background()
 		input := "Can you help me with a calculation?"
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			// Clear previous messages
@@ -204,7 +204,7 @@ func BenchmarkAgentToolExtraction(b *testing.B) {
 	mockProvider := provider.NewMockProvider()
 	optimizedAgent := workflow.NewAgent(mockProvider)
 	unoptimizedAgent := workflow.NewUnoptimizedAgent(mockProvider)
-	
+
 	// Test cases with different formats of tool calls
 	testCases := []struct {
 		name    string
@@ -226,11 +226,11 @@ func BenchmarkAgentToolExtraction(b *testing.B) {
 			}`,
 		},
 		{
-			name: "SimpleJSONFormat",
+			name:    "SimpleJSONFormat",
 			content: `{"tool": "search", "params": {"query": "best restaurants in New York"}}`,
 		},
 		{
-			name: "MarkdownCodeBlock",
+			name:    "MarkdownCodeBlock",
 			content: "I'll use the search tool to find information for you.\n\n```json\n{\"tool\": \"search\", \"params\": {\"query\": \"golang performance optimization\"}}\n```",
 		},
 		{
@@ -257,11 +257,11 @@ func BenchmarkAgentToolExtraction(b *testing.B) {
 			}`,
 		},
 		{
-			name: "TextFormat",
+			name:    "TextFormat",
 			content: "Tool: search\nParams: {\"query\": \"golang performance tips\"}",
 		},
 	}
-	
+
 	// Benchmark the optimized extractToolCall method
 	b.Run("OptimizedExtractToolCall", func(b *testing.B) {
 		for _, tc := range testCases {
@@ -277,7 +277,7 @@ func BenchmarkAgentToolExtraction(b *testing.B) {
 			})
 		}
 	})
-	
+
 	// Benchmark the unoptimized extractToolCall method
 	b.Run("UnoptimizedExtractToolCall", func(b *testing.B) {
 		for _, tc := range testCases {
@@ -293,7 +293,7 @@ func BenchmarkAgentToolExtraction(b *testing.B) {
 			})
 		}
 	})
-	
+
 	// Only benchmark the multiple tool calls for the relevant test cases
 	multiToolTestCases := []struct {
 		name    string
@@ -323,11 +323,11 @@ func BenchmarkAgentToolExtraction(b *testing.B) {
 			}`,
 		},
 		{
-			name: "MarkdownMultipleTools",
+			name:    "MarkdownMultipleTools",
 			content: "I'll use multiple tools to get information for you.\n\n```json\n{\"tool_calls\": [{\"function\": {\"name\": \"get_weather\", \"arguments\": \"{\\\"location\\\":\\\"San Francisco\\\",\\\"unit\\\":\\\"celsius\\\"}\"}}]}\n```",
 		},
 	}
-	
+
 	// Benchmark the optimized extractMultipleToolCalls method
 	b.Run("OptimizedExtractMultipleToolCalls", func(b *testing.B) {
 		for _, tc := range multiToolTestCases {
@@ -343,7 +343,7 @@ func BenchmarkAgentToolExtraction(b *testing.B) {
 			})
 		}
 	})
-	
+
 	// Benchmark the unoptimized extractMultipleToolCalls method
 	b.Run("UnoptimizedExtractMultipleToolCalls", func(b *testing.B) {
 		for _, tc := range multiToolTestCases {

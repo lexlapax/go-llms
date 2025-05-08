@@ -45,11 +45,11 @@ func BenchmarkSimilarityCalculation(b *testing.B) {
 	b.Run("First_Call", func(b *testing.B) {
 		// Ensure a clean cache state for accurate first-call measurement
 		provider.ResetSimilarityCache()
-		
+
 		// Just run once to measure first-call overhead
 		pair := testPairs[1] // Use the Similar pair
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			provider.PublicCalculateSimilarity(pair.textA, pair.textB)
 		}
@@ -61,34 +61,34 @@ func BenchmarkSimilarityCalculation(b *testing.B) {
 			// Reset cache before each test
 			provider.ResetSimilarityCache()
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				provider.PublicCalculateSimilarity(pair.textA, pair.textB)
 			}
 		})
-		
+
 		// Test with cache benefits
 		b.Run(pair.name+"_Cached", func(b *testing.B) {
 			// Prime the cache with one call
 			provider.PublicCalculateSimilarity(pair.textA, pair.textB)
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				provider.PublicCalculateSimilarity(pair.textA, pair.textB)
 			}
 		})
 	}
-	
+
 	// Test cache performance under concurrent access
 	b.Run("Concurrent_Access", func(b *testing.B) {
 		provider.ResetSimilarityCache()
-		
+
 		b.RunParallel(func(pb *testing.PB) {
 			// Choose a random test pair for each goroutine
 			// Simple timer-based "random" selection
 			idx := time.Now().UnixNano() % int64(len(testPairs))
 			pair := testPairs[idx]
-			
+
 			for pb.Next() {
 				provider.PublicCalculateSimilarity(pair.textA, pair.textB)
 			}

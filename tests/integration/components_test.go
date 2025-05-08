@@ -22,8 +22,8 @@ func TestComponentsIntegration(t *testing.T) {
 	userSchema := &sdomain.Schema{
 		Type: "object",
 		Properties: map[string]sdomain.Property{
-			"name": {Type: "string", MinLength: intPtrOpt(3)},
-			"age": {Type: "integer", Minimum: float64PtrOpt(18)},
+			"name":  {Type: "string", MinLength: intPtrOpt(3)},
+			"age":   {Type: "integer", Minimum: float64PtrOpt(18)},
 			"email": {Type: "string", Format: "email"},
 			"tags": {
 				Type: "array",
@@ -79,10 +79,10 @@ func TestComponentsIntegration(t *testing.T) {
 	// Test with valid user data
 	t.Run("ValidUserData", func(t *testing.T) {
 		userData := map[string]interface{}{
-			"name": "John Doe",
-			"age": 30,
+			"name":  "John Doe",
+			"age":   30,
 			"email": "john@example.com",
-			"tags": []interface{}{"customer", "premium"},
+			"tags":  []interface{}{"customer", "premium"},
 		}
 
 		result, err := userTool.Execute(context.Background(), userData)
@@ -113,8 +113,8 @@ func TestComponentsIntegration(t *testing.T) {
 	// Test with invalid field values
 	t.Run("InvalidFieldValues", func(t *testing.T) {
 		userData := map[string]interface{}{
-			"name": "Jo", // Too short
-			"age": 16,    // Below minimum
+			"name":  "Jo",            // Too short
+			"age":   16,              // Below minimum
 			"email": "invalid-email", // Invalid format
 		}
 
@@ -136,22 +136,22 @@ func TestComponentsIntegration(t *testing.T) {
 			if !validationResult.Valid {
 				return "", fmt.Errorf("validation failed: %v", validationResult.Errors)
 			}
-			
+
 			// Parse the JSON to a map
 			var userData map[string]interface{}
 			if err := json.Unmarshal([]byte(jsonData), &userData); err != nil {
 				return "", err
 			}
-			
+
 			// Process with the tool
 			toolResult, err := userTool.Execute(context.Background(), userData)
 			if err != nil {
 				return "", err
 			}
-			
+
 			return toolResult.(string), nil
 		}
-		
+
 		// Valid JSON
 		validJSON := `{
 			"name": "John Doe",
@@ -159,37 +159,37 @@ func TestComponentsIntegration(t *testing.T) {
 			"email": "john@example.com",
 			"tags": ["customer", "premium"]
 		}`
-		
+
 		// Process the valid data
 		result, err := validateAndProcess(validJSON)
 		if err != nil {
 			t.Fatalf("Error with valid data: %v", err)
 		}
-		
+
 		expected := "John Doe (john@example.com) is 30 years old with tags: customer, premium"
 		if result != expected {
 			t.Errorf("Expected result '%s', got '%s'", expected, result)
 		}
-		
+
 		// Invalid JSON (missing required field)
 		invalidJSON := `{
 			"name": "John Doe",
 			"email": "john@example.com"
 		}`
-		
+
 		// Should fail validation
 		_, err = validateAndProcess(invalidJSON)
 		if err == nil {
 			t.Errorf("Expected error for missing required field, got none")
 		}
-		
+
 		// Invalid JSON (format error)
 		invalidFormatJSON := `{
 			"name": "John Doe",
 			"age": 30,
 			"email": "not-an-email"
 		}`
-		
+
 		// Should fail validation
 		_, err = validateAndProcess(invalidFormatJSON)
 		if err == nil {
@@ -205,10 +205,10 @@ func TestComponentsIntegration(t *testing.T) {
 		}
 
 		userData := map[string]interface{}{
-			"name": "John Doe",
-			"age": 30,
+			"name":  "John Doe",
+			"age":   30,
 			"email": "john@example.com",
-			"tags": []interface{}{"customer", "premium"},
+			"tags":  []interface{}{"customer", "premium"},
 		}
 
 		// Make repeated calls to exercise object pooling and caching

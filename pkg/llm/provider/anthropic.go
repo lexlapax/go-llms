@@ -49,10 +49,10 @@ func WithAnthropicHTTPClient(client *http.Client) AnthropicOption {
 // NewAnthropicProvider creates a new Anthropic provider
 func NewAnthropicProvider(apiKey, model string, options ...AnthropicOption) *AnthropicProvider {
 	provider := &AnthropicProvider{
-		apiKey:      apiKey,
-		model:       model,
-		baseURL:     defaultAnthropicBaseURL,
-		httpClient:  http.DefaultClient,
+		apiKey:       apiKey,
+		model:        model,
+		baseURL:      defaultAnthropicBaseURL,
+		httpClient:   http.DefaultClient,
 		messageCache: NewMessageCache(),
 	}
 
@@ -85,12 +85,12 @@ func (p *AnthropicProvider) ConvertMessagesToAnthropicFormat(messages []domain.M
 		result := cachedResult.(map[string]interface{})
 		return result["messages"].([]map[string]interface{}), result["system"].(string)
 	}
-	
+
 	// Pre-allocate the slice with reasonable capacity
 	// Anthropic handles system messages separately, so capacity is potentially less
 	anthMessages := make([]map[string]interface{}, 0, len(messages))
 	var systemMessage string
-	
+
 	// Fast path for single message
 	if len(messages) == 1 {
 		if messages[0].Role == domain.RoleSystem {
@@ -107,7 +107,7 @@ func (p *AnthropicProvider) ConvertMessagesToAnthropicFormat(messages []domain.M
 			message["role"] = string(messages[0].Role)
 			message["content"] = messages[0].Content
 			anthMessages = append(anthMessages, message)
-			
+
 			// Cache and return
 			result := map[string]interface{}{
 				"messages": anthMessages,
@@ -117,7 +117,7 @@ func (p *AnthropicProvider) ConvertMessagesToAnthropicFormat(messages []domain.M
 			return anthMessages, systemMessage
 		}
 	}
-	
+
 	// Process all messages
 	for _, msg := range messages {
 		if msg.Role == domain.RoleSystem {
@@ -131,14 +131,14 @@ func (p *AnthropicProvider) ConvertMessagesToAnthropicFormat(messages []domain.M
 			anthMessages = append(anthMessages, message)
 		}
 	}
-	
+
 	// Cache the result - store both the messages and system prompt
 	result := map[string]interface{}{
 		"messages": anthMessages,
 		"system":   systemMessage,
 	}
 	p.messageCache.Set(cacheKey, result)
-	
+
 	return anthMessages, systemMessage
 }
 
@@ -151,34 +151,34 @@ func (p *AnthropicProvider) buildAnthropicRequestBody(
 	// Pre-allocate the map with the right capacity (standard fields + possible options)
 	// We need at least model and messages, plus potential options
 	requestBody := make(map[string]interface{}, 6)
-	
+
 	// Add required fields
 	requestBody["model"] = p.model
 	requestBody["messages"] = messages
-	
+
 	// Add system message if present
 	if systemMessage != "" {
 		requestBody["system"] = systemMessage
 	}
-	
+
 	// Add temperature if it differs from default
 	if options.Temperature != 0.7 {
 		requestBody["temperature"] = options.Temperature
 	}
-	
+
 	// Always add max_tokens - Anthropic requires this field
 	requestBody["max_tokens"] = options.MaxTokens
-	
+
 	// Add top_p if it differs from default
 	if options.TopP != 1.0 {
 		requestBody["top_p"] = options.TopP
 	}
-	
+
 	// Add stop sequences if provided
 	if len(options.StopSequences) > 0 {
 		requestBody["stop_sequences"] = options.StopSequences
 	}
-	
+
 	return requestBody
 }
 
@@ -189,10 +189,10 @@ func (p *AnthropicProvider) GenerateMessage(ctx context.Context, messages []doma
 	for _, option := range options {
 		option(providerOptions)
 	}
-	
+
 	// Convert messages to Anthropic format - optimized with caching
 	anthMessages, systemMessage := p.ConvertMessagesToAnthropicFormat(messages)
-	
+
 	// Build request body - optimized with pre-allocation
 	requestBody := p.buildAnthropicRequestBody(anthMessages, systemMessage, providerOptions)
 
@@ -312,10 +312,10 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 
 	// Convert messages to Anthropic format - optimized with caching
 	anthMessages, systemMessage := p.ConvertMessagesToAnthropicFormat(messages)
-	
+
 	// Build request body - optimized with pre-allocation
 	requestBody := p.buildAnthropicRequestBody(anthMessages, systemMessage, providerOptions)
-	
+
 	// Add streaming flag
 	requestBody["stream"] = true
 
@@ -465,7 +465,7 @@ func enhancePromptWithAnthropicSchema(prompt string, schema *schemaDomain.Schema
 	// Reuse buffer for schema JSON - reduces allocations
 	var schemaBuffer bytes.Buffer
 	schemaBuffer.Grow(1024) // Pre-allocate reasonable buffer size for most schemas
-	
+
 	// Use optimized JSON marshaling with indentation
 	err := json.MarshalIndentWithBuffer(schema, &schemaBuffer, "", "  ")
 	if err != nil {
@@ -476,15 +476,15 @@ func enhancePromptWithAnthropicSchema(prompt string, schema *schemaDomain.Schema
 	// Build enhanced prompt
 	// Estimate the size to pre-allocate the final string builder
 	totalSize := len(prompt) + schemaBuffer.Len() + 200 // 200 for the template text
-	
+
 	var promptBuilder strings.Builder
 	promptBuilder.Grow(totalSize)
-	
+
 	promptBuilder.WriteString(prompt)
 	promptBuilder.WriteString("\n\nYou are to provide a JSON response that conforms to the following JSON schema.")
 	promptBuilder.WriteString("\nRespond ONLY with valid JSON that matches this schema:\n\n")
 	promptBuilder.Write(schemaBuffer.Bytes())
 	promptBuilder.WriteString("\n\nYour response must be valid JSON only, with no explanations, markdown code blocks, or any other text.")
-	
+
 	return promptBuilder.String()
 }

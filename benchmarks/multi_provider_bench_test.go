@@ -15,11 +15,11 @@ import (
 
 // Counter for benchmarking provider calls
 var (
-	generateCounter         int64
-	generateMessageCounter  int64
-	generateSchemaCounter   int64
-	streamCounter           int64
-	streamMessageCounter    int64
+	generateCounter        int64
+	generateMessageCounter int64
+	generateSchemaCounter  int64
+	streamCounter          int64
+	streamMessageCounter   int64
 )
 
 // resetCounters resets all counters for clean test runs
@@ -35,16 +35,16 @@ func resetCounters() {
 func BenchmarkProviderTypes(b *testing.B) {
 	// Fast mock provider that succeeds immediately
 	fastProvider := newCountingMockProvider(0, false)
-	
+
 	// Slow mock provider that takes 50ms to respond
 	slowProvider := newCountingMockProvider(50*time.Millisecond, false)
-	
+
 	// Failing mock provider that always returns an error
 	failingProvider := newCountingMockProvider(0, true)
-	
+
 	// Variable delay provider (100-300ms)
 	variableProvider := newVariableDelayMockProvider(100*time.Millisecond, 300*time.Millisecond)
-	
+
 	// Test input data
 	prompt := "Test prompt for benchmarking"
 	messages := []domain.Message{
@@ -56,9 +56,9 @@ func BenchmarkProviderTypes(b *testing.B) {
 			"result": {Type: "string"},
 		},
 	}
-	
+
 	ctx := context.Background()
-	
+
 	// Single provider (baseline)
 	b.Run("SingleProvider", func(b *testing.B) {
 		resetCounters()
@@ -70,7 +70,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			b.StopTimer()
 			b.ReportMetric(float64(atomic.LoadInt64(&generateCounter)), "provider_calls")
 		})
-		
+
 		b.Run("GenerateMessage", func(b *testing.B) {
 			resetCounters()
 			b.ResetTimer()
@@ -80,7 +80,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			b.StopTimer()
 			b.ReportMetric(float64(atomic.LoadInt64(&generateMessageCounter)), "provider_calls")
 		})
-		
+
 		b.Run("GenerateWithSchema", func(b *testing.B) {
 			resetCounters()
 			b.ResetTimer()
@@ -91,7 +91,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			b.ReportMetric(float64(atomic.LoadInt64(&generateSchemaCounter)), "provider_calls")
 		})
 	})
-	
+
 	// Multi-provider with fastest strategy (optimal case)
 	b.Run("MultiProvider_Fastest_Optimal", func(b *testing.B) {
 		providers := []provider.ProviderWeight{
@@ -99,7 +99,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			{Provider: slowProvider, Weight: 1.0, Name: "slow"},
 		}
 		multiProvider := provider.NewMultiProvider(providers, provider.StrategyFastest)
-		
+
 		b.Run("Generate", func(b *testing.B) {
 			resetCounters()
 			b.ResetTimer()
@@ -109,7 +109,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			b.StopTimer()
 			b.ReportMetric(float64(atomic.LoadInt64(&generateCounter)), "provider_calls")
 		})
-		
+
 		b.Run("GenerateMessage", func(b *testing.B) {
 			resetCounters()
 			b.ResetTimer()
@@ -119,7 +119,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			b.StopTimer()
 			b.ReportMetric(float64(atomic.LoadInt64(&generateMessageCounter)), "provider_calls")
 		})
-		
+
 		b.Run("GenerateWithSchema", func(b *testing.B) {
 			resetCounters()
 			b.ResetTimer()
@@ -130,7 +130,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			b.ReportMetric(float64(atomic.LoadInt64(&generateSchemaCounter)), "provider_calls")
 		})
 	})
-	
+
 	// Multi-provider with primary strategy (primary succeeds)
 	b.Run("MultiProvider_Primary_Success", func(b *testing.B) {
 		providers := []provider.ProviderWeight{
@@ -138,7 +138,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			{Provider: slowProvider, Weight: 1.0, Name: "slow"},
 		}
 		multiProvider := provider.NewMultiProvider(providers, provider.StrategyPrimary).WithPrimaryProvider(0)
-		
+
 		b.Run("Generate", func(b *testing.B) {
 			resetCounters()
 			b.ResetTimer()
@@ -148,7 +148,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			b.StopTimer()
 			b.ReportMetric(float64(atomic.LoadInt64(&generateCounter)), "provider_calls")
 		})
-		
+
 		b.Run("GenerateMessage", func(b *testing.B) {
 			resetCounters()
 			b.ResetTimer()
@@ -159,7 +159,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			b.ReportMetric(float64(atomic.LoadInt64(&generateMessageCounter)), "provider_calls")
 		})
 	})
-	
+
 	// Multi-provider with primary strategy (primary fails)
 	b.Run("MultiProvider_Primary_Fallback", func(b *testing.B) {
 		providers := []provider.ProviderWeight{
@@ -167,7 +167,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			{Provider: fastProvider, Weight: 1.0, Name: "fast"},
 		}
 		multiProvider := provider.NewMultiProvider(providers, provider.StrategyPrimary).WithPrimaryProvider(0)
-		
+
 		b.Run("Generate", func(b *testing.B) {
 			resetCounters()
 			b.ResetTimer()
@@ -177,7 +177,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			b.StopTimer()
 			b.ReportMetric(float64(atomic.LoadInt64(&generateCounter)), "provider_calls")
 		})
-		
+
 		b.Run("GenerateMessage", func(b *testing.B) {
 			resetCounters()
 			b.ResetTimer()
@@ -188,7 +188,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			b.ReportMetric(float64(atomic.LoadInt64(&generateMessageCounter)), "provider_calls")
 		})
 	})
-	
+
 	// Multi-provider with variable delay providers (realistic simulation)
 	b.Run("MultiProvider_VariableDelay", func(b *testing.B) {
 		providers := []provider.ProviderWeight{
@@ -197,7 +197,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			{Provider: newVariableDelayMockProvider(50*time.Millisecond, 500*time.Millisecond), Weight: 1.0, Name: "variable3"},
 		}
 		multiProvider := provider.NewMultiProvider(providers, provider.StrategyFastest)
-		
+
 		// Only run a small number of iterations since this is slow
 		b.Run("Generate", func(b *testing.B) {
 			resetCounters()
@@ -212,7 +212,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 			b.StopTimer()
 			b.ReportMetric(float64(atomic.LoadInt64(&generateCounter)), "provider_calls")
 		})
-		
+
 		b.Run("GenerateMessage", func(b *testing.B) {
 			resetCounters()
 			count := b.N
@@ -235,15 +235,15 @@ func BenchmarkProviderTimeout(b *testing.B) {
 	verySlowProvider := newCountingMockProvider(2*time.Second, false)
 	slowerProvider := newCountingMockProvider(500*time.Millisecond, false)
 	fasterProvider := newCountingMockProvider(100*time.Millisecond, false)
-	
+
 	// Test input data
 	prompt := "Test prompt for timeout benchmarking"
 	messages := []domain.Message{
 		{Role: domain.RoleUser, Content: "Test message for timeout benchmarking"},
 	}
-	
+
 	// Timeout duration will be used for each test context
-	
+
 	// Create multi-provider with fastest strategy
 	providers := []provider.ProviderWeight{
 		{Provider: verySlowProvider, Weight: 1.0, Name: "very_slow"},
@@ -251,7 +251,7 @@ func BenchmarkProviderTimeout(b *testing.B) {
 		{Provider: fasterProvider, Weight: 1.0, Name: "faster"},
 	}
 	multiProvider := provider.NewMultiProvider(providers, provider.StrategyFastest)
-	
+
 	// Only run a small number of iterations since this is slow
 	b.Run("Generate_WithTimeout", func(b *testing.B) {
 		resetCounters()
@@ -269,7 +269,7 @@ func BenchmarkProviderTimeout(b *testing.B) {
 		b.StopTimer()
 		b.ReportMetric(float64(atomic.LoadInt64(&generateCounter)), "provider_calls")
 	})
-	
+
 	b.Run("GenerateMessage_WithTimeout", func(b *testing.B) {
 		resetCounters()
 		count := b.N
@@ -292,7 +292,7 @@ func BenchmarkProviderTimeout(b *testing.B) {
 
 // countingMockProvider counts calls and simulates delay and failures
 type countingMockProvider struct {
-	delay   time.Duration
+	delay      time.Duration
 	alwaysFail bool
 }
 
@@ -305,7 +305,7 @@ func newCountingMockProvider(delay time.Duration, alwaysFail bool) *countingMock
 
 func (p *countingMockProvider) Generate(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
 	atomic.AddInt64(&generateCounter, 1)
-	
+
 	if p.delay > 0 {
 		select {
 		case <-ctx.Done():
@@ -314,17 +314,17 @@ func (p *countingMockProvider) Generate(ctx context.Context, prompt string, opti
 			// Continue after delay
 		}
 	}
-	
+
 	if p.alwaysFail {
 		return "", errors.New("simulated provider failure")
 	}
-	
+
 	return "Mock response for: " + prompt, nil
 }
 
 func (p *countingMockProvider) GenerateMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
 	atomic.AddInt64(&generateMessageCounter, 1)
-	
+
 	if p.delay > 0 {
 		select {
 		case <-ctx.Done():
@@ -333,11 +333,11 @@ func (p *countingMockProvider) GenerateMessage(ctx context.Context, messages []d
 			// Continue after delay
 		}
 	}
-	
+
 	if p.alwaysFail {
 		return domain.Response{}, errors.New("simulated provider failure")
 	}
-	
+
 	// Create response with message content
 	var content string
 	if len(messages) > 0 {
@@ -345,13 +345,13 @@ func (p *countingMockProvider) GenerateMessage(ctx context.Context, messages []d
 	} else {
 		content = "Mock response for empty messages"
 	}
-	
+
 	return domain.GetResponsePool().NewResponse(content), nil
 }
 
 func (p *countingMockProvider) GenerateWithSchema(ctx context.Context, prompt string, schema *schemaDomain.Schema, options ...domain.Option) (interface{}, error) {
 	atomic.AddInt64(&generateSchemaCounter, 1)
-	
+
 	if p.delay > 0 {
 		select {
 		case <-ctx.Done():
@@ -360,34 +360,34 @@ func (p *countingMockProvider) GenerateWithSchema(ctx context.Context, prompt st
 			// Continue after delay
 		}
 	}
-	
+
 	if p.alwaysFail {
 		return nil, errors.New("simulated provider failure")
 	}
-	
+
 	// Create a simple mock response
 	mockResponse := map[string]interface{}{
 		"result": "Mock structured response for: " + prompt,
 	}
-	
+
 	return mockResponse, nil
 }
 
 func (p *countingMockProvider) Stream(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
 	atomic.AddInt64(&streamCounter, 1)
-	
+
 	if p.alwaysFail {
 		return nil, errors.New("simulated provider failure")
 	}
-	
+
 	tokenCh := make(chan domain.Token, 5)
-	
+
 	go func() {
 		defer close(tokenCh)
-		
+
 		// Simulate token streaming with delay
 		tokens := []string{"Mock ", "streaming ", "response ", "for: ", prompt}
-		
+
 		for i, token := range tokens {
 			// Check for cancellation
 			select {
@@ -396,7 +396,7 @@ func (p *countingMockProvider) Stream(ctx context.Context, prompt string, option
 			case <-time.After(p.delay / 5): // Divide the delay among tokens
 				// Send the token
 				isLast := i == len(tokens)-1
-				
+
 				select {
 				case <-ctx.Done():
 					return
@@ -406,22 +406,22 @@ func (p *countingMockProvider) Stream(ctx context.Context, prompt string, option
 			}
 		}
 	}()
-	
+
 	return tokenCh, nil
 }
 
 func (p *countingMockProvider) StreamMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.ResponseStream, error) {
 	atomic.AddInt64(&streamMessageCounter, 1)
-	
+
 	if p.alwaysFail {
 		return nil, errors.New("simulated provider failure")
 	}
-	
+
 	tokenCh := make(chan domain.Token, 5)
-	
+
 	go func() {
 		defer close(tokenCh)
-		
+
 		// Get the last message content for the response
 		var lastContent string
 		if len(messages) > 0 {
@@ -429,10 +429,10 @@ func (p *countingMockProvider) StreamMessage(ctx context.Context, messages []dom
 		} else {
 			lastContent = "empty messages"
 		}
-		
+
 		// Simulate token streaming with delay
 		tokens := []string{"Mock ", "streaming ", "response ", "for: ", lastContent}
-		
+
 		for i, token := range tokens {
 			// Check for cancellation
 			select {
@@ -441,7 +441,7 @@ func (p *countingMockProvider) StreamMessage(ctx context.Context, messages []dom
 			case <-time.After(p.delay / 5): // Divide the delay among tokens
 				// Send the token
 				isLast := i == len(tokens)-1
-				
+
 				select {
 				case <-ctx.Done():
 					return
@@ -451,7 +451,7 @@ func (p *countingMockProvider) StreamMessage(ctx context.Context, messages []dom
 			}
 		}
 	}()
-	
+
 	return tokenCh, nil
 }
 
@@ -488,7 +488,7 @@ func (p *variableDelayMockProvider) getRandomDelay() time.Duration {
 func (p *variableDelayMockProvider) Generate(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
 	atomic.AddInt64(&generateCounter, 1)
 	delay := p.getRandomDelay()
-	
+
 	select {
 	case <-ctx.Done():
 		return "", ctx.Err()
@@ -500,7 +500,7 @@ func (p *variableDelayMockProvider) Generate(ctx context.Context, prompt string,
 func (p *variableDelayMockProvider) GenerateMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
 	atomic.AddInt64(&generateMessageCounter, 1)
 	delay := p.getRandomDelay()
-	
+
 	select {
 	case <-ctx.Done():
 		return domain.Response{}, ctx.Err()
@@ -518,7 +518,7 @@ func (p *variableDelayMockProvider) GenerateMessage(ctx context.Context, message
 func (p *variableDelayMockProvider) GenerateWithSchema(ctx context.Context, prompt string, schema *schemaDomain.Schema, options ...domain.Option) (interface{}, error) {
 	atomic.AddInt64(&generateSchemaCounter, 1)
 	delay := p.getRandomDelay()
-	
+
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -532,21 +532,21 @@ func (p *variableDelayMockProvider) GenerateWithSchema(ctx context.Context, prom
 func (p *variableDelayMockProvider) Stream(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
 	atomic.AddInt64(&streamCounter, 1)
 	tokenCh := make(chan domain.Token, 5)
-	
+
 	go func() {
 		defer close(tokenCh)
-		
+
 		tokens := []string{"Variable ", "delay ", "streaming ", "response ", "for: ", prompt}
-		
+
 		for i, token := range tokens {
 			delay := p.getRandomDelay() / 6 // Divide total delay among tokens
-			
+
 			select {
 			case <-ctx.Done():
 				return
 			case <-time.After(delay):
 				isLast := i == len(tokens)-1
-				
+
 				select {
 				case <-ctx.Done():
 					return
@@ -556,35 +556,35 @@ func (p *variableDelayMockProvider) Stream(ctx context.Context, prompt string, o
 			}
 		}
 	}()
-	
+
 	return tokenCh, nil
 }
 
 func (p *variableDelayMockProvider) StreamMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.ResponseStream, error) {
 	atomic.AddInt64(&streamMessageCounter, 1)
 	tokenCh := make(chan domain.Token, 5)
-	
+
 	go func() {
 		defer close(tokenCh)
-		
+
 		var lastContent string
 		if len(messages) > 0 {
 			lastContent = messages[len(messages)-1].Content
 		} else {
 			lastContent = "empty messages"
 		}
-		
+
 		tokens := []string{"Variable ", "delay ", "streaming ", "response ", "for: ", lastContent}
-		
+
 		for i, token := range tokens {
 			delay := p.getRandomDelay() / 6 // Divide total delay among tokens
-			
+
 			select {
 			case <-ctx.Done():
 				return
 			case <-time.After(delay):
 				isLast := i == len(tokens)-1
-				
+
 				select {
 				case <-ctx.Done():
 					return
@@ -594,6 +594,6 @@ func (p *variableDelayMockProvider) StreamMessage(ctx context.Context, messages 
 			}
 		}
 	}()
-	
+
 	return tokenCh, nil
 }
