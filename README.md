@@ -23,9 +23,15 @@ Go-LLMs is a Go library for creating LLM-powered applications with structured ou
 4. Provide comprehensive validation for LLM outputs
 5. Follow clean architecture principles with vertical feature slices
 
-## Project Structure
+## Architecture
 
-The project follows a vertical slicing approach where code is organized by feature:
+### Overview
+
+Go-LLMs is built around several key components that work together to provide a comprehensive solution for working with LLMs in Go applications.
+
+![Go-LLMs Architecture Overview](docs/images/architecture_overview.svg)
+
+The architecture follows a vertical slicing approach where code is organized by feature:
 
 ```
 go-llms/
@@ -51,6 +57,41 @@ go-llms/
 │       └── workflow/          # Agent execution flow
 └── examples/                  # Usage examples
 ```
+
+### Data Flow
+
+This diagram shows how data flows through the system when generating structured outputs:
+
+![Go-LLMs Data Flow](docs/images/data_flow.svg)
+
+1. The application sends a request to an LLM provider
+2. The provider formats the request for the external LLM API
+3. The raw response from the LLM is returned to the provider
+4. The structured output processor extracts structured data
+5. The schema validator validates the extracted data
+6. The valid result is returned to the application
+
+### Agent Workflow
+
+When using agents with tools, the flow of execution follows this pattern:
+
+![Go-LLMs Agent Workflow](docs/images/agent_workflow.svg)
+
+The agent coordinates between:
+- The LLM provider for generating responses
+- Tools for performing specific operations
+- Hooks for monitoring and logging
+- User input/output handling
+
+### Multi-Provider Strategies
+
+Go-LLMs supports multiple strategies for working with several LLM providers simultaneously:
+
+![Go-LLMs Multi-Provider Strategies](docs/images/multi_provider.svg)
+
+- **Fastest Strategy**: Uses the first provider to respond
+- **Primary Strategy**: Tries the primary provider first, with fallbacks
+- **Consensus Strategy**: Compares results from multiple providers to determine the best response
 
 ## Installation
 

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="900" height="650" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <style>
+        .box {
+            fill: #f0f0f0;
+            stroke: #333;
+            stroke-width: 2;
+            rx: 8;
+            ry: 8;
+        }
+        .client {
+            fill: #ffe6e6;
+        }
+        .multi {
+            fill: #e6f3e6;
+        }
+        .provider1 {
+            fill: #e6f3ff;
+        }
+        .provider2 {
+            fill: #fff2e6;
+        }
+        .provider3 {
+            fill: #f2e6ff;
+        }
+        .strategy {
+            fill: #ffffe6;
+        }
+        .arrow {
+            stroke: #333;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+        .strategy-arrow {
+            stroke-width: 3;
+        }
+        .title {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            text-anchor: middle;
+        }
+        .subtitle {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            text-anchor: middle;
+        }
+        .label {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            fill: #555;
+            text-anchor: middle;
+        }
+    </style>
+    
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+        </marker>
+    </defs>
+    
+    <!-- Client Application Box -->
+    <rect x="375" y="40" width="150" height="60" class="box client" />
+    <text x="450" y="70" class="title">Client Application</text>
+    <text x="450" y="90" class="subtitle">User Code</text>
+    
+    <!-- Multi Provider Box -->
+    <rect x="300" y="150" width="300" height="80" class="box multi" />
+    <text x="450" y="180" class="title">Multi-Provider</text>
+    <text x="450" y="200" class="subtitle">Provider Orchestration</text>
+    <text x="450" y="220" class="subtitle">Result Processing</text>
+    
+    <!-- Provider Boxes -->
+    <rect x="100" y="300" width="150" height="70" class="box provider1" />
+    <text x="175" y="330" class="title">OpenAI Provider</text>
+    <text x="175" y="350" class="subtitle">Fast, Reliable</text>
+    
+    <rect x="375" y="300" width="150" height="70" class="box provider2" />
+    <text x="450" y="330" class="title">Anthropic Provider</text>
+    <text x="450" y="350" class="subtitle">High Quality</text>
+    
+    <rect x="650" y="300" width="150" height="70" class="box provider3" />
+    <text x="725" y="330" class="title">Custom Provider</text>
+    <text x="725" y="350" class="subtitle">Specialized Tasks</text>
+    
+    <!-- Strategy Boxes -->
+    <rect x="150" y="500" width="180" height="80" class="box strategy" />
+    <text x="240" y="530" class="title">Fastest Strategy</text>
+    <text x="240" y="550" class="subtitle">Returns first response</text>
+    <text x="240" y="570" class="subtitle">Race providers</text>
+    
+    <rect x="360" y="500" width="180" height="80" class="box strategy" />
+    <text x="450" y="530" class="title">Primary Strategy</text>
+    <text x="450" y="550" class="subtitle">Try primary first</text>
+    <text x="450" y="570" class="subtitle">Fallback to others on error</text>
+    
+    <rect x="570" y="500" width="180" height="80" class="box strategy" />
+    <text x="660" y="530" class="title">Consensus Strategy</text>
+    <text x="660" y="550" class="subtitle">Compare results</text>
+    <text x="660" y="570" class="subtitle">Return most common/similar</text>
+    
+    <!-- Arrows -->
+    <!-- Client to Multi-Provider -->
+    <path d="M 450 100 L 450 150" class="arrow" />
+    <text x="470" y="130" class="label">Query</text>
+    
+    <!-- Multi-Provider to Client -->
+    <path d="M 475 150 L 475 100" class="arrow" style="stroke: #007700" />
+    <text x="495" y="130" class="label" style="fill: #007700">Result</text>
+    
+    <!-- Multi-Provider to Individual Providers -->
+    <path d="M 300 190 L 175 190 L 175 300" class="arrow" />
+    <path d="M 450 230 L 450 300" class="arrow" />
+    <path d="M 600 190 L 725 190 L 725 300" class="arrow" />
+    
+    <!-- Providers to Multi-Provider -->
+    <path d="M 175 300 L 175 240 L 300 240" class="arrow" style="stroke: #007700" />
+    <path d="M 450 300 L 450 230" class="arrow" style="stroke: #007700" />
+    <path d="M 725 300 L 725 240 L 600 240" class="arrow" style="stroke: #007700" />
+    
+    <!-- Strategies to Multi-Provider -->
+    <path d="M 240 500 L 240 400 L 360 400 L 360 230" class="arrow strategy-arrow" style="stroke: #0000aa" />
+    <path d="M 450 500 L 450 230" class="arrow strategy-arrow" style="stroke: #0000aa" />
+    <path d="M 660 500 L 660 400 L 540 400 L 540 230" class="arrow strategy-arrow" style="stroke: #0000aa" />
+    
+    <!-- Strategy Configuration Label -->
+    <text x="450" y="420" class="label" style="fill: #0000aa; font-size: 14px;">Strategy Configuration</text>
+    
+    <!-- Title -->
+    <text x="450" y="20" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle">Go-LLMs Multi-Provider Strategies</text>
+</svg>

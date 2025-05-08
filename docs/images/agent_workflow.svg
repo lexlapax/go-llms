@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="900" height="600" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <style>
+        .box {
+            fill: #f0f0f0;
+            stroke: #333;
+            stroke-width: 2;
+            rx: 8;
+            ry: 8;
+        }
+        .agent {
+            fill: #e6f3e6;
+        }
+        .llm {
+            fill: #e6f3ff;
+        }
+        .tool {
+            fill: #ffe6e6;
+        }
+        .hook {
+            fill: #fff2e6;
+        }
+        .arrow {
+            stroke: #333;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+        .dashed {
+            stroke-dasharray: 5,3;
+        }
+        .title {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            text-anchor: middle;
+        }
+        .subtitle {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            text-anchor: middle;
+        }
+        .label {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            fill: #555;
+            text-anchor: middle;
+        }
+    </style>
+    
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+        </marker>
+    </defs>
+    
+    <!-- Agent Box -->
+    <rect x="350" y="130" width="200" height="100" class="box agent" />
+    <text x="450" y="160" class="title">Agent</text>
+    <text x="450" y="180" class="subtitle">- Workflow Manager</text>
+    <text x="450" y="200" class="subtitle">- Tool Executor</text>
+    <text x="450" y="220" class="subtitle">- Context Manager</text>
+    
+    <!-- LLM Provider Box -->
+    <rect x="350" y="40" width="200" height="60" class="box llm" />
+    <text x="450" y="70" class="title">LLM Provider</text>
+    <text x="450" y="90" class="subtitle">(OpenAI, Anthropic, etc.)</text>
+    
+    <!-- Tools Boxes -->
+    <rect x="50" y="150" width="150" height="60" class="box tool" />
+    <text x="125" y="180" class="title">Calculator Tool</text>
+    <text x="125" y="200" class="subtitle">Math Operations</text>
+    
+    <rect x="50" y="250" width="150" height="60" class="box tool" />
+    <text x="125" y="280" class="title">Web Fetch Tool</text>
+    <text x="125" y="300" class="subtitle">HTTP Requests</text>
+    
+    <rect x="50" y="350" width="150" height="60" class="box tool" />
+    <text x="125" y="380" class="title">File Tool</text>
+    <text x="125" y="400" class="subtitle">Read/Write Files</text>
+    
+    <rect x="50" y="450" width="150" height="60" class="box tool" />
+    <text x="125" y="480" class="title">Execute Tool</text>
+    <text x="125" y="500" class="subtitle">Run Commands</text>
+    
+    <!-- Hooks Boxes -->
+    <rect x="700" y="120" width="150" height="60" class="box hook" />
+    <text x="775" y="150" class="title">Logging Hook</text>
+    <text x="775" y="170" class="subtitle">Debug Logs</text>
+    
+    <rect x="700" y="200" width="150" height="60" class="box hook" />
+    <text x="775" y="230" class="title">Metrics Hook</text>
+    <text x="775" y="250" class="subtitle">Performance Stats</text>
+    
+    <!-- User Input and Output -->
+    <rect x="350" y="480" width="200" height="60" class="box" />
+    <text x="450" y="510" class="title">User Input/Output</text>
+    <text x="450" y="530" class="subtitle">Prompts and Responses</text>
+    
+    <!-- Arrows -->
+    <!-- Between Agent and LLM -->
+    <path d="M 450 130 L 450 100" class="arrow" />
+    <path d="M 480 100 L 480 130" class="arrow" style="stroke: #007700" />
+    
+    <!-- Between Agent and Tools -->
+    <path d="M 350 170 L 200 170 L 200 180 L 200 180" class="arrow" />
+    <path d="M 200 180 L 350 180" class="arrow" style="stroke: #770000" />
+    
+    <path d="M 350 190 L 225 190 L 225 250" class="arrow" />
+    <path d="M 225 310 L 225 350" class="arrow" />
+    <path d="M 225 410 L 225 450" class="arrow" />
+    
+    <!-- Tool results back to agent -->
+    <path d="M 200 250 L 300 250 L 300 190 L 350 190" class="arrow" style="stroke: #770000" />
+    <path d="M 200 350 L 280 350 L 280 200 L 350 200" class="arrow" style="stroke: #770000" />
+    <path d="M 200 450 L 260 450 L 260 210 L 350 210" class="arrow" style="stroke: #770000" />
+    
+    <!-- Between Agent and Hooks (dashed lines) -->
+    <path d="M 550 150 L 700 150" class="arrow dashed" />
+    <path d="M 550 210 L 700 230" class="arrow dashed" />
+    
+    <!-- User Flow -->
+    <path d="M 450 480 L 450 420 L 450 420 L 450 230" class="arrow" />
+    <path d="M 450 420 L 450 480" class="arrow" style="stroke: #000077" />
+    
+    <!-- Labels -->
+    <text x="465" y="120" class="label">LLM Query</text>
+    <text x="495" y="120" class="label" style="fill: #007700">LLM Response</text>
+    
+    <text x="280" y="160" class="label">Tool Call</text>
+    <text x="280" y="190" class="label" style="fill: #770000">Tool Result</text>
+    
+    <text x="625" y="140" class="label">Log Events</text>
+    <text x="625" y="220" class="label">Record Metrics</text>
+    
+    <text x="430" y="450" class="label">User Prompt</text>
+    <text x="470" y="450" class="label" style="fill: #000077">Final Response</text>
+    
+    <!-- Title -->
+    <text x="450" y="20" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle">Go-LLMs Agent Workflow</text>
+</svg>
