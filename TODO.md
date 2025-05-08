@@ -9,7 +9,7 @@
 ## Examples
 - [x] Add dedicated example for multi-provider with Consensus strategy
 - [x] Create example showing hooks for monitoring and metrics collection
-- [ ] Add example demonstrating schema generation from Go structs
+- [x] Add example demonstrating schema generation from Go structs
 
 ## Testing & Performance
 - [x] Add benchmarks for consensus algorithms to ensure performance optimization
