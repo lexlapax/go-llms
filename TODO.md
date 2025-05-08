@@ -29,9 +29,9 @@
 - [ ] Document concurrency patterns and thread safety
 
 ## Error Handling
-- [ ] Ensure error handling consistency across all providers
-- [ ] Create standardized error types for common failure scenarios
-- [ ] Implement improved error context and error wrapping
+- [x] Ensure error handling consistency across all providers
+- [x] Create standardized error types for common failure scenarios
+- [x] Implement improved error context and error wrapping
 
 ## Additional providers
 - [ ] Add Google Gemini api based provider

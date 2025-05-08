@@ -51,6 +51,15 @@ var (
     
     // ErrModelNotFound is returned when the requested model is not found.
     ErrModelNotFound = errors.New("model not found")
+    
+    // ErrNetworkConnectivity is returned when there are network issues connecting to the provider.
+    ErrNetworkConnectivity = errors.New("network connectivity issues")
+    
+    // ErrTokenQuotaExceeded is returned when the user has exceeded their token quota.
+    ErrTokenQuotaExceeded = errors.New("token quota exceeded")
+    
+    // ErrInvalidModelParameters is returned when provided model parameters are invalid.
+    ErrInvalidModelParameters = errors.New("invalid model parameters")
 )
 ```
 
@@ -122,6 +131,21 @@ func IsProviderUnavailableError(err error) bool {
 func IsContentFilteredError(err error) bool {
     return errors.Is(err, ErrContentFiltered)
 }
+
+// IsNetworkConnectivityError checks if the error is a network connectivity error.
+func IsNetworkConnectivityError(err error) bool {
+    return errors.Is(err, ErrNetworkConnectivity)
+}
+
+// IsTokenQuotaExceededError checks if the error is a token quota exceeded error.
+func IsTokenQuotaExceededError(err error) bool {
+    return errors.Is(err, ErrTokenQuotaExceeded)
+}
+
+// IsInvalidModelParametersError checks if the error is an invalid model parameters error.
+func IsInvalidModelParametersError(err error) bool {
+    return errors.Is(err, ErrInvalidModelParameters)
+}
 ```
 
 ## Usage Examples
@@ -140,6 +164,18 @@ if err != nil {
     } else if domain.IsTimeoutError(err) {
         // Handle timeout errors
         fmt.Println("Request timed out, please try again")
+    } else if domain.IsNetworkConnectivityError(err) {
+        // Handle network connectivity errors
+        fmt.Println("Network connectivity issues, check your internet connection")
+    } else if domain.IsTokenQuotaExceededError(err) {
+        // Handle token quota exceeded errors
+        fmt.Println("Token quota exceeded, check your billing and usage limits")
+    } else if domain.IsInvalidModelParametersError(err) {
+        // Handle invalid model parameters errors
+        fmt.Println("Invalid model parameters provided, please check your request")
+    } else if domain.IsContentFilteredError(err) {
+        // Handle content filtered errors
+        fmt.Println("Content was filtered by the provider, please revise your prompt")
     } else {
         // Handle other errors
         fmt.Printf("Error: %v\n", err)

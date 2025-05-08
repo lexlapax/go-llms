@@ -4,6 +4,7 @@ package domain
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // Common error types
@@ -43,6 +44,15 @@ var (
 	
 	// ErrModelNotFound is returned when the requested model is not found.
 	ErrModelNotFound = errors.New("model not found")
+	
+	// ErrNetworkConnectivity is returned when there are network issues connecting to the provider.
+	ErrNetworkConnectivity = errors.New("network connectivity issues")
+	
+	// ErrTokenQuotaExceeded is returned when the user has exceeded their token quota.
+	ErrTokenQuotaExceeded = errors.New("token quota exceeded")
+	
+	// ErrInvalidModelParameters is returned when provided model parameters are invalid.
+	ErrInvalidModelParameters = errors.New("invalid model parameters")
 )
 
 // ProviderError represents an error from an LLM provider with additional context.
@@ -78,15 +88,35 @@ func (e *ProviderError) Unwrap() error {
 
 // NewProviderError creates a new ProviderError.
 func NewProviderError(provider, operation string, statusCode int, message string, err error) *ProviderError {
-	// If no underlying error is provided, use a generic error based on the status code
+	// If no underlying error is provided, determine the most specific error based on status code or message
 	if err == nil {
+		lowerMessage := strings.ToLower(message)
+		
 		switch {
+		// HTTP Status Code based errors
 		case statusCode == 401:
 			err = ErrAuthenticationFailed
 		case statusCode == 429:
 			err = ErrRateLimitExceeded
-		case statusCode >= 500:
+		case statusCode == 400 && (strings.Contains(lowerMessage, "param") || strings.Contains(lowerMessage, "request")):
+			err = ErrInvalidModelParameters
+		case statusCode == 402 || strings.Contains(lowerMessage, "quota") || strings.Contains(lowerMessage, "billing"):
+			err = ErrTokenQuotaExceeded
+		case statusCode == 404 && strings.Contains(lowerMessage, "model"):
+			err = ErrModelNotFound
+		case statusCode >= 500 && statusCode < 505:
 			err = ErrProviderUnavailable
+		case statusCode == 502 || statusCode == 503 || statusCode == 504:
+			err = ErrNetworkConnectivity
+			
+		// Message content based errors (when status code doesn't help)
+		case strings.Contains(lowerMessage, "context") && strings.Contains(lowerMessage, "length"):
+			err = ErrContextTooLong
+		case strings.Contains(lowerMessage, "content") && (strings.Contains(lowerMessage, "filter") || 
+			strings.Contains(lowerMessage, "policy")):
+			err = ErrContentFiltered
+		case strings.Contains(lowerMessage, "network") || strings.Contains(lowerMessage, "connection"):
+			err = ErrNetworkConnectivity
 		default:
 			err = ErrRequestFailed
 		}
@@ -124,4 +154,19 @@ func IsProviderUnavailableError(err error) bool {
 // IsContentFilteredError checks if the error is a content filtered error.
 func IsContentFilteredError(err error) bool {
 	return errors.Is(err, ErrContentFiltered)
+}
+
+// IsNetworkConnectivityError checks if the error is a network connectivity error.
+func IsNetworkConnectivityError(err error) bool {
+	return errors.Is(err, ErrNetworkConnectivity)
+}
+
+// IsTokenQuotaExceededError checks if the error is a token quota exceeded error.
+func IsTokenQuotaExceededError(err error) bool {
+	return errors.Is(err, ErrTokenQuotaExceeded)
+}
+
+// IsInvalidModelParametersError checks if the error is an invalid model parameters error.
+func IsInvalidModelParametersError(err error) bool {
+	return errors.Is(err, ErrInvalidModelParameters)
 }

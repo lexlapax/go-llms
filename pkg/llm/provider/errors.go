@@ -32,6 +32,17 @@ func mapOpenAIErrorToStandard(statusCode int, errorMsg string, operation string)
 	case strings.Contains(lowerErrorMsg, "model not found"):
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrModelNotFound)
 		
+	case strings.Contains(lowerErrorMsg, "quota") || strings.Contains(lowerErrorMsg, "billing"):
+		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrTokenQuotaExceeded)
+		
+	case strings.Contains(lowerErrorMsg, "invalid parameter") || strings.Contains(lowerErrorMsg, "invalid request"):
+		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrInvalidModelParameters)
+		
+	case statusCode == http.StatusServiceUnavailable || 
+		 statusCode == http.StatusBadGateway || 
+		 statusCode == http.StatusGatewayTimeout:
+		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrNetworkConnectivity)
+		
 	case statusCode >= 500:
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrProviderUnavailable)
 		
@@ -71,6 +82,25 @@ func mapAnthropicErrorToStandard(statusCode int, errorType, errorMsg string, ope
 	case strings.Contains(lowerErrorType, "model_not_found") || 
 	     strings.Contains(lowerErrorMsg, "model not found"):
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrModelNotFound)
+		
+	case strings.Contains(lowerErrorType, "quota") || 
+	     strings.Contains(lowerErrorMsg, "quota") || 
+	     strings.Contains(lowerErrorMsg, "billing") || 
+	     strings.Contains(lowerErrorMsg, "payment"):
+		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrTokenQuotaExceeded)
+		
+	case strings.Contains(lowerErrorType, "invalid_param") || 
+	     strings.Contains(lowerErrorMsg, "invalid parameter") || 
+	     strings.Contains(lowerErrorMsg, "invalid request"):
+		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrInvalidModelParameters)
+		
+	case statusCode == http.StatusServiceUnavailable || 
+	     statusCode == http.StatusBadGateway || 
+	     statusCode == http.StatusGatewayTimeout || 
+	     strings.Contains(lowerErrorMsg, "network") || 
+	     strings.Contains(lowerErrorMsg, "connection") || 
+	     strings.Contains(lowerErrorType, "connection"):
+		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrNetworkConnectivity)
 		
 	case statusCode >= 500:
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrProviderUnavailable)
