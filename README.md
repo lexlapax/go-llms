@@ -12,6 +12,7 @@ Go-LLMs is a Go library for creating LLM-powered applications with structured ou
 - **Multiple providers**: Support for OpenAI, Anthropic, and extensible for other providers
 - **Schema validation**: Comprehensive JSON schema validation with type coercion
 - **Monitoring hooks**: Hooks for logging, metrics, and debugging
+- **Multi-provider strategies**: Combine providers using fastest, primary, or consensus approaches
 
 ## Project Goals
 
@@ -87,8 +88,11 @@ fmt.Printf("Validation result: %v\n", result.Valid)
 ### Using LLM Providers
 
 ```go
-// Create an OpenAI provider
-provider := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"))
+// Create an OpenAI provider with the modern gpt-4o model
+provider := provider.NewOpenAIProvider(
+    os.Getenv("OPENAI_API_KEY"),
+    "gpt-4o",
+)
 
 // Generate text with a simple prompt
 response, err := provider.Generate(context.Background(), "Explain quantum computing")
@@ -116,8 +120,8 @@ fmt.Printf("Generated person: %s (%d)\n", person["name"], person["age"])
 ### Processing Structured Outputs
 
 ```go
-// Create a structured processor
-processor := processor.NewStructuredProcessor(validator)
+// Create a JSON processor
+processor := processor.NewJsonProcessor()
 
 // Process raw LLM output containing JSON
 rawOutput := `I'll create a person profile for you:
@@ -150,27 +154,61 @@ if err != nil {
 fmt.Printf("Person: %s (%d)\n", person.Name, person.Age)
 ```
 
+### Multi-Provider Strategies
+
+```go
+// Create multiple providers
+openaiProvider := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"), "gpt-4o")
+anthropicProvider := provider.NewAnthropicProvider(os.Getenv("ANTHROPIC_API_KEY"), "claude-3-5-sonnet-latest")
+
+// Create provider weights
+providers := []provider.ProviderWeight{
+    {Provider: openaiProvider, Weight: 1.0, Name: "openai"},
+    {Provider: anthropicProvider, Weight: 1.0, Name: "anthropic"},
+}
+
+// Create a multi-provider with the fastest strategy
+fastestProvider := provider.NewMultiProvider(providers, provider.StrategyFastest)
+
+// Or with the primary strategy (with fallback)
+primaryProvider := provider.NewMultiProvider(providers, provider.StrategyPrimary).
+    WithPrimaryProvider(0) // Use first provider as primary
+
+// Or with consensus strategy
+consensusProvider := provider.NewMultiProvider(providers, provider.StrategyConsensus).
+    WithConsensusStrategy(provider.ConsensusSimilarity).
+    WithSimilarityThreshold(0.7)
+
+// Use like any other provider
+response, err := consensusProvider.Generate(context.Background(), "What are the three laws of robotics?")
+```
+
 ### Using Agents with Tools
 
 ```go
 // Create a provider
-llmProvider := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"))
+llmProvider := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"), "gpt-4o")
 
-// Create an agent
-agent := workflow.NewAgent(llmProvider)
+// Create an agent with string output type
+agent := workflow.NewAgent[struct{}, string](llmProvider).
+    SetSystemPrompt("You are a helpful assistant with access to tools.")
 
-// Add tools
-agent.AddTool(tools.NewCalculatorTool())
-agent.AddTool(tools.NewWebSearchTool())
-
-// Set system prompt
-agent.SetSystemPrompt("You are a helpful assistant that can search the web and perform calculations.")
+// Add a calculator tool
+agent.AddTool(tools.NewTool(
+    "calculator",
+    "Perform mathematical calculations",
+    func(ctx context.Context, params map[string]interface{}) (interface{}, error) {
+        expression, _ := params["expression"].(string)
+        // Implement calculation...
+        return result, nil
+    },
+))
 
 // Add a logging hook
-agent.WithHook(hooks.NewLoggingHook())
+agent.AddHook(workflow.NewLoggingHook(slog.Default(), workflow.LogLevelDetailed))
 
 // Run the agent
-result, err := agent.Run(context.Background(), "What is the square root of 144, and can you find information about the Fibonacci sequence?")
+result, err := agent.Run(context.Background(), "What is the square root of 144?", struct{}{})
 if err != nil {
     log.Fatalf("Agent error: %v", err)
 }
@@ -197,9 +235,18 @@ response, err := provider.Generate(context.Background(), enhancedPrompt)
 
 See the `cmd/examples/` directory for more comprehensive examples.
 
+## Documentation
+
+For detailed API documentation, see the [API Reference](docs/API_REFERENCE.md).
+
 ## Development Status
 
-This project is currently in active development. The API is unstable and subject to change.
+The core functionality is complete and working. Current focus is on:
+
+1. Enhanced API documentation
+2. Additional examples
+3. Performance optimization
+4. Error handling standardization
 
 ## License
 
