@@ -13,6 +13,7 @@ Go-LLMs is a Go library for creating LLM-powered applications with structured ou
 - **Schema validation**: Comprehensive JSON schema validation with type coercion
 - **Monitoring hooks**: Hooks for logging, metrics, and debugging
 - **Multi-provider strategies**: Combine providers using fastest, primary, or consensus approaches
+- **Convenience utilities**: Helpful functions for common operations and patterns
 
 ## Project Goals
 
@@ -231,6 +232,57 @@ if err != nil {
 
 // Use the enhanced prompt with your LLM provider
 response, err := provider.Generate(context.Background(), enhancedPrompt)
+```
+
+### Convenience Utilities
+
+```go
+// Create a provider from config
+config := llmutil.ModelConfig{
+    Provider: "openai",
+    Model:    "gpt-4o",
+    APIKey:   os.Getenv("OPENAI_API_KEY"),
+}
+provider, err := llmutil.CreateProvider(config)
+
+// Generate responses in parallel
+prompts := []string{
+    "What is the capital of France?",
+    "Give me a recipe for pancakes",
+    "How many planets are in our solar system?",
+}
+results, errors := llmutil.BatchGenerate(context.Background(), provider, prompts)
+
+// Generate with retry for transient errors
+result, err := llmutil.GenerateWithRetry(
+    context.Background(), 
+    provider, 
+    "Write a haiku about programming",
+    3, // max retries
+)
+
+// Create a provider pool for load balancing
+providerPool := llmutil.NewProviderPool(
+    []domain.Provider{provider1, provider2, provider3},
+    llmutil.StrategyRoundRobin,
+)
+
+// Create an agent with common configuration
+agentConfig := llmutil.AgentConfig{
+    Provider:      provider,
+    SystemPrompt:  "You are a helpful assistant with access to tools.",
+    EnableCaching: true,
+    Tools:         []agentDomain.Tool{calculatorTool},
+    Hooks:         []agentDomain.Hook{workflow.NewMetricsHook()},
+}
+agent := llmutil.CreateAgent(agentConfig)
+
+// Run an agent with timeout
+result, err := llmutil.RunWithTimeout(
+    agent,
+    "What is 7 * 6?",
+    10*time.Second, // timeout
+)
 ```
 
 See the `cmd/examples/` directory for more comprehensive examples.

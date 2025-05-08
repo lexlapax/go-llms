@@ -19,6 +19,7 @@ This API reference provides a comprehensive guide to the Go-LLMs library, which 
 - **Agent System**: Build LLM agents with tools and workflow capabilities
 - **Monitoring Hooks**: Track and measure LLM operations with logging and metrics hooks
 - **Type-Safe API**: Generics-based design for type safety and IDE support
+- **Convenience Utilities**: Helper functions for common LLM operations and patterns
 
 ## Package Structure
 
@@ -41,6 +42,9 @@ go-llms/
 │       ├── domain/            # Agent domain models
 │       ├── tools/             # Tool implementations
 │       └── workflow/          # Agent workflows
+│   └── util/                  # Utility packages
+│       ├── json/              # JSON utilities 
+│       └── llmutil/           # LLM convenience functions
 ```
 
 ## Getting Started
@@ -128,6 +132,7 @@ Detailed documentation for each package is available in the API docs:
 - [LLM Package](docs/api/llm.md) - LLM provider integration
 - [Structured Package](docs/api/structured.md) - Structured output processing
 - [Agent Package](docs/api/agent.md) - Agent and tool functionality
+- [Utility Packages](docs/api/util.md) - Convenience utilities and helpers
 
 ## Examples
 
@@ -207,6 +212,51 @@ schema := &domain.Schema{
 // Process output directly into a typed struct
 var weather WeatherInfo
 err := processor.ProcessTyped(schema, response, &weather)
+```
+
+### Convenience Utilities
+
+```go
+// Create a provider with configuration
+config := llmutil.ModelConfig{
+    Provider: "openai",
+    Model:    "gpt-4o",
+    APIKey:   os.Getenv("OPENAI_API_KEY"),
+}
+provider, err := llmutil.CreateProvider(config)
+
+// Process multiple prompts in parallel
+prompts := []string{
+    "What is the capital of France?",
+    "What is the largest planet in our solar system?",
+    "Who wrote Romeo and Juliet?",
+}
+results, errors := llmutil.BatchGenerate(context.Background(), provider, prompts)
+
+// Create a provider pool for load balancing
+providerPool := llmutil.NewProviderPool(
+    []domain.Provider{provider1, provider2, provider3},
+    llmutil.StrategyRoundRobin,
+)
+
+// Use the pool like any other provider
+result, err := providerPool.Generate(context.Background(), "What is the square root of 144?")
+
+// Create and configure an agent in one step
+agent := llmutil.CreateAgent(llmutil.AgentConfig{
+    Provider:      provider,
+    SystemPrompt:  "You are a helpful assistant with access to tools.",
+    EnableCaching: true,
+    Tools:         []agentDomain.Tool{calculatorTool},
+    Hooks:         []agentDomain.Hook{metricsHook},
+})
+
+// Run the agent with a timeout
+result, err := llmutil.RunWithTimeout(
+    agent,
+    "Calculate 25 * 16",
+    10*time.Second,
+)
 ```
 
 For more examples, see the [examples directory](cmd/examples/).
