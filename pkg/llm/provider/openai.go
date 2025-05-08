@@ -249,16 +249,7 @@ func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.
 
 	// Check for error
 	if resp.StatusCode != http.StatusOK {
-		var errorResp struct {
-			Error struct {
-				Message string `json:"message"`
-			} `json:"error"`
-		}
-		// Use optimized JSON unmarshaling - significantly faster than standard library
-		if err := json.Unmarshal(body, &errorResp); err == nil && errorResp.Error.Message != "" {
-			return domain.Response{}, fmt.Errorf("API error: %s", errorResp.Error.Message)
-		}
-		return domain.Response{}, fmt.Errorf("API error: status code %d", resp.StatusCode)
+		return domain.Response{}, ParseJSONError(body, resp.StatusCode, "openai", "GenerateMessage")
 	}
 
 	// Parse response - use optimized JSON unmarshaling
@@ -362,8 +353,9 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		return nil, fmt.Errorf("API error: status code %d", resp.StatusCode)
+		return nil, ParseJSONError(body, resp.StatusCode, "openai", "StreamMessage")
 	}
 
 	// Get a channel from the pool

@@ -230,17 +230,7 @@ func (p *AnthropicProvider) GenerateMessage(ctx context.Context, messages []doma
 
 	// Check for error
 	if resp.StatusCode != http.StatusOK {
-		var errorResp struct {
-			Error struct {
-				Type    string `json:"type"`
-				Message string `json:"message"`
-			} `json:"error"`
-		}
-		// Use optimized JSON unmarshaling - significantly faster than standard library
-		if err := json.Unmarshal(body, &errorResp); err == nil && errorResp.Error.Message != "" {
-			return domain.Response{}, fmt.Errorf("API error: %s: %s", errorResp.Error.Type, errorResp.Error.Message)
-		}
-		return domain.Response{}, fmt.Errorf("API error: status code %d", resp.StatusCode)
+		return domain.Response{}, ParseJSONError(body, resp.StatusCode, "anthropic", "GenerateMessage")
 	}
 
 	// Parse response
@@ -347,8 +337,9 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		return nil, fmt.Errorf("API error: status code %d", resp.StatusCode)
+		return nil, ParseJSONError(body, resp.StatusCode, "anthropic", "StreamMessage")
 	}
 
 	// Get a channel from the pool

@@ -31,7 +31,7 @@ TEST_FLAGS=-v -race -coverprofile=coverage.out -covermode=atomic
 DEP_FLAGS=-v
 
 # Commands
-.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg profile-cpu profile-mem profile-block coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples example examples-all test-integration test-integration-mock test-cmd test-examples
+.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg benchmark-consensus profile-cpu profile-mem profile-block coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples example examples-all test-integration test-integration-mock test-cmd test-examples
 
 # Default target
 all: clean test build examples-all
@@ -139,6 +139,11 @@ benchmark-pkg:
 		exit 1; \
 	fi
 	$(GOTEST) -bench=. -benchmem ./$(PACKAGE_DIR)/$(PKG)
+
+# Run just the consensus-related benchmarks
+benchmark-consensus:
+	@echo "Running consensus optimization benchmarks..."
+	$(GOTEST) -bench=Consensus -benchmem ./benchmarks/...
 
 # Profile CPU usage (creates cpu.prof)
 profile-cpu:
@@ -267,6 +272,7 @@ help:
 	@echo "  make test-func        Run a specific test function"
 	@echo "                        (usage: make test-func PKG=schema/validation FUNC=TestArrayValidation)"
 	@echo "  make benchmark        Run benchmarks for all packages"
+	@echo "  make benchmark-consensus Run just the consensus-related benchmarks"
 	@echo "  make benchmark-pkg    Run benchmarks for a specific package"
 	@echo "                        (usage: make benchmark-pkg PKG=schema/validation)"
 	@echo "  make coverage         Generate test coverage report"

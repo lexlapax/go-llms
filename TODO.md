@@ -12,7 +12,8 @@
 - [ ] Add example demonstrating schema generation from Go structs
 
 ## Testing & Performance
-- [ ] Add benchmarks for all components to ensure performance optimization
+- [x] Add benchmarks for consensus algorithms to ensure performance optimization
+- [ ] Add benchmarks for remaining components to ensure performance optimization
 - [ ] Implement stress tests for high-load scenarios
 - [ ] Create comprehensive test suite for error conditions
 

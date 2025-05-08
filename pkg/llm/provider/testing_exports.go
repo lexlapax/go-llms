@@ -67,3 +67,54 @@ func PublicSelectSimilarityConsensus(publicResults []FallbackResult, threshold f
 
 	return selectSimilarityConsensus(results, threshold)
 }
+
+// PublicSelectMajorityConsensus exposes selectMajorityConsensus for testing
+func PublicSelectMajorityConsensus(publicResults []FallbackResult) (string, error) {
+	// Convert public results to internal results
+	results := make([]fallbackResult, len(publicResults))
+	for i, pr := range publicResults {
+		results[i] = fallbackResult{
+			provider:    pr.Provider,
+			content:     pr.Content,
+			err:         pr.Err,
+			elapsedTime: pr.ElapsedTime,
+			weight:      pr.Weight,
+		}
+	}
+
+	return selectMajorityConsensus(results)
+}
+
+// PublicSelectWeightedConsensus exposes selectWeightedConsensus for testing
+func PublicSelectWeightedConsensus(publicResults []FallbackResult) (string, error) {
+	// Convert public results to internal results
+	results := make([]fallbackResult, len(publicResults))
+	for i, pr := range publicResults {
+		results[i] = fallbackResult{
+			provider:    pr.Provider,
+			content:     pr.Content,
+			err:         pr.Err,
+			elapsedTime: pr.ElapsedTime,
+			weight:      pr.Weight,
+		}
+	}
+
+	return selectWeightedConsensus(results)
+}
+
+// PublicSelectBestFromGroup exposes selectBestFromGroup for testing
+func PublicSelectBestFromGroup(publicResults []FallbackResult) string {
+	// Convert public results to internal results
+	results := make([]fallbackResult, len(publicResults))
+	for i, pr := range publicResults {
+		results[i] = fallbackResult{
+			provider:    pr.Provider,
+			content:     pr.Content,
+			err:         pr.Err,
+			elapsedTime: pr.ElapsedTime,
+			weight:      pr.Weight,
+		}
+	}
+
+	return selectBestFromGroup(results)
+}

@@ -13,12 +13,19 @@ import (
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// Error definitions for multi-provider operations
+// Error definitions for multi-provider operations - using standardized errors
 var (
-	ErrNoProviders       = errors.New("no providers configured")
-	ErrNoSuccessfulCalls = errors.New("no successful responses from any providers")
-	ErrContextCanceled   = errors.New("operation canceled due to context cancellation")
-	ErrProviderTimeout   = errors.New("provider operation timed out")
+	// ErrNoProviders is returned when no providers are configured
+	ErrNoProviders = domain.NewProviderError("multi", "all", 0, "no providers configured", domain.ErrInvalidConfiguration)
+	
+	// ErrNoSuccessfulCalls is returned when no providers return a successful response
+	ErrNoSuccessfulCalls = domain.NewProviderError("multi", "all", 0, "no successful responses from any providers", domain.ErrRequestFailed)
+	
+	// ErrContextCanceled is returned when the operation is canceled due to context cancellation
+	ErrContextCanceled = domain.NewProviderError("multi", "all", 0, "operation canceled due to context cancellation (context.Canceled)", context.Canceled)
+	
+	// ErrProviderTimeout is returned when the provider operation times out
+	ErrProviderTimeout = domain.NewProviderError("multi", "all", 0, "provider operation timed out (context.DeadlineExceeded)", domain.ErrTimeout)
 )
 
 // SelectionStrategy defines how to select results when multiple providers return valid responses
@@ -197,18 +204,36 @@ func (mp *MultiProvider) Stream(ctx context.Context, prompt string, options ...d
 		// 1. close(responseCh) will be called, making the channel unusable for reuse
 		// 2. The channel pool's Put method checks if the channel is closed and won't reuse it
 
+		// Track errors for detailed reporting
+		providerErrors := make(map[string]error)
+
 		// Try the selected provider first
-		stream, err := mp.providers[selectedProviderIdx].Provider.Stream(ctx, prompt, options...)
+		selectedProvider := mp.providers[selectedProviderIdx]
+		selectedProviderName := selectedProvider.Name
+		if selectedProviderName == "" {
+			selectedProviderName = fmt.Sprintf("provider_%d", selectedProviderIdx)
+		}
+
+		stream, err := selectedProvider.Provider.Stream(ctx, prompt, options...)
 		if err == nil {
 			// Forward tokens from the provider to our response channel
 			mp.forwardStream(ctx, stream, responseCh)
 			return
 		}
 
+		// Record the error
+		providerErrors[selectedProviderName] = err
+
 		// If the primary fails, try each provider in order
 		for i, pw := range mp.providers {
 			if i == selectedProviderIdx {
 				continue // Skip the one we already tried
+			}
+
+			// Get provider name for error reporting
+			providerName := pw.Name
+			if providerName == "" {
+				providerName = fmt.Sprintf("provider_%d", i)
 			}
 
 			// Check if the context was canceled
@@ -225,13 +250,18 @@ func (mp *MultiProvider) Stream(ctx context.Context, prompt string, options ...d
 				mp.forwardStream(ctx, stream, responseCh)
 				return
 			}
+
+			// Record the error
+			providerErrors[providerName] = err
 		}
 
-		// If all providers failed, send an error token
+		// If all providers failed, send an error token with detailed error info
+		errorMessage := NewMultiProviderError(providerErrors, ErrNoSuccessfulCalls.Error()).Error()
+		
 		select {
 		case <-ctx.Done():
 		case responseCh <- domain.Token{
-			Text:     "[ERROR: All providers failed]",
+			Text:     "[ERROR: " + errorMessage + "]",
 			Finished: true,
 		}:
 		}
@@ -263,18 +293,36 @@ func (mp *MultiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 		// 1. close(responseCh) will be called, making the channel unusable for reuse
 		// 2. The channel pool's Put method checks if the channel is closed and won't reuse it
 
+		// Track errors for detailed reporting
+		providerErrors := make(map[string]error)
+
 		// Try the selected provider first
-		stream, err := mp.providers[selectedProviderIdx].Provider.StreamMessage(ctx, messages, options...)
+		selectedProvider := mp.providers[selectedProviderIdx]
+		selectedProviderName := selectedProvider.Name
+		if selectedProviderName == "" {
+			selectedProviderName = fmt.Sprintf("provider_%d", selectedProviderIdx)
+		}
+
+		stream, err := selectedProvider.Provider.StreamMessage(ctx, messages, options...)
 		if err == nil {
 			// Forward tokens from the provider to our response channel
 			mp.forwardStream(ctx, stream, responseCh)
 			return
 		}
 
+		// Record the error
+		providerErrors[selectedProviderName] = err
+
 		// If the primary fails, try each provider in order
 		for i, pw := range mp.providers {
 			if i == selectedProviderIdx {
 				continue // Skip the one we already tried
+			}
+
+			// Get provider name for error reporting
+			providerName := pw.Name
+			if providerName == "" {
+				providerName = fmt.Sprintf("provider_%d", i)
 			}
 
 			// Check if the context was canceled
@@ -291,13 +339,18 @@ func (mp *MultiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 				mp.forwardStream(ctx, stream, responseCh)
 				return
 			}
+
+			// Record the error
+			providerErrors[providerName] = err
 		}
 
-		// If all providers failed, send an error token
+		// If all providers failed, send an error token with detailed error info
+		errorMessage := NewMultiProviderError(providerErrors, ErrNoSuccessfulCalls.Error()).Error()
+		
 		select {
 		case <-ctx.Done():
 		case responseCh <- domain.Token{
-			Text:     "[ERROR: All providers failed]",
+			Text:     "[ERROR: " + errorMessage + "]",
 			Finished: true,
 		}:
 		}
@@ -486,6 +539,19 @@ func (mp *MultiProvider) selectTextResult(results []fallbackResult) (string, err
 		return "", ErrNoSuccessfulCalls
 	}
 
+	// First, check if any of the errors are context-related (deadline, cancellation)
+	// These take precedence over other errors
+	for _, result := range results {
+		if result.err != nil {
+			if errors.Is(result.err, context.DeadlineExceeded) {
+				return "", ErrProviderTimeout
+			}
+			if errors.Is(result.err, context.Canceled) {
+				return "", ErrContextCanceled
+			}
+		}
+	}
+
 	switch mp.selectionStrat {
 	case StrategyFastest:
 		// Sort by time and return the first successful one
@@ -520,19 +586,35 @@ func (mp *MultiProvider) selectTextResult(results []fallbackResult) (string, err
 	}
 
 	// If we get here, all providers failed
-	var errMsg string
+	// Create a map of provider errors for more structured error handling
+	providerErrors := make(map[string]error)
 	for _, result := range results {
 		if result.err != nil {
-			errMsg += fmt.Sprintf("[%s: %v] ", result.provider, result.err)
+			providerErrors[result.provider] = result.err
 		}
 	}
-	return "", fmt.Errorf("%w: %s", ErrNoSuccessfulCalls, errMsg)
+	
+	// Create and return a unified multi-provider error
+	return "", NewMultiProviderError(providerErrors, ErrNoSuccessfulCalls.Error())
 }
 
 // selectMessageResult selects a response result based on the configured strategy
 func (mp *MultiProvider) selectMessageResult(results []fallbackResult) (domain.Response, error) {
 	if len(results) == 0 {
 		return domain.Response{}, ErrNoSuccessfulCalls
+	}
+
+	// First, check if any of the errors are context-related (deadline, cancellation)
+	// These take precedence over other errors
+	for _, result := range results {
+		if result.err != nil {
+			if errors.Is(result.err, context.DeadlineExceeded) {
+				return domain.Response{}, ErrProviderTimeout
+			}
+			if errors.Is(result.err, context.Canceled) {
+				return domain.Response{}, ErrContextCanceled
+			}
+		}
 	}
 
 	switch mp.selectionStrat {
@@ -574,19 +656,35 @@ func (mp *MultiProvider) selectMessageResult(results []fallbackResult) (domain.R
 	}
 
 	// If we get here, all providers failed
-	var errMsg string
+	// Create a map of provider errors for more structured error handling
+	providerErrors := make(map[string]error)
 	for _, result := range results {
 		if result.err != nil {
-			errMsg += fmt.Sprintf("[%s: %v] ", result.provider, result.err)
+			providerErrors[result.provider] = result.err
 		}
 	}
-	return domain.Response{}, fmt.Errorf("%w: %s", ErrNoSuccessfulCalls, errMsg)
+	
+	// Create and return a unified multi-provider error
+	return domain.Response{}, NewMultiProviderError(providerErrors, ErrNoSuccessfulCalls.Error())
 }
 
 // selectStructuredResult selects a structured result based on the configured strategy
 func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (interface{}, error) {
 	if len(results) == 0 {
 		return nil, ErrNoSuccessfulCalls
+	}
+
+	// First, check if any of the errors are context-related (deadline, cancellation)
+	// These take precedence over other errors
+	for _, result := range results {
+		if result.err != nil {
+			if errors.Is(result.err, context.DeadlineExceeded) {
+				return nil, ErrProviderTimeout
+			}
+			if errors.Is(result.err, context.Canceled) {
+				return nil, ErrContextCanceled
+			}
+		}
 	}
 
 	switch mp.selectionStrat {
@@ -698,13 +796,16 @@ func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (inter
 	}
 
 	// If we get here, all providers failed or returned nil
-	var errMsg string
+	// Create a map of provider errors for more structured error handling
+	providerErrors := make(map[string]error)
 	for _, result := range results {
 		if result.err != nil {
-			errMsg += fmt.Sprintf("[%s: %v] ", result.provider, result.err)
+			providerErrors[result.provider] = result.err
 		}
 	}
-	return nil, fmt.Errorf("%w: %s", ErrNoSuccessfulCalls, errMsg)
+	
+	// Create and return a unified multi-provider error
+	return nil, NewMultiProviderError(providerErrors, ErrNoSuccessfulCalls.Error())
 }
 
 // selectProviderForStreaming selects which provider to use for streaming based on the strategy
