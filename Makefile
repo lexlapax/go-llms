@@ -34,7 +34,7 @@ DEP_FLAGS=-v
 .PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg profile-cpu profile-mem profile-block coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples example examples-all test-integration test-integration-mock test-cmd test-examples
 
 # Default target
-all: clean test build
+all: clean test build examples-all
 
 # Build the main binary
 build: 
@@ -73,7 +73,7 @@ example:
 
 # Run all tests
 test:
-	$(GOTEST) $(TEST_FLAGS) `go list ./... | grep -v github.com/lexlapax/go-llms/tests/integration`
+	$(GOTEST) $(TEST_FLAGS) `go list ./... | grep -v github.com/lexlapax/go-llms/tests/integration | grep -v github.com/lexlapax/go-llms/tests/multi_provider | grep -v github.com/lexlapax/go-llms/tests/examples`
 
 # Run tests for a specific package (usage: make test-pkg PKG=schema/validation)
 test-pkg:
