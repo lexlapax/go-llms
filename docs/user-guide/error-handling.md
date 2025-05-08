@@ -1,6 +1,10 @@
 # Error Handling in Go-LLMs
 
+> **[Documentation Home](/REFERENCE.md) / [User Guide](/docs/user-guide/) / Error Handling**
+
 This document describes the error handling patterns and best practices used in the Go-LLMs library.
+
+*Related: [Getting Started](getting-started.md) | [Multi-Provider Guide](multi-provider.md) | [API Reference](/docs/api/README.md)*
 
 ## Core Principles
 

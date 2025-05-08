@@ -1,6 +1,10 @@
 # Advanced Schema Validation Features
 
+> **[Documentation Home](/REFERENCE.md) / [User Guide](/docs/user-guide/) / Advanced Validation**
+
 This document describes the advanced schema validation features available in the Go-LLMs schema validation package.
+
+*Related: [Getting Started](getting-started.md) | [API Reference](/docs/api/schema.md) | [Performance Optimization](/docs/technical/performance.md#validation-optimization)*
 
 ## Table of Contents
 

@@ -1,6 +1,10 @@
 # Concurrency Patterns in Go-LLMs
 
+> **[Documentation Home](/REFERENCE.md) / [Technical Documentation](/docs/technical/) / Concurrency Patterns**
+
 This document describes the concurrency patterns implemented in Go-LLMs to ensure thread safety, optimize performance, and handle streaming operations effectively. It covers design decisions, implementation details, and best practices.
+
+*Related: [Performance Optimization](performance.md) | [Sync.Pool Implementation](sync-pool.md) | [Caching Mechanisms](caching.md)*
 
 ## Overview of Concurrency in Go-LLMs
 

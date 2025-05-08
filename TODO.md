@@ -7,7 +7,7 @@
 - [x] Add detailed documentation README for the command line client
 - [x] Document error handling patterns and best practices
 - [x] Create architecture diagrams for README
-- [ ] Consolidate documentation and make sure it's consistent
+- [x] Consolidate documentation and make sure it's consistent
 
 ## Examples
 - [x] Add dedicated example for multi-provider with Consensus strategy
