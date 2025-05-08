@@ -7,7 +7,7 @@
 - [ ] Create architecture diagrams for README
 
 ## Examples
-- [ ] Add dedicated example for multi-provider with Consensus strategy
+- [x] Add dedicated example for multi-provider with Consensus strategy
 - [ ] Create example showing hooks for monitoring and metrics collection
 - [ ] Add example demonstrating schema generation from Go structs
 
