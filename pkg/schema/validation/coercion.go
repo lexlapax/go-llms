@@ -3,10 +3,88 @@ package validation
 import (
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Coerce attempts to convert a value to the expected type
-func (v *Validator) Coerce(targetType string, value interface{}) (interface{}, bool) {
+func (v *Validator) Coerce(targetType string, value interface{}, format ...string) (interface{}, bool) {
+	// Get the optional format
+	var formatStr string
+	if len(format) > 0 {
+		formatStr = format[0]
+	}
+	
+	// If format is specified, try to coerce based on format
+	if formatStr != "" {
+		// Check if we're validating a string type
+		isStringType := targetType == "string"
+		
+		switch formatStr {
+		case "date", "date-time":
+			date, ok := CoerceToDate(value)
+			if !ok {
+				return value, false
+			}
+			// For string validation, return ISO format string
+			if isStringType {
+				return date.Format(time.RFC3339), true
+			}
+			return date, true
+			
+		case "uuid":
+			uuid, ok := CoerceToUUID(value)
+			if !ok {
+				return value, false
+			}
+			// For string validation, return UUID string
+			if isStringType {
+				return uuid.String(), true
+			}
+			return uuid, true
+			
+		case "email":
+			email, ok := CoerceToEmail(value)
+			if !ok {
+				return value, false
+			}
+			return email, true
+			
+		case "uri", "url":
+			url, ok := CoerceToURL(value)
+			if !ok {
+				return value, false
+			}
+			// For string validation, return URL string
+			if isStringType {
+				return url.String(), true
+			}
+			return url, true
+			
+		case "duration":
+			duration, ok := CoerceToDuration(value)
+			if !ok {
+				return value, false
+			}
+			// For string validation, return duration string
+			if isStringType {
+				return duration.String(), true
+			}
+			return duration, true
+			
+		case "ipv4", "ipv6", "ip":
+			ip, ok := CoerceToIP(value)
+			if !ok {
+				return value, false
+			}
+			// For string validation, return IP string
+			if isStringType {
+				return ip.String(), true
+			}
+			return ip, true
+		}
+	}
+	
+	// Coerce based on target type
 	switch targetType {
 	case "string":
 		return coerceToString(value)
@@ -16,6 +94,10 @@ func (v *Validator) Coerce(targetType string, value interface{}) (interface{}, b
 		return coerceToNumber(value)
 	case "boolean":
 		return coerceToBoolean(value)
+	case "array":
+		return CoerceToArray(value)
+	case "object":
+		return CoerceToObject(value)
 	default:
 		return value, false
 	}

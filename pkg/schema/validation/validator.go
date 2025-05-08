@@ -21,12 +21,15 @@ type Validator struct {
 
 	// validationResultPool provides reusable validation results
 	validationResultPool sync.Pool
+	
+	// enableCoercion controls whether the validator attempts to coerce values to the expected type
+	enableCoercion bool
 }
 
 // NewValidator creates a new validator with performance enhancements
 // This function returns a validator with improved performance through
 // object pooling, regex caching, and efficient validation paths.
-func NewValidator() *Validator {
+func NewValidator(options ...func(*Validator)) *Validator {
 	v := &Validator{
 		errorBufferPool: sync.Pool{
 			New: func() interface{} {
@@ -44,8 +47,22 @@ func NewValidator() *Validator {
 				}
 			},
 		},
+		enableCoercion: false, // Disabled by default for backward compatibility
 	}
+	
+	// Apply options
+	for _, option := range options {
+		option(v)
+	}
+	
 	return v
+}
+
+// WithCoercion enables or disables type coercion during validation
+func WithCoercion(enable bool) func(*Validator) {
+	return func(v *Validator) {
+		v.enableCoercion = enable
+	}
 }
 
 // Validate validates a JSON string against a schema
@@ -102,10 +119,29 @@ func (v *Validator) validateValue(path string, schema *domain.Schema, data inter
 		return errors
 	}
 
-	// Validate type first with fast simple type checks
-	typeError := v.validateType(path, schema.Type, data)
-	if typeError != "" {
-		errors = append(errors, typeError)
+	// Try to get format from properties
+	var format string
+	if schema.Properties != nil {
+		if prop, exists := schema.Properties[""]; exists {
+			format = prop.Format
+		}
+	}
+
+	// Try to coerce the value to the expected type if coercion is enabled
+	if v.enableCoercion {
+		coercedValue, coerced := v.Coerce(schema.Type, data, format)
+		if coerced {
+			data = coercedValue
+		}
+	}
+
+	// Validate type with fast simple type checks
+	if !v.isCorrectType(schema.Type, data) {
+		displayPath := path
+		if displayPath == "" {
+			displayPath = "value"
+		}
+		errors = append(errors, fmt.Sprintf("%s must be a %s", displayPath, schema.Type))
 		// If type is wrong, don't proceed with further validation
 		return errors
 	}
@@ -125,56 +161,59 @@ func (v *Validator) validateValue(path string, schema *domain.Schema, data inter
 	return errors
 }
 
-// validateType validates the type of a value
-func (v *Validator) validateType(path string, expectedType string, value interface{}) string {
-	displayPath := path
-	if displayPath == "" {
-		displayPath = "value"
-	}
-
+// isCorrectType checks if a value is of the expected type
+func (v *Validator) isCorrectType(expectedType string, value interface{}) bool {
 	// Fast path for nil values
 	if value == nil {
-		return fmt.Sprintf("%s is null but expected %s", displayPath, expectedType)
+		return false
 	}
 
-	// Use type switches for more efficient type checking
 	switch expectedType {
 	case "string":
-		if _, ok := value.(string); !ok {
-			return fmt.Sprintf("%s must be a string", displayPath)
-		}
+		_, ok := value.(string)
+		return ok
 	case "integer":
-		num, ok := value.(float64)
-		if !ok {
-			return fmt.Sprintf("%s must be an integer", displayPath)
+		// Accept both int64 and float64 for integer type
+		switch v := value.(type) {
+		case int, int64:
+			return true
+		case float64:
+			// Fast integer check
+			return float64(int(v)) == v
 		}
-		// Fast integer check
-		if float64(int(num)) != num {
-			return fmt.Sprintf("%s must be an integer (no decimal part)", displayPath)
-		}
+		return false
 	case "number":
-		if _, ok := value.(float64); !ok {
-			return fmt.Sprintf("%s must be a number", displayPath)
+		switch value.(type) {
+		case float64, int, int64:
+			return true
 		}
+		return false
 	case "boolean":
-		if _, ok := value.(bool); !ok {
-			return fmt.Sprintf("%s must be a boolean", displayPath)
-		}
+		_, ok := value.(bool)
+		return ok
 	case "object":
-		if _, ok := value.(map[string]interface{}); !ok {
-			return fmt.Sprintf("%s must be an object", displayPath)
-		}
+		_, ok := value.(map[string]interface{})
+		return ok
 	case "array":
-		if _, ok := value.([]interface{}); !ok {
-			return fmt.Sprintf("%s must be an array", displayPath)
-		}
+		_, ok := value.([]interface{})
+		return ok
 	}
-
-	return ""
+	return false
 }
+
+// Note: The validateType function has been replaced by isCorrectType 
+// and direct type validation in validateValue
 
 // validateObject validates an object against a schema
 func (v *Validator) validateObject(path string, schema *domain.Schema, data interface{}, errors []string) []string {
+	// Try to coerce to object if coercion is enabled
+	if v.enableCoercion && !v.isCorrectType("object", data) {
+		coercedObj, ok := CoerceToObject(data)
+		if ok {
+			data = coercedObj
+		}
+	}
+	
 	obj, ok := data.(map[string]interface{})
 	if !ok {
 		// This should never happen as we already validated the type
@@ -236,6 +275,14 @@ func (v *Validator) validateObject(path string, schema *domain.Schema, data inte
 
 // validateArray validates an array against a schema
 func (v *Validator) validateArray(path string, schema *domain.Schema, data interface{}, errors []string) []string {
+	// Try to coerce to array if coercion is enabled
+	if v.enableCoercion && !v.isCorrectType("array", data) {
+		coercedArr, ok := CoerceToArray(data)
+		if ok {
+			data = coercedArr
+		}
+	}
+	
 	arr, ok := data.([]interface{})
 	if !ok {
 		// This should never happen as we already validated the type
@@ -362,64 +409,115 @@ func (v *Validator) validateString(path string, schema *domain.Schema, data inte
 		}
 	}
 
-	// Validate format with cached regex patterns
+	// Validate format with advanced coercion utilities or regex patterns depending on coercion setting
 	if format != "" {
-		switch format {
-		case "email":
-			emailPattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-			var re *regexp.Regexp
-			if cached, found := RegexCache.Load(emailPattern); found {
-				re = cached.(*regexp.Regexp)
-			} else {
-				var err error
-				re, err = regexp.Compile(emailPattern)
-				if err != nil {
-					errors = append(errors, fmt.Sprintf("invalid email pattern: %v", err))
-					return errors
+		if v.enableCoercion {
+			// Use coercion utilities for format validation
+			switch format {
+			case "email":
+				if _, ok := CoerceToEmail(str); !ok {
+					errors = append(errors, fmt.Sprintf("%s must be a valid email address", displayPath))
 				}
-				RegexCache.Store(emailPattern, re)
-			}
-			if !re.MatchString(str) {
-				errors = append(errors, fmt.Sprintf("%s must be a valid email address", displayPath))
-			}
-		case "date-time":
-			// Simplified ISO8601 date-time validation
-			dateTimePattern := `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$`
-			var re *regexp.Regexp
-			if cached, found := RegexCache.Load(dateTimePattern); found {
-				re = cached.(*regexp.Regexp)
-			} else {
-				var err error
-				re, err = regexp.Compile(dateTimePattern)
-				if err != nil {
-					errors = append(errors, fmt.Sprintf("invalid date-time pattern: %v", err))
-					return errors
+			case "date", "date-time":
+				if _, ok := CoerceToDate(str); !ok {
+					errors = append(errors, fmt.Sprintf("%s must be a valid ISO8601 date-time", displayPath))
 				}
-				RegexCache.Store(dateTimePattern, re)
-			}
-			if !re.MatchString(str) {
-				errors = append(errors, fmt.Sprintf("%s must be a valid ISO8601 date-time", displayPath))
-			}
-		case "uri":
-			// Simplified URI validation
-			uriPattern := `^(https?|ftp)://[^\s/$.?#].[^\s]*$`
-			var re *regexp.Regexp
-			if cached, found := RegexCache.Load(uriPattern); found {
-				re = cached.(*regexp.Regexp)
-			} else {
-				var err error
-				re, err = regexp.Compile(uriPattern)
-				if err != nil {
-					errors = append(errors, fmt.Sprintf("invalid URI pattern: %v", err))
-					return errors
+			case "uri", "url":
+				if _, ok := CoerceToURL(str); !ok {
+					errors = append(errors, fmt.Sprintf("%s must be a valid URI", displayPath))
 				}
-				RegexCache.Store(uriPattern, re)
+			case "uuid":
+				if _, ok := CoerceToUUID(str); !ok {
+					errors = append(errors, fmt.Sprintf("%s must be a valid UUID", displayPath))
+				}
+			case "duration":
+				if _, ok := CoerceToDuration(str); !ok {
+					errors = append(errors, fmt.Sprintf("%s must be a valid duration", displayPath))
+				}
+			case "ipv4", "ipv6", "ip":
+				if _, ok := CoerceToIP(str); !ok {
+					errors = append(errors, fmt.Sprintf("%s must be a valid IP address", displayPath))
+				}
+			default:
+				// No error for unsupported formats when coercion is enabled
 			}
-			if !re.MatchString(str) {
-				errors = append(errors, fmt.Sprintf("%s must be a valid URI", displayPath))
+		} else {
+			// Use strict regex patterns for format validation
+			switch format {
+			case "email":
+				emailPattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+				var re *regexp.Regexp
+				if cached, found := RegexCache.Load(emailPattern); found {
+					re = cached.(*regexp.Regexp)
+				} else {
+					var err error
+					re, err = regexp.Compile(emailPattern)
+					if err != nil {
+						errors = append(errors, fmt.Sprintf("invalid email pattern: %v", err))
+						return errors
+					}
+					RegexCache.Store(emailPattern, re)
+				}
+				if !re.MatchString(str) {
+					errors = append(errors, fmt.Sprintf("%s must be a valid email address", displayPath))
+				}
+			case "date-time":
+				// Strict ISO8601 date-time validation
+				dateTimePattern := `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$`
+				var re *regexp.Regexp
+				if cached, found := RegexCache.Load(dateTimePattern); found {
+					re = cached.(*regexp.Regexp)
+				} else {
+					var err error
+					re, err = regexp.Compile(dateTimePattern)
+					if err != nil {
+						errors = append(errors, fmt.Sprintf("invalid date-time pattern: %v", err))
+						return errors
+					}
+					RegexCache.Store(dateTimePattern, re)
+				}
+				if !re.MatchString(str) {
+					errors = append(errors, fmt.Sprintf("%s must be a valid ISO8601 date-time", displayPath))
+				}
+			case "uri", "url":
+				// Strict URI validation
+				uriPattern := `^(https?|ftp)://[^\s/$.?#].[^\s]*$`
+				var re *regexp.Regexp
+				if cached, found := RegexCache.Load(uriPattern); found {
+					re = cached.(*regexp.Regexp)
+				} else {
+					var err error
+					re, err = regexp.Compile(uriPattern)
+					if err != nil {
+						errors = append(errors, fmt.Sprintf("invalid URI pattern: %v", err))
+						return errors
+					}
+					RegexCache.Store(uriPattern, re)
+				}
+				if !re.MatchString(str) {
+					errors = append(errors, fmt.Sprintf("%s must be a valid URI", displayPath))
+				}
+			case "uuid":
+				// Strict UUID validation
+				uuidPattern := `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`
+				var re *regexp.Regexp
+				if cached, found := RegexCache.Load(uuidPattern); found {
+					re = cached.(*regexp.Regexp)
+				} else {
+					var err error
+					re, err = regexp.Compile(uuidPattern)
+					if err != nil {
+						errors = append(errors, fmt.Sprintf("invalid UUID pattern: %v", err))
+						return errors
+					}
+					RegexCache.Store(uuidPattern, re)
+				}
+				if !re.MatchString(str) {
+					errors = append(errors, fmt.Sprintf("%s must be a valid UUID", displayPath))
+				}
+			default:
+				errors = append(errors, fmt.Sprintf("unsupported format: %s", format))
 			}
-		default:
-			errors = append(errors, fmt.Sprintf("unsupported format: %s", format))
 		}
 	}
 

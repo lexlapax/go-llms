@@ -2,7 +2,7 @@
 
 ## Documentation
 - [x] Create comprehensive API documentation for all public interfaces
-- [x] Ensure each example has a README documentation 
+- [ ] Ensure each example has a README documentation 
 - [x] Add detailed examples showing usage patterns for each component
 - [x] Document error handling patterns and best practices
 - [ ] Create architecture diagrams for README
@@ -20,7 +20,7 @@
 
 ## Features
 - [x] Implement convenience functions for common operations
-- [ ] Add more type coercion utilities for different data types
+- [x] Add more type coercion utilities for different data types
 - [ ] Enhance the schema validation with more advanced features
 
 ## Documentation for Performance Optimization

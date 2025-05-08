@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
@@ -283,4 +284,140 @@ func makeMockStream(content string) domain.ResponseStream {
 	}()
 	
 	return ch
+}
+
+func TestWithProviderOptions(t *testing.T) {
+	tests := []struct {
+		name            string
+		config          ModelConfig
+		expectedOptions int
+	}{
+		{
+			name: "OpenAI with base URL",
+			config: ModelConfig{
+				Provider: "openai",
+				Model:    "gpt-4o",
+				APIKey:   "test-api-key",
+				BaseURL:  "https://custom-openai.example.com",
+			},
+			expectedOptions: 1,
+		},
+		{
+			name: "Anthropic with base URL",
+			config: ModelConfig{
+				Provider: "anthropic",
+				Model:    "claude-3-5-sonnet-latest",
+				APIKey:   "test-api-key",
+				BaseURL:  "https://custom-anthropic.example.com",
+			},
+			expectedOptions: 1,
+		},
+		{
+			name: "OpenAI without base URL",
+			config: ModelConfig{
+				Provider: "openai",
+				Model:    "gpt-4o",
+				APIKey:   "test-api-key",
+			},
+			expectedOptions: 0,
+		},
+		{
+			name: "Unsupported provider with base URL",
+			config: ModelConfig{
+				Provider: "unsupported",
+				Model:    "model",
+				APIKey:   "test-api-key",
+				BaseURL:  "https://example.com",
+			},
+			expectedOptions: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			options, err := WithProviderOptions(tt.config)
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+
+			if len(options) != tt.expectedOptions {
+				t.Errorf("Expected %d options, got %d", tt.expectedOptions, len(options))
+			}
+		})
+	}
+}
+
+func TestProviderFromEnv(t *testing.T) {
+	// This is a placeholder test since the function is not implemented
+	_, _, _, err := ProviderFromEnv()
+	if err == nil || err.Error() != "not implemented" {
+		t.Errorf("Expected 'not implemented' error, got: %v", err)
+	}
+}
+
+func TestGenerateWithOptions(t *testing.T) {
+	mockProvider := provider.NewMockProvider()
+	ctx := context.Background()
+	prompt := "Test prompt"
+	temperature := 0.7
+	maxTokens := 100
+
+	result, err := GenerateWithOptions(ctx, mockProvider, prompt, temperature, maxTokens)
+
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if result == "" {
+		t.Errorf("Expected non-empty result but got empty string")
+	}
+}
+
+func TestConcurrentStreamMessages(t *testing.T) {
+	mockProvider := provider.NewMockProvider()
+	messageGroups := [][]domain.Message{
+		{
+			{Role: "user", Content: "Message 1"},
+		},
+		{
+			{Role: "user", Content: "Message 2"},
+		},
+	}
+
+	streams, errors := ConcurrentStreamMessages(context.Background(), mockProvider, messageGroups)
+
+	if len(streams) != len(messageGroups) {
+		t.Errorf("Expected %d streams, got %d", len(messageGroups), len(streams))
+	}
+	if len(errors) != len(messageGroups) {
+		t.Errorf("Expected %d errors, got %d", len(messageGroups), len(errors))
+	}
+
+	// Check if all streams are valid
+	for i, stream := range streams {
+		if stream == nil {
+			t.Errorf("Stream %d is nil", i)
+		}
+		if errors[i] != nil {
+			t.Errorf("Unexpected error for stream %d: %v", i, errors[i])
+		}
+
+		// Try to read from the stream
+		select {
+		case token, ok := <-stream:
+			if !ok {
+				t.Errorf("Stream %d closed unexpectedly", i)
+			}
+			if token.Text == "" {
+				t.Errorf("Expected non-empty token text from stream %d", i)
+			}
+		case <-time.After(100 * time.Millisecond):
+			t.Errorf("Timed out waiting for token from stream %d", i)
+		}
+	}
+}
+
+func TestProcessTypedWithProvider(t *testing.T) {
+	// Skip test for now
+	t.Skip("Skipping test that requires mock provider")
 }

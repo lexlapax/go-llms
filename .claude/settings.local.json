@@ -31,7 +31,8 @@
       "Bash(pkg/agent/tools/optimized_tool_benchmark_test.go )",
       "Bash(pkg/agent/tools/optimized_tool_edge_test.go )",
       "Bash(pkg/agent/tools/optimized_tool_fixed.go )",
-      "Bash(pkg/agent/tools/optimized_tool_test.go)"
+      "Bash(pkg/agent/tools/optimized_tool_test.go)",
+      "Bash(go tool cover:*)"
     ],
     "deny": []
   }
