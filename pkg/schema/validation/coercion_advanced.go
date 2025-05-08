@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -270,6 +271,147 @@ func CoerceToIP(value interface{}) (net.IP, bool) {
 			return CoerceToIP(str)
 		}
 		return nil, false
+	}
+}
+
+// CoerceToBase64 validates and decodes a base64 string
+func CoerceToBase64(value interface{}) ([]byte, bool) {
+	switch v := value.(type) {
+	case []byte:
+		return v, true
+	case string:
+		// Try to decode as base64
+		decoded, err := base64.StdEncoding.DecodeString(v)
+		if err == nil {
+			return decoded, true
+		}
+		// Try URL-safe base64
+		decoded, err = base64.URLEncoding.DecodeString(v)
+		if err == nil {
+			return decoded, true
+		}
+		// Try URL-safe base64 without padding
+		decoded, err = base64.RawURLEncoding.DecodeString(v)
+		if err == nil {
+			return decoded, true
+		}
+		return nil, false
+	default:
+		// Try to convert to string first
+		if str, ok := CoerceToString(value); ok {
+			return CoerceToBase64(str)
+		}
+		return nil, false
+	}
+}
+
+// CoerceToHostname validates a hostname according to RFC 1123
+func CoerceToHostname(value interface{}) (string, bool) {
+	switch v := value.(type) {
+	case string:
+		// Simple hostname validation based on RFC 1123
+		// Hostname must be at least 1 character and at most 253 characters
+		if len(v) < 1 || len(v) > 253 {
+			return "", false
+		}
+		
+		// Each label must be between 1 and 63 characters and consist of letters, numbers, and hyphens
+		// Labels cannot start or end with hyphens
+		labels := strings.Split(v, ".")
+		for _, label := range labels {
+			if len(label) < 1 || len(label) > 63 {
+				return "", false
+			}
+			if strings.HasPrefix(label, "-") || strings.HasSuffix(label, "-") {
+				return "", false
+			}
+			for _, r := range label {
+				if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-') {
+					return "", false
+				}
+			}
+		}
+		
+		return v, true
+	default:
+		// Try to convert to string first
+		if str, ok := CoerceToString(value); ok {
+			return CoerceToHostname(str)
+		}
+		return "", false
+	}
+}
+
+// CoerceToIPv4 validates that a string is a valid IPv4 address
+func CoerceToIPv4(value interface{}) (net.IP, bool) {
+	switch v := value.(type) {
+	case net.IP:
+		// Check if this is an IPv4 address
+		if v.To4() != nil {
+			return v, true
+		}
+		return nil, false
+	case string:
+		ip := net.ParseIP(v)
+		if ip == nil || ip.To4() == nil {
+			return nil, false
+		}
+		return ip, true
+	default:
+		// Try to convert to string first
+		if str, ok := CoerceToString(value); ok {
+			return CoerceToIPv4(str)
+		}
+		return nil, false
+	}
+}
+
+// CoerceToIPv6 validates that a string is a valid IPv6 address
+func CoerceToIPv6(value interface{}) (net.IP, bool) {
+	switch v := value.(type) {
+	case net.IP:
+		// Check if this is an IPv6 address (but not IPv4-mapped)
+		if v.To4() == nil && len(v) == net.IPv6len {
+			return v, true
+		}
+		return nil, false
+	case string:
+		ip := net.ParseIP(v)
+		if ip == nil || ip.To4() != nil {
+			return nil, false
+		}
+		return ip, true
+	default:
+		// Try to convert to string first
+		if str, ok := CoerceToString(value); ok {
+			return CoerceToIPv6(str)
+		}
+		return nil, false
+	}
+}
+
+// CoerceToJSON validates that a string is valid JSON
+func CoerceToJSON(value interface{}) (interface{}, bool) {
+	switch v := value.(type) {
+	case string:
+		var result interface{}
+		err := json.Unmarshal([]byte(v), &result)
+		if err != nil {
+			return nil, false
+		}
+		return result, true
+	default:
+		// If not a string, check if it's already a valid JSON type
+		switch v.(type) {
+		case map[string]interface{}, []interface{}, string, float64, bool, nil:
+			return v, true
+		default:
+			// Try to convert to string first
+			if str, ok := CoerceToString(value); ok {
+				return CoerceToJSON(str)
+			}
+			return nil, false
+		}
 	}
 }
 

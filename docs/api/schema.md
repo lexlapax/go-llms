@@ -16,31 +16,47 @@ type Schema struct {
     AdditionalProperties *bool               `json:"additionalProperties,omitempty"`
     Description          string              `json:"description,omitempty"`
     Title                string              `json:"title,omitempty"`
+    
+    // Conditional validation
+    If                  *Schema             `json:"if,omitempty"`
+    Then                *Schema             `json:"then,omitempty"`
+    Else                *Schema             `json:"else,omitempty"`
+    AllOf               []*Schema           `json:"allOf,omitempty"`
+    AnyOf               []*Schema           `json:"anyOf,omitempty"`
+    OneOf               []*Schema           `json:"oneOf,omitempty"`
+    Not                 *Schema             `json:"not,omitempty"`
 }
 ```
 
-The `Schema` struct represents a JSON Schema compatible definition that describes the structure of expected data. It supports various types such as objects, arrays, strings, numbers, etc.
+The `Schema` struct represents a JSON Schema compatible definition that describes the structure of expected data. It supports various types such as objects, arrays, strings, numbers, etc., as well as advanced conditional validation through logical operators.
 
 #### Property
 
 ```go
 type Property struct {
-    Type        string      `json:"type"`
-    Format      string      `json:"format,omitempty"`
-    Description string      `json:"description,omitempty"`
-    Minimum     *float64    `json:"minimum,omitempty"`
-    Maximum     *float64    `json:"maximum,omitempty"`
-    MinLength   *int        `json:"minLength,omitempty"`
-    MaxLength   *int        `json:"maxLength,omitempty"`
-    Pattern     string      `json:"pattern,omitempty"`
-    Enum        []string    `json:"enum,omitempty"`
-    Items       *Property   `json:"items,omitempty"`
-    Required    []string    `json:"required,omitempty"`
-    Properties  map[string]Property `json:"properties,omitempty"`
+    Type                 string              `json:"type"`
+    Format               string              `json:"format,omitempty"`
+    Description          string              `json:"description,omitempty"`
+    Minimum              *float64            `json:"minimum,omitempty"`
+    Maximum              *float64            `json:"maximum,omitempty"`
+    ExclusiveMinimum     *float64            `json:"exclusiveMinimum,omitempty"`
+    ExclusiveMaximum     *float64            `json:"exclusiveMaximum,omitempty"`
+    MinLength            *int                `json:"minLength,omitempty"`
+    MaxLength            *int                `json:"maxLength,omitempty"`
+    MinItems             *int                `json:"minItems,omitempty"`
+    MaxItems             *int                `json:"maxItems,omitempty"`
+    UniqueItems          *bool               `json:"uniqueItems,omitempty"`
+    Pattern              string              `json:"pattern,omitempty"`
+    Enum                 []string            `json:"enum,omitempty"`
+    Items                *Property           `json:"items,omitempty"`
+    Required             []string            `json:"required,omitempty"`
+    Properties           map[string]Property `json:"properties,omitempty"`
+    AdditionalProperties *bool               `json:"additionalProperties,omitempty"`
+    CustomValidator      string              `json:"customValidator,omitempty"`
 }
 ```
 
-The `Property` struct defines the characteristics of a property in a schema, with support for validation constraints like minimum/maximum values, length limits, patterns, etc.
+The `Property` struct defines the characteristics of a property in a schema, with support for validation constraints like minimum/maximum values, length limits, patterns, etc. It includes advanced array validation features and support for custom validators.
 
 #### ValidationResult
 
@@ -74,8 +90,20 @@ The validation package implements the `Validator` interface and provides functio
 ### Default Validator
 
 ```go
-// Create a new validator
+// Create a new validator with default settings
 validator := validation.NewValidator()
+
+// Create a validator with type coercion enabled
+validator := validation.NewValidator(validation.WithCoercion(true))
+
+// Create a validator with custom validation enabled
+validator := validation.NewValidator(validation.WithCustomValidation(true))
+
+// Enable both features
+validator := validation.NewValidator(
+    validation.WithCoercion(true),
+    validation.WithCustomValidation(true),
+)
 
 // Validate JSON data against a schema
 result, err := validator.Validate(schema, jsonData)
@@ -91,13 +119,19 @@ if !result.Valid {
 }
 ```
 
-The default validator supports a wide range of validation operations, including:
+The validator supports a comprehensive range of validation operations, including:
 
 - Type validation (string, number, boolean, object, array)
 - Numeric constraints (minimum, maximum, exclusiveMinimum, exclusiveMaximum)
 - String constraints (minLength, maxLength, pattern, enum)
+- String format validation (email, date-time, uri, uuid, hostname, ipv4, ipv6, etc.)
+- Multi-format string validation with pipe (`|`) or comma (`,`) separators
 - Array validation (items, minItems, maxItems, uniqueItems)
 - Object validation (required properties, property types, additionalProperties)
+- Conditional validation (if-then-else, allOf, anyOf, oneOf, not)
+- Custom validation functions
+
+For detailed documentation on advanced validation features, see the [Advanced Validation Guide](../schema/ADVANCED_VALIDATION.md).
 
 ## Schema Generation
 
@@ -142,6 +176,8 @@ Coercion supports converting between compatible types such as:
 
 ## Example Usage
 
+### Basic Validation
+
 ```go
 // Define a schema
 schema := &domain.Schema{
@@ -175,6 +211,78 @@ if !result.Valid {
 }
 
 fmt.Println("Validation successful!")
+```
+
+### Advanced Validation
+
+```go
+// Define a schema with advanced features
+schema := &domain.Schema{
+    Type: "object",
+    Properties: map[string]domain.Property{
+        "username": {
+            Type: "string", 
+            MinLength: intPtr(3), 
+            CustomValidator: "alphanumeric",
+        },
+        "contact": {
+            Type: "string",
+            Format: "email|phone", // Multiple formats
+        },
+        "age": {
+            Type: "integer",
+            ExclusiveMinimum: float64Ptr(18), // Must be > 18
+        },
+        "tags": {
+            Type: "array",
+            MinItems: intPtr(1),
+            MaxItems: intPtr(5),
+            UniqueItems: boolPtr(true),
+            Items: &domain.Property{
+                Type: "string",
+            },
+        },
+        "account_type": {Type: "string"},
+    },
+    Required: []string{"username", "contact", "age"},
+    
+    // Conditional validation: if account_type is "premium", require "payment_info"
+    If: &domain.Schema{
+        Properties: map[string]domain.Property{
+            "account_type": {
+                Enum: []string{"premium"},
+            },
+        },
+    },
+    Then: &domain.Schema{
+        Required: []string{"payment_info"},
+        Properties: map[string]domain.Property{
+            "payment_info": {Type: "object"},
+        },
+    },
+}
+
+// Create a validator with all features enabled
+validator := validation.NewValidator(
+    validation.WithCoercion(true),
+    validation.WithCustomValidation(true),
+)
+
+// Validate JSON data
+jsonData := `{
+    "username": "john123",
+    "contact": "john@example.com",
+    "age": 25,
+    "tags": ["user", "active", "verified"],
+    "account_type": "premium",
+    "payment_info": {
+        "card_type": "visa",
+        "last_four": "1234"
+    }
+}`
+
+result, err := validator.Validate(schema, jsonData)
+// ... handle result
 ```
 
 ## Helper Functions

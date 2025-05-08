@@ -9,6 +9,15 @@ type Schema struct {
 	AdditionalProperties *bool               `json:"additionalProperties,omitempty"`
 	Description          string              `json:"description,omitempty"`
 	Title                string              `json:"title,omitempty"`
+	
+	// Conditional validation
+	If                  *Schema             `json:"if,omitempty"`
+	Then                *Schema             `json:"then,omitempty"`
+	Else                *Schema             `json:"else,omitempty"`
+	AllOf               []*Schema           `json:"allOf,omitempty"`
+	AnyOf               []*Schema           `json:"anyOf,omitempty"`
+	OneOf               []*Schema           `json:"oneOf,omitempty"`
+	Not                 *Schema             `json:"not,omitempty"`
 }
 
 // Property represents a property in a schema
@@ -18,14 +27,20 @@ type Property struct {
 	Description          string              `json:"description,omitempty"`
 	Minimum              *float64            `json:"minimum,omitempty"`
 	Maximum              *float64            `json:"maximum,omitempty"`
+	ExclusiveMinimum     *float64            `json:"exclusiveMinimum,omitempty"`
+	ExclusiveMaximum     *float64            `json:"exclusiveMaximum,omitempty"`
 	MinLength            *int                `json:"minLength,omitempty"`
 	MaxLength            *int                `json:"maxLength,omitempty"`
+	MinItems             *int                `json:"minItems,omitempty"`
+	MaxItems             *int                `json:"maxItems,omitempty"`
+	UniqueItems          *bool               `json:"uniqueItems,omitempty"`
 	Pattern              string              `json:"pattern,omitempty"`
 	Enum                 []string            `json:"enum,omitempty"`
 	Items                *Property           `json:"items,omitempty"`
 	Required             []string            `json:"required,omitempty"`
 	Properties           map[string]Property `json:"properties,omitempty"`
 	AdditionalProperties *bool               `json:"additionalProperties,omitempty"`
+	CustomValidator      string              `json:"customValidator,omitempty"`
 }
 
 // ValidationResult represents the outcome of a validation

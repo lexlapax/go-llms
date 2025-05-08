@@ -21,7 +21,7 @@
 ## Features
 - [x] Implement convenience functions for common operations
 - [x] Add more type coercion utilities for different data types
-- [ ] Enhance the schema validation with more advanced features
+- [x] Enhance the schema validation with more advanced features
 
 ## Documentation for Performance Optimization
 - [ ] Document memory pooling strategies used

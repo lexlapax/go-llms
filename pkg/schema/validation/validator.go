@@ -1,9 +1,12 @@
 package validation
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -24,6 +27,9 @@ type Validator struct {
 	
 	// enableCoercion controls whether the validator attempts to coerce values to the expected type
 	enableCoercion bool
+	
+	// enableCustomValidation controls whether the validator supports custom validation functions
+	enableCustomValidation bool
 }
 
 // NewValidator creates a new validator with performance enhancements
@@ -48,6 +54,7 @@ func NewValidator(options ...func(*Validator)) *Validator {
 			},
 		},
 		enableCoercion: false, // Disabled by default for backward compatibility
+		enableCustomValidation: false, // Disabled by default for backward compatibility
 	}
 	
 	// Apply options
@@ -114,8 +121,16 @@ func (v *Validator) ValidateStruct(schema *domain.Schema, obj interface{}) (*dom
 
 // validateValue validates a value against a schema
 func (v *Validator) validateValue(path string, schema *domain.Schema, data interface{}, errors []string) []string {
-	// Fast path for nil schema or empty type
-	if schema == nil || schema.Type == "" {
+	// Fast path for nil schema
+	if schema == nil {
+		return errors
+	}
+	
+	// Process conditional validation first
+	errors = v.validateConditional(path, schema, data, errors)
+
+	// If schema doesn't have a type but has conditionals, we're done
+	if schema.Type == "" {
 		return errors
 	}
 
@@ -156,6 +171,118 @@ func (v *Validator) validateValue(path string, schema *domain.Schema, data inter
 		errors = v.validateString(path, schema, data, errors)
 	case "integer", "number":
 		errors = v.validateNumber(path, schema, data, errors)
+	}
+
+	return errors
+}
+
+// validateConditional validates a value against conditional schema requirements
+func (v *Validator) validateConditional(path string, schema *domain.Schema, data interface{}, errors []string) []string {
+	// If-Then-Else validation
+	if schema.If != nil {
+		// Create a copy of errors to check if If schema validation produces errors
+		ifErrors := make([]string, len(errors))
+		copy(ifErrors, errors)
+		
+		// Validate against If schema
+		ifErrors = v.validateValue(path, schema.If, data, ifErrors)
+		
+		// If If schema is valid (no new errors were added), apply Then schema
+		if len(ifErrors) == len(errors) && schema.Then != nil {
+			errors = v.validateValue(path, schema.Then, data, errors)
+		} else if len(ifErrors) > len(errors) && schema.Else != nil {
+			// If If schema is invalid, apply Else schema
+			errors = v.validateValue(path, schema.Else, data, errors)
+		}
+	}
+
+	// AllOf validation - data must be valid against all schemas
+	if schema.AllOf != nil && len(schema.AllOf) > 0 {
+		for _, subSchema := range schema.AllOf {
+			errors = v.validateValue(path, subSchema, data, errors)
+		}
+	}
+
+	// AnyOf validation - data must be valid against at least one schema
+	if schema.AnyOf != nil && len(schema.AnyOf) > 0 {
+		validAgainstAny := false
+		
+		// Try all schemas
+		for _, subSchema := range schema.AnyOf {
+			// Make a copy of errors for this schema
+			subErrors := make([]string, len(errors))
+			copy(subErrors, errors)
+			
+			// Validate against this schema
+			subErrors = v.validateValue(path, subSchema, data, subErrors)
+			
+			// If no new errors were added, this schema validated
+			if len(subErrors) == len(errors) {
+				validAgainstAny = true
+				break
+			}
+		}
+		
+		// If not valid against any schema, add a general error
+		if !validAgainstAny {
+			displayPath := path
+			if displayPath == "" {
+				displayPath = "value"
+			}
+			errors = append(errors, fmt.Sprintf("%s does not match any of the required schemas", displayPath))
+		}
+	}
+
+	// OneOf validation - data must be valid against exactly one schema
+	if schema.OneOf != nil && len(schema.OneOf) > 0 {
+		validSchemaCount := 0
+		
+		// Try all schemas
+		for _, subSchema := range schema.OneOf {
+			// Make a copy of errors for this schema
+			subErrors := make([]string, len(errors))
+			copy(subErrors, errors)
+			
+			// Validate against this schema
+			subErrors = v.validateValue(path, subSchema, data, subErrors)
+			
+			// If no new errors were added, this schema validated
+			if len(subErrors) == len(errors) {
+				validSchemaCount++
+			}
+		}
+		
+		// Must be valid against exactly one schema
+		if validSchemaCount != 1 {
+			displayPath := path
+			if displayPath == "" {
+				displayPath = "value"
+			}
+			if validSchemaCount == 0 {
+				errors = append(errors, fmt.Sprintf("%s does not match any of the required schemas", displayPath))
+			} else {
+				errors = append(errors, fmt.Sprintf("%s matches more than one schema when it should match exactly one", displayPath))
+			}
+		}
+	}
+
+	// Not validation - data must NOT be valid against the schema
+	if schema.Not != nil {
+		// Make a copy of errors for Not schema
+		notErrors := make([]string, len(errors))
+		copy(notErrors, errors)
+		
+		// Validate against Not schema
+		notErrors = v.validateValue(path, schema.Not, data, notErrors)
+		
+		// If no new errors were added, the Not schema validated, which is wrong
+		if len(notErrors) == len(errors) {
+			displayPath := path
+			if displayPath == "" {
+				displayPath = "value"
+			}
+			errors = append(errors, fmt.Sprintf("%s matches a schema that it should not match", displayPath))
+		}
 	}
 
 	return errors
@@ -254,7 +381,9 @@ func (v *Validator) validateObject(path string, schema *domain.Schema, data inte
 				// we need to handle the constraints in a special way
 				if prop.MinLength != nil || prop.MaxLength != nil || prop.Pattern != "" ||
 					len(prop.Enum) > 0 || prop.Format != "" || prop.Minimum != nil ||
-					prop.Maximum != nil || prop.Items != nil {
+					prop.Maximum != nil || prop.ExclusiveMinimum != nil || prop.ExclusiveMaximum != nil ||
+					prop.MinItems != nil || prop.MaxItems != nil || prop.UniqueItems != nil ||
+					prop.Items != nil {
 
 					// Create a copy of the property in the schema's Properties map
 					// to handle constraints in the validateX methods
@@ -266,6 +395,11 @@ func (v *Validator) validateObject(path string, schema *domain.Schema, data inte
 
 				// Validate the property value
 				errors = v.validateValue(propPath, subSchema, value, errors)
+				
+				// If custom validation is enabled, run custom validators
+				if v.enableCustomValidation && prop.CustomValidator != "" {
+					errors = v.validateWithCustomValidator(propPath, prop, value, errors)
+				}
 			}
 		}
 	}
@@ -289,6 +423,85 @@ func (v *Validator) validateArray(path string, schema *domain.Schema, data inter
 		return errors
 	}
 
+	// Get array-specific constraints from the special "" property
+	var minItems, maxItems *int
+	var uniqueItems *bool
+
+	if schema.Properties != nil {
+		if prop, exists := schema.Properties[""]; exists {
+			minItems = prop.MinItems
+			maxItems = prop.MaxItems
+			uniqueItems = prop.UniqueItems
+		}
+	}
+
+	// Validate minItems
+	if minItems != nil && len(arr) < *minItems {
+		displayPath := path
+		if displayPath == "" {
+			displayPath = "array"
+		}
+		errors = append(errors, fmt.Sprintf("%s must contain at least %d items", displayPath, *minItems))
+	}
+
+	// Validate maxItems
+	if maxItems != nil && len(arr) > *maxItems {
+		displayPath := path
+		if displayPath == "" {
+			displayPath = "array"
+		}
+		errors = append(errors, fmt.Sprintf("%s must contain no more than %d items", displayPath, *maxItems))
+	}
+
+	// Validate uniqueItems if required
+	if uniqueItems != nil && *uniqueItems && len(arr) > 1 {
+		// Performance optimization for small arrays: use a direct comparison
+		if len(arr) <= 10 {
+			for i := 0; i < len(arr)-1; i++ {
+				for j := i + 1; j < len(arr); j++ {
+					// Simple equality check for primitive types
+					if equalValues(arr[i], arr[j]) {
+						displayPath := path
+						if displayPath == "" {
+							displayPath = "array"
+						}
+						errors = append(errors, fmt.Sprintf("%s must contain unique items", displayPath))
+						// Only report the error once
+						i = len(arr)
+						break
+					}
+				}
+			}
+		} else {
+			// For larger arrays, use a map-based approach for better performance
+			seen := make(map[string]bool)
+			hasDuplicates := false
+			
+			for _, item := range arr {
+				// Convert item to string for map key
+				key, err := json.Marshal(item)
+				if err != nil {
+					continue // Skip this item if it can't be marshaled
+				}
+				
+				keyStr := string(key)
+				if seen[keyStr] {
+					hasDuplicates = true
+					break
+				}
+				seen[keyStr] = true
+			}
+			
+			if hasDuplicates {
+				displayPath := path
+				if displayPath == "" {
+					displayPath = "array"
+				}
+				errors = append(errors, fmt.Sprintf("%s must contain unique items", displayPath))
+			}
+		}
+	}
+
 	// Get the items schema if available
 	var itemsSchema *domain.Schema
 	if schema.Properties != nil {
@@ -304,7 +517,9 @@ func (v *Validator) validateArray(path string, schema *domain.Schema, data inter
 			// Inherit constraints from the item schema if needed
 			if items.MinLength != nil || items.MaxLength != nil || items.Pattern != "" ||
 				len(items.Enum) > 0 || items.Format != "" || items.Minimum != nil ||
-				items.Maximum != nil || items.Items != nil {
+				items.Maximum != nil || items.ExclusiveMinimum != nil || items.ExclusiveMaximum != nil ||
+				items.MinItems != nil || items.MaxItems != nil || items.UniqueItems != nil ||
+				items.Items != nil {
 
 				if itemsSchema.Properties == nil {
 					itemsSchema.Properties = map[string]domain.Property{}
@@ -333,6 +548,239 @@ func (v *Validator) validateArray(path string, schema *domain.Schema, data inter
 		errors = v.validateValue(itemPath, itemsSchema, item, errors)
 	}
 
+	return errors
+}
+
+// equalValues provides a basic equality check for common value types
+func equalValues(a, b interface{}) bool {
+	// Fast path for identical types
+	switch a := a.(type) {
+	case string:
+		if b, ok := b.(string); ok {
+			return a == b
+		}
+	case float64:
+		if b, ok := b.(float64); ok {
+			return a == b
+		}
+	case bool:
+		if b, ok := b.(bool); ok {
+			return a == b
+		}
+	case nil:
+		return b == nil
+	}
+	
+	// For complex types, use reflection or JSON marshaling
+	aJson, aErr := json.Marshal(a)
+	bJson, bErr := json.Marshal(b)
+	
+	if aErr != nil || bErr != nil {
+		return false
+	}
+	
+	return string(aJson) == string(bJson)
+}
+
+// validateStringFormat validates a string against a specific format
+func (v *Validator) validateStringFormat(format string, str string, displayPath string, errors []string) []string {
+	if v.enableCoercion {
+		// Use coercion utilities for format validation
+		switch format {
+		case "email":
+			if _, ok := CoerceToEmail(str); !ok {
+				errors = append(errors, fmt.Sprintf("%s must be a valid email address", displayPath))
+			}
+		case "date", "date-time":
+			if _, ok := CoerceToDate(str); !ok {
+				errors = append(errors, fmt.Sprintf("%s must be a valid ISO8601 date-time", displayPath))
+			}
+		case "uri", "url":
+			if _, ok := CoerceToURL(str); !ok {
+				errors = append(errors, fmt.Sprintf("%s must be a valid URI", displayPath))
+			}
+		case "uuid":
+			if _, ok := CoerceToUUID(str); !ok {
+				errors = append(errors, fmt.Sprintf("%s must be a valid UUID", displayPath))
+			}
+		case "duration":
+			if _, ok := CoerceToDuration(str); !ok {
+				errors = append(errors, fmt.Sprintf("%s must be a valid duration", displayPath))
+			}
+		case "ip":
+			if _, ok := CoerceToIP(str); !ok {
+				errors = append(errors, fmt.Sprintf("%s must be a valid IP address", displayPath))
+			}
+		case "ipv4":
+			if _, ok := CoerceToIPv4(str); !ok {
+				errors = append(errors, fmt.Sprintf("%s must be a valid IPv4 address", displayPath))
+			}
+		case "ipv6":
+			if _, ok := CoerceToIPv6(str); !ok {
+				errors = append(errors, fmt.Sprintf("%s must be a valid IPv6 address", displayPath))
+			}
+		case "hostname":
+			if _, ok := CoerceToHostname(str); !ok {
+				errors = append(errors, fmt.Sprintf("%s must be a valid hostname", displayPath))
+			}
+		case "base64":
+			if _, ok := CoerceToBase64(str); !ok {
+				errors = append(errors, fmt.Sprintf("%s must be a valid base64 string", displayPath))
+			}
+		case "json":
+			if _, ok := CoerceToJSON(str); !ok {
+				errors = append(errors, fmt.Sprintf("%s must be a valid JSON string", displayPath))
+			}
+		default:
+			// No error for unsupported formats when coercion is enabled
+		}
+	} else {
+		// Use strict regex patterns for format validation
+		switch format {
+		case "email":
+			emailPattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+			var re *regexp.Regexp
+			if cached, found := RegexCache.Load(emailPattern); found {
+				re = cached.(*regexp.Regexp)
+			} else {
+				var err error
+				re, err = regexp.Compile(emailPattern)
+				if err != nil {
+					errors = append(errors, fmt.Sprintf("invalid email pattern: %v", err))
+					return errors
+				}
+				RegexCache.Store(emailPattern, re)
+			}
+			if !re.MatchString(str) {
+				errors = append(errors, fmt.Sprintf("%s must be a valid email address", displayPath))
+			}
+		case "date-time":
+			// Strict ISO8601 date-time validation
+			dateTimePattern := `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$`
+			var re *regexp.Regexp
+			if cached, found := RegexCache.Load(dateTimePattern); found {
+				re = cached.(*regexp.Regexp)
+			} else {
+				var err error
+				re, err = regexp.Compile(dateTimePattern)
+				if err != nil {
+					errors = append(errors, fmt.Sprintf("invalid date-time pattern: %v", err))
+					return errors
+				}
+				RegexCache.Store(dateTimePattern, re)
+			}
+			if !re.MatchString(str) {
+				errors = append(errors, fmt.Sprintf("%s must be a valid ISO8601 date-time", displayPath))
+			}
+		case "uri", "url":
+			// Strict URI validation
+			uriPattern := `^(https?|ftp)://[^\s/$.?#].[^\s]*$`
+			var re *regexp.Regexp
+			if cached, found := RegexCache.Load(uriPattern); found {
+				re = cached.(*regexp.Regexp)
+			} else {
+				var err error
+				re, err = regexp.Compile(uriPattern)
+				if err != nil {
+					errors = append(errors, fmt.Sprintf("invalid URI pattern: %v", err))
+					return errors
+				}
+				RegexCache.Store(uriPattern, re)
+			}
+			if !re.MatchString(str) {
+				errors = append(errors, fmt.Sprintf("%s must be a valid URI", displayPath))
+			}
+		case "uuid":
+			// Strict UUID validation
+			uuidPattern := `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`
+			var re *regexp.Regexp
+			if cached, found := RegexCache.Load(uuidPattern); found {
+				re = cached.(*regexp.Regexp)
+			} else {
+				var err error
+				re, err = regexp.Compile(uuidPattern)
+				if err != nil {
+					errors = append(errors, fmt.Sprintf("invalid UUID pattern: %v", err))
+					return errors
+				}
+				RegexCache.Store(uuidPattern, re)
+			}
+			if !re.MatchString(str) {
+				errors = append(errors, fmt.Sprintf("%s must be a valid UUID", displayPath))
+			}
+		case "hostname":
+			// Hostname validation based on RFC 1123
+			hostnamePattern := `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
+			var re *regexp.Regexp
+			if cached, found := RegexCache.Load(hostnamePattern); found {
+				re = cached.(*regexp.Regexp)
+			} else {
+				var err error
+				re, err = regexp.Compile(hostnamePattern)
+				if err != nil {
+					errors = append(errors, fmt.Sprintf("invalid hostname pattern: %v", err))
+					return errors
+				}
+				RegexCache.Store(hostnamePattern, re)
+			}
+			if !re.MatchString(str) {
+				errors = append(errors, fmt.Sprintf("%s must be a valid hostname", displayPath))
+			}
+		case "ipv4":
+			// IPv4 validation
+			ipv4Pattern := `^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$`
+			var re *regexp.Regexp
+			if cached, found := RegexCache.Load(ipv4Pattern); found {
+				re = cached.(*regexp.Regexp)
+			} else {
+				var err error
+				re, err = regexp.Compile(ipv4Pattern)
+				if err != nil {
+					errors = append(errors, fmt.Sprintf("invalid IPv4 pattern: %v", err))
+					return errors
+				}
+				RegexCache.Store(ipv4Pattern, re)
+			}
+			if !re.MatchString(str) {
+				errors = append(errors, fmt.Sprintf("%s must be a valid IPv4 address", displayPath))
+				return errors
+			}
+			
+			// Validate each octet
+			parts := strings.Split(str, ".")
+			for _, part := range parts {
+				if num, err := strconv.Atoi(part); err != nil || num < 0 || num > 255 {
+					errors = append(errors, fmt.Sprintf("%s must be a valid IPv4 address", displayPath))
+					break
+				}
+			}
+		case "ipv6":
+			// Just check if net.ParseIP parses it as a valid IPv6 address
+			ip := net.ParseIP(str)
+			if ip == nil || ip.To4() != nil {
+				errors = append(errors, fmt.Sprintf("%s must be a valid IPv6 address", displayPath))
+			}
+		case "base64":
+			// Validate base64 encoding
+			_, err := base64.StdEncoding.DecodeString(str)
+			if err != nil {
+				// Try URL-safe base64
+				_, err = base64.URLEncoding.DecodeString(str)
+				if err != nil {
+					errors = append(errors, fmt.Sprintf("%s must be a valid base64 string", displayPath))
+				}
+			}
+		case "json":
+			// Validate JSON
+			var j interface{}
+			if err := json.Unmarshal([]byte(str), &j); err != nil {
+				errors = append(errors, fmt.Sprintf("%s must be a valid JSON string", displayPath))
+			}
+		default:
+			errors = append(errors, fmt.Sprintf("unsupported format: %s", format))
+		}
+	}
+	
 	return errors
 }
 
@@ -409,115 +857,44 @@ func (v *Validator) validateString(path string, schema *domain.Schema, data inte
 		}
 	}
 
-	// Validate format with advanced coercion utilities or regex patterns depending on coercion setting
+	// Validate format with improved format support
 	if format != "" {
-		if v.enableCoercion {
-			// Use coercion utilities for format validation
-			switch format {
-			case "email":
-				if _, ok := CoerceToEmail(str); !ok {
-					errors = append(errors, fmt.Sprintf("%s must be a valid email address", displayPath))
+		// Check for multiple formats (separated by comma or pipe)
+		if strings.Contains(format, ",") || strings.Contains(format, "|") {
+			var separator string
+			if strings.Contains(format, ",") {
+				separator = ","
+			} else {
+				separator = "|"
+			}
+			
+			formats := strings.Split(format, separator)
+			validAgainstAny := false
+			
+			// Try validating against each format until one succeeds
+			for _, fmt := range formats {
+				fmt = strings.TrimSpace(fmt)
+				// Make a copy of errors for this format
+				tmpErrors := make([]string, len(errors))
+				copy(tmpErrors, errors)
+				
+				// Validate against this format
+				tmpErrors = v.validateStringFormat(fmt, str, displayPath, tmpErrors)
+				
+				// If no new errors were added, this format is valid
+				if len(tmpErrors) == len(errors) {
+					validAgainstAny = true
+					break
 				}
-			case "date", "date-time":
-				if _, ok := CoerceToDate(str); !ok {
-					errors = append(errors, fmt.Sprintf("%s must be a valid ISO8601 date-time", displayPath))
-				}
-			case "uri", "url":
-				if _, ok := CoerceToURL(str); !ok {
-					errors = append(errors, fmt.Sprintf("%s must be a valid URI", displayPath))
-				}
-			case "uuid":
-				if _, ok := CoerceToUUID(str); !ok {
-					errors = append(errors, fmt.Sprintf("%s must be a valid UUID", displayPath))
-				}
-			case "duration":
-				if _, ok := CoerceToDuration(str); !ok {
-					errors = append(errors, fmt.Sprintf("%s must be a valid duration", displayPath))
-				}
-			case "ipv4", "ipv6", "ip":
-				if _, ok := CoerceToIP(str); !ok {
-					errors = append(errors, fmt.Sprintf("%s must be a valid IP address", displayPath))
-				}
-			default:
-				// No error for unsupported formats when coercion is enabled
+			}
+			
+			// If not valid against any format, add a general error
+			if !validAgainstAny {
+				errors = append(errors, fmt.Sprintf("%s must match one of these formats: %s", displayPath, format))
 			}
 		} else {
-			// Use strict regex patterns for format validation
-			switch format {
-			case "email":
-				emailPattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-				var re *regexp.Regexp
-				if cached, found := RegexCache.Load(emailPattern); found {
-					re = cached.(*regexp.Regexp)
-				} else {
-					var err error
-					re, err = regexp.Compile(emailPattern)
-					if err != nil {
-						errors = append(errors, fmt.Sprintf("invalid email pattern: %v", err))
-						return errors
-					}
-					RegexCache.Store(emailPattern, re)
-				}
-				if !re.MatchString(str) {
-					errors = append(errors, fmt.Sprintf("%s must be a valid email address", displayPath))
-				}
-			case "date-time":
-				// Strict ISO8601 date-time validation
-				dateTimePattern := `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$`
-				var re *regexp.Regexp
-				if cached, found := RegexCache.Load(dateTimePattern); found {
-					re = cached.(*regexp.Regexp)
-				} else {
-					var err error
-					re, err = regexp.Compile(dateTimePattern)
-					if err != nil {
-						errors = append(errors, fmt.Sprintf("invalid date-time pattern: %v", err))
-						return errors
-					}
-					RegexCache.Store(dateTimePattern, re)
-				}
-				if !re.MatchString(str) {
-					errors = append(errors, fmt.Sprintf("%s must be a valid ISO8601 date-time", displayPath))
-				}
-			case "uri", "url":
-				// Strict URI validation
-				uriPattern := `^(https?|ftp)://[^\s/$.?#].[^\s]*$`
-				var re *regexp.Regexp
-				if cached, found := RegexCache.Load(uriPattern); found {
-					re = cached.(*regexp.Regexp)
-				} else {
-					var err error
-					re, err = regexp.Compile(uriPattern)
-					if err != nil {
-						errors = append(errors, fmt.Sprintf("invalid URI pattern: %v", err))
-						return errors
-					}
-					RegexCache.Store(uriPattern, re)
-				}
-				if !re.MatchString(str) {
-					errors = append(errors, fmt.Sprintf("%s must be a valid URI", displayPath))
-				}
-			case "uuid":
-				// Strict UUID validation
-				uuidPattern := `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`
-				var re *regexp.Regexp
-				if cached, found := RegexCache.Load(uuidPattern); found {
-					re = cached.(*regexp.Regexp)
-				} else {
-					var err error
-					re, err = regexp.Compile(uuidPattern)
-					if err != nil {
-						errors = append(errors, fmt.Sprintf("invalid UUID pattern: %v", err))
-						return errors
-					}
-					RegexCache.Store(uuidPattern, re)
-				}
-				if !re.MatchString(str) {
-					errors = append(errors, fmt.Sprintf("%s must be a valid UUID", displayPath))
-				}
-			default:
-				errors = append(errors, fmt.Sprintf("unsupported format: %s", format))
-			}
+			// Single format validation
+			errors = v.validateStringFormat(format, str, displayPath, errors)
 		}
 	}
 
@@ -538,12 +915,14 @@ func (v *Validator) validateNumber(path string, schema *domain.Schema, data inte
 	}
 
 	// Get number constraints
-	var minimum, maximum *float64
+	var minimum, maximum, exclusiveMinimum, exclusiveMaximum *float64
 
 	if schema.Properties != nil {
 		if prop, exists := schema.Properties[""]; exists {
 			minimum = prop.Minimum
 			maximum = prop.Maximum
+			exclusiveMinimum = prop.ExclusiveMinimum
+			exclusiveMaximum = prop.ExclusiveMaximum
 		}
 	}
 
@@ -555,6 +934,16 @@ func (v *Validator) validateNumber(path string, schema *domain.Schema, data inte
 	// Validate maximum - fast path
 	if maximum != nil && num > *maximum {
 		errors = append(errors, fmt.Sprintf("%s must be at most %g", displayPath, *maximum))
+	}
+
+	// Validate exclusive minimum
+	if exclusiveMinimum != nil && num <= *exclusiveMinimum {
+		errors = append(errors, fmt.Sprintf("%s must be greater than %g", displayPath, *exclusiveMinimum))
+	}
+
+	// Validate exclusive maximum
+	if exclusiveMaximum != nil && num >= *exclusiveMaximum {
+		errors = append(errors, fmt.Sprintf("%s must be less than %g", displayPath, *exclusiveMaximum))
 	}
 
 	return errors
