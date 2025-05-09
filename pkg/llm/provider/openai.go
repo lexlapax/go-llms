@@ -21,33 +21,18 @@ const (
 
 // OpenAIProvider implements the Provider interface for OpenAI
 type OpenAIProvider struct {
-	apiKey     string
-	model      string
-	baseURL    string
-	httpClient *http.Client
+	apiKey       string
+	model        string
+	baseURL      string
+	httpClient   *http.Client
+	organization string
+	logitBias    map[string]float64
 	// Optimization: cache for converted messages
 	messageCache *MessageCache
 }
 
-// OpenAIOption configures the OpenAI provider
-type OpenAIOption func(*OpenAIProvider)
-
-// WithBaseURL sets a custom base URL for the OpenAI API
-func WithBaseURL(url string) OpenAIOption {
-	return func(p *OpenAIProvider) {
-		p.baseURL = url
-	}
-}
-
-// WithHTTPClient sets a custom HTTP client
-func WithHTTPClient(client *http.Client) OpenAIOption {
-	return func(p *OpenAIProvider) {
-		p.httpClient = client
-	}
-}
-
 // NewOpenAIProvider creates a new OpenAI provider
-func NewOpenAIProvider(apiKey, model string, options ...OpenAIOption) *OpenAIProvider {
+func NewOpenAIProvider(apiKey, model string, options ...domain.ProviderOption) *OpenAIProvider {
 	provider := &OpenAIProvider{
 		apiKey:       apiKey,
 		model:        model,
@@ -55,12 +40,36 @@ func NewOpenAIProvider(apiKey, model string, options ...OpenAIOption) *OpenAIPro
 		httpClient:   http.DefaultClient,
 		messageCache: NewMessageCache(),
 	}
-
+	
 	for _, option := range options {
-		option(provider)
+		// Check if the option is compatible with OpenAI
+		if openAIOption, ok := option.(domain.OpenAIOption); ok {
+			openAIOption.ApplyToOpenAI(provider)
+		}
 	}
-
+	
 	return provider
+}
+
+// Setter methods for options
+// SetBaseURL sets the base URL for the OpenAI API
+func (p *OpenAIProvider) SetBaseURL(url string) {
+	p.baseURL = url
+}
+
+// SetHTTPClient sets the HTTP client
+func (p *OpenAIProvider) SetHTTPClient(client *http.Client) {
+	p.httpClient = client
+}
+
+// SetOrganization sets the organization ID
+func (p *OpenAIProvider) SetOrganization(org string) {
+	p.organization = org
+}
+
+// SetLogitBias sets the logit bias
+func (p *OpenAIProvider) SetLogitBias(logitBias map[string]float64) {
+	p.logitBias = logitBias
 }
 
 // Generate produces text from a prompt
@@ -198,6 +207,11 @@ func (p *OpenAIProvider) buildOpenAIRequestBody(
 	if options.PresencePenalty != 0 {
 		requestBody["presence_penalty"] = options.PresencePenalty
 	}
+	
+	// Add logit bias if provided
+	if p.logitBias != nil && len(p.logitBias) > 0 {
+		requestBody["logit_bias"] = p.logitBias
+	}
 
 	return requestBody
 }
@@ -233,6 +247,11 @@ func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.apiKey))
+	
+	// Set organization header if provided
+	if p.organization != "" {
+		req.Header.Set("OpenAI-Organization", p.organization)
+	}
 
 	// Make the request
 	resp, err := p.httpClient.Do(req)
@@ -344,6 +363,11 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.apiKey))
 	req.Header.Set("Accept", "text/event-stream")
+	
+	// Set organization header if provided
+	if p.organization != "" {
+		req.Header.Set("OpenAI-Organization", p.organization)
+	}
 
 	// Make the request
 	resp, err := p.httpClient.Do(req)

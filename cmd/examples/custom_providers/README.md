@@ -20,10 +20,11 @@ The go-llms library makes it easy to use providers that implement the same API a
 Use provider-specific option functions when creating a provider:
 
 ```go
+baseURLOption := domain.NewBaseURLOption("https://custom-endpoint.com")
 provider := provider.NewOpenAIProvider(
     apiKey,
     modelName,
-    provider.WithBaseURL("https://custom-endpoint.com"),
+    baseURLOption,
 )
 ```
 

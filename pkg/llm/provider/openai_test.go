@@ -75,7 +75,8 @@ func TestOpenAIProvider(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("NewOpenAIProvider", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(mockServer.URL))
+		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", baseURLOption)
 		if provider == nil {
 			t.Fatal("Expected non-nil provider")
 		}
@@ -85,10 +86,14 @@ func TestOpenAIProvider(t *testing.T) {
 		if provider.model != "gpt-4o" {
 			t.Errorf("Expected model 'gpt-4o', got '%s'", provider.model)
 		}
+		if provider.baseURL != mockServer.URL {
+			t.Errorf("Expected baseURL '%s', got '%s'", mockServer.URL, provider.baseURL)
+		}
 	})
 
 	t.Run("Generate", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(mockServer.URL))
+		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", baseURLOption)
 		response, err := provider.Generate(ctx, "Tell me a joke")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -100,7 +105,8 @@ func TestOpenAIProvider(t *testing.T) {
 	})
 
 	t.Run("GenerateMessage", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(mockServer.URL))
+		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", baseURLOption)
 		messages := []domain.Message{
 			{Role: domain.RoleSystem, Content: "You are a helpful assistant"},
 			{Role: domain.RoleUser, Content: "Tell me a joke"},
@@ -116,7 +122,8 @@ func TestOpenAIProvider(t *testing.T) {
 	})
 
 	t.Run("Invalid API key", func(t *testing.T) {
-		provider := NewOpenAIProvider("invalid-key", "gpt-4o", WithBaseURL(mockServer.URL))
+		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
+		provider := NewOpenAIProvider("invalid-key", "gpt-4o", baseURLOption)
 		_, err := provider.Generate(ctx, "Tell me a joke")
 		if err == nil {
 			t.Fatal("Expected error for invalid API key, got nil")
@@ -124,7 +131,8 @@ func TestOpenAIProvider(t *testing.T) {
 	})
 
 	t.Run("Generate with options", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(mockServer.URL))
+		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", baseURLOption)
 
 		// Set custom options
 		options := []domain.Option{
@@ -176,7 +184,8 @@ func TestOpenAIProvider(t *testing.T) {
 	defer streamServer.Close()
 
 	t.Run("Stream", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(streamServer.URL))
+		baseURLOption := domain.NewBaseURLOption(streamServer.URL)
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", baseURLOption)
 		stream, err := provider.Stream(ctx, "Tell me a joke")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -213,7 +222,8 @@ func TestOpenAIProvider(t *testing.T) {
 	})
 
 	t.Run("StreamMessage", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(streamServer.URL))
+		baseURLOption := domain.NewBaseURLOption(streamServer.URL)
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", baseURLOption)
 		messages := []domain.Message{
 			{Role: domain.RoleSystem, Content: "You are a helpful assistant"},
 			{Role: domain.RoleUser, Content: "Tell me a joke"},
@@ -274,7 +284,8 @@ func TestOpenAIProvider(t *testing.T) {
 	defer schemaServer.Close()
 
 	t.Run("GenerateWithSchema", func(t *testing.T) {
-		provider := NewOpenAIProvider("test-api-key", "gpt-4o", WithBaseURL(schemaServer.URL))
+		baseURLOption := domain.NewBaseURLOption(schemaServer.URL)
+		provider := NewOpenAIProvider("test-api-key", "gpt-4o", baseURLOption)
 
 		// Define a simple schema
 		schema := &schemaDomain.Schema{

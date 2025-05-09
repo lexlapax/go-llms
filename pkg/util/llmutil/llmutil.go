@@ -25,21 +25,18 @@ type ModelConfig struct {
 }
 
 // WithProviderOptions creates provider-specific options for initialization
-func WithProviderOptions(config ModelConfig) ([]interface{}, error) {
-	var options []interface{}
+func WithProviderOptions(config ModelConfig) ([]domain.ProviderOption, error) {
+	var interfaceOptions []domain.ProviderOption
 	
 	if config.BaseURL != "" {
-		switch config.Provider {
-		case "openai":
-			options = append(options, provider.WithBaseURL(config.BaseURL))
-		case "anthropic":
-			options = append(options, provider.WithAnthropicBaseURL(config.BaseURL))
-		case "gemini":
-			options = append(options, provider.WithGeminiBaseURL(config.BaseURL))
+		// Only add interface options for valid providers
+		if config.Provider == "openai" || config.Provider == "anthropic" || config.Provider == "gemini" {
+			baseURLOption := domain.NewBaseURLOption(config.BaseURL)
+			interfaceOptions = append(interfaceOptions, baseURLOption)
 		}
 	}
 	
-	return options, nil
+	return interfaceOptions, nil
 }
 
 // CreateProvider creates an LLM provider based on configuration
@@ -57,30 +54,34 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 	
 	switch config.Provider {
 	case "openai":
-		openAIOptions := make([]provider.OpenAIOption, 0, len(options))
-		for _, opt := range options {
-			if o, ok := opt.(provider.OpenAIOption); ok {
-				openAIOptions = append(openAIOptions, o)
-			}
-		}
-		llmProvider = provider.NewOpenAIProvider(config.APIKey, config.Model, openAIOptions...)
+		llmProvider = provider.NewOpenAIProvider(config.APIKey, config.Model, options...)
 	
 	case "anthropic":
-		anthropicOptions := make([]provider.AnthropicOption, 0, len(options))
+		// TODO: Refactor Anthropic provider to use interface-based options
+		// For now, fall back to the old functional options
+		var anthropicOptions []provider.AnthropicOption
+		
+		// Manually convert interface options to functional options
 		for _, opt := range options {
-			if o, ok := opt.(provider.AnthropicOption); ok {
-				anthropicOptions = append(anthropicOptions, o)
+			if baseURLOpt, ok := opt.(*domain.BaseURLOption); ok {
+				anthropicOptions = append(anthropicOptions, provider.WithAnthropicBaseURL(baseURLOpt.URL))
 			}
 		}
+		
 		llmProvider = provider.NewAnthropicProvider(config.APIKey, config.Model, anthropicOptions...)
 	
 	case "gemini":
-		geminiOptions := make([]provider.GeminiOption, 0, len(options))
+		// TODO: Refactor Gemini provider to use interface-based options
+		// For now, fall back to the old functional options
+		var geminiOptions []provider.GeminiOption
+		
+		// Manually convert interface options to functional options
 		for _, opt := range options {
-			if o, ok := opt.(provider.GeminiOption); ok {
-				geminiOptions = append(geminiOptions, o)
+			if baseURLOpt, ok := opt.(*domain.BaseURLOption); ok {
+				geminiOptions = append(geminiOptions, provider.WithGeminiBaseURL(baseURLOpt.URL))
 			}
 		}
+		
 		llmProvider = provider.NewGeminiProvider(config.APIKey, config.Model, geminiOptions...)
 	
 	case "mock":
@@ -125,11 +126,11 @@ func ProviderFromEnv() (domain.Provider, string, string, error) {
 	
 	// Try to create a provider in order of preference
 	if openAIKey != "" {
-		var options []provider.OpenAIOption
+		var options []domain.ProviderOption
 		
 		// Add base URL option if specified
 		if openAIBaseURL != "" {
-			options = append(options, provider.WithBaseURL(openAIBaseURL))
+			options = append(options, domain.NewBaseURLOption(openAIBaseURL))
 		}
 		
 		llmProvider := provider.NewOpenAIProvider(openAIKey, openAIModel, options...)

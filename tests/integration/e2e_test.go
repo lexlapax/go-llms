@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/workflow"
+	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 	"github.com/lexlapax/go-llms/pkg/schema/validation"
@@ -23,6 +25,18 @@ func TestEndToEndWorkflow(t *testing.T) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
 		t.Skip("OPENAI_API_KEY environment variable not set, skipping end-to-end test")
+	}
+	
+	// Create custom HTTP client with longer timeouts for reliability
+	httpClient := &http.Client{
+		Timeout: 60 * time.Second,
+		Transport: &http.Transport{
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   30 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
 	}
 
 	t.Run("ValidateProcessGenerate", func(t *testing.T) {
@@ -48,8 +62,9 @@ func TestEndToEndWorkflow(t *testing.T) {
 		// Create a processor
 		proc := processor.NewStructuredProcessor(validator)
 
-		// Create an LLM provider
-		llm := provider.NewOpenAIProvider(apiKey, "gpt-4o")
+		// Create an LLM provider with custom client for better reliability
+		clientOption := domain.NewHTTPClientOption(httpClient)
+		llm := provider.NewOpenAIProvider(apiKey, "gpt-4o", clientOption)
 
 		// Generate a response
 		prompt := "Calculate 21 times 2 and return the result as an integer."
@@ -100,9 +115,22 @@ func TestLiveEndToEndAgent(t *testing.T) {
 	if apiKey == "" {
 		t.Skip("OPENAI_API_KEY environment variable not set, skipping live end-to-end agent test")
 	}
+	
+	// Create custom HTTP client with longer timeouts for reliability
+	httpClient := &http.Client{
+		Timeout: 60 * time.Second,
+		Transport: &http.Transport{
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   30 * time.Second,
+			ResponseHeaderTimeout: 30 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+	}
 
-	// Create an LLM provider
-	llm := provider.NewOpenAIProvider(apiKey, "gpt-4o")
+	// Create an LLM provider with custom client for better reliability
+	clientOption := domain.NewHTTPClientOption(httpClient)
+	llm := provider.NewOpenAIProvider(apiKey, "gpt-4o", clientOption)
 
 	// Create an agent
 	agent := workflow.NewAgent(llm)

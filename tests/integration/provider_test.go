@@ -22,7 +22,11 @@ func TestProviderIntegration(t *testing.T) {
 		}
 
 		// Create an OpenAI provider
+		// Using the old functional options pattern
 		openai := provider.NewOpenAIProvider(apiKey, "gpt-4o")
+		
+		// Alternative: You can also use the new interface-based options pattern
+		// openai := provider.NewOpenAIProviderWithOptions(apiKey, "gpt-4o")
 
 		// Test simple generation
 		t.Run("Generate", func(t *testing.T) {

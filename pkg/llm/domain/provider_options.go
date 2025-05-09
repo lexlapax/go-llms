@@ -55,8 +55,10 @@ func NewBaseURLOption(url string) *BaseURLOption {
 func (o *BaseURLOption) ProviderType() string { return "all" }
 
 func (o *BaseURLOption) ApplyToOpenAI(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the OpenAI provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	// Use type assertion to check if provider implements SetBaseURL method
+	if p, ok := provider.(interface{ SetBaseURL(url string) }); ok {
+		p.SetBaseURL(o.URL)
+	}
 }
 
 func (o *BaseURLOption) ApplyToAnthropic(provider interface{}) {
@@ -82,8 +84,9 @@ func NewHTTPClientOption(client *http.Client) *HTTPClientOption {
 func (o *HTTPClientOption) ProviderType() string { return "all" }
 
 func (o *HTTPClientOption) ApplyToOpenAI(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the OpenAI provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	if p, ok := provider.(interface{ SetHTTPClient(client *http.Client) }); ok {
+		p.SetHTTPClient(o.Client)
+	}
 }
 
 func (o *HTTPClientOption) ApplyToAnthropic(provider interface{}) {
@@ -227,8 +230,9 @@ func NewOpenAIOrganizationOption(organization string) *OpenAIOrganizationOption 
 func (o *OpenAIOrganizationOption) ProviderType() string { return "openai" }
 
 func (o *OpenAIOrganizationOption) ApplyToOpenAI(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the OpenAI provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	if p, ok := provider.(interface{ SetOrganization(org string) }); ok {
+		p.SetOrganization(o.Organization)
+	}
 }
 
 // OpenAILogitBiasOption sets the logit bias for OpenAI API calls
@@ -244,8 +248,9 @@ func NewOpenAILogitBiasOption(logitBias map[string]float64) *OpenAILogitBiasOpti
 func (o *OpenAILogitBiasOption) ProviderType() string { return "openai" }
 
 func (o *OpenAILogitBiasOption) ApplyToOpenAI(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the OpenAI provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	if p, ok := provider.(interface{ SetLogitBias(logitBias map[string]float64) }); ok {
+		p.SetLogitBias(o.LogitBias)
+	}
 }
 
 // Anthropic-specific options

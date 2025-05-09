@@ -53,12 +53,13 @@ func runOpenRouterExample() {
 		model = "anthropic/claude-3-5-sonnet"
 	}
 
-	// Method 1: Direct provider instantiation with options
+	// Method 1: Direct provider instantiation with interface-based options
 	fmt.Println("\nMethod 1: Direct provider instantiation")
+	baseURLOption := domain.NewBaseURLOption("https://openrouter.ai/api")
 	openRouterProvider := provider.NewOpenAIProvider(
 		apiKey,
 		model,
-		provider.WithBaseURL("https://openrouter.ai/api"),
+		baseURLOption,
 	)
 
 	// Use the provider to generate a response
@@ -133,10 +134,11 @@ func runOllamaExample() {
 
 	// Method 1: Direct provider instantiation with options
 	fmt.Println("\nMethod 1: Direct provider instantiation")
+	baseURLOption := domain.NewBaseURLOption(ollamaHost)
 	ollamaProvider := provider.NewOpenAIProvider(
 		apiKey,
 		ollamaModel,
-		provider.WithBaseURL(ollamaHost),
+		baseURLOption,
 	)
 
 	// Use the provider to generate a response

@@ -352,6 +352,7 @@ func TestWithProviderOptions(t *testing.T) {
 				t.Errorf("Unexpected error: %v", err)
 			}
 
+			// Check the options
 			if len(options) != tt.expectedOptions {
 				t.Errorf("Expected %d options, got %d", tt.expectedOptions, len(options))
 			}
