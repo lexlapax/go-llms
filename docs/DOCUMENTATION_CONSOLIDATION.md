@@ -28,8 +28,8 @@ docs/
 ├── plan/                     # Project planning documents
 │   ├── README.md             # Planning documentation overview
 │   ├── coding-practices.md   # Coding standards and guidelines
-│   ├── implementation-plan.md # Original implementation plan
-│   └── pydantic-ai-to-go.md  # Blueprint for porting pydantic-ai to Go
+│   ├── implementation-plan.md # Detailed implementation plan
+│   └── design-inspirations.md # Key inspirations and design decisions
 ├── technical/                # Technical documentation
 │   ├── README.md             # Technical documentation overview
 │   ├── architecture.md       # Architecture documentation
@@ -102,7 +102,7 @@ As part of the documentation reorganization, we also moved the project planning 
 1. **Created Plan Directory**:
    - Added a `docs/plan/` directory for planning documents
    - Moved three planning files from the root directory:
-     - `pydantic-ai-to-go.md` → `docs/plan/pydantic-ai-to-go.md`
+     - `design-inspirations.md` → `docs/plan/design-inspirations.md` (renamed from pydantic-ai-to-go.md)
      - `coding-practices.md` → `docs/plan/coding-practices.md`
      - `implementation-plan.md` → `docs/plan/implementation-plan.md`
 

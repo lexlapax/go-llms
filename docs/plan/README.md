@@ -6,7 +6,7 @@ This directory contains the original planning documents for the Go-LLMs project.
 
 ## Documents
 
-- [Pydantic-AI to Go](pydantic-ai-to-go.md) - Original blueprint for porting pydantic-ai to Go
+- [Design Inspirations](design-inspirations.md) - Key inspirations and design decisions
 - [Coding Practices](coding-practices.md) - Coding standards and guidelines for the project
 - [Implementation Plan](implementation-plan.md) - Detailed implementation plan with phases and milestones
 

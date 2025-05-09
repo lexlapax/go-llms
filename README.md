@@ -379,7 +379,7 @@ For a complete reference of all documentation, see the [REFERENCE.md](REFERENCE.
 
 The following documents provide insight into the project's design and planning:
 
-- [Design Inspirations](docs/plan/pydantic-ai-to-go.md) - Key inspirations and design decisions
+- [Design Inspirations](docs/plan/design-inspirations.md) - Key inspirations and design decisions
 - [Coding Practices](docs/plan/coding-practices.md) - Coding standards and guidelines for the project
 - [Implementation Plan](docs/plan/implementation-plan.md) - Detailed implementation plan with phases and milestones
 
@@ -394,4 +394,4 @@ The core functionality is complete and working. Current focus is on:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
