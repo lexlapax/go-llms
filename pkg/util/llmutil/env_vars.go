@@ -16,6 +16,11 @@ const (
 	EnvRetryAttempts = "LLM_RETRY_ATTEMPTS" // Number of retry attempts for failed requests
 	EnvRetryDelay    = "LLM_RETRY_DELAY"    // Delay between retries in milliseconds
 
+	// Provider use case options
+	EnvOpenAIUseCase    = "OPENAI_USE_CASE"    // Use case for OpenAI (default, streaming, performance, reliability)
+	EnvAnthropicUseCase = "ANTHROPIC_USE_CASE" // Use case for Anthropic
+	EnvGeminiUseCase    = "GEMINI_USE_CASE"    // Use case for Gemini
+
 	// OpenAI options
 	EnvOpenAIOrganization = "OPENAI_ORGANIZATION" // Organization ID for OpenAI
 	EnvOpenAIModel        = "OPENAI_MODEL"        // Model to use for OpenAI

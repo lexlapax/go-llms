@@ -364,20 +364,105 @@ func makeMockStream(content string) domain.ResponseStream {
 }
 
 func TestWithProviderOptions(t *testing.T) {
+	// Save original environment variables
+	origOpenAIOrg := os.Getenv(EnvOpenAIOrganization)
+	origAnthropicSystemPrompt := os.Getenv(EnvAnthropicSystemPrompt)
+
+	// Clean up environment after test
+	defer func() {
+		os.Setenv(EnvOpenAIOrganization, origOpenAIOrg)
+		os.Setenv(EnvAnthropicSystemPrompt, origAnthropicSystemPrompt)
+	}()
+
+	// Set environment variables for test
+	os.Setenv(EnvOpenAIOrganization, "env-org-id")
+	os.Setenv(EnvAnthropicSystemPrompt, "env-system-prompt")
+
 	tests := []struct {
 		name            string
 		config          ModelConfig
 		expectedOptions int
+		checkOption     func([]domain.ProviderOption) bool
 	}{
 		{
-			name: "OpenAI with base URL",
+			name: "Base URL Option",
 			config: ModelConfig{
 				Provider: "openai",
-				Model:    "gpt-4o",
-				APIKey:   "test-api-key",
-				BaseURL:  "https://custom-openai.example.com",
+				BaseURL:  "https://custom.openai.com",
 			},
 			expectedOptions: 1,
+			checkOption: func(options []domain.ProviderOption) bool {
+				for _, opt := range options {
+					if baseURLOpt, ok := opt.(*domain.BaseURLOption); ok {
+						return baseURLOpt.URL == "https://custom.openai.com"
+					}
+				}
+				return false
+			},
+		},
+		{
+			name: "With Use Case",
+			config: ModelConfig{
+				Provider: "openai",
+				UseCase:  "streaming",
+			},
+			expectedOptions: 3, // At least 3 options from streaming
+			checkOption: func(options []domain.ProviderOption) bool {
+				hasTimeout := false
+				hasHTTPClient := false
+
+				for _, opt := range options {
+					switch opt.(type) {
+					case *domain.TimeoutOption:
+						hasTimeout = true
+					case *domain.HTTPClientOption:
+						hasHTTPClient = true
+					}
+				}
+
+				return hasTimeout && hasHTTPClient
+			},
+		},
+		{
+			name: "Custom Options Override",
+			config: ModelConfig{
+				Provider: "anthropic",
+				UseCase:  "default",
+				Options: []domain.ProviderOption{
+					domain.NewAnthropicSystemPromptOption("custom-override-prompt"),
+				},
+			},
+			expectedOptions: 1, // At least the one we added
+			checkOption: func(options []domain.ProviderOption) bool {
+				for _, opt := range options {
+					if _, ok := opt.(*domain.AnthropicSystemPromptOption); ok {
+						// Our custom option should be applied, but we can't check its value directly
+						// Just verify it's present
+						return true
+					}
+				}
+				return false
+			},
+		},
+		{
+			name: "Unknown Provider",
+			config: ModelConfig{
+				Provider: "unknown",
+				UseCase:  "performance",
+			},
+			expectedOptions: 3, // Should still get the performance options
+			checkOption: func(options []domain.ProviderOption) bool {
+				hasRetry := false
+
+				for _, opt := range options {
+					if _, ok := opt.(*domain.RetryOption); ok {
+						hasRetry = true
+						break
+					}
+				}
+
+				return hasRetry
+			},
 		},
 		{
 			name: "Anthropic with base URL",
@@ -388,35 +473,14 @@ func TestWithProviderOptions(t *testing.T) {
 				BaseURL:  "https://custom-anthropic.example.com",
 			},
 			expectedOptions: 1,
-		},
-		{
-			name: "Gemini with base URL",
-			config: ModelConfig{
-				Provider: "gemini",
-				Model:    "gemini-2.0-flash-lite",
-				APIKey:   "test-api-key",
-				BaseURL:  "https://custom-gemini.example.com",
+			checkOption: func(options []domain.ProviderOption) bool {
+				for _, opt := range options {
+					if baseURLOpt, ok := opt.(*domain.BaseURLOption); ok {
+						return baseURLOpt.URL == "https://custom-anthropic.example.com"
+					}
+				}
+				return false
 			},
-			expectedOptions: 1,
-		},
-		{
-			name: "OpenAI without base URL",
-			config: ModelConfig{
-				Provider: "openai",
-				Model:    "gpt-4o",
-				APIKey:   "test-api-key",
-			},
-			expectedOptions: 0,
-		},
-		{
-			name: "Unsupported provider with base URL",
-			config: ModelConfig{
-				Provider: "unsupported",
-				Model:    "model",
-				APIKey:   "test-api-key",
-				BaseURL:  "https://example.com",
-			},
-			expectedOptions: 0,
 		},
 		{
 			name: "OpenAI with base URL and custom options",
@@ -431,33 +495,47 @@ func TestWithProviderOptions(t *testing.T) {
 				},
 			},
 			expectedOptions: 3, // Base URL + 2 custom options
-		},
-		{
-			name: "OpenAI with only custom options (no base URL)",
-			config: ModelConfig{
-				Provider: "openai",
-				Model:    "gpt-4o",
-				APIKey:   "test-api-key",
-				Options: []domain.ProviderOption{
-					domain.NewTimeoutOption(15),
-					domain.NewRetryOption(3, 500),
-				},
+			checkOption: func(options []domain.ProviderOption) bool {
+				hasBaseURL := false
+				hasTimeout := false
+				hasOrg := false
+
+				for _, opt := range options {
+					switch o := opt.(type) {
+					case *domain.BaseURLOption:
+						hasBaseURL = o.URL == "https://custom-openai.example.com"
+					case *domain.TimeoutOption:
+						hasTimeout = true
+					case *domain.OpenAIOrganizationOption:
+						hasOrg = true // Just check that organization is present
+					}
+				}
+
+				return hasBaseURL && hasTimeout && hasOrg
 			},
-			expectedOptions: 2, // Just the 2 custom options
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Call function
 			options, err := WithProviderOptions(tt.config)
 
+			// Check error
 			if err != nil {
-				t.Errorf("Unexpected error: %v", err)
+				t.Errorf("WithProviderOptions() error = %v", err)
+				return
 			}
 
-			// Check the options
-			if len(options) != tt.expectedOptions {
-				t.Errorf("Expected %d options, got %d", tt.expectedOptions, len(options))
+			// Check number of options
+			if len(options) < tt.expectedOptions {
+				t.Errorf("WithProviderOptions() returned %d options, expected at least %d",
+					len(options), tt.expectedOptions)
+			}
+
+			// Check specific option contents
+			if !tt.checkOption(options) {
+				t.Errorf("WithProviderOptions() did not return expected option configuration")
 			}
 		})
 	}

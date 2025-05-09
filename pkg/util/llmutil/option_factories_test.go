@@ -1,6 +1,8 @@
 package llmutil
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
@@ -338,5 +340,126 @@ func TestWithAnthropicStreamingOptions(t *testing.T) {
 	}
 	if !hasHeaders {
 		t.Errorf("Expected HeadersOption but not found")
+	}
+}
+
+func TestCreateOptionFactoryFromEnv(t *testing.T) {
+	// Save original environment variables
+	origOpenAIOrg := os.Getenv(EnvOpenAIOrganization)
+	origAnthropicSystemPrompt := os.Getenv(EnvAnthropicSystemPrompt)
+	origHTTPTimeout := os.Getenv(EnvHTTPTimeout)
+
+	// Clean up environment after test
+	defer func() {
+		os.Setenv(EnvOpenAIOrganization, origOpenAIOrg)
+		os.Setenv(EnvAnthropicSystemPrompt, origAnthropicSystemPrompt)
+		os.Setenv(EnvHTTPTimeout, origHTTPTimeout)
+	}()
+
+	tests := []struct {
+		name          string
+		provider      string
+		useCase       string
+		envVars       map[string]string
+		expectedTypes []string
+		minOptions    int
+	}{
+		{
+			name:     "OpenAI Default",
+			provider: "openai",
+			useCase:  "default",
+			envVars: map[string]string{
+				EnvOpenAIOrganization: "test-org",
+			},
+			expectedTypes: []string{"*domain.OpenAIOrganizationOption", "*domain.HeadersOption"},
+			minOptions:    2,
+		},
+		{
+			name:     "OpenAI Streaming",
+			provider: "openai",
+			useCase:  "streaming",
+			envVars: map[string]string{
+				EnvOpenAIOrganization: "test-org",
+			},
+			expectedTypes: []string{
+				"*domain.OpenAIOrganizationOption",
+				"*domain.HeadersOption",
+				"*domain.HTTPClientOption",
+				"*domain.TimeoutOption",
+			},
+			minOptions: 4,
+		},
+		{
+			name:     "Anthropic With Env Override",
+			provider: "anthropic",
+			useCase:  "default",
+			envVars: map[string]string{
+				EnvAnthropicSystemPrompt: "Custom env prompt",
+				EnvHTTPTimeout:           "20",
+			},
+			expectedTypes: []string{"*domain.AnthropicSystemPromptOption", "*domain.TimeoutOption"},
+			minOptions:    2,
+		},
+		{
+			name:     "Gemini Performance",
+			provider: "gemini",
+			useCase:  "performance",
+			envVars:  map[string]string{},
+			expectedTypes: []string{
+				"*domain.HTTPClientOption",
+				"*domain.TimeoutOption",
+				"*domain.RetryOption",
+				"*domain.GeminiGenerationConfigOption",
+				"*domain.GeminiSafetySettingsOption",
+			},
+			minOptions: 5,
+		},
+		{
+			name:     "Unknown Provider",
+			provider: "unknown",
+			useCase:  "reliability",
+			envVars:  map[string]string{},
+			expectedTypes: []string{
+				"*domain.HTTPClientOption",
+				"*domain.TimeoutOption",
+				"*domain.RetryOption",
+			},
+			minOptions: 3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Clear environment variables first
+			os.Unsetenv(EnvOpenAIOrganization)
+			os.Unsetenv(EnvAnthropicSystemPrompt)
+			os.Unsetenv(EnvHTTPTimeout)
+
+			// Set environment variables for test
+			for k, v := range tt.envVars {
+				os.Setenv(k, v)
+			}
+
+			// Call function
+			options := CreateOptionFactoryFromEnv(tt.provider, tt.useCase)
+
+			// Check minimum number of options
+			if len(options) < tt.minOptions {
+				t.Errorf("Expected at least %d options, got %d", tt.minOptions, len(options))
+			}
+
+			// Check that expected option types are present
+			foundTypes := make(map[string]bool)
+			for _, opt := range options {
+				typeName := fmt.Sprintf("%T", opt)
+				foundTypes[typeName] = true
+			}
+
+			for _, expectedType := range tt.expectedTypes {
+				if !foundTypes[expectedType] {
+					t.Errorf("Expected option type %s but not found", expectedType)
+				}
+			}
+		})
 	}
 }

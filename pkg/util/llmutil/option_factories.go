@@ -3,6 +3,7 @@ package llmutil
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 )
@@ -206,4 +207,90 @@ func WithAnthropicStreamingOptions(systemPrompt string) []domain.ProviderOption 
 
 	// Replace HTTP client and timeout with streaming-optimized versions
 	return append(options, streamingOptions...)
+}
+
+// CreateOptionFactoryFromEnv creates provider options combining environment variables and factory functions.
+// This function provides a consolidated approach to creating provider options by:
+// 1. Getting options from environment variables
+// 2. Applying option factory functions based on the use case
+// 3. Merging both sets of options with appropriate priority
+//
+// Parameters:
+// - providerType: The provider type ("openai", "anthropic", "gemini")
+// - useCase: The use case ("default", "performance", "reliability", "streaming")
+//
+// The function determines which factory function to use based on the provider and use case,
+// then merges those options with any options found in environment variables.
+func CreateOptionFactoryFromEnv(providerType, useCase string) []domain.ProviderOption {
+	var options []domain.ProviderOption
+
+	// First, get options from environment variables
+	envOptions := GetProviderOptionsFromEnv(providerType)
+
+	// Next, apply factory function options based on provider and use case
+	var factoryOptions []domain.ProviderOption
+
+	switch providerType {
+	case "openai":
+		// Get organization ID from environment if available
+		orgID := os.Getenv(EnvOpenAIOrganization)
+
+		switch useCase {
+		case "streaming":
+			factoryOptions = WithOpenAIStreamingOptions(orgID)
+		case "performance":
+			factoryOptions = append(WithPerformanceOptions(), domain.NewOpenAIOrganizationOption(orgID))
+		case "reliability":
+			factoryOptions = append(WithReliabilityOptions(), domain.NewOpenAIOrganizationOption(orgID))
+		default:
+			factoryOptions = WithOpenAIDefaultOptions(orgID)
+		}
+
+	case "anthropic":
+		// Get system prompt from environment if available
+		systemPrompt := os.Getenv(EnvAnthropicSystemPrompt)
+
+		switch useCase {
+		case "streaming":
+			factoryOptions = WithAnthropicStreamingOptions(systemPrompt)
+		case "performance":
+			factoryOptions = append(WithPerformanceOptions(), domain.NewAnthropicSystemPromptOption(systemPrompt))
+		case "reliability":
+			factoryOptions = append(WithReliabilityOptions(), domain.NewAnthropicSystemPromptOption(systemPrompt))
+		default:
+			factoryOptions = WithAnthropicDefaultOptions(systemPrompt)
+		}
+
+	case "gemini":
+		switch useCase {
+		case "streaming":
+			factoryOptions = append(WithStreamingOptions(), WithGeminiDefaultOptions()...)
+		case "performance":
+			factoryOptions = append(WithPerformanceOptions(), WithGeminiDefaultOptions()...)
+		case "reliability":
+			factoryOptions = append(WithReliabilityOptions(), WithGeminiDefaultOptions()...)
+		default:
+			factoryOptions = WithGeminiDefaultOptions()
+		}
+
+	default:
+		// For unknown providers, just use common options based on use case
+		switch useCase {
+		case "streaming":
+			factoryOptions = WithStreamingOptions()
+		case "performance":
+			factoryOptions = WithPerformanceOptions()
+		case "reliability":
+			factoryOptions = WithReliabilityOptions()
+		}
+	}
+
+	// Merge options, giving priority to environment variables
+	// First add factory options as defaults
+	options = append(options, factoryOptions...)
+
+	// Then add environment options which may override factory options
+	options = append(options, envOptions...)
+
+	return options
 }

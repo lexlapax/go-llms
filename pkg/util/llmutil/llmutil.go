@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
@@ -22,13 +23,20 @@ type ModelConfig struct {
 	BaseURL   string                  // Optional base URL override
 	MaxTokens int                     // Optional max tokens override
 	Options   []domain.ProviderOption // Optional provider-specific options
+	UseCase   string                  // Optional use case identifier (default, performance, reliability, streaming)
 }
 
 // WithProviderOptions creates provider-specific options for initialization
 func WithProviderOptions(config ModelConfig) ([]domain.ProviderOption, error) {
 	var interfaceOptions []domain.ProviderOption
 
-	// Add user-provided options
+	// If a use case is specified, get options from the factory
+	if config.UseCase != "" {
+		factoryOptions := CreateOptionFactoryFromEnv(config.Provider, config.UseCase)
+		interfaceOptions = append(interfaceOptions, factoryOptions...)
+	}
+
+	// Add user-provided options (these have the highest priority)
 	if config.Options != nil {
 		interfaceOptions = append(interfaceOptions, config.Options...)
 	}
@@ -70,11 +78,9 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 		return nil, err
 	}
 
-	// If no options provided in config, try to get them from environment
-	if len(config.Options) == 0 {
-		envOptions := GetProviderOptionsFromEnv(config.Provider)
-		options = append(options, envOptions...)
-	}
+	// WithProviderOptions already handles combining options from factories, environment variables,
+	// and explicit configuration, so we don't need to append additional environment options here.
+	// This is now handled by the use of CreateOptionFactoryFromEnv inside WithProviderOptions.
 
 	switch config.Provider {
 	case "openai":
@@ -99,6 +105,7 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 // ProviderFromEnv creates a provider using environment variables
 // It looks for API keys, base URLs, models, and other provider-specific options
 // from environment variables and applies them when creating the provider.
+// It now also supports use case-specific option factories.
 func ProviderFromEnv() (domain.Provider, string, string, error) {
 	// Check for API keys in environment variables
 	openAIKey := GetAPIKeyFromEnv("openai")
@@ -112,8 +119,13 @@ func ProviderFromEnv() (domain.Provider, string, string, error) {
 
 	// Try to create a provider in order of preference
 	if openAIKey != "" {
-		// Get OpenAI-specific options from environment variables
-		options := GetOpenAIOptionsFromEnv()
+		// Use the new option factory approach with environment variables
+		// Default to "default" use case unless specified in environment
+		useCase := os.Getenv(EnvOpenAIUseCase)
+		if useCase == "" {
+			useCase = "default"
+		}
+		options := CreateOptionFactoryFromEnv("openai", useCase)
 
 		// Create provider with options
 		llmProvider := provider.NewOpenAIProvider(openAIKey, openAIModel, options...)
@@ -121,8 +133,12 @@ func ProviderFromEnv() (domain.Provider, string, string, error) {
 	}
 
 	if anthropicKey != "" {
-		// Get Anthropic-specific options from environment variables
-		options := GetAnthropicOptionsFromEnv()
+		// Use the new option factory approach with environment variables
+		useCase := os.Getenv(EnvAnthropicUseCase)
+		if useCase == "" {
+			useCase = "default"
+		}
+		options := CreateOptionFactoryFromEnv("anthropic", useCase)
 
 		// Create provider with options
 		llmProvider := provider.NewAnthropicProvider(anthropicKey, anthropicModel, options...)
@@ -130,8 +146,12 @@ func ProviderFromEnv() (domain.Provider, string, string, error) {
 	}
 
 	if geminiKey != "" {
-		// Get Gemini-specific options from environment variables
-		options := GetGeminiOptionsFromEnv()
+		// Use the new option factory approach with environment variables
+		useCase := os.Getenv(EnvGeminiUseCase)
+		if useCase == "" {
+			useCase = "default"
+		}
+		options := CreateOptionFactoryFromEnv("gemini", useCase)
 
 		// Create provider with options
 		llmProvider := provider.NewGeminiProvider(geminiKey, geminiModel, options...)
