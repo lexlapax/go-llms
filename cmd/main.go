@@ -43,7 +43,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-llms.yaml)")
-	rootCmd.PersistentFlags().String("provider", "openai", "LLM provider to use (openai, anthropic, mock)")
+	rootCmd.PersistentFlags().String("provider", "openai", "LLM provider to use (openai, anthropic, gemini, mock)")
 	rootCmd.PersistentFlags().String("model", "", "Model to use with the provider")
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
 	rootCmd.PersistentFlags().StringP("output", "o", "text", "Output format (text, json)")
@@ -91,6 +91,7 @@ func initConfig() {
 	// Set default provider models
 	viper.SetDefault("providers.openai.default_model", "gpt-4o")
 	viper.SetDefault("providers.anthropic.default_model", "claude-3-5-sonnet-latest")
+	viper.SetDefault("providers.gemini.default_model", "gemini-2.0-flash-lite")
 
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
@@ -514,6 +515,8 @@ func newChatCmd() *cobra.Command {
 				llmProvider = provider.NewOpenAIProvider(apiKey, modelName)
 			case "anthropic":
 				llmProvider = provider.NewAnthropicProvider(apiKey, modelName)
+			case "gemini":
+				llmProvider = provider.NewGeminiProvider(apiKey, modelName)
 			case "mock":
 				llmProvider = provider.NewMockProvider()
 			default:
@@ -621,6 +624,8 @@ func newCompleteCmd() *cobra.Command {
 				llmProvider = provider.NewOpenAIProvider(apiKey, modelName)
 			case "anthropic":
 				llmProvider = provider.NewAnthropicProvider(apiKey, modelName)
+			case "gemini":
+				llmProvider = provider.NewGeminiProvider(apiKey, modelName)
 			case "mock":
 				llmProvider = provider.NewMockProvider()
 			default:
@@ -708,6 +713,8 @@ func newAgentCmd() *cobra.Command {
 				llmProvider = provider.NewOpenAIProvider(apiKey, modelName)
 			case "anthropic":
 				llmProvider = provider.NewAnthropicProvider(apiKey, modelName)
+			case "gemini":
+				llmProvider = provider.NewGeminiProvider(apiKey, modelName)
 			case "mock":
 				llmProvider = provider.NewMockProvider()
 			default:
@@ -898,6 +905,8 @@ func newStructuredCmd() *cobra.Command {
 				llmProvider = provider.NewOpenAIProvider(apiKey, modelName)
 			case "anthropic":
 				llmProvider = provider.NewAnthropicProvider(apiKey, modelName)
+			case "gemini":
+				llmProvider = provider.NewGeminiProvider(apiKey, modelName)
 			case "mock":
 				llmProvider = provider.NewMockProvider()
 			default:

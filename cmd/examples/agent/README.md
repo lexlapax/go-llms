@@ -6,7 +6,7 @@ This example demonstrates how to use the agent workflow capabilities of the Go-L
 
 The Agent example showcases:
 
-1. Creating an agent with multiple LLM provider options (OpenAI, Anthropic, or Mock)
+1. Creating an agent with multiple LLM provider options (OpenAI, Anthropic, Gemini, or Mock)
 2. Adding various monitoring hooks for logging and metrics
 3. Configuring the agent with different tools
 4. Running the agent with different types of requests
@@ -45,6 +45,11 @@ make example EXAMPLE=agent
 
 # With Anthropic API key
 export ANTHROPIC_API_KEY=your_api_key_here
+make example EXAMPLE=agent
+./bin/agent
+
+# With Gemini API key
+export GEMINI_API_KEY=your_api_key_here
 make example EXAMPLE=agent
 ./bin/agent
 

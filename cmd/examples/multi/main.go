@@ -14,8 +14,9 @@ func main() {
 	// Check if at least one API key is provided
 	openaiKey := os.Getenv("OPENAI_API_KEY")
 	anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
+	geminiKey := os.Getenv("GEMINI_API_KEY")
 
-	if openaiKey == "" && anthropicKey == "" {
+	if openaiKey == "" && anthropicKey == "" && geminiKey == "" {
 		fmt.Println("No API keys found. Using mock providers for demonstration.")
 		runWithMockProviders()
 		return
@@ -45,6 +46,18 @@ func main() {
 			Provider: anthropicProvider,
 			Weight:   1.0,
 			Name:     "anthropic",
+		})
+	}
+
+	if geminiKey != "" {
+		geminiProvider := provider.NewGeminiProvider(
+			geminiKey,
+			"gemini-2.0-flash-lite", // You can change this to your preferred model
+		)
+		providers = append(providers, provider.ProviderWeight{
+			Provider: geminiProvider,
+			Weight:   1.0,
+			Name:     "gemini",
 		})
 	}
 

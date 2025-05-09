@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
@@ -41,59 +40,13 @@ func main() {
 	// Example 1: Simple provider creation with convenience function
 	fmt.Println("\n=== Example 1: Provider Creation ===")
 	
-	// Try to create a provider - fallback to mock if no API keys
-	var llmProvider domain.Provider
-	var providerName string
-	
-	if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
-		config := llmutil.ModelConfig{
-			Provider: "openai",
-			Model:    "gpt-4o",
-			APIKey:   apiKey,
-		}
-		
-		var err error
-		llmProvider, err = llmutil.CreateProvider(config)
-		if err != nil {
-			log.Printf("Failed to create OpenAI provider: %v", err)
-		} else {
-			providerName = "OpenAI"
-		}
+	// Try to create a provider using environment variables
+	llmProvider, providerName, modelName, err := llmutil.ProviderFromEnv()
+	if err != nil {
+		log.Fatalf("Failed to create provider: %v", err)
 	}
 	
-	if llmProvider == nil && os.Getenv("ANTHROPIC_API_KEY") != "" {
-		config := llmutil.ModelConfig{
-			Provider: "anthropic",
-			Model:    "claude-3-5-sonnet-latest",
-			APIKey:   os.Getenv("ANTHROPIC_API_KEY"),
-		}
-		
-		var err error
-		llmProvider, err = llmutil.CreateProvider(config)
-		if err != nil {
-			log.Printf("Failed to create Anthropic provider: %v", err)
-		} else {
-			providerName = "Anthropic"
-		}
-	}
-	
-	// Fallback to mock provider if no real providers are configured
-	if llmProvider == nil {
-		config := llmutil.ModelConfig{
-			Provider: "mock",
-			Model:    "mock-model",
-			APIKey:   "not-needed",
-		}
-		
-		var err error
-		llmProvider, err = llmutil.CreateProvider(config)
-		if err != nil {
-			log.Fatalf("Failed to create mock provider: %v", err)
-		}
-		providerName = "Mock"
-	}
-	
-	fmt.Printf("Using %s provider\n", providerName)
+	fmt.Printf("Using %s provider with model %s\n", providerName, modelName)
 	
 	// Example 2: Using batch generation
 	fmt.Println("\n=== Example 2: Batch Generation ===")

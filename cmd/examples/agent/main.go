@@ -120,11 +120,15 @@ func main() {
 		providerName = "Anthropic"
 		modelName = "claude-3-5-sonnet-latest"
 		llmProvider = provider.NewAnthropicProvider(apiKey, modelName)
+	} else if apiKey := os.Getenv("GEMINI_API_KEY"); apiKey != "" {
+		providerName = "Gemini"
+		modelName = "gemini-2.0-flash-lite"
+		llmProvider = provider.NewGeminiProvider(apiKey, modelName)
 	} else {
 		providerName = "Mock"
 		modelName = "mock-model"
 		llmProvider = provider.NewMockProvider()
-		fmt.Println("No API keys found for OpenAI or Anthropic. Using mock provider.")
+		fmt.Println("No API keys found for OpenAI, Anthropic, or Gemini. Using mock provider.")
 	}
 
 	fmt.Printf("Using %s provider with model: %s\n", providerName, modelName)

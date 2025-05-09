@@ -3,6 +3,7 @@ package llmutil
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -349,10 +350,49 @@ func TestWithProviderOptions(t *testing.T) {
 }
 
 func TestProviderFromEnv(t *testing.T) {
-	// This is a placeholder test since the function is not implemented
-	_, _, _, err := ProviderFromEnv()
-	if err == nil || err.Error() != "not implemented" {
-		t.Errorf("Expected 'not implemented' error, got: %v", err)
+	// Store original environment variables
+	originalOpenAI := os.Getenv("OPENAI_API_KEY")
+	originalAnthropic := os.Getenv("ANTHROPIC_API_KEY")
+	originalGemini := os.Getenv("GEMINI_API_KEY")
+
+	// Clean up environment after the test
+	defer func() {
+		os.Setenv("OPENAI_API_KEY", originalOpenAI)
+		os.Setenv("ANTHROPIC_API_KEY", originalAnthropic)
+		os.Setenv("GEMINI_API_KEY", originalGemini)
+	}()
+
+	// Clear all API keys to test the mock provider fallback
+	os.Setenv("OPENAI_API_KEY", "")
+	os.Setenv("ANTHROPIC_API_KEY", "")
+	os.Setenv("GEMINI_API_KEY", "")
+
+	// Test with no API keys (should return mock provider)
+	prov, provName, modelName, err := ProviderFromEnv()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if provName != "mock" {
+		t.Errorf("Expected 'mock' provider, got: %s", provName)
+	}
+
+	// Test with Gemini API key set
+	os.Setenv("GEMINI_API_KEY", "test-gemini-key")
+	prov, provName, modelName, err = ProviderFromEnv()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if provName != "gemini" {
+		t.Errorf("Expected 'gemini' provider, got: %s", provName)
+	}
+	if modelName != "gemini-2.0-flash-lite" {
+		t.Errorf("Expected 'gemini-2.0-flash-lite' model, got: %s", modelName)
+	}
+
+	// Test that the right provider type is returned
+	_, ok := prov.(*provider.GeminiProvider)
+	if !ok {
+		t.Errorf("Expected GeminiProvider, got: %T", prov)
 	}
 }
 

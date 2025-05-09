@@ -9,7 +9,7 @@ Go-LLMs is a Go library for creating LLM-powered applications with structured ou
 - **Type safety**: Leverages Go's type system for better developer experience
 - **Dependency injection**: Enables passing data and services into agents
 - **Tool integration**: Allows LLMs to interact with external systems through function calls
-- **Multiple providers**: Support for OpenAI, Anthropic, and extensible for other providers
+- **Multiple providers**: Support for OpenAI, Anthropic, Google Gemini, and extensible for other providers
 - **Schema validation**: Comprehensive JSON schema validation with type coercion
 - **Monitoring hooks**: Hooks for logging, metrics, and debugging
 - **Multi-provider strategies**: Combine providers using fastest, primary, or consensus approaches
@@ -19,7 +19,7 @@ Go-LLMs is a Go library for creating LLM-powered applications with structured ou
 
 1. Create an idiomatic Go implementation of pydantic-ai
 2. Minimize external dependencies by leveraging Go's standard library
-3. Support modern LLM providers (OpenAI, Anthropic, etc.)
+3. Support modern LLM providers (OpenAI, Anthropic, Google Gemini, etc.)
 4. Provide comprehensive validation for LLM outputs
 5. Follow clean architecture principles with vertical feature slices
 
@@ -45,7 +45,7 @@ go-llms/
 │   │   └── adapter/           # Schema generation from Go structs
 │   ├── llm/                   # LLM integration
 │   │   ├── domain/            # Core domain models and interfaces
-│   │   ├── provider/          # Provider implementations (OpenAI, Anthropic)
+│   │   ├── provider/          # Provider implementations (OpenAI, Anthropic, Gemini)
 │   │   └── prompt/            # Prompt templates and formatting
 │   ├── structured/            # Structured output processing
 │   │   ├── domain/            # Core domain models and interfaces
@@ -202,11 +202,13 @@ fmt.Printf("Person: %s (%d)\n", person.Name, person.Age)
 // Create multiple providers
 openaiProvider := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"), "gpt-4o")
 anthropicProvider := provider.NewAnthropicProvider(os.Getenv("ANTHROPIC_API_KEY"), "claude-3-5-sonnet-latest")
+geminiProvider := provider.NewGeminiProvider(os.Getenv("GEMINI_API_KEY"), "gemini-2.0-flash-lite")
 
 // Create provider weights
 providers := []provider.ProviderWeight{
     {Provider: openaiProvider, Weight: 1.0, Name: "openai"},
     {Provider: anthropicProvider, Weight: 1.0, Name: "anthropic"},
+    {Provider: geminiProvider, Weight: 1.0, Name: "gemini"},
 }
 
 // Create a multi-provider with the fastest strategy
@@ -365,6 +367,7 @@ The library includes several example applications that demonstrate key features:
 
 - [Simple Example](cmd/examples/simple/README.md) - Basic usage with mock providers
 - [Anthropic Example](cmd/examples/anthropic/README.md) - Integration with Anthropic Claude
+- [Gemini Example](cmd/examples/gemini/README.md) - Integration with Google Gemini
 - [Agent Example](cmd/examples/agent/README.md) - Agent with tools for complex tasks
 - [Multi-Provider Example](cmd/examples/multi/README.md) - Working with multiple providers
 - [Consensus Example](cmd/examples/consensus/README.md) - Multi-provider consensus strategies

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
@@ -33,6 +34,8 @@ func WithProviderOptions(config ModelConfig) ([]interface{}, error) {
 			options = append(options, provider.WithBaseURL(config.BaseURL))
 		case "anthropic":
 			options = append(options, provider.WithAnthropicBaseURL(config.BaseURL))
+		case "gemini":
+			options = append(options, provider.WithGeminiBaseURL(config.BaseURL))
 		}
 	}
 	
@@ -71,6 +74,15 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 		}
 		llmProvider = provider.NewAnthropicProvider(config.APIKey, config.Model, anthropicOptions...)
 	
+	case "gemini":
+		geminiOptions := make([]provider.GeminiOption, 0, len(options))
+		for _, opt := range options {
+			if o, ok := opt.(provider.GeminiOption); ok {
+				geminiOptions = append(geminiOptions, o)
+			}
+		}
+		llmProvider = provider.NewGeminiProvider(config.APIKey, config.Model, geminiOptions...)
+	
 	case "mock":
 		llmProvider = provider.NewMockProvider()
 	
@@ -82,11 +94,48 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 }
 
 // ProviderFromEnv creates a provider using environment variables
-// It looks for OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.
+// It looks for OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, etc.
 func ProviderFromEnv() (domain.Provider, string, string, error) {
-	// Implementation would be similar to what's in the examples
-	// This is a placeholder for the actual implementation
-	return nil, "", "", fmt.Errorf("not implemented")
+	// Check for API keys in environment variables
+	openAIKey := os.Getenv("OPENAI_API_KEY")
+	anthropicKey := os.Getenv("ANTHROPIC_API_KEY") 
+	geminiKey := os.Getenv("GEMINI_API_KEY")
+	
+	// Default models for each provider
+	openAIModel := os.Getenv("OPENAI_MODEL")
+	if openAIModel == "" {
+		openAIModel = "gpt-4o"
+	}
+	
+	anthropicModel := os.Getenv("ANTHROPIC_MODEL")
+	if anthropicModel == "" {
+		anthropicModel = "claude-3-5-sonnet-latest"
+	}
+	
+	geminiModel := os.Getenv("GEMINI_MODEL")
+	if geminiModel == "" {
+		geminiModel = "gemini-2.0-flash-lite"
+	}
+	
+	// Try to create a provider in order of preference
+	if openAIKey != "" {
+		provider := provider.NewOpenAIProvider(openAIKey, openAIModel)
+		return provider, "openai", openAIModel, nil
+	}
+	
+	if anthropicKey != "" {
+		provider := provider.NewAnthropicProvider(anthropicKey, anthropicModel)
+		return provider, "anthropic", anthropicModel, nil
+	}
+	
+	if geminiKey != "" {
+		provider := provider.NewGeminiProvider(geminiKey, geminiModel)
+		return provider, "gemini", geminiModel, nil
+	}
+	
+	// If no API keys are found, create a mock provider
+	mockProvider := provider.NewMockProvider()
+	return mockProvider, "mock", "default", nil
 }
 
 // BatchGenerate generates responses for multiple prompts in parallel
