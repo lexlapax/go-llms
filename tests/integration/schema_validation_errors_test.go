@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -354,32 +355,566 @@ func TestSchemaValidationErrors(t *testing.T) {
 
 	// Test conditional validation errors (if/then/else)
 	t.Run("ConditionalValidation", func(t *testing.T) {
-		// Skip test as conditional validation is not fully implemented
-		t.Skip("Conditional validation not fully implemented yet")
+		// Skip test as the if/then/else at the property level still needs implementation work
+		t.Skip("Top-level conditional validation not fully implemented yet")
+		// This is a simplified case just to test if-then-else validation works at schema level
+		schema := &domain.Schema{
+			Type: "object",
+			Properties: map[string]domain.Property{
+				"type": {Type: "string"},
+				"value": {Type: "object"}, // This will be validated by if-then-else
+			},
+			Required: []string{"type", "value"},
+			// These conditions are at the schema level
+			If: &domain.Schema{
+				Properties: map[string]domain.Property{
+					"type": {Type: "string", Enum: []string{"number"}},
+				},
+				Required: []string{"type"},
+			},
+			Then: &domain.Schema{
+				Properties: map[string]domain.Property{
+					"value": {Type: "number"},
+				},
+			},
+			Else: &domain.Schema{
+				Properties: map[string]domain.Property{
+					"value": {Type: "string"},
+				},
+			},
+		}
+
+		// Test with a valid case (type: integer, value: number)
+		validJSON := `{"type": "integer", "value": 42}`
+		result, err := validator.Validate(schema, validJSON)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if !result.Valid {
+			t.Errorf("Expected validation to pass but got errors: %v", result.Errors)
+		}
+
+		// Test with an invalid case (type: string, value: number)
+		invalidJSON := `{"type": "string", "value": 42}`
+		result, err = validator.Validate(schema, invalidJSON)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Valid {
+			t.Error("Expected validation to fail but it passed")
+		}
+
+		// Check for specific error message
+		errorFound := false
+		for _, errMsg := range result.Errors {
+			if schemaContains(errMsg, "value must be a string") {
+				errorFound = true
+				break
+			}
+		}
+		if !errorFound {
+			t.Errorf("Expected error about value needing to be a string, but got: %v", result.Errors)
+		}
 	})
 
 	// Test anyOf validation
 	t.Run("AnyOfValidation", func(t *testing.T) {
-		// Skip test as anyOf validation has issues
-		t.Skip("AnyOf validation not fully conformant yet")
+		// Skip test as anyOf validation needs more implementation work
+		t.Skip("AnyOf validation not fully implemented yet")
+		// Create a schema with AnyOf validation
+		schema := &domain.Schema{
+			Type: "object",
+			Properties: map[string]domain.Property{
+				"value": {
+					Type: "object",
+					AnyOf: []*domain.Schema{
+						{Type: "string"},
+						{Type: "number"},
+						{Type: "object", Properties: map[string]domain.Property{
+							"id": {Type: "string"},
+						}},
+					},
+				},
+			},
+			Required: []string{"value"},
+		}
+
+		// Valid cases - should match one schema
+		validCases := []struct {
+			name  string
+			input string
+		}{
+			{"StringValue", `{"value": "test string"}`},
+			{"NumberValue", `{"value": 123}`},
+			{"ObjectValue", `{"value": {"id": "abc123"}}`},
+		}
+
+		for _, tc := range validCases {
+			t.Run(tc.name, func(t *testing.T) {
+				result, err := validator.Validate(schema, tc.input)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+				if !result.Valid {
+					t.Errorf("Expected validation to pass but got errors: %v", result.Errors)
+				}
+			})
+		}
+
+		// Invalid cases - should not match any schema
+		invalidCases := []struct {
+			name           string
+			input          string
+			expectedErrors []string
+		}{
+			{
+				"BooleanValue",
+				`{"value": true}`,
+				[]string{"value does not match any of the required schemas"},
+			},
+			{
+				"ArrayValue",
+				`{"value": [1, 2, 3]}`,
+				[]string{"value does not match any of the required schemas"},
+			},
+			{
+				"InvalidObject",
+				`{"value": {"name": "test"}}`,
+				[]string{"value does not match any of the required schemas"},
+			},
+			{
+				"MissingValue",
+				`{}`,
+				[]string{"value is required"},
+			},
+		}
+
+		for _, tc := range invalidCases {
+			t.Run(tc.name, func(t *testing.T) {
+				result, err := validator.Validate(schema, tc.input)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+
+				if result.Valid {
+					t.Error("Expected validation to fail but it passed")
+				}
+
+				for _, expected := range tc.expectedErrors {
+					found := false
+					for _, actual := range result.Errors {
+						if schemaContains(actual, expected) {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Errorf("Expected error message '%s' but it was not found in errors: %v", expected, result.Errors)
+					}
+				}
+			})
+		}
 	})
 
 	// Test oneOf validation
 	t.Run("OneOfValidation", func(t *testing.T) {
-		// Skip test as oneOf validation has issues
-		t.Skip("OneOf validation not fully conformant yet")
+		// Skip test as oneOf validation needs more implementation work
+		t.Skip("OneOf validation not fully implemented yet")
+		// Create a schema with OneOf validation
+		schema := &domain.Schema{
+			Type: "object",
+			Properties: map[string]domain.Property{
+				"value": {
+					Type: "object",
+					OneOf: []*domain.Schema{
+						{Type: "string"},
+						{Type: "number"},
+						{Type: "object", Properties: map[string]domain.Property{
+							"id": {Type: "string"},
+							"type": {Type: "string", Enum: []string{"user"}},
+						}, Required: []string{"id", "type"}},
+					},
+				},
+			},
+			Required: []string{"value"},
+		}
+
+		// Valid cases - should match exactly one schema
+		validCases := []struct {
+			name  string
+			input string
+		}{
+			{"StringValue", `{"value": "test string"}`},
+			{"NumberValue", `{"value": 123}`},
+			{"ObjectValue", `{"value": {"id": "abc123", "type": "user"}}`},
+		}
+
+		for _, tc := range validCases {
+			t.Run(tc.name, func(t *testing.T) {
+				result, err := validator.Validate(schema, tc.input)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+				if !result.Valid {
+					t.Errorf("Expected validation to pass but got errors: %v", result.Errors)
+				}
+			})
+		}
+
+		// Invalid cases
+		invalidCases := []struct {
+			name           string
+			input          string
+			expectedErrors []string
+		}{
+			{
+				"BooleanValue",
+				`{"value": true}`,
+				[]string{"value does not match any of the required schemas"},
+			},
+			{
+				"ArrayValue",
+				`{"value": [1, 2, 3]}`,
+				[]string{"value does not match any of the required schemas"},
+			},
+			{
+				"MissingValue",
+				`{}`,
+				[]string{"value is required"},
+			},
+			{
+				"PartialObjectMatch",
+				`{"value": {"id": "abc123"}}`,
+				[]string{"value.type is required"},
+			},
+			// This is an edge case where the value could match both string and number schemas
+			// when type coercion is enabled
+			{
+				"AmbiguousNumericString",
+				`{"value": "123"}`,
+				[]string{"value matches more than one schema when it should match exactly one"},
+			},
+		}
+
+		for _, tc := range invalidCases {
+			t.Run(tc.name, func(t *testing.T) {
+				// Create a new validator with coercion enabled to test the ambiguous case
+				var validatorToUse *validation.Validator
+				if tc.name == "AmbiguousNumericString" {
+					validatorToUse = validation.NewValidator(validation.WithCoercion(true))
+				} else {
+					validatorToUse = validator
+				}
+
+				result, err := validatorToUse.Validate(schema, tc.input)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+
+				if result.Valid {
+					t.Error("Expected validation to fail but it passed")
+				}
+
+				for _, expected := range tc.expectedErrors {
+					found := false
+					for _, actual := range result.Errors {
+						if schemaContains(actual, expected) {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Errorf("Expected error message '%s' but it was not found in errors: %v", expected, result.Errors)
+					}
+				}
+			})
+		}
 	})
 
 	// Test not validation
 	t.Run("NotValidation", func(t *testing.T) {
-		// Skip test as not validation has issues
-		t.Skip("Not validation not fully conformant yet")
+		// Skip test as not validation needs more implementation work
+		t.Skip("Not validation not fully implemented yet")
+		// Create a schema with Not validation
+		schema := &domain.Schema{
+			Type: "object",
+			Properties: map[string]domain.Property{
+				"value": {
+					Type: "object",
+					Not: &domain.Schema{
+						Type: "object",
+						Properties: map[string]domain.Property{
+							"type": {Type: "string", Enum: []string{"admin"}},
+						},
+						Required: []string{"type"},
+					},
+				},
+			},
+			Required: []string{"value"},
+		}
+
+		// Valid cases - should NOT match the "not" schema
+		validCases := []struct {
+			name  string
+			input string
+		}{
+			{"StringValue", `{"value": "test string"}`},
+			{"NumberValue", `{"value": 123}`},
+			{"NonAdminObject", `{"value": {"type": "user"}}`},
+			{"EmptyObject", `{"value": {}}`},
+			{"ObjectWithoutType", `{"value": {"id": "abc123"}}`},
+		}
+
+		for _, tc := range validCases {
+			t.Run(tc.name, func(t *testing.T) {
+				result, err := validator.Validate(schema, tc.input)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+				if !result.Valid {
+					t.Errorf("Expected validation to pass but got errors: %v", result.Errors)
+				}
+			})
+		}
+
+		// Invalid cases - should match the "not" schema, which means validation fails
+		invalidCases := []struct {
+			name           string
+			input          string
+			expectedErrors []string
+		}{
+			{
+				"AdminObject",
+				`{"value": {"type": "admin"}}`,
+				[]string{"value matches a schema that it should not match"},
+			},
+			{
+				"MissingValue",
+				`{}`,
+				[]string{"value is required"},
+			},
+		}
+
+		for _, tc := range invalidCases {
+			t.Run(tc.name, func(t *testing.T) {
+				result, err := validator.Validate(schema, tc.input)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+
+				if result.Valid {
+					t.Error("Expected validation to fail but it passed")
+				}
+
+				for _, expected := range tc.expectedErrors {
+					found := false
+					for _, actual := range result.Errors {
+						if schemaContains(actual, expected) {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Errorf("Expected error message '%s' but it was not found in errors: %v", expected, result.Errors)
+					}
+				}
+			})
+		}
+
+		// Edge case - nested not schema
+		t.Run("NestedNotSchema", func(t *testing.T) {
+			nestedSchema := &domain.Schema{
+				Type: "object",
+				Properties: map[string]domain.Property{
+					"value": {
+						Type: "object",
+						Not: &domain.Schema{
+							Not: &domain.Schema{
+								Type: "string",
+							},
+						},
+					},
+				},
+				Required: []string{"value"},
+			}
+
+			// This should fail because the inner Not schema (Not: Type string) means "not a string",
+			// and the outer Not schema means "not(not a string)" which means "must be a string"
+			// So anything other than a string should fail
+
+			// Should pass - it's a string
+			result, err := validator.Validate(nestedSchema, `{"value": "string value"}`)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			if !result.Valid {
+				t.Errorf("Expected nested not schema with string value to pass but got errors: %v", result.Errors)
+			}
+
+			// Should fail - it's not a string
+			result, err = validator.Validate(nestedSchema, `{"value": 123}`)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			if result.Valid {
+				t.Error("Expected nested not schema with number value to fail but it passed")
+			}
+		})
 	})
 
 	// Test format validation errors
 	t.Run("FormatValidation", func(t *testing.T) {
-		// Skip test as format validation is incomplete
-		t.Skip("Format validation not fully implemented yet")
+		// Testing the formats that are currently implemented
+		formats := map[string]struct {
+			format     string
+			valid      []string
+			invalid    []string
+			errorMatch string
+		}{
+			"Email": {
+				format:     "email",
+				valid:      []string{"user@example.com", "name.surname@domain.co.uk"},
+				invalid:    []string{"user@", "user@.com", "user@domain.", "@domain.com"},
+				errorMatch: "must be a valid email",
+			},
+			"Hostname": {
+				format:     "hostname",
+				valid:      []string{"example.com", "sub.domain.org", "valid-hostname"},
+				invalid:    []string{"example..com", "-invalid.com", "host:name"},
+				errorMatch: "must be a valid hostname",
+			},
+			"IPv4": {
+				format:     "ipv4",
+				valid:      []string{"192.168.1.1", "127.0.0.1", "8.8.8.8"},
+				invalid:    []string{"256.0.0.1", "192.168.1", "192.168.1.1.1", "a.b.c.d"},
+				errorMatch: "must be a valid IPv4 address",
+			},
+			"UUID": {
+				format:     "uuid",
+				valid:      []string{"550e8400-e29b-41d4-a716-446655440000"},
+				invalid:    []string{"not-a-uuid", "550e8400-e29b-41d4-a716", "550e8400-e29b-41d4-a716-44665544000G"},
+				errorMatch: "must be a valid UUID",
+			},
+			"URI": {
+				format:     "uri",
+				valid:      []string{"http://example.com", "https://domain.org/path?query=value", "ftp://server.net"},
+				invalid:    []string{"://example.com", "http:/example", "example.com"},
+				errorMatch: "must be a valid URI",
+			},
+		}
+
+		for formatName, formatData := range formats {
+			t.Run(formatName, func(t *testing.T) {
+				schema := &domain.Schema{
+					Type: "object",
+					Properties: map[string]domain.Property{
+						"value": {
+							Type:   "string",
+							Format: formatData.format,
+						},
+					},
+					Required: []string{"value"},
+				}
+
+				// Test valid values
+				for _, validValue := range formatData.valid {
+					jsonStr := fmt.Sprintf(`{"value": "%s"}`, validValue)
+					result, err := validator.Validate(schema, jsonStr)
+
+					if err != nil {
+						t.Fatalf("Unexpected error: %v", err)
+					}
+
+					if !result.Valid {
+						t.Errorf("Expected '%s' to be a valid %s but got errors: %v",
+							validValue, formatName, result.Errors)
+					}
+				}
+
+				// Test invalid values
+				for _, invalidValue := range formatData.invalid {
+					jsonStr := fmt.Sprintf(`{"value": "%s"}`, invalidValue)
+					result, err := validator.Validate(schema, jsonStr)
+
+					if err != nil {
+						t.Fatalf("Unexpected error: %v", err)
+					}
+
+					if result.Valid {
+						t.Errorf("Expected '%s' to be an invalid %s but validation passed",
+							invalidValue, formatName)
+					}
+
+					// Check that error message contains the expected text
+					errorFound := false
+					for _, errMsg := range result.Errors {
+						if schemaContains(errMsg, formatData.errorMatch) {
+							errorFound = true
+							break
+						}
+					}
+
+					if !errorFound {
+						t.Errorf("Expected error message to contain '%s' but got: %v",
+							formatData.errorMatch, result.Errors)
+					}
+				}
+			})
+		}
+
+		// Test edge case: multiple formats
+		t.Run("MultipleFormats", func(t *testing.T) {
+			schema := &domain.Schema{
+				Type: "object",
+				Properties: map[string]domain.Property{
+					"value": {
+						Type:   "string",
+						Format: "email,uri",
+					},
+				},
+				Required: []string{"value"},
+			}
+
+			// Valid URI but not email
+			result, err := validator.Validate(schema, `{"value": "http://example.com"}`)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			if !result.Valid {
+				t.Errorf("Expected URI to be valid with multiple format validation but got errors: %v", result.Errors)
+			}
+
+			// Valid email but not URI
+			result, err = validator.Validate(schema, `{"value": "user@example.com"}`)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			if !result.Valid {
+				t.Errorf("Expected email to be valid with multiple format validation but got errors: %v", result.Errors)
+			}
+
+			// Invalid for both formats
+			result, err = validator.Validate(schema, `{"value": "not-valid-anything"}`)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			if result.Valid {
+				t.Error("Expected validation to fail with invalid value for multiple formats but it passed")
+			}
+
+			// Check that error message contains the formats
+			errorFound := false
+			for _, errMsg := range result.Errors {
+				if schemaContains(errMsg, "must match one of these formats: email,uri") {
+					errorFound = true
+					break
+				}
+			}
+
+			if !errorFound {
+				t.Errorf("Expected error message to mention formats but got: %v", result.Errors)
+			}
+		})
 	})
 
 	// Test schema parse errors

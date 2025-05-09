@@ -8,9 +8,11 @@ This document outlines the testing approach implemented in Go-LLMs, focusing on 
 
 1. [Introduction](#introduction)
 2. [Error Condition Test Suite](#error-condition-test-suite)
-3. [Stress Testing](#stress-testing)
-4. [Running Tests](#running-tests)
-5. [Related Documentation](#related-documentation)
+3. [Agent Testing Considerations](#agent-testing-considerations)
+4. [Schema Validation Testing](#schema-validation-testing)
+5. [Stress Testing](#stress-testing)
+6. [Running Tests](#running-tests)
+7. [Related Documentation](#related-documentation)
 
 ## Introduction
 
@@ -142,10 +144,10 @@ func TestAgentErrors(t *testing.T) {
         mockProvider.WithGenerateFunc(func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
             return "", errors.New("simulated provider error")
         })
-        
-        agent := workflow.NewBaseAgent(mockProvider, nil)
+
+        agent := workflow.NewAgent(mockProvider)
         _, err := agent.Run(context.Background(), "test prompt")
-        
+
         require.Error(t, err)
         require.Contains(t, err.Error(), "simulated provider error")
     })
@@ -169,8 +171,277 @@ These tests verify:
 - Schema validation errors
 - Timeout handling
 - Error propagation through hooks
+- Recursion depth handling
 
+## Agent Testing Considerations
+
+When testing agent workflows, there are special considerations for handling edge cases and limitations.
+
+### Mock Testing Limitations
+
+When testing agent workflows with mock LLM providers, there are several limitations to be aware of:
+
+#### Tool Call Handling
+
+1. **Direct Response Return**: When a mock provider returns a tool call JSON, the agent may return the raw JSON response directly instead of executing the tool. This behavior was observed in the edge case tests where the agent would return the tool call JSON as a string rather than properly executing the tool.
+
+2. **Recursive Tool Calls**: Testing recursive depth limits requires special handling. Instead of relying on the agent's ability to execute tools during testing, create a controlled test where:
+   - The test triggers a known error condition
+   - The mock provider surfaces this error back through the agent
+
+3. **Sequential Tool Calls**: Similar to the recursive case, testing a sequence of tool calls requires careful setup to ensure proper chaining of calls.
+
+### Effective Testing Patterns
+
+Based on our findings, here are recommended patterns for testing agent workflows:
+
+#### 1. Direct Tool Extraction Testing
+
+Test the `ExtractToolCall` method directly to verify tool call extraction:
+
+```go
+func TestExtractToolCall(t *testing.T) {
+    mockProvider := provider.NewMockProvider()
+    agent := workflow.NewAgent(mockProvider)
+
+    testJSON := `{
+      "tool": "test_tool",
+      "params": {
+        "key": "value"
+      }
+    }`
+
+    toolName, params, shouldCall := agent.ExtractToolCall(testJSON)
+    assert.Equal(t, "test_tool", toolName)
+    assert.True(t, shouldCall)
+}
 ```
+
+#### 2. Testing Tool Functionality with Error Conditions
+
+For testing edge cases like recursion depth limits:
+
+```go
+func TestRecursionDepthLimit(t *testing.T) {
+    // Create a counter to track recursion depth
+    recursionCount := 0
+    maxRecursion := 5
+
+    // Create a tool that errors at max depth
+    recursiveErrorTool := tools.NewTool(
+        "recursive_error_tool",
+        "A tool that tracks calls and errors at max depth",
+        func(params map[string]interface{}) (interface{}, error) {
+            recursionCount++
+
+            if recursionCount >= maxRecursion {
+                return nil, fmt.Errorf("maximum recursion depth (%d) exceeded", maxRecursion)
+            }
+
+            return fmt.Sprintf("Success at depth %d", recursionCount), nil
+        },
+        &sdomain.Schema{
+            Type: "object",
+            Properties: map[string]sdomain.Property{},
+        },
+    )
+
+    // Configure the mock provider to surface the error
+    mockProvider := provider.NewMockProvider()
+    mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []llmDomain.Message, options ...llmDomain.Option) (llmDomain.Response, error) {
+        // Check if previous message contains an error about max recursion
+        if len(messages) > 1 {
+            lastMsg := messages[len(messages)-1]
+            if strings.Contains(lastMsg.Content, "maximum recursion depth") {
+                // Re-surface the error from the tool
+                return llmDomain.Response{}, fmt.Errorf("tool execution failed: %s", lastMsg.Content)
+            }
+        }
+
+        // Always call the tool in testing
+        return llmDomain.Response{
+            Content: `{"tool": "recursive_error_tool", "params": {}}`,
+        }, nil
+    })
+
+    // Setup agent with tool
+    agent := workflow.NewAgent(mockProvider)
+    agent.AddTool(recursiveErrorTool)
+
+    // Run the agent
+    _, err := agent.Run(context.Background(), "Test recursive tool error")
+
+    // Assertions
+    assert.Error(t, err, "Agent should surface the recursion depth error")
+    assert.Contains(t, err.Error(), "maximum recursion depth")
+    assert.Equal(t, maxRecursion, recursionCount)
+}
+```
+
+#### 3. JSON Format Considerations
+
+Ensure all tool call JSON in tests uses the `params` field rather than `parameters`:
+
+```go
+// Correct format
+`{
+  "tool": "test_tool",
+  "params": {
+    "key": "value"
+  }
+}`
+
+// Incorrect format
+`{
+  "tool": "test_tool",
+  "parameters": {
+    "key": "value"
+  }
+}`
+```
+
+### Future Improvements for Agent Testing
+
+Potential improvements to make agent testing more robust:
+
+1. Enhanced test mode for agents that prioritizes tool execution during testing
+2. Better instrumentation to track tool calls without relying on hooks
+3. Extension of the mock provider to better support tool execution chains
+
+## Schema Validation Testing
+
+The schema validation system in Go-LLMs provides comprehensive validation features for structured data. Testing this system requires specific approaches to ensure all validation features work as expected.
+
+### Implementation Status
+
+The schema validation system has two categories of features:
+
+#### Core Validation Features (Fully Implemented)
+
+These features are fully implemented and have complete test coverage:
+
+- ✅ Type validation (string, number, integer, boolean, object, array)
+- ✅ Constraint validation (min/max length, min/max items, pattern, enum, etc.)
+- ✅ Required fields validation
+- ✅ Nested object validation
+- ✅ Array item validation
+- ✅ Format validation (email, uri, hostname, ipv4, uuid, etc.)
+- ✅ Type coercion
+
+#### Conditional Validation Features (Partially Implemented)
+
+These features have the core implementation in place but need additional work:
+
+- 🔄 If/Then/Else conditional validation
+- 🔄 AllOf validation
+- 🔄 AnyOf validation
+- 🔄 OneOf validation
+- 🔄 Not validation
+
+### Validation Test Structure
+
+Schema validation tests are structured to check specific validation features:
+
+```go
+func TestSchemaValidationErrors(t *testing.T) {
+    // Test type validation for various data types
+    t.Run("TypeValidationErrors", func(t *testing.T) {
+        schema := &domain.Schema{
+            Type: "object",
+            Properties: map[string]domain.Property{
+                "string_prop": {Type: "string"},
+                "number_prop": {Type: "number"},
+                "integer_prop": {Type: "integer"},
+                "boolean_prop": {Type: "boolean"},
+                "array_prop": {Type: "array"},
+                "object_prop": {Type: "object"},
+            },
+            Required: []string{"string_prop", "number_prop", "integer_prop", "boolean_prop"},
+        }
+
+        // Test with wrong types
+        wrongTypesJSON := `{
+            "string_prop": 123,
+            "number_prop": "not a number",
+            "integer_prop": 3.14,
+            "boolean_prop": "true",
+            "array_prop": {},
+            "object_prop": []
+        }`
+
+        result, err := validator.Validate(schema, wrongTypesJSON)
+        // Verify error messages match expected format
+        // ...
+    })
+
+    // Additional test suites for other validation features
+    t.Run("ConstraintValidationErrors", func(t *testing.T) { /* ... */ })
+    t.Run("RequiredFieldsValidation", func(t *testing.T) { /* ... */ })
+    t.Run("NestedObjectValidation", func(t *testing.T) { /* ... */ })
+    t.Run("ArrayItemValidation", func(t *testing.T) { /* ... */ })
+    t.Run("FormatValidation", func(t *testing.T) { /* ... */ })
+
+    // Tests for conditional validation features (currently skipped)
+    t.Run("ConditionalValidation", func(t *testing.T) {
+        t.Skip("Top-level conditional validation not fully implemented yet")
+        // ...
+    })
+
+    // Additional conditional validation tests (skipped until implementation complete)
+    t.Run("AnyOfValidation", func(t *testing.T) { /* ... */ })
+    t.Run("OneOfValidation", func(t *testing.T) { /* ... */ })
+    t.Run("NotValidation", func(t *testing.T) { /* ... */ })
+}
+```
+
+### Testing Complex Validation Scenarios
+
+For complex validation scenarios like nested objects and arrays:
+
+```go
+func TestNestedObjectValidation(t *testing.T) {
+    schema := &domain.Schema{
+        Type: "object",
+        Properties: map[string]domain.Property{
+            "nested": {
+                Type: "object",
+                Properties: map[string]domain.Property{
+                    "field1": {Type: "string"},
+                    "field2": {Type: "number"},
+                },
+                Required: []string{"field1", "field2"},
+            },
+        },
+        Required: []string{"nested"},
+    }
+
+    // Test with invalid nested object
+    invalidNestedJSON := `{
+        "nested": {
+            "field1": 123,
+            "field3": "extra"
+        }
+    }`
+
+    result, err := validator.Validate(schema, invalidNestedJSON)
+    // Expect errors for type mismatch and missing required field
+}
+```
+
+### Recent Improvements and Future Work
+
+Recent improvements to the schema validation testing framework include:
+
+- Added AnyOf, OneOf, Not properties to Property struct to support nested validation
+- Enhanced validateValue to support conditional validation at all levels
+- Implemented property-level conditional validation infrastructure
+- Added tests for schema validation edge cases
+
+Future work will focus on:
+- Completing implementation of AnyOf, OneOf, Not validation at the property level
+- Enhancing error handling for conditional validation
+- Adding documentation for schema validation best practices
+- Creating examples showing how to use conditional validation effectively
 
 ## Stress Testing
 

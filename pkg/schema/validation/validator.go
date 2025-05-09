@@ -375,6 +375,9 @@ func (v *Validator) validateObject(path string, schema *domain.Schema, data inte
 					Properties:  prop.Properties,
 					Required:    prop.Required,
 					Description: prop.Description,
+					AnyOf:       prop.AnyOf,
+					OneOf:       prop.OneOf,
+					Not:         prop.Not,
 				}
 
 				// For simple constraint validations in string, number, etc.
@@ -383,7 +386,7 @@ func (v *Validator) validateObject(path string, schema *domain.Schema, data inte
 					len(prop.Enum) > 0 || prop.Format != "" || prop.Minimum != nil ||
 					prop.Maximum != nil || prop.ExclusiveMinimum != nil || prop.ExclusiveMaximum != nil ||
 					prop.MinItems != nil || prop.MaxItems != nil || prop.UniqueItems != nil ||
-					prop.Items != nil {
+					prop.Items != nil || len(prop.AnyOf) > 0 || len(prop.OneOf) > 0 || prop.Not != nil {
 
 					// Create a copy of the property in the schema's Properties map
 					// to handle constraints in the validateX methods
@@ -512,6 +515,9 @@ func (v *Validator) validateArray(path string, schema *domain.Schema, data inter
 				Properties:  items.Properties,
 				Required:    items.Required,
 				Description: items.Description,
+				AnyOf:       items.AnyOf,
+				OneOf:       items.OneOf,
+				Not:         items.Not,
 			}
 
 			// Inherit constraints from the item schema if needed
@@ -519,7 +525,7 @@ func (v *Validator) validateArray(path string, schema *domain.Schema, data inter
 				len(items.Enum) > 0 || items.Format != "" || items.Minimum != nil ||
 				items.Maximum != nil || items.ExclusiveMinimum != nil || items.ExclusiveMaximum != nil ||
 				items.MinItems != nil || items.MaxItems != nil || items.UniqueItems != nil ||
-				items.Items != nil {
+				items.Items != nil || len(items.AnyOf) > 0 || len(items.OneOf) > 0 || items.Not != nil {
 
 				if itemsSchema.Properties == nil {
 					itemsSchema.Properties = map[string]domain.Property{}

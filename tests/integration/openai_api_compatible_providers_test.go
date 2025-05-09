@@ -16,14 +16,19 @@ import (
 // TestOpenAIAPICompatibleProvidersIntegration tests integration with providers that implement the OpenAI API specification
 // These tests require actual API keys and are skipped by default
 func TestOpenAIAPICompatibleProvidersIntegration(t *testing.T) {
-	// TODO: Temporarily skip these tests until they can be properly fixed and updated
-	t.Skip("Skipping OpenAI API compatible providers tests until they can be properly fixed")
-	
+	// Each sub-test will automatically skip if the required environment variables are missing
+
 	// Test OpenRouter integration
 	t.Run("OpenRouter", func(t *testing.T) {
 		apiKey := os.Getenv("OPENROUTER_API_KEY")
 		if apiKey == "" {
 			t.Skip("OPENROUTER_API_KEY environment variable not set, skipping test")
+		}
+
+		// Skip tests in CI environments or when running batch tests
+		isCI := os.Getenv("CI") != "" || os.Getenv("SKIP_OPEN_ROUTER") != ""
+		if isCI {
+			t.Skip("Skipping OpenRouter test in CI environment or when SKIP_OPEN_ROUTER is set")
 		}
 
 		// Get the model name from environment variable or use default
@@ -128,6 +133,12 @@ func TestOpenAIAPICompatibleProvidersIntegration(t *testing.T) {
 		ollamaHost := os.Getenv("OLLAMA_HOST")
 		if ollamaHost == "" {
 			t.Skip("OLLAMA_HOST environment variable not set, skipping test")
+		}
+
+		// Skip tests in CI environments or when running batch tests
+		isCI := os.Getenv("CI") != "" || os.Getenv("SKIP_OLLAMA") != ""
+		if isCI {
+			t.Skip("Skipping Ollama test in CI environment or when SKIP_OLLAMA is set")
 		}
 
 		// Get Ollama model from environment variable or use default

@@ -41,6 +41,11 @@ type Property struct {
 	Properties           map[string]Property `json:"properties,omitempty"`
 	AdditionalProperties *bool               `json:"additionalProperties,omitempty"`
 	CustomValidator      string              `json:"customValidator,omitempty"`
+
+	// Conditional validation (added to support AnyOf, OneOf, Not in properties)
+	AnyOf []*Schema `json:"anyOf,omitempty"`
+	OneOf []*Schema `json:"oneOf,omitempty"`
+	Not   *Schema   `json:"not,omitempty"`
 }
 
 // ValidationResult represents the outcome of a validation
