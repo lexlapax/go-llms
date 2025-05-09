@@ -347,14 +347,14 @@ func TestChannelPoolStress(t *testing.T) {
 		for _, concurrency := range concurrencyLevels {
 			t.Run(fmt.Sprintf("ChannelPool_%s_Concurrency_%d", config.name, concurrency), func(t *testing.T) {
 				var (
-					wg                  sync.WaitGroup
-					acquireErrors       int32
-					releaseErrors       int32
-					totalAcquireTime    int64
-					totalReleaseTime    int64
-					totalMessagesCount  int64
-					messageDropCount    int32
-					waitTimeoutCount    int32
+					wg                 sync.WaitGroup
+					acquireErrors      int32
+					releaseErrors      int32
+					totalAcquireTime   int64
+					totalReleaseTime   int64
+					totalMessagesCount int64
+					messageDropCount   int32
+					waitTimeoutCount   int32
 				)
 
 				// Create a semaphore to limit concurrent goroutines

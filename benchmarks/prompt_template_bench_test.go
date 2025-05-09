@@ -261,7 +261,7 @@ All required fields must be present and properly formatted according to the sche
 			schema.Required = append(schema.Required, "age") // Add an extra required field
 			schemas[i] = &schema
 		}
-		
+
 		enhancer := processor.GetDefaultPromptEnhancer()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -276,7 +276,7 @@ All required fields must be present and properly formatted according to the sche
 		enhancer := processor.GetDefaultPromptEnhancer()
 		// Warm up cache
 		_, _ = enhancer.Enhance(shortPrompt, complexObjectSchema)
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, err := enhancer.Enhance(shortPrompt, complexObjectSchema)
@@ -293,7 +293,7 @@ All required fields must be present and properly formatted according to the sche
 			"instructions": "Focus on accuracy.",
 			"format":       "a detailed profile",
 		}
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, err := enhancer.EnhanceWithOptions(mediumPrompt, simpleObjectSchema, options)
@@ -307,12 +307,12 @@ All required fields must be present and properly formatted according to the sche
 		enhancer := processor.GetDefaultPromptEnhancer()
 		// Create complex options with examples
 		examples := make([]map[string]interface{}, 3)
-		
+
 		examples[0] = map[string]interface{}{
-			"name":  "John Doe",
-			"age":   30,
-			"email": "john.doe@example.com",
-			"tags":  []string{"vip", "premium"},
+			"name":      "John Doe",
+			"age":       30,
+			"email":     "john.doe@example.com",
+			"tags":      []string{"vip", "premium"},
 			"interests": []string{"sports", "music"},
 			"address": map[string]interface{}{
 				"street":  "123 Main St",
@@ -321,11 +321,11 @@ All required fields must be present and properly formatted according to the sche
 				"country": "USA",
 			},
 		}
-		
+
 		examples[1] = map[string]interface{}{
-			"name":  "Jane Smith",
-			"email": "jane.smith@example.com",
-			"age":   25,
+			"name":      "Jane Smith",
+			"email":     "jane.smith@example.com",
+			"age":       25,
 			"interests": []string{"reading", "travel"},
 			"address": map[string]interface{}{
 				"street":  "456 Oak Ave",
@@ -333,7 +333,7 @@ All required fields must be present and properly formatted according to the sche
 				"country": "Canada",
 			},
 		}
-		
+
 		examples[2] = map[string]interface{}{
 			"name":  "Bob Johnson",
 			"email": "bob@example.com",
@@ -344,13 +344,13 @@ All required fields must be present and properly formatted according to the sche
 				"city":   "Elsewhere",
 			},
 		}
-		
+
 		options := map[string]interface{}{
 			"instructions": "Generate realistic data for a diverse set of users with various interests and demographics.",
 			"format":       "a detailed user profile with all available fields properly filled out",
 			"examples":     examples,
 		}
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, err := enhancer.EnhanceWithOptions(mediumPrompt, complexObjectSchema, options)

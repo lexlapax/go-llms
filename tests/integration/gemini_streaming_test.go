@@ -136,12 +136,12 @@ func TestGeminiStreamingMock(t *testing.T) {
 
 			// Responses with empty lines, extra whitespace and keeps-alive
 			responses := []string{
-				"", // Empty line
-				"data: ", // Empty data
-				"data: {}", // Empty JSON object
+				"",                        // Empty line
+				"data: ",                  // Empty data
+				"data: {}",                // Empty JSON object
 				`data: {"candidates":[]}`, // Empty candidates array
 				`data: {"candidates":[{"content":{"parts":[{"text":"Hello"}]},"finishReason":""}]}`,
-				"", // Another empty line
+				"",       // Another empty line
 				"data: ", // Another empty data
 				`data: {"candidates":[{"content":{"parts":[{"text":" World"}]},"finishReason":"STOP"}]}`,
 				`data: [DONE]`,
@@ -214,7 +214,7 @@ func TestGeminiStreamingMock(t *testing.T) {
 			responses := []string{
 				`data: {"candidates":[{"content":{"parts":[{"text":"Valid"}]},"finishReason":""}]}`,
 				`data: {"candidates":[{"content":{"parts":{"text":"Malformed"}]},"finishReason":""}]}`, // Parts should be an array
-				`data: {"candidates":[{"content":{"parts":[{"text":123}]},"finishReason":""}]}`, // Text should be string, not number
+				`data: {"candidates":[{"content":{"parts":[{"text":123}]},"finishReason":""}]}`,        // Text should be string, not number
 				`data: {"candid`, // Incomplete JSON
 				`data: {"candidates":[{"content":{"parts":[{"text":" JSON"}]},"finishReason":"STOP"}]}`,
 				`data: [DONE]`,
@@ -586,14 +586,14 @@ func TestGeminiStreamingLive(t *testing.T) {
 		}
 
 		var fullResponse strings.Builder
-		var tokens []domain.Token
+		// tokens variable intentionally removed as it was unused
 		tokenCount := 0
 		emptyTokens := 0
 		finishedTokens := 0
 
 		for token := range stream {
 			tokenCount++
-			tokens = append(tokens, token)
+			_ = token
 
 			if token.Text == "" {
 				emptyTokens++

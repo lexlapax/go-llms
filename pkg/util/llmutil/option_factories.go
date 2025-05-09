@@ -216,9 +216,9 @@ func WithAnthropicStreamingOptions(systemPrompt string) []domain.ProviderOption 
 // 3. Merging both sets of options with appropriate priority
 //
 // Parameters:
-// - providerType: The provider type ("openai", "anthropic", "gemini")
-// - useCase: The use case ("default", "performance", "reliability", "streaming")
-//            If empty, the function will look for a use case in the environment variables
+//   - providerType: The provider type ("openai", "anthropic", "gemini")
+//   - useCase: The use case ("default", "performance", "reliability", "streaming")
+//     If empty, the function will look for a use case in the environment variables
 //
 // The function determines which factory function to use based on the provider and use case,
 // then merges those options with any options found in environment variables.

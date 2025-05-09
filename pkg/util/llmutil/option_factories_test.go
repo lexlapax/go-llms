@@ -437,8 +437,8 @@ func TestCreateOptionFactoryFromEnv(t *testing.T) {
 			provider: "openai",
 			useCase:  "", // No use case in parameter
 			envVars: map[string]string{
-				EnvOpenAIUseCase:       "streaming", // Use case from environment
-				EnvOpenAIOrganization:  "test-org",
+				EnvOpenAIUseCase:      "streaming", // Use case from environment
+				EnvOpenAIOrganization: "test-org",
 			},
 			expectedTypes: []string{
 				"*domain.OpenAIOrganizationOption",

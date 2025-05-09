@@ -123,7 +123,7 @@ func TestAgentEdgeCases(t *testing.T) {
 				return fmt.Sprintf("Success at depth %d", recursionCount), nil
 			},
 			&sdomain.Schema{
-				Type: "object",
+				Type:       "object",
 				Properties: map[string]sdomain.Property{},
 			},
 		)
@@ -408,7 +408,7 @@ func TestAgentEdgeCases(t *testing.T) {
 
 		// Track parameter values
 		paramValues := make(map[string]interface{})
-		
+
 		// Create a tool that records parameter values
 		edgeTool := tools.NewTool(
 			"edge_tool",
@@ -466,7 +466,7 @@ func TestAgentEdgeCases(t *testing.T) {
 		t.Run("VeryLargeNumber", func(t *testing.T) {
 			_, err := agent.Run(context.Background(), "Test with very large number")
 			assert.NoError(t, err, "Agent should handle very large numbers")
-			
+
 			// Check that the number was parsed correctly
 			value, ok := paramValues["value"].(float64)
 			assert.True(t, ok, "Should be parsed as float64")
@@ -477,7 +477,7 @@ func TestAgentEdgeCases(t *testing.T) {
 		t.Run("VerySmallNumber", func(t *testing.T) {
 			_, err := agent.Run(context.Background(), "Test with very small number")
 			assert.NoError(t, err, "Agent should handle very small numbers")
-			
+
 			// Check that the number was parsed correctly
 			value, ok := paramValues["value"].(float64)
 			assert.True(t, ok, "Should be parsed as float64")
@@ -503,7 +503,7 @@ func TestAgentEdgeCases(t *testing.T) {
 				return "First tool result", nil
 			},
 			&sdomain.Schema{
-				Type: "object",
+				Type:       "object",
 				Properties: map[string]sdomain.Property{},
 			},
 		)
@@ -517,7 +517,7 @@ func TestAgentEdgeCases(t *testing.T) {
 				return "Second tool result", nil
 			},
 			&sdomain.Schema{
-				Type: "object",
+				Type:       "object",
 				Properties: map[string]sdomain.Property{},
 			},
 		)
@@ -711,10 +711,10 @@ func TestAgentEdgeCases(t *testing.T) {
 			&sdomain.Schema{
 				Type: "object",
 				Properties: map[string]sdomain.Property{
-					"int_value": {Type: "integer"},
-					"float_value": {Type: "number"},
+					"int_value":    {Type: "integer"},
+					"float_value":  {Type: "number"},
 					"string_value": {Type: "string"},
-					"bool_value": {Type: "boolean"},
+					"bool_value":   {Type: "boolean"},
 				},
 				Required: []string{"int_value", "float_value", "string_value", "bool_value"},
 			},

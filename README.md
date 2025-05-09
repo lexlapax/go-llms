@@ -451,6 +451,30 @@ The following documents provide insight into the project's design and planning:
 - [Coding Practices](docs/plan/coding-practices.md) - Coding standards and guidelines for the project
 - [Implementation Plan](docs/plan/implementation-plan.md) - Detailed implementation plan with phases and milestones
 
+## Running Tests
+
+Go-LLMs includes a comprehensive test suite with several environment variables to control test execution:
+
+```bash
+# Run all tests (excluding integration, provider, edge case, and stress tests)
+make test
+
+# Run all tests including integration tests
+make test-all
+
+# Run with environment variables to enable specific tests
+ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...  # Enable OpenAI API compatible provider tests
+
+# Skip specific provider tests even when ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1
+SKIP_OPEN_ROUTER=1 ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...
+SKIP_OLLAMA=1 ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...
+
+# Run benchmarks
+make benchmark
+```
+
+For more information on testing, see the [Testing Framework documentation](docs/technical/testing.md).
+
 ## Development Status
 
 The core functionality is complete and working. Current focus is on:

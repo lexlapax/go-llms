@@ -40,9 +40,9 @@ func TestAgentErrors(t *testing.T) {
 	t.Run("FailingTool", func(t *testing.T) {
 		// Create a provider that calls a tool but the tool fails
 		provider := &mockToolCallingProvider{
-			toolName:     "failing_tool",
-			toolParams:   map[string]interface{}{"param": "value"},
-			expectError:  true,
+			toolName:    "failing_tool",
+			toolParams:  map[string]interface{}{"param": "value"},
+			expectError: true,
 		}
 
 		// Create an agent
@@ -77,9 +77,9 @@ func TestAgentErrors(t *testing.T) {
 	t.Run("InvalidToolName", func(t *testing.T) {
 		// Create a provider that calls a non-existent tool
 		provider := &mockToolCallingProvider{
-			toolName:     "nonexistent_tool",
-			toolParams:   map[string]interface{}{"param": "value"},
-			expectError:  true,
+			toolName:    "nonexistent_tool",
+			toolParams:  map[string]interface{}{"param": "value"},
+			expectError: true,
 		}
 
 		// Create an agent
@@ -96,9 +96,9 @@ func TestAgentErrors(t *testing.T) {
 	t.Run("InvalidToolParams", func(t *testing.T) {
 		// Create a provider that calls a tool with invalid parameters
 		provider := &mockToolCallingProvider{
-			toolName:     "test_tool",
-			toolParams:   map[string]interface{}{"wrong_param": "value"}, // Wrong parameter name
-			expectError:  true,
+			toolName:    "test_tool",
+			toolParams:  map[string]interface{}{"wrong_param": "value"}, // Wrong parameter name
+			expectError: true,
 		}
 
 		// Create an agent
@@ -223,9 +223,9 @@ func TestAgentErrors(t *testing.T) {
 	t.Run("InvalidToolResponse", func(t *testing.T) {
 		// Create a provider that generates a valid tool call
 		provider := &mockToolCallingProvider{
-			toolName:     "invalid_response_tool",
-			toolParams:   map[string]interface{}{"param": "value"},
-			expectError:  true,
+			toolName:    "invalid_response_tool",
+			toolParams:  map[string]interface{}{"param": "value"},
+			expectError: true,
 		}
 
 		// Create an agent
@@ -296,12 +296,12 @@ func (p *mockToolCallingProvider) Generate(ctx context.Context, prompt string, o
 	if p.expectError {
 		return "", errors.New("mock provider error")
 	}
-	
+
 	// If custom response is set, return it
 	if p.generateResp != "" {
 		return p.generateResp, nil
 	}
-	
+
 	// Create a tool call in JSON format
 	return fmt.Sprintf(`{"tool": "%s", "params": %s}`, p.toolName, mapToJSON(p.toolParams)), nil
 }
@@ -349,7 +349,7 @@ func mapToJSON(m map[string]interface{}) string {
 }
 
 // Mock provider that returns invalid schema data
-type mockInvalidSchemaProvider struct{
+type mockInvalidSchemaProvider struct {
 	expectError bool
 }
 
@@ -422,7 +422,7 @@ func (p *mockDelayProvider) StreamMessage(ctx context.Context, messages []llmDom
 }
 
 // Standard mock provider
-type mockProvider struct{
+type mockProvider struct {
 	expectError bool
 }
 

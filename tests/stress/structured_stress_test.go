@@ -209,7 +209,7 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 
 	// Create mock provider with appropriate responses for different schemas
 	mockProvider := provider.NewMockProvider()
-	
+
 	// Configure the mock provider to return valid JSON for each schema
 	mockProvider.WithGenerateFunc(func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
 		if strings.Contains(prompt, "person profile") {
@@ -228,32 +228,32 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 
 	// Define schema configurations to test
 	schemaConfigs := []struct {
-		name          string
-		schema        string
-		prompt        string
-		schemaSize    string
-		complexity    string
+		name       string
+		schema     string
+		prompt     string
+		schemaSize string
+		complexity string
 	}{
 		{
-			name:          "SmallSchema",
-			schema:        personSchema,
-			prompt:        "Generate a fictional person profile",
-			schemaSize:    "small",
-			complexity:    "low",
+			name:       "SmallSchema",
+			schema:     personSchema,
+			prompt:     "Generate a fictional person profile",
+			schemaSize: "small",
+			complexity: "low",
 		},
 		{
-			name:          "MediumSchema",
-			schema:        productSchema,
-			prompt:        "Generate a fictional product description",
-			schemaSize:    "medium",
-			complexity:    "medium",
+			name:       "MediumSchema",
+			schema:     productSchema,
+			prompt:     "Generate a fictional product description",
+			schemaSize: "medium",
+			complexity: "medium",
 		},
 		{
-			name:          "LargeSchema",
-			schema:        complexSchema,
-			prompt:        "Generate a complex dataset with statistics",
-			schemaSize:    "large",
-			complexity:    "high",
+			name:       "LargeSchema",
+			schema:     complexSchema,
+			prompt:     "Generate a complex dataset with statistics",
+			schemaSize: "large",
+			complexity: "high",
 		},
 	}
 
@@ -269,18 +269,18 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 			t.Errorf("Failed to parse schema for %s: %v", sc.name, err)
 			continue
 		}
-		
+
 		for _, concurrency := range concurrencyLevels {
 			t.Run(fmt.Sprintf("%s_Concurrency_%d", sc.name, concurrency), func(t *testing.T) {
 				var (
-					wg             sync.WaitGroup
-					successful     int32
-					failed         int32
-					totalLatencyMs int64
-					maxLatencyMs   int64
-					minLatencyMs   int64 = 999999
-					validationErrors int32
-					totalLLMLatencyMs int64
+					wg                 sync.WaitGroup
+					successful         int32
+					failed             int32
+					totalLatencyMs     int64
+					maxLatencyMs       int64
+					minLatencyMs       int64 = 999999
+					validationErrors   int32
+					totalLLMLatencyMs  int64
 					totalProcLatencyMs int64
 				)
 
@@ -322,15 +322,15 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 
 						// Measure request time
 						requestStart := time.Now()
-						
+
 						// Track LLM and processing times separately
 						var llmLatencyMs, procLatencyMs int64
-						
+
 						// Generate a mock response with the LLM
 						llmStart := time.Now()
 						response, err := mockProvider.Generate(ctx, prompt)
 						llmLatencyMs = time.Since(llmStart).Milliseconds()
-						
+
 						if err == nil {
 							// Process the structured output
 							procStart := time.Now()
@@ -339,8 +339,8 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 							if processErr != nil {
 								err = processErr
 								// Check if the error message mentions validation
-								if strings.Contains(processErr.Error(), "validation") || 
-								   strings.Contains(processErr.Error(), "conform to schema") {
+								if strings.Contains(processErr.Error(), "validation") ||
+									strings.Contains(processErr.Error(), "conform to schema") {
 									atomic.AddInt32(&validationErrors, 1)
 								}
 							} else if output != nil {
@@ -349,7 +349,7 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 							}
 							procLatencyMs = time.Since(procStart).Milliseconds()
 						}
-						
+
 						// Calculate total request duration
 						requestDuration := time.Since(requestStart)
 						latencyMs := requestDuration.Milliseconds()
@@ -358,7 +358,7 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 						atomic.AddInt64(&totalLatencyMs, latencyMs)
 						atomic.AddInt64(&totalLLMLatencyMs, llmLatencyMs)
 						atomic.AddInt64(&totalProcLatencyMs, procLatencyMs)
-						
+
 						// Update min/max latency
 						for {
 							current := atomic.LoadInt64(&maxLatencyMs)
@@ -369,7 +369,7 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 								break
 							}
 						}
-						
+
 						for {
 							current := atomic.LoadInt64(&minLatencyMs)
 							if latencyMs >= current {
@@ -382,7 +382,7 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 
 						if err != nil {
 							atomic.AddInt32(&failed, 1)
-							
+
 							if ctx.Err() == context.DeadlineExceeded {
 								t.Logf("Request %d timed out: %v", id, err)
 							} else {
@@ -416,10 +416,10 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 				// Calculate percentage of LLM latency
 				llmPercentage := 0.0
 				if avgLatencyMs > 0 {
-					llmPercentage = avgLLMLatencyMs/avgLatencyMs*100
+					llmPercentage = avgLLMLatencyMs / avgLatencyMs * 100
 				}
 
-				t.Logf("Results for %s (%s schema, %s complexity) at concurrency %d:", 
+				t.Logf("Results for %s (%s schema, %s complexity) at concurrency %d:",
 					sc.name, sc.schemaSize, sc.complexity, concurrency)
 				t.Logf("  Success rate: %.2f%% (%d/%d)", successRate, successful, total)
 				t.Logf("  Validation error rate: %.2f%% (%d/%d)", validationErrorRate, validationErrors, total)

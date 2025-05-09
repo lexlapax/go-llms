@@ -24,12 +24,12 @@ func TestSchemaValidationErrors(t *testing.T) {
 		schema := &domain.Schema{
 			Type: "object",
 			Properties: map[string]domain.Property{
-				"string_prop": {Type: "string"},
-				"number_prop": {Type: "number"},
+				"string_prop":  {Type: "string"},
+				"number_prop":  {Type: "number"},
 				"integer_prop": {Type: "integer"},
 				"boolean_prop": {Type: "boolean"},
-				"array_prop": {Type: "array"},
-				"object_prop": {Type: "object"},
+				"array_prop":   {Type: "array"},
+				"object_prop":  {Type: "object"},
 			},
 			Required: []string{"string_prop", "number_prop", "integer_prop", "boolean_prop"},
 		}
@@ -298,7 +298,7 @@ func TestSchemaValidationErrors(t *testing.T) {
 							Items: &domain.Property{
 								Type: "object",
 								Properties: map[string]domain.Property{
-									"name": {Type: "string"},
+									"name":  {Type: "string"},
 									"value": {Type: "number"},
 								},
 								Required: []string{"name", "value"},
@@ -361,7 +361,7 @@ func TestSchemaValidationErrors(t *testing.T) {
 		schema := &domain.Schema{
 			Type: "object",
 			Properties: map[string]domain.Property{
-				"type": {Type: "string"},
+				"type":  {Type: "string"},
 				"value": {Type: "object"}, // This will be validated by if-then-else
 			},
 			Required: []string{"type", "value"},
@@ -530,7 +530,7 @@ func TestSchemaValidationErrors(t *testing.T) {
 						{Type: "string"},
 						{Type: "number"},
 						{Type: "object", Properties: map[string]domain.Property{
-							"id": {Type: "string"},
+							"id":   {Type: "string"},
 							"type": {Type: "string", Enum: []string{"user"}},
 						}, Required: []string{"id", "type"}},
 					},

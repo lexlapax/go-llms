@@ -51,7 +51,7 @@ func TestAgentConcurrentRequests(t *testing.T) {
 	for _, tool := range mockTools {
 		cachedAgent.AddTool(tool)
 	}
-	
+
 	// Add a shared thread-safe tool counter for the cached agent
 	cachedAgentToolCounter := &safeToolCounter{}
 	cachedAgent.WithHook(cachedAgentToolCounter)
@@ -75,7 +75,7 @@ func TestAgentConcurrentRequests(t *testing.T) {
 	for _, tool := range mockTools {
 		multiAgent.AddTool(tool)
 	}
-	
+
 	// Add a shared thread-safe tool counter for the multi agent
 	multiAgentToolCounter := &safeToolCounter{}
 	multiAgent.WithHook(multiAgentToolCounter)
@@ -156,7 +156,7 @@ func TestAgentConcurrentRequests(t *testing.T) {
 
 						// Update metrics atomically
 						atomic.AddInt64(&totalLatencyMs, latencyMs)
-						
+
 						// Update min/max latency
 						for {
 							current := atomic.LoadInt64(&maxLatencyMs)
@@ -167,7 +167,7 @@ func TestAgentConcurrentRequests(t *testing.T) {
 								break
 							}
 						}
-						
+
 						for {
 							current := atomic.LoadInt64(&minLatencyMs)
 							if latencyMs >= current {
@@ -210,7 +210,7 @@ func TestAgentConcurrentRequests(t *testing.T) {
 				t.Logf("  Success rate: %.2f%% (%d/%d)", successRate, successful, successful+failed)
 				t.Logf("  Average latency: %.2f ms", avgLatencyMs)
 				t.Logf("  Min latency: %d ms", minLatencyMs)
-				t.Logf("  Max latency: %d ms", maxLatencyMs) 
+				t.Logf("  Max latency: %d ms", maxLatencyMs)
 				t.Logf("  Total duration: %v", totalDuration)
 				t.Logf("  Average tool invocations per request: %.2f", avgToolsPerRequest)
 				t.Logf("  Goroutines: %d initial, %d peak", initialGoroutines, peakGoroutines)
@@ -236,7 +236,7 @@ func TestAgentConcurrentRequests(t *testing.T) {
 // safeToolCounter is a thread-safe hook for counting tool invocations
 type safeToolCounter struct {
 	count int32
-	mu    sync.Mutex
+	// mu is not used since we're using atomic operations
 }
 
 func (t *safeToolCounter) Reset() {
@@ -255,4 +255,5 @@ func (t *safeToolCounter) AfterToolCall(ctx context.Context, tool string, result
 }
 
 func (t *safeToolCounter) BeforeGenerate(ctx context.Context, messages []llmdomain.Message) {}
-func (t *safeToolCounter) AfterGenerate(ctx context.Context, response llmdomain.Response, err error) {}
+func (t *safeToolCounter) AfterGenerate(ctx context.Context, response llmdomain.Response, err error) {
+}

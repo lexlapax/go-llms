@@ -29,7 +29,7 @@ func TestJSONExtractorEdgeCases(t *testing.T) {
 		// Extra comma is technically invalid JSON but common in LLM responses
 		input := `{"name": "John", "age": 30, }`
 		result := processor.ExtractJSON(input)
-		
+
 		// Current behavior: this returns nothing because it's invalid JSON
 		// If the processor is enhanced to fix common JSON issues, this test should be updated
 		assert.Equal(t, "", result)
@@ -37,7 +37,7 @@ func TestJSONExtractorEdgeCases(t *testing.T) {
 		// Single quotes instead of double quotes
 		input = `{'name': 'John', 'age': 30}`
 		result = processor.ExtractJSON(input)
-		
+
 		// Current behavior: this returns nothing because it's invalid JSON
 		// If the processor is enhanced to handle single quotes, this test should be updated
 		assert.Equal(t, "", result)
@@ -51,7 +51,7 @@ func TestJSONExtractorEdgeCases(t *testing.T) {
 			`{"nested": true}` +
 			"\n```\n" +
 			"```"
-		
+
 		result := processor.ExtractJSON(input)
 		assert.JSONEq(t, `{"nested": true}`, result)
 	})
@@ -77,7 +77,7 @@ func TestJSONExtractorEdgeCases(t *testing.T) {
 		// Create a large JSON object
 		var sb strings.Builder
 		sb.WriteString(`{"items": [`)
-		
+
 		for i := 0; i < 1000; i++ {
 			if i > 0 {
 				sb.WriteString(",")
@@ -91,14 +91,14 @@ func TestJSONExtractorEdgeCases(t *testing.T) {
 			}
 			sb.WriteString(`"}`)
 		}
-		
+
 		sb.WriteString(`]}`)
 		largeJSON := sb.String()
-		
+
 		// Test that large JSON can be extracted
 		result := processor.ExtractJSON(largeJSON)
 		assert.Greater(t, len(result), 1000, "Large JSON should be extracted")
-		
+
 		// Wrap in text
 		largeJSONInText := "Here is some large JSON:\n" + largeJSON + "\nEnd of JSON"
 		result = processor.ExtractJSON(largeJSONInText)
@@ -164,10 +164,10 @@ func TestJSONExtractorEdgeCases(t *testing.T) {
 				}
 			}
 		}`
-		
+
 		result := processor.ExtractJSON(input)
 		assert.NotEmpty(t, result, "Complex nested JSON should be extracted")
-		
+
 		// Verify the extracted JSON is valid and preserves structure
 		var validJSON bool
 		assert.NotPanics(t, func() {

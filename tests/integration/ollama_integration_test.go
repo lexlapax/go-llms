@@ -17,15 +17,14 @@ import (
 // TestOllamaIntegration provides dedicated integration tests for Ollama
 // Skip if OLLAMA_HOST environment variable is not set
 func TestOllamaIntegration(t *testing.T) {
+	// Skip all tests in this file by default - set ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 to run them
+	if os.Getenv("ENABLE_OPENAPI_COMPATIBLE_API_TESTS") != "1" {
+		t.Skip("Skipping Ollama integration tests - set ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 to run")
+	}
+
 	ollamaHost := os.Getenv("OLLAMA_HOST")
 	if ollamaHost == "" {
 		t.Skip("OLLAMA_HOST environment variable not set, skipping Ollama integration tests")
-	}
-
-	// Skip tests in CI environments or when running batch tests
-	isCI := os.Getenv("CI") != "" || os.Getenv("SKIP_OLLAMA") != ""
-	if isCI {
-		t.Skip("Skipping Ollama test in CI environment or when SKIP_OLLAMA is set")
 	}
 
 	// Get Ollama model from environment variable or use default

@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 )
 
@@ -90,24 +91,24 @@ func TestCreateProviderWithUseCase(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := CreateProvider(tt.config)
-
+			
 			if tt.expectSuccess {
 				if err != nil {
 					t.Errorf("Expected success but got error: %v", err)
 					return
 				}
-
+				
 				if provider == nil {
 					t.Errorf("Expected provider but got nil")
 					return
 				}
-
+				
 				// Check the type of the provider
 				typeName := typeName(provider)
 				if typeName != tt.expectedResult {
 					t.Errorf("Expected provider type %s but got %s", tt.expectedResult, typeName)
 				}
-
+				
 				// For use case tests, we just verify the provider was created successfully
 				// We can't check internal option state directly
 			} else {
@@ -142,3 +143,21 @@ func getProviderType(v interface{}) string {
 
 // Helper function to extract provider options - this is just for testing
 // This is an unused function but kept for future testing purposes, marked with _ prefix
+func _getProviderOptions(provider domain.Provider) []domain.ProviderOption {
+	// This is a simplified mock implementation just for testing
+	// In a real implementation, we would need to extract options from the provider
+	// But for our test purposes, we'll just make up some options based on the provider type
+
+	var options []domain.ProviderOption
+
+	switch getProviderType(provider) {
+	case "OpenAIProvider":
+		options = append(options, domain.NewTimeoutOption(60))
+	case "AnthropicProvider":
+		options = append(options, domain.NewTimeoutOption(60))
+	case "GeminiProvider":
+		options = append(options, domain.NewTimeoutOption(60))
+	}
+
+	return options
+}

@@ -19,7 +19,7 @@ func BenchmarkMemoryPooling(b *testing.B) {
 			"It contains multiple sentences and paragraphs to better approximate real-world scenarios where " +
 			"responses might be quite extensive. When dealing with larger texts, memory allocations become " +
 			"more significant, making the benefits of pooling more apparent. This benchmark helps us evaluate " +
-			"how well our pooling strategy performs with larger memory allocations and whether it provides " + 
+			"how well our pooling strategy performs with larger memory allocations and whether it provides " +
 			"meaningful benefits in such scenarios compared to standard allocation patterns."
 	)
 
@@ -434,45 +434,45 @@ func BenchmarkMemoryPooling(b *testing.B) {
 						ch <- domain.Token{Text: "Test", Finished: true}
 						close(ch)
 					}()
-					
+
 					// Consume the token
 					for range ch {
 						// Just consume
 					}
-					
+
 					// Now put the channel back
 					pool.Put(ch)
 				}
 			})
 		})
 	})
-	
+
 	// 6. Benchmark high-throughput multi-stream scenarios
 	b.Run("HighThroughputStreaming", func(b *testing.B) {
 		const numStreams = 50 // Number of concurrent streams
 		tokens := []string{"The", " quick", " brown", " fox", " jumps"}
-		
+
 		b.Run("MultiStream_WithoutPool", func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				var wg sync.WaitGroup
 				wg.Add(numStreams)
-				
+
 				// Create channels
 				channels := make([]chan domain.Token, numStreams)
 				for j := 0; j < numStreams; j++ {
 					channels[j] = make(chan domain.Token, 10)
 				}
-				
+
 				// Start producers
 				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 				defer cancel()
-				
+
 				for j := 0; j < numStreams; j++ {
 					go func(ch chan domain.Token, id int) {
 						defer close(ch)
 						defer wg.Done()
-						
+
 						for k, token := range tokens {
 							select {
 							case <-ctx.Done():
@@ -486,43 +486,43 @@ func BenchmarkMemoryPooling(b *testing.B) {
 						}
 					}(channels[j], j)
 				}
-				
+
 				// Consume all channels
 				for j := 0; j < numStreams; j++ {
 					for range channels[j] {
 						// Just consume
 					}
 				}
-				
+
 				wg.Wait()
 			}
 		})
-		
+
 		b.Run("MultiStream_WithPool", func(b *testing.B) {
 			tokenPool := domain.GetTokenPool()
 			channelPool := domain.GetChannelPool()
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				var wg sync.WaitGroup
 				wg.Add(numStreams)
-				
+
 				// Create channels
 				channels := make([]chan domain.Token, numStreams)
 				for j := 0; j < numStreams; j++ {
 					_, ch := channelPool.GetResponseStream()
 					channels[j] = ch
 				}
-				
+
 				// Start producers
 				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 				defer cancel()
-				
+
 				for j := 0; j < numStreams; j++ {
 					go func(ch chan domain.Token, id int) {
 						defer close(ch)
 						defer wg.Done()
-						
+
 						for k, token := range tokens {
 							select {
 							case <-ctx.Done():
@@ -536,19 +536,19 @@ func BenchmarkMemoryPooling(b *testing.B) {
 						}
 					}(channels[j], j)
 				}
-				
+
 				// Consume all channels
 				for j := 0; j < numStreams; j++ {
 					for range channels[j] {
 						// Just consume
 					}
 				}
-				
+
 				wg.Wait()
 			}
 		})
 	})
-	
+
 	// 7. Benchmark clear operations for checking overhead
 	b.Run("ClearOperations", func(b *testing.B) {
 		b.Run("Response_Clear", func(b *testing.B) {
@@ -562,7 +562,7 @@ func BenchmarkMemoryPooling(b *testing.B) {
 				pool.Put(resp)
 			}
 		})
-		
+
 		b.Run("Token_Clear", func(b *testing.B) {
 			pool := domain.GetTokenPool()
 			b.ResetTimer()

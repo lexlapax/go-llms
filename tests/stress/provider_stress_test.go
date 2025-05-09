@@ -88,9 +88,9 @@ func TestProviderConcurrentRequests(t *testing.T) {
 		for _, concurrency := range concurrencyLevels {
 			t.Run(fmt.Sprintf("%s_Concurrency_%d", p.name, concurrency), func(t *testing.T) {
 				var (
-					wg            sync.WaitGroup
-					successful    int32
-					failed        int32
+					wg             sync.WaitGroup
+					successful     int32
+					failed         int32
 					totalLatencyMs int64
 					maxLatencyMs   int64
 					minLatencyMs   int64 = 999999
@@ -129,7 +129,7 @@ func TestProviderConcurrentRequests(t *testing.T) {
 
 						// Update metrics atomically
 						atomic.AddInt64(&totalLatencyMs, latencyMs)
-						
+
 						// Update min/max latency
 						for {
 							current := atomic.LoadInt64(&maxLatencyMs)
@@ -140,7 +140,7 @@ func TestProviderConcurrentRequests(t *testing.T) {
 								break
 							}
 						}
-						
+
 						for {
 							current := atomic.LoadInt64(&minLatencyMs)
 							if latencyMs >= current {

@@ -95,6 +95,7 @@
     - [x] Identified and skipped incomplete JSON extractor features (multi-object, malformed recovery)
     - [x] Fixed Ollama integration test by skipping flaky tests (max tokens and timeout tests)
     - [x] Fixed OpenRouter and Ollama API tests by adding environment variables to skip them when needed
+    - [x] Added global skip mechanism for OpenAI API compatible provider tests with ENABLE_OPENAPI_COMPATIBLE_API_TESTS environment variable
     - [x] Fixed test environment variables for CI and batch testing
   - [x] Update or create documentation in docs/ to document the test coverage for edge cases.
     - [x] Added agent-testing.md to document the limitations of agent testing with mock providers

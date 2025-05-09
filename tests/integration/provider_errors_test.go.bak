@@ -63,7 +63,7 @@ func TestProviderErrors(t *testing.T) {
 			}
 
 			// Log request to aid debugging
-			fmt.Printf("Request: %s %s (Provider: %s, Error: %s)\n",
+			fmt.Printf("Request: %s %s (Provider: %s, Error: %s)\n", 
 				r.Method, r.URL.Path, providerType, errorType)
 
 			// Return appropriate error responses based on provider and error type
@@ -72,41 +72,41 @@ func TestProviderErrors(t *testing.T) {
 				w.WriteHeader(http.StatusUnauthorized)
 				switch providerType {
 				case "anthropic":
-					_, _ = w.Write([]byte(`{"error":{"type":"authentication_error","message":"Invalid API key"}}`))
+					w.Write([]byte(`{"error":{"type":"authentication_error","message":"Invalid API key"}}`))
 				case "gemini":
-					_, _ = w.Write([]byte(`{"error":{"code":401,"message":"API key not valid","status":"UNAUTHENTICATED"}}`))
+					w.Write([]byte(`{"error":{"code":401,"message":"API key not valid","status":"UNAUTHENTICATED"}}`))
 				default: // openai
-					_, _ = w.Write([]byte(`{"error":{"message":"Invalid API key","type":"authentication_error","code":401}}`))
+					w.Write([]byte(`{"error":{"message":"Invalid API key","type":"authentication_error","code":401}}`))
 				}
 			case "rate-limit":
 				w.WriteHeader(http.StatusTooManyRequests)
 				switch providerType {
 				case "anthropic":
-					_, _ = w.Write([]byte(`{"error":{"type":"rate_limit_error","message":"Rate limit exceeded"}}`))
+					w.Write([]byte(`{"error":{"type":"rate_limit_error","message":"Rate limit exceeded"}}`))
 				case "gemini":
-					_, _ = w.Write([]byte(`{"error":{"code":429,"message":"Resource has been exhausted","status":"RESOURCE_EXHAUSTED"}}`))
+					w.Write([]byte(`{"error":{"code":429,"message":"Resource has been exhausted","status":"RESOURCE_EXHAUSTED"}}`))
 				default: // openai
-					_, _ = w.Write([]byte(`{"error":{"message":"Rate limit exceeded","type":"rate_limit_error","code":429}}`))
+					w.Write([]byte(`{"error":{"message":"Rate limit exceeded","type":"rate_limit_error","code":429}}`))
 				}
 			case "context-length":
 				w.WriteHeader(http.StatusBadRequest)
 				switch providerType {
 				case "anthropic":
-					_, _ = w.Write([]byte(`{"error":{"type":"context_length_error","message":"Prompt too long"}}`))
+					w.Write([]byte(`{"error":{"type":"context_length_error","message":"Prompt too long"}}`))
 				case "gemini":
-					_, _ = w.Write([]byte(`{"error":{"code":400,"message":"Input content is too long","status":"INVALID_ARGUMENT"}}`))
+					w.Write([]byte(`{"error":{"code":400,"message":"Input content is too long","status":"INVALID_ARGUMENT"}}`))
 				default: // openai
-					_, _ = w.Write([]byte(`{"error":{"message":"Context length exceeded","type":"context_length_error","code":400}}`))
+					w.Write([]byte(`{"error":{"message":"Context length exceeded","type":"context_length_error","code":400}}`))
 				}
 			case "content-filter":
 				w.WriteHeader(http.StatusBadRequest)
 				switch providerType {
 				case "anthropic":
-					_, _ = w.Write([]byte(`{"error":{"type":"content_filter_error","message":"Content violates policy"}}`))
+					w.Write([]byte(`{"error":{"type":"content_filter_error","message":"Content violates policy"}}`))
 				case "gemini":
-					_, _ = w.Write([]byte(`{"error":{"code":400,"message":"Content violates policy","status":"FAILED_PRECONDITION"}}`))
+					w.Write([]byte(`{"error":{"code":400,"message":"Content violates policy","status":"FAILED_PRECONDITION"}}`))
 				default: // openai
-					_, _ = w.Write([]byte(`{"error":{"message":"Content violates policy","type":"content_filter_error","code":400}}`))
+					w.Write([]byte(`{"error":{"message":"Content violates policy","type":"content_filter_error","code":400}}`))
 				}
 			case "timeout":
 				// Sleep to simulate timeout
@@ -114,34 +114,34 @@ func TestProviderErrors(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				switch providerType {
 				case "anthropic":
-					_, _ = w.Write([]byte(`{"content":[{"type":"text","text":"delayed response"}]}`))
+					w.Write([]byte(`{"content":[{"type":"text","text":"delayed response"}]}`))
 				case "gemini":
-					_, _ = w.Write([]byte(`{"candidates":[{"content":{"parts":[{"text":"delayed response"}]}}]}`))
+					w.Write([]byte(`{"candidates":[{"content":{"parts":[{"text":"delayed response"}]}}]}`))
 				default: // openai
-					_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"delayed response"},"finish_reason":"stop"}]}`))
+					w.Write([]byte(`{"choices":[{"message":{"content":"delayed response"},"finish_reason":"stop"}]}`))
 				}
 			case "parsing-error":
 				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte(`{"invalid-json:`)) // invalid JSON for all providers
+				w.Write([]byte(`{"invalid-json:`)) // invalid JSON for all providers
 			case "server-error":
 				w.WriteHeader(http.StatusInternalServerError)
 				switch providerType {
 				case "anthropic":
-					_, _ = w.Write([]byte(`{"error":{"type":"server_error","message":"Server error"}}`))
+					w.Write([]byte(`{"error":{"type":"server_error","message":"Server error"}}`))
 				case "gemini":
-					_, _ = w.Write([]byte(`{"error":{"code":500,"message":"Internal server error","status":"INTERNAL"}}`))
+					w.Write([]byte(`{"error":{"code":500,"message":"Internal server error","status":"INTERNAL"}}`))
 				default: // openai
-					_, _ = w.Write([]byte(`{"error":{"message":"Server error","type":"server_error","code":500}}`))
+					w.Write([]byte(`{"error":{"message":"Server error","type":"server_error","code":500}}`))
 				}
 			default:
 				w.WriteHeader(http.StatusNotFound)
 				switch providerType {
 				case "anthropic":
-					_, _ = w.Write([]byte(`{"error":{"type":"not_found_error","message":"Not found"}}`))
+					w.Write([]byte(`{"error":{"type":"not_found_error","message":"Not found"}}`))
 				case "gemini":
-					_, _ = w.Write([]byte(`{"error":{"code":404,"message":"Not found","status":"NOT_FOUND"}}`))
+					w.Write([]byte(`{"error":{"code":404,"message":"Not found","status":"NOT_FOUND"}}`))
 				default: // openai
-					_, _ = w.Write([]byte(`{"error":{"message":"Not found","type":"not_found_error","code":404}}`))
+					w.Write([]byte(`{"error":{"message":"Not found","type":"not_found_error","code":404}}`))
 				}
 			}
 		}))
@@ -199,9 +199,9 @@ func TestProviderErrors(t *testing.T) {
 				}
 
 				// Check for timeout-related errors - accept any error that mentions timeout or deadline
-				if !strings.Contains(strings.ToLower(err.Error()), "deadline exceeded") &&
-					!strings.Contains(strings.ToLower(err.Error()), "timeout") &&
-					!domain.IsNetworkConnectivityError(err) {
+				if !strings.Contains(strings.ToLower(err.Error()), "deadline exceeded") && 
+				   !strings.Contains(strings.ToLower(err.Error()), "timeout") &&
+				   !domain.IsNetworkConnectivityError(err) {
 					t.Errorf("Expected error with deadline/timeout references, got: %v", err)
 				}
 			}
@@ -213,21 +213,21 @@ func TestProviderErrors(t *testing.T) {
 		// Use an invalid URL that will trigger a network error
 		badURL := "https://invalid-domain-that-does-not-exist-123456789.example"
 		baseURLOption := domain.NewBaseURLOption(badURL)
-
+		
 		// Test with all providers
 		providers := []domain.Provider{
 			provider.NewOpenAIProvider("test-key", "gpt-4o", baseURLOption),
 			provider.NewAnthropicProvider("test-key", "claude-3-5-sonnet-latest", baseURLOption),
 			provider.NewGeminiProvider("test-key", "gemini-2.0-flash-lite", baseURLOption),
 		}
-
+		
 		for _, p := range providers {
 			_, err := p.Generate(context.Background(), "Test prompt")
 			if err == nil {
 				t.Errorf("Expected network error but got nil")
 				continue
 			}
-
+			
 			if !domain.IsNetworkConnectivityError(err) {
 				// Allow both network connectivity errors and the error message containing "no such host"
 				if !strings.Contains(err.Error(), "no such host") {
@@ -243,23 +243,23 @@ func TestProviderErrors(t *testing.T) {
 		retryServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Increment counter for each request
 			count++
-
+			
 			// Succeed on the 3rd attempt
 			if count >= 3 {
 				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"Success after retry"},"finish_reason":"stop"}]}`))
+				w.Write([]byte(`{"choices":[{"message":{"content":"Success after retry"},"finish_reason":"stop"}]}`))
 				return
 			}
-
+			
 			// Otherwise return a retryable error (rate limit)
 			w.WriteHeader(http.StatusTooManyRequests)
-			_, _ = w.Write([]byte(`{"error":{"message":"Rate limit exceeded","type":"rate_limit_error","code":429}}`))
+			w.Write([]byte(`{"error":{"message":"Rate limit exceeded","type":"rate_limit_error","code":429}}`))
 		}))
 		defer retryServer.Close()
 
 		// Test with OpenAI provider (retry logic should be similar for all)
 		p := provider.NewOpenAIProvider("test-key", "gpt-4o", domain.NewBaseURLOption(retryServer.URL))
-
+		
 		// Test with 3 retries (should succeed)
 		result, err := generateWithRetry(context.Background(), p, "Test prompt", 3)
 		if err != nil {
@@ -284,13 +284,13 @@ func TestProviderErrors(t *testing.T) {
 func testAllProviders(t *testing.T, baseURL string, expectedError error) {
 	// Create multiple providers with the base URL option
 	baseURLOption := domain.NewBaseURLOption(baseURL)
-
+	
 	// For content filter and context length errors, we'll be more lenient and just check
 	// that there's an error, as specific mapping can vary by provider
 	isSpecialCase := expectedError == domain.ErrContentFiltered ||
-		expectedError == domain.ErrContextTooLong ||
-		strings.Contains(baseURL, "/parsing-error")
-
+		              expectedError == domain.ErrContextTooLong ||
+		              strings.Contains(baseURL, "/parsing-error")
+	
 	// OpenAI provider
 	openaiProvider := provider.NewOpenAIProvider("test-key", "gpt-4o", baseURLOption)
 	_, err := openaiProvider.Generate(context.Background(), "Test prompt")
@@ -299,7 +299,7 @@ func testAllProviders(t *testing.T, baseURL string, expectedError error) {
 	} else if !isSpecialCase && !errors.Is(err, expectedError) {
 		t.Errorf("Expected error %v for provider OpenAI, got: %v", expectedError, err)
 	}
-
+	
 	// Anthropic provider
 	anthropicProvider := provider.NewAnthropicProvider("test-key", "claude-3-5-sonnet-latest", baseURLOption)
 	_, err = anthropicProvider.Generate(context.Background(), "Test prompt")
@@ -308,7 +308,7 @@ func testAllProviders(t *testing.T, baseURL string, expectedError error) {
 	} else if !isSpecialCase && !errors.Is(err, expectedError) {
 		t.Errorf("Expected error %v for provider Anthropic, got: %v", expectedError, err)
 	}
-
+	
 	// Gemini provider
 	geminiProvider := provider.NewGeminiProvider("test-key", "gemini-2.0-flash-lite", baseURLOption)
 	_, err = geminiProvider.Generate(context.Background(), "Test prompt")
@@ -323,22 +323,22 @@ func testAllProviders(t *testing.T, baseURL string, expectedError error) {
 func generateWithRetry(ctx context.Context, provider domain.Provider, prompt string, maxRetries int) (string, error) {
 	var result string
 	var err error
-
+	
 	for i := 0; i < maxRetries; i++ {
 		result, err = provider.Generate(ctx, prompt)
 		if err == nil {
 			return result, nil
 		}
-
+		
 		// Check if this is a retryable error
 		if !isRetryableError(err) {
 			return "", fmt.Errorf("non-retryable error: %w", err)
 		}
-
+		
 		// Wait a bit before retrying (increasing backoff)
 		time.Sleep(time.Duration(i+1) * 10 * time.Millisecond)
 	}
-
+	
 	return "", errors.New("max retries reached")
 }
 
@@ -347,27 +347,27 @@ func isRetryableError(err error) bool {
 	if err == nil {
 		return false
 	}
-
+	
 	// Network connectivity errors are retryable
 	if errors.Is(err, domain.ErrNetworkConnectivity) {
 		return true
 	}
-
+	
 	// Rate limit errors are retryable
 	if errors.Is(err, domain.ErrRateLimitExceeded) {
 		return true
 	}
-
+	
 	// Certain provider unavailable errors might be retryable
 	if errors.Is(err, domain.ErrProviderUnavailable) {
 		return true
 	}
-
+	
 	// Check for specific error messages
-	if strings.Contains(err.Error(), "rate limit") ||
-		strings.Contains(err.Error(), "too many requests") {
+	if strings.Contains(err.Error(), "rate limit") || 
+	   strings.Contains(err.Error(), "too many requests") {
 		return true
 	}
-
+	
 	return false
 }

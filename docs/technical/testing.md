@@ -12,6 +12,7 @@ This document outlines the testing approach implemented in Go-LLMs, focusing on 
 4. [Schema Validation Testing](#schema-validation-testing)
 5. [Stress Testing](#stress-testing)
 6. [Running Tests](#running-tests)
+   1. [Test Skip Control](#test-skip-control)
 7. [Related Documentation](#related-documentation)
 
 ## Introduction
@@ -686,6 +687,36 @@ make test-stress-agent         # Run agent workflow stress tests
 make test-stress-structured    # Run structured output processor stress tests
 make test-stress-pool          # Run memory pool stress tests
 ```
+
+### Test Skip Control
+
+Go-LLMs uses environment variables to control which tests are run. This is particularly useful for tests that require external API keys, special configurations, or are designed to test edge cases.
+
+#### OpenAI API Compatible Provider Tests
+
+OpenAI API compatible provider integration tests can be controlled with the `ENABLE_OPENAPI_COMPATIBLE_API_TESTS` environment variable:
+
+```bash
+# Run all tests including OpenAI API compatible provider integration tests
+ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...
+
+# Run specific OpenAI API compatible provider tests
+ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/openai_api_compatible_providers_test.go
+ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/ollama_integration_test.go
+```
+
+
+#### Provider-Specific Skip Controls
+
+For fine-grained control over specific provider tests, you can use these variables:
+
+```bash
+# Skip specific provider tests even when ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1
+SKIP_OPEN_ROUTER=1 ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...
+SKIP_OLLAMA=1 ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...
+```
+
+This system allows for efficient CI/CD pipeline configuration and enables developers to run only the tests relevant to their current work.
 
 ## Related Documentation
 
