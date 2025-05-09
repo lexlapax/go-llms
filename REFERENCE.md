@@ -22,6 +22,8 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 
 - [Architecture](/docs/technical/architecture.md) - Overview of the library architecture
 - [Performance Optimization](/docs/technical/performance.md) - Performance optimization strategies
+- [Testing Framework](/docs/technical/testing.md) - Error condition testing and stress testing
+- [Benchmarking Framework](/docs/technical/benchmarks.md) - Performance benchmarks and measurement
 - [Sync.Pool Implementation](/docs/technical/sync-pool.md) - Detailed guide on sync.Pool usage
 - [Caching Mechanisms](/docs/technical/caching.md) - Caching strategies and implementations
 - [Concurrency Patterns](/docs/technical/concurrency.md) - Thread safety and concurrent execution

@@ -316,33 +316,13 @@ Optimized: 3,840,904 ops/s,   297 ns/op,   896 B/op,  1 allocs/op
 
 ## Benchmarking
 
-The library includes comprehensive benchmarks to measure performance improvements:
+The library includes comprehensive benchmarks to measure performance improvements. For detailed information about the benchmarking framework, available benchmarks, and results, see:
 
-```bash
-# Run parameter handling benchmarks
-go test -bench=ToolParameterHandling ./benchmarks/... -benchmem
-
-# Run all tool optimization benchmarks
-go test -bench=. ./benchmarks/optimized_tools_bench_test.go -benchmem
-
-# Run JSON extraction benchmarks
-go test -bench=. ./benchmarks/json_extractor_bench_test.go -benchmem
-
-# Run schema validation benchmarks
-go test -bench=. ./benchmarks/optimized_schema_bench_test.go -benchmem
-
-# Run agent context initialization benchmarks
-go test -bench=BenchmarkAgentContextInit ./benchmarks/... -benchmem
-
-# Run agent tool call extraction benchmarks
-go test -bench=BenchmarkAgentToolExtraction ./benchmarks/... -benchmem
-
-# Run provider message handling benchmarks
-go test -bench=BenchmarkProviderMessageConversion ./benchmarks/... -benchmem
-```
+- [Benchmarking Framework](benchmarks.md) - Detailed overview of performance benchmarks
 
 For more detailed information on specific optimization strategies, see:
 
 - [Sync.Pool Implementation Guide](sync-pool.md)
 - [Caching Mechanisms](caching.md)
 - [Concurrency Patterns](concurrency.md)
+- [Testing Framework](testing.md)

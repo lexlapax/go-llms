@@ -10,6 +10,8 @@ This directory contains technical documentation for the Go-LLMs library, focusin
 
 - [Architecture](architecture.md) - Overview of the library architecture, component structure, and interaction patterns
 - [Performance Optimization](performance.md) - Comprehensive overview of performance optimization strategies
+- [Testing Framework](testing.md) - Detailed overview of error condition testing and stress testing
+- [Benchmarking Framework](benchmarks.md) - Detailed overview of performance benchmarks
 - [Sync.Pool Implementation](sync-pool.md) - Detailed guide on sync.Pool usage for memory optimization
 - [Caching Mechanisms](caching.md) - Explanation of caching strategies and implementations
 - [Concurrency Patterns](concurrency.md) - Documentation of thread safety and concurrent execution patterns
