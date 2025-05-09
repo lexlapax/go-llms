@@ -60,16 +60,16 @@ type CalculatorParams struct {
 func (t *CalculatorTool) Execute(ctx context.Context, params interface{}) (interface{}, error) {
 	// Quick simulation of processing time
 	time.Sleep(10 * time.Millisecond)
-	
+
 	// Try to convert params to CalculatorParams
 	var calcParams CalculatorParams
-	
+
 	// If params is a map, try to extract the values
 	if paramsMap, ok := params.(map[string]interface{}); ok {
 		if op, ok := paramsMap["operation"].(string); ok {
 			calcParams.Operation = op
 		}
-		
+
 		if a, ok := paramsMap["a"].(float64); ok {
 			calcParams.A = a
 		} else if aStr, ok := paramsMap["a"].(string); ok {
@@ -77,7 +77,7 @@ func (t *CalculatorTool) Execute(ctx context.Context, params interface{}) (inter
 				calcParams.A = aVal
 			}
 		}
-		
+
 		if b, ok := paramsMap["b"].(float64); ok {
 			calcParams.B = b
 		} else if bStr, ok := paramsMap["b"].(string); ok {
@@ -86,7 +86,7 @@ func (t *CalculatorTool) Execute(ctx context.Context, params interface{}) (inter
 			}
 		}
 	}
-	
+
 	// Perform the calculation
 	switch calcParams.Operation {
 	case "add":
@@ -251,15 +251,15 @@ func runAgentOperations(ctx context.Context, agent domain.Agent, count int) {
 
 	for i := 0; i < count && i < len(prompts); i++ {
 		fmt.Printf("\n➡️ Running operation %d: %s\n", i+1, prompts[i])
-		
+
 		result, err := agent.Run(ctx, prompts[i])
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			continue
 		}
-		
+
 		fmt.Printf("✅ Result: %s\n", truncateString(fmt.Sprintf("%v", result), 60))
-		
+
 		// Add a small delay between operations
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -274,11 +274,11 @@ func printMetrics(metrics workflow.Metrics) {
 	fmt.Printf("Error Count:         %d\n", metrics.ErrorCount)
 	fmt.Printf("Estimated Tokens:    %d\n", metrics.TotalTokens)
 	fmt.Printf("Avg Generation Time: %.2f ms\n", metrics.AverageGenTimeMs)
-	
+
 	if len(metrics.ToolStats) > 0 {
 		fmt.Println("\n🔧 Tool Statistics")
 		fmt.Println("-----------------")
-		
+
 		// Convert to JSON for pretty formatting
 		toolStatsJSON, _ := json.MarshalIndent(metrics.ToolStats, "", "  ")
 		fmt.Println(string(toolStatsJSON))

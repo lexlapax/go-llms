@@ -86,38 +86,38 @@ type OrderStatus string
 
 // Define order statuses as enum values
 const (
-	StatusPending     OrderStatus = "pending"
-	StatusProcessing  OrderStatus = "processing"
-	StatusShipped     OrderStatus = "shipped"
-	StatusDelivered   OrderStatus = "delivered"
-	StatusCancelled   OrderStatus = "cancelled"
+	StatusPending    OrderStatus = "pending"
+	StatusProcessing OrderStatus = "processing"
+	StatusShipped    OrderStatus = "shipped"
+	StatusDelivered  OrderStatus = "delivered"
+	StatusCancelled  OrderStatus = "cancelled"
 )
 
 // Order represents a customer order
 type Order struct {
-	ID              string       `json:"id" validate:"required" description:"Unique order identifier"`
-	CustomerID      string       `json:"customerId" validate:"required" description:"ID of the customer who placed the order"`
-	OrderDate       time.Time    `json:"orderDate" format:"date-time" description:"Date when order was placed"`
-	Status          OrderStatus  `json:"status" validate:"required,oneof=pending processing shipped delivered cancelled" description:"Current order status"`
-	Items           []OrderItem  `json:"items" validate:"required" description:"Items included in the order"`
-	ShippingAddress Address      `json:"shippingAddress" validate:"required" description:"Shipping destination address"`
-	BillingAddress  Address      `json:"billingAddress" validate:"required" description:"Billing address for payment"`
+	ID              string        `json:"id" validate:"required" description:"Unique order identifier"`
+	CustomerID      string        `json:"customerId" validate:"required" description:"ID of the customer who placed the order"`
+	OrderDate       time.Time     `json:"orderDate" format:"date-time" description:"Date when order was placed"`
+	Status          OrderStatus   `json:"status" validate:"required,oneof=pending processing shipped delivered cancelled" description:"Current order status"`
+	Items           []OrderItem   `json:"items" validate:"required" description:"Items included in the order"`
+	ShippingAddress Address       `json:"shippingAddress" validate:"required" description:"Shipping destination address"`
+	BillingAddress  Address       `json:"billingAddress" validate:"required" description:"Billing address for payment"`
 	PaymentMethod   PaymentMethod `json:"paymentMethod" validate:"required,oneof=credit_card debit paypal bank_wire" description:"Method of payment"`
-	Total           float64      `json:"total" validate:"min=0" description:"Total order amount in USD"`
-	Notes           string       `json:"notes,omitempty" description:"Additional order notes or instructions"`
+	Total           float64       `json:"total" validate:"min=0" description:"Total order amount in USD"`
+	Notes           string        `json:"notes,omitempty" description:"Additional order notes or instructions"`
 }
 
 // displaySchema prints a schema in a formatted JSON
 func displaySchema(name string, schema *domain.Schema) {
 	fmt.Printf("\n=== %s Schema ===\n", name)
-	
+
 	// Convert schema to JSON
 	jsonBytes, err := json.MarshalIndent(schema, "", "  ")
 	if err != nil {
 		fmt.Printf("Error marshaling schema: %v\n", err)
 		return
 	}
-	
+
 	// Print the JSON schema
 	fmt.Println(string(jsonBytes))
 	fmt.Println()
@@ -126,19 +126,19 @@ func displaySchema(name string, schema *domain.Schema) {
 // showSchemaUsageWithLLM demonstrates how to use a generated schema with an LLM
 func showSchemaUsageWithLLM(schema *domain.Schema) {
 	fmt.Println("=== Using Generated Schema with LLM ===")
-	
+
 	// Example prompt that would generate a product
 	prompt := "Generate a detailed product description for a new smartphone with high-end specifications. Include all required fields."
-	
+
 	// This is just a simulation - in a real scenario, this would call the LLM
 	fmt.Println("Prompt:", prompt)
 	fmt.Println("* In a real application, this would send the prompt to an LLM with the schema *")
 	fmt.Println("* The LLM would generate a response conforming to the Product schema *")
 	fmt.Println("* The processor would validate and parse the response into a Product struct *")
-	
+
 	// Example of how you would call the processor in a real application
 	fmt.Println("\nExample code for processing with schema:")
-	
+
 	exampleCode := `
     // Create processor with LLM provider
     processor := structured.NewProcessor(llmProvider)
@@ -166,7 +166,7 @@ func main() {
 
 	// Generate and display schemas for various types
 	fmt.Println("Generating JSON Schemas from Go structs...")
-	
+
 	// Address schema
 	addressSchema, err := reflection.GenerateSchema(Address{})
 	if err != nil {
@@ -175,7 +175,7 @@ func main() {
 	}
 	displaySchema("Address", addressSchema)
 	writeSchemaToFile(schemasDir+"/address_schema.json", addressSchema)
-	
+
 	// Customer schema
 	customerSchema, err := reflection.GenerateSchema(Customer{})
 	if err != nil {
@@ -184,7 +184,7 @@ func main() {
 	}
 	displaySchema("Customer", customerSchema)
 	writeSchemaToFile(schemasDir+"/customer_schema.json", customerSchema)
-	
+
 	// Product schema
 	productSchema, err := reflection.GenerateSchema(Product{})
 	if err != nil {
@@ -193,7 +193,7 @@ func main() {
 	}
 	displaySchema("Product", productSchema)
 	writeSchemaToFile(schemasDir+"/product_schema.json", productSchema)
-	
+
 	// Order schema
 	orderSchema, err := reflection.GenerateSchema(Order{})
 	if err != nil {
@@ -202,11 +202,11 @@ func main() {
 	}
 	displaySchema("Order", orderSchema)
 	writeSchemaToFile(schemasDir+"/order_schema.json", orderSchema)
-	
+
 	// Demonstrate schema usage with LLM
 	fmt.Println("\nDemonstrating schema usage with LLM...")
 	showSchemaUsageWithLLM(productSchema)
-	
+
 	fmt.Println("\nAll schemas have been generated and saved to the 'schemas' directory.")
 }
 
@@ -217,7 +217,7 @@ func writeSchemaToFile(filename string, schema *domain.Schema) {
 		fmt.Printf("Error marshaling schema for file %s: %v\n", filename, err)
 		return
 	}
-	
+
 	if err := os.WriteFile(filename, jsonBytes, 0644); err != nil {
 		fmt.Printf("Error writing schema to file %s: %v\n", filename, err)
 		return

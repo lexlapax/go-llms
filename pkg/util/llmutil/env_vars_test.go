@@ -19,10 +19,10 @@ func TestGetAPIKeyFromEnv(t *testing.T) {
 	}()
 
 	tests := []struct {
-		name         string
-		provider     string
-		envVars      map[string]string
-		expectedKey  string
+		name        string
+		provider    string
+		envVars     map[string]string
+		expectedKey string
 	}{
 		{
 			name:     "OpenAI Key",
@@ -49,15 +49,15 @@ func TestGetAPIKeyFromEnv(t *testing.T) {
 			expectedKey: "test-gemini-key",
 		},
 		{
-			name:     "No Key",
-			provider: "openai",
-			envVars:  map[string]string{},
+			name:        "No Key",
+			provider:    "openai",
+			envVars:     map[string]string{},
 			expectedKey: "",
 		},
 		{
-			name:     "Unknown Provider",
-			provider: "unknown",
-			envVars:  map[string]string{},
+			name:        "Unknown Provider",
+			provider:    "unknown",
+			envVars:     map[string]string{},
 			expectedKey: "",
 		},
 	}
@@ -99,10 +99,10 @@ func TestGetModelFromEnv(t *testing.T) {
 	}()
 
 	tests := []struct {
-		name           string
-		provider       string
-		envVars        map[string]string
-		expectedModel  string
+		name          string
+		provider      string
+		envVars       map[string]string
+		expectedModel string
 	}{
 		{
 			name:     "OpenAI Model",
@@ -113,9 +113,9 @@ func TestGetModelFromEnv(t *testing.T) {
 			expectedModel: "gpt-4",
 		},
 		{
-			name:     "OpenAI Default Model",
-			provider: "openai",
-			envVars:  map[string]string{},
+			name:          "OpenAI Default Model",
+			provider:      "openai",
+			envVars:       map[string]string{},
 			expectedModel: "gpt-4o",
 		},
 		{
@@ -127,9 +127,9 @@ func TestGetModelFromEnv(t *testing.T) {
 			expectedModel: "claude-3-opus-20240229",
 		},
 		{
-			name:     "Anthropic Default Model",
-			provider: "anthropic",
-			envVars:  map[string]string{},
+			name:          "Anthropic Default Model",
+			provider:      "anthropic",
+			envVars:       map[string]string{},
 			expectedModel: "claude-3-5-sonnet-latest",
 		},
 		{
@@ -141,15 +141,15 @@ func TestGetModelFromEnv(t *testing.T) {
 			expectedModel: "gemini-1.5-pro",
 		},
 		{
-			name:     "Gemini Default Model",
-			provider: "gemini",
-			envVars:  map[string]string{},
+			name:          "Gemini Default Model",
+			provider:      "gemini",
+			envVars:       map[string]string{},
 			expectedModel: "gemini-2.0-flash-lite",
 		},
 		{
-			name:     "Unknown Provider",
-			provider: "unknown",
-			envVars:  map[string]string{},
+			name:          "Unknown Provider",
+			provider:      "unknown",
+			envVars:       map[string]string{},
 			expectedModel: "",
 		},
 	}
@@ -196,8 +196,8 @@ func TestGetCommonOptionsFromEnv(t *testing.T) {
 		expectedCount int
 	}{
 		{
-			name: "No Options",
-			envVars: map[string]string{},
+			name:          "No Options",
+			envVars:       map[string]string{},
 			expectedCount: 0,
 		},
 		{
@@ -292,9 +292,9 @@ func TestGetProviderOptionsFromEnv(t *testing.T) {
 		expectedCount int
 	}{
 		{
-			name:     "OpenAI No Options",
-			provider: "openai",
-			envVars:  map[string]string{},
+			name:          "OpenAI No Options",
+			provider:      "openai",
+			envVars:       map[string]string{},
 			expectedCount: 0,
 		},
 		{
@@ -370,7 +370,7 @@ func TestGetProviderOptionsFromEnv(t *testing.T) {
 
 			// Check result count
 			if len(options) != tt.expectedCount {
-				t.Errorf("GetProviderOptionsFromEnv(%s) returned %d options, want %d", 
+				t.Errorf("GetProviderOptionsFromEnv(%s) returned %d options, want %d",
 					tt.provider, len(options), tt.expectedCount)
 			}
 		})

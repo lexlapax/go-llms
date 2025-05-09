@@ -26,33 +26,33 @@ type AgentConfig struct {
 func CreateAgent(config AgentConfig) agentDomain.Agent {
 	// Create the base agent
 	var agent agentDomain.Agent
-	
+
 	if config.EnableCaching {
 		agent = workflow.NewCachedAgent(config.Provider)
 	} else {
 		agent = workflow.NewAgent(config.Provider)
 	}
-	
+
 	// Set system prompt if provided
 	if config.SystemPrompt != "" {
 		agent.SetSystemPrompt(config.SystemPrompt)
 	}
-	
+
 	// Set model if provided
 	if config.ModelName != "" {
 		agent.WithModel(config.ModelName)
 	}
-	
+
 	// Add tools
 	for _, tool := range config.Tools {
 		agent.AddTool(tool)
 	}
-	
+
 	// Add hooks
 	for _, hook := range config.Hooks {
 		agent.WithHook(hook)
 	}
-	
+
 	return agent
 }
 
@@ -66,14 +66,14 @@ func CreateStandardTools() []agentDomain.Tool {
 			func() map[string]string {
 				now := time.Now()
 				return map[string]string{
-					"date":              now.Format("2006-01-02"),
-					"time":              now.Format("15:04:05"),
-					"year":              fmt.Sprintf("%d", now.Year()),
-					"month":             now.Month().String(),
-					"day":               fmt.Sprintf("%d", now.Day()),
-					"weekday":           now.Weekday().String(),
-					"timezone":          now.Location().String(),
-					"unix_epoch":        fmt.Sprintf("%d", now.Unix()),
+					"date":       now.Format("2006-01-02"),
+					"time":       now.Format("15:04:05"),
+					"year":       fmt.Sprintf("%d", now.Year()),
+					"month":      now.Month().String(),
+					"day":        fmt.Sprintf("%d", now.Day()),
+					"weekday":    now.Weekday().String(),
+					"timezone":   now.Location().String(),
+					"unix_epoch": fmt.Sprintf("%d", now.Unix()),
 				}
 			},
 			&schemaDomain.Schema{
@@ -81,7 +81,7 @@ func CreateStandardTools() []agentDomain.Tool {
 				Description: "Returns the current date and time information",
 			},
 		),
-		
+
 		// Simple calculator tool
 		tools.NewTool(
 			"calculator",
@@ -108,7 +108,7 @@ func CreateStandardTools() []agentDomain.Tool {
 			},
 		),
 	}
-	
+
 	return standardTools
 }
 
@@ -116,14 +116,14 @@ func CreateStandardTools() []agentDomain.Tool {
 func AgentWithMetrics(provider llmDomain.Provider, systemPrompt string) agentDomain.Agent {
 	// Create a cached agent for better performance
 	agent := workflow.NewCachedAgent(provider)
-	
+
 	// Set the system prompt
 	agent.SetSystemPrompt(systemPrompt)
-	
+
 	// Add a metrics hook
 	metricsHook := workflow.NewMetricsHook()
 	agent.WithHook(metricsHook)
-	
+
 	return agent
 }
 
@@ -136,7 +136,7 @@ func RunWithTimeout(
 	// Create a context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	
+
 	// Run the agent with the timeout context
 	return agent.Run(ctx, prompt)
 }
@@ -148,26 +148,26 @@ func RunWithSchema[T any](
 	timeout time.Duration,
 ) (T, error) {
 	var result T
-	
+
 	// Create a context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	
+
 	// This is a placeholder implementation
 	// In a real implementation, we would generate schema from the type
 	// and convert the result properly
-	
+
 	// Run the agent with a simple schema
 	schema := &schemaDomain.Schema{
-		Type: "object",
+		Type:       "object",
 		Properties: map[string]schemaDomain.Property{},
 	}
-	
+
 	_, err := agent.RunWithSchema(ctx, prompt, schema)
 	if err != nil {
 		return result, err
 	}
-	
+
 	// Placeholder implementation
 	return result, fmt.Errorf("schema generation and conversion not implemented")
 }

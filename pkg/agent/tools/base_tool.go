@@ -238,7 +238,7 @@ func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflec
 	// Skip this check for complex types as the cache may be incomplete
 	canConvert := globalParamCache.canConvert(value.Type(), targetType)
 	_ = canConvert // We use this later for cache updates
-	
+
 	// Note: We continue with conversion attempts regardless of canConvert result,
 	// as the conversion logic below might handle cases not in the cache
 

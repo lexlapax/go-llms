@@ -35,14 +35,14 @@ func TestMetricsHook(t *testing.T) {
 	if metrics.Requests <= 0 {
 		t.Errorf("Expected requests to be greater than 0, got %d", metrics.Requests)
 	}
-	
+
 	// Manually notify the hook of a tool call since we're using a mock provider
 	// and can't guarantee it will call tools in the test
 	metricsHook.NotifyToolCall("testTool", nil)
-	
+
 	// Get updated metrics
 	metrics = metricsHook.GetMetrics()
-	
+
 	if metrics.ToolCalls <= 0 {
 		t.Errorf("Expected tool calls to be greater than 0, got %d", metrics.ToolCalls)
 	}

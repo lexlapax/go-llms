@@ -278,7 +278,7 @@ func TestApplyOptions(t *testing.T) {
 
 	t.Run("Apply HeadersOption", func(t *testing.T) {
 		headers := map[string]string{
-			"X-API-Key": "test-key",
+			"X-API-Key":  "test-key",
 			"User-Agent": "go-llms-test",
 		}
 		option := NewHeadersOption(headers)
@@ -326,33 +326,33 @@ func TestApplyMultipleOptions(t *testing.T) {
 	// Create options
 	customURL := "https://custom-api.example.com"
 	baseURLOption := NewBaseURLOption(customURL)
-	
+
 	customClient := &http.Client{Timeout: 30 * time.Second}
 	clientOption := NewHTTPClientOption(customClient)
-	
+
 	timeoutMS := 5000
 	timeoutOption := NewTimeoutOption(timeoutMS)
-	
+
 	maxRetries := 3
 	retryDelay := 1000
 	retryOption := NewRetryOption(maxRetries, retryDelay)
-	
+
 	headers := map[string]string{
-		"X-API-Key": "test-key",
+		"X-API-Key":  "test-key",
 		"User-Agent": "go-llms-test",
 	}
 	headersOption := NewHeadersOption(headers)
-	
+
 	// Create provider
 	openAIProvider := &mockOpenAIProvider{}
-	
+
 	// Apply all options
 	applyBaseURLOption(baseURLOption, openAIProvider)
 	applyHTTPClientOption(clientOption, openAIProvider)
 	applyTimeoutOption(timeoutOption, openAIProvider)
 	applyRetryOption(retryOption, openAIProvider)
 	applyHeadersOption(headersOption, openAIProvider)
-	
+
 	// Verify all options were applied
 	if openAIProvider.baseURL != customURL {
 		t.Errorf("Expected baseURL to be %s, got %s", customURL, openAIProvider.baseURL)

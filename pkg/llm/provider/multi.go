@@ -17,13 +17,13 @@ import (
 var (
 	// ErrNoProviders is returned when no providers are configured
 	ErrNoProviders = domain.NewProviderError("multi", "all", 0, "no providers configured", domain.ErrInvalidConfiguration)
-	
+
 	// ErrNoSuccessfulCalls is returned when no providers return a successful response
 	ErrNoSuccessfulCalls = domain.NewProviderError("multi", "all", 0, "no successful responses from any providers", domain.ErrRequestFailed)
-	
+
 	// ErrContextCanceled is returned when the operation is canceled due to context cancellation
 	ErrContextCanceled = domain.NewProviderError("multi", "all", 0, "operation canceled due to context cancellation (context.Canceled)", context.Canceled)
-	
+
 	// ErrProviderTimeout is returned when the provider operation times out
 	ErrProviderTimeout = domain.NewProviderError("multi", "all", 0, "provider operation timed out (context.DeadlineExceeded)", domain.ErrTimeout)
 )
@@ -257,7 +257,7 @@ func (mp *MultiProvider) Stream(ctx context.Context, prompt string, options ...d
 
 		// If all providers failed, send an error token with detailed error info
 		errorMessage := NewMultiProviderError(providerErrors, ErrNoSuccessfulCalls.Error()).Error()
-		
+
 		select {
 		case <-ctx.Done():
 		case responseCh <- domain.Token{
@@ -346,7 +346,7 @@ func (mp *MultiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 
 		// If all providers failed, send an error token with detailed error info
 		errorMessage := NewMultiProviderError(providerErrors, ErrNoSuccessfulCalls.Error()).Error()
-		
+
 		select {
 		case <-ctx.Done():
 		case responseCh <- domain.Token{
@@ -593,7 +593,7 @@ func (mp *MultiProvider) selectTextResult(results []fallbackResult) (string, err
 			providerErrors[result.provider] = result.err
 		}
 	}
-	
+
 	// Create and return a unified multi-provider error
 	return "", NewMultiProviderError(providerErrors, ErrNoSuccessfulCalls.Error())
 }
@@ -663,7 +663,7 @@ func (mp *MultiProvider) selectMessageResult(results []fallbackResult) (domain.R
 			providerErrors[result.provider] = result.err
 		}
 	}
-	
+
 	// Create and return a unified multi-provider error
 	return domain.Response{}, NewMultiProviderError(providerErrors, ErrNoSuccessfulCalls.Error())
 }
@@ -803,7 +803,7 @@ func (mp *MultiProvider) selectStructuredResult(results []fallbackResult) (inter
 			providerErrors[result.provider] = result.err
 		}
 	}
-	
+
 	// Create and return a unified multi-provider error
 	return nil, NewMultiProviderError(providerErrors, ErrNoSuccessfulCalls.Error())
 }

@@ -106,12 +106,12 @@ func NewCachedAgent(provider ldomain.Provider) *CachedAgent {
 		cacheConfig:   config,
 		cacheStats:    CacheStats{LastCacheCleanup: time.Now()},
 	}
-	
+
 	// Embed the MultiAgent using pointer semantics
 	agent.DefaultAgent = multiAgent.DefaultAgent
 	agent.multiProviderMetrics = multiAgent.multiProviderMetrics
 	agent.providerContextCache = sync.Map{} // Create a new sync.Map instead of copying
-	
+
 	return agent
 }
 

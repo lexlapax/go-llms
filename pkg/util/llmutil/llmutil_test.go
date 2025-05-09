@@ -140,7 +140,7 @@ func TestCreateProvider(t *testing.T) {
 			os.Unsetenv("OPENAI_API_KEY")
 			os.Unsetenv("ANTHROPIC_API_KEY")
 			os.Unsetenv("GEMINI_API_KEY")
-			
+
 			// Set environment variables for this test
 			for k, v := range tt.envSetup {
 				os.Setenv(k, v)
@@ -258,38 +258,38 @@ func TestGenerateWithRetry(t *testing.T) {
 
 func TestIsRetryableError(t *testing.T) {
 	tests := []struct {
-		name           string
-		err            error
+		name            string
+		err             error
 		expectRetryable bool
 	}{
 		{
-			name:           "nil error",
-			err:            nil,
+			name:            "nil error",
+			err:             nil,
 			expectRetryable: false,
 		},
 		{
-			name:           "network connectivity error",
-			err:            domain.ErrNetworkConnectivity,
+			name:            "network connectivity error",
+			err:             domain.ErrNetworkConnectivity,
 			expectRetryable: true,
 		},
 		{
-			name:           "rate limit error",
-			err:            domain.ErrRateLimitExceeded,
+			name:            "rate limit error",
+			err:             domain.ErrRateLimitExceeded,
 			expectRetryable: true,
 		},
 		{
-			name:           "invalid model parameters error",
-			err:            domain.ErrInvalidModelParameters,
+			name:            "invalid model parameters error",
+			err:             domain.ErrInvalidModelParameters,
 			expectRetryable: false,
 		},
 		{
-			name:           "token quota exceeded error",
-			err:            domain.ErrTokenQuotaExceeded,
+			name:            "token quota exceeded error",
+			err:             domain.ErrTokenQuotaExceeded,
 			expectRetryable: false,
 		},
 		{
-			name:           "other error",
-			err:            errors.New("some other error"),
+			name:            "other error",
+			err:             errors.New("some other error"),
 			expectRetryable: false,
 		},
 	}
@@ -353,13 +353,13 @@ func (m *mockFailingProvider) StreamMessage(ctx context.Context, messages []doma
 // Helper function to create a simple mock response stream
 func makeMockStream(content string) domain.ResponseStream {
 	ch := make(chan domain.Token, 1)
-	
+
 	// Start a goroutine to send the content to the channel
 	go func() {
 		defer close(ch)
 		ch <- domain.Token{Text: content, Finished: true}
 	}()
-	
+
 	return ch
 }
 
@@ -464,6 +464,11 @@ func TestWithProviderOptions(t *testing.T) {
 }
 
 func TestProviderFromEnv(t *testing.T) {
+	// Define variables for provider, name, and model
+	var prov domain.Provider
+	var provName, modelName string
+	var err error
+
 	// Store original environment variables
 	originalOpenAI := os.Getenv("OPENAI_API_KEY")
 	originalAnthropic := os.Getenv("ANTHROPIC_API_KEY")
@@ -502,7 +507,7 @@ func TestProviderFromEnv(t *testing.T) {
 	}
 
 	// Test with no API keys (should return mock provider)
-	prov, provName, modelName, err := ProviderFromEnv()
+	_, provName, _, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -538,7 +543,7 @@ func TestProviderFromEnv(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "test-openai-key")
 	os.Setenv("OPENAI_BASE_URL", "https://custom-openai.example.com")
 	os.Setenv("OPENAI_ORGANIZATION", "test-org")
-	prov, provName, modelName, err = ProviderFromEnv()
+	prov, provName, _, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -561,7 +566,7 @@ func TestProviderFromEnv(t *testing.T) {
 	os.Setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
 	os.Setenv("ANTHROPIC_BASE_URL", "https://custom-anthropic.example.com")
 	os.Setenv("ANTHROPIC_SYSTEM_PROMPT", "Test system prompt")
-	prov, provName, modelName, err = ProviderFromEnv()
+	prov, provName, _, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -584,7 +589,7 @@ func TestProviderFromEnv(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "test-openai-key")
 	os.Setenv("LLM_HTTP_TIMEOUT", "15")
 	os.Setenv("LLM_RETRY_ATTEMPTS", "3")
-	prov, provName, modelName, err = ProviderFromEnv()
+	prov, provName, _, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}

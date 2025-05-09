@@ -21,12 +21,12 @@ const (
 
 // GeminiProvider implements the Provider interface for Google Gemini
 type GeminiProvider struct {
-	apiKey        string
-	model         string
-	baseURL       string
-	httpClient    *http.Client
-	messageCache  *MessageCache
-	topK          int
+	apiKey         string
+	model          string
+	baseURL        string
+	httpClient     *http.Client
+	messageCache   *MessageCache
+	topK           int
 	safetySettings []map[string]interface{}
 }
 
@@ -39,12 +39,12 @@ func NewGeminiProvider(apiKey, model string, options ...domain.ProviderOption) *
 	}
 
 	provider := &GeminiProvider{
-		apiKey:        apiKey,
-		model:         model,
-		baseURL:       defaultGeminiBaseURL,
-		httpClient:    http.DefaultClient,
-		messageCache:  NewMessageCache(),
-		topK:          40, // Default topK value
+		apiKey:         apiKey,
+		model:          model,
+		baseURL:        defaultGeminiBaseURL,
+		httpClient:     http.DefaultClient,
+		messageCache:   NewMessageCache(),
+		topK:           40, // Default topK value
 		safetySettings: nil,
 	}
 
@@ -94,7 +94,7 @@ func (p *GeminiProvider) ConvertMessagesToGeminiFormat(messages []domain.Message
 	for _, msg := range messages {
 		// Create a message object
 		message := make(map[string]interface{})
-		
+
 		// Map our roles to Gemini roles
 		// Gemini API uses "user" and "model" roles
 		var role string
@@ -111,23 +111,23 @@ func (p *GeminiProvider) ConvertMessagesToGeminiFormat(messages []domain.Message
 		default:
 			role = "user" // Default to user for unknown roles
 		}
-		
+
 		message["role"] = role
-		
+
 		// Create a parts array with the text content
 		parts := []map[string]interface{}{
 			{
 				"text": msg.Content,
 			},
 		}
-		
+
 		message["parts"] = parts
 		contents = append(contents, message)
 	}
 
 	// Cache the result
 	p.messageCache.Set(cacheKey, contents)
-	
+
 	return contents
 }
 
@@ -171,7 +171,7 @@ func (p *GeminiProvider) buildGeminiRequestBody(
 	}
 
 	// Add safety settings if configured
-	if p.safetySettings != nil && len(p.safetySettings) > 0 {
+	if len(p.safetySettings) > 0 {
 		requestBody["safetySettings"] = p.safetySettings
 	}
 
@@ -266,7 +266,7 @@ func (p *GeminiProvider) GenerateMessage(ctx context.Context, messages []domain.
 			FinishReason string `json:"finishReason"`
 		} `json:"candidates"`
 		PromptFeedback struct {
-			BlockReason string `json:"blockReason"`
+			BlockReason   string `json:"blockReason"`
 			SafetyRatings []struct {
 				Category    string `json:"category"`
 				Probability string `json:"probability"`
@@ -310,25 +310,25 @@ func (p *GeminiProvider) GenerateMessage(ctx context.Context, messages []domain.
 func (p *GeminiProvider) GenerateWithSchema(ctx context.Context, prompt string, schema *schemaDomain.Schema, options ...domain.Option) (interface{}, error) {
 	// Build a prompt that includes the schema
 	enhancedPrompt := enhancePromptWithGeminiSchema(prompt, schema)
-	
+
 	// Generate response
 	response, err := p.Generate(ctx, enhancedPrompt, options...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate response: %w", err)
 	}
-	
+
 	// Try to extract JSON from the response using optimized extractor
 	jsonStr := processor.ExtractJSON(response)
 	if jsonStr == "" {
 		return nil, fmt.Errorf("response does not contain valid JSON")
 	}
-	
+
 	// Parse the JSON into a map - use optimized JSON unmarshaling
 	var result interface{}
 	if err := json.UnmarshalFromString(jsonStr, &result); err != nil {
 		return nil, fmt.Errorf("failed to parse response JSON: %w", err)
 	}
-	
+
 	return result, nil
 }
 
@@ -383,7 +383,7 @@ func (p *GeminiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		
+
 		// Extract error information
 		var errorResponse struct {
 			Error struct {
@@ -410,7 +410,7 @@ func (p *GeminiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 	go func() {
 		defer resp.Body.Close()
 		defer close(tokenCh)
-		
+
 		scanner := bufio.NewScanner(resp.Body)
 		for scanner.Scan() {
 			// Check if context is canceled
@@ -433,7 +433,7 @@ func (p *GeminiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 			if data == "" {
 				continue
 			}
-			
+
 			// Handle special case for end of stream marker if present
 			if data == "[DONE]" {
 				select {
@@ -512,58 +512,58 @@ func mapGeminiErrorToStandard(statusCode int, errorType, errorMsg string, operat
 	// Convert error message and type to lowercase for case-insensitive matching
 	lowerErrorMsg := strings.ToLower(errorMsg)
 	lowerErrorType := strings.ToLower(errorType)
-	
+
 	// Common error patterns for Gemini
 	switch {
-	case statusCode == http.StatusUnauthorized || 
-		 strings.Contains(lowerErrorType, "authentication") || 
-		 strings.Contains(lowerErrorMsg, "api key") ||
-		 strings.Contains(lowerErrorMsg, "unauthorized"):
+	case statusCode == http.StatusUnauthorized ||
+		strings.Contains(lowerErrorType, "authentication") ||
+		strings.Contains(lowerErrorMsg, "api key") ||
+		strings.Contains(lowerErrorMsg, "unauthorized"):
 		return domain.NewProviderError("gemini", operation, statusCode, errorMsg, domain.ErrAuthenticationFailed)
-		
-	case statusCode == http.StatusTooManyRequests || 
-		 strings.Contains(lowerErrorType, "rate_limit") || 
-		 strings.Contains(lowerErrorMsg, "rate limit"):
+
+	case statusCode == http.StatusTooManyRequests ||
+		strings.Contains(lowerErrorType, "rate_limit") ||
+		strings.Contains(lowerErrorMsg, "rate limit"):
 		return domain.NewProviderError("gemini", operation, statusCode, errorMsg, domain.ErrRateLimitExceeded)
-		
+
 	case strings.Contains(lowerErrorType, "invalid_argument") ||
-		 strings.Contains(lowerErrorMsg, "token") || 
-		 strings.Contains(lowerErrorMsg, "context length") || 
-		 strings.Contains(lowerErrorMsg, "too long"):
+		strings.Contains(lowerErrorMsg, "token") ||
+		strings.Contains(lowerErrorMsg, "context length") ||
+		strings.Contains(lowerErrorMsg, "too long"):
 		return domain.NewProviderError("gemini", operation, statusCode, errorMsg, domain.ErrContextTooLong)
-		
+
 	case strings.Contains(lowerErrorType, "permissions_denied") ||
-		 strings.Contains(lowerErrorMsg, "content filtered") || 
-		 strings.Contains(lowerErrorMsg, "content policy") ||
-		 strings.Contains(lowerErrorMsg, "safety"):
+		strings.Contains(lowerErrorMsg, "content filtered") ||
+		strings.Contains(lowerErrorMsg, "content policy") ||
+		strings.Contains(lowerErrorMsg, "safety"):
 		return domain.NewProviderError("gemini", operation, statusCode, errorMsg, domain.ErrContentFiltered)
-		
-	case strings.Contains(lowerErrorType, "not_found") || 
-		 strings.Contains(lowerErrorMsg, "model not found"):
+
+	case strings.Contains(lowerErrorType, "not_found") ||
+		strings.Contains(lowerErrorMsg, "model not found"):
 		return domain.NewProviderError("gemini", operation, statusCode, errorMsg, domain.ErrModelNotFound)
-		
-	case strings.Contains(lowerErrorType, "resource_exhausted") || 
-		 strings.Contains(lowerErrorMsg, "quota") || 
-		 strings.Contains(lowerErrorMsg, "billing") || 
-		 strings.Contains(lowerErrorMsg, "payment"):
+
+	case strings.Contains(lowerErrorType, "resource_exhausted") ||
+		strings.Contains(lowerErrorMsg, "quota") ||
+		strings.Contains(lowerErrorMsg, "billing") ||
+		strings.Contains(lowerErrorMsg, "payment"):
 		return domain.NewProviderError("gemini", operation, statusCode, errorMsg, domain.ErrTokenQuotaExceeded)
-		
-	case strings.Contains(lowerErrorType, "invalid") || 
-		 strings.Contains(lowerErrorMsg, "invalid parameter") || 
-		 strings.Contains(lowerErrorMsg, "invalid request"):
+
+	case strings.Contains(lowerErrorType, "invalid") ||
+		strings.Contains(lowerErrorMsg, "invalid parameter") ||
+		strings.Contains(lowerErrorMsg, "invalid request"):
 		return domain.NewProviderError("gemini", operation, statusCode, errorMsg, domain.ErrInvalidModelParameters)
-		
-	case statusCode == http.StatusServiceUnavailable || 
-		 statusCode == http.StatusBadGateway || 
-		 statusCode == http.StatusGatewayTimeout || 
-		 strings.Contains(lowerErrorMsg, "network") || 
-		 strings.Contains(lowerErrorMsg, "connection") || 
-		 strings.Contains(lowerErrorType, "connection"):
+
+	case statusCode == http.StatusServiceUnavailable ||
+		statusCode == http.StatusBadGateway ||
+		statusCode == http.StatusGatewayTimeout ||
+		strings.Contains(lowerErrorMsg, "network") ||
+		strings.Contains(lowerErrorMsg, "connection") ||
+		strings.Contains(lowerErrorType, "connection"):
 		return domain.NewProviderError("gemini", operation, statusCode, errorMsg, domain.ErrNetworkConnectivity)
-		
+
 	case statusCode >= 500:
 		return domain.NewProviderError("gemini", operation, statusCode, errorMsg, domain.ErrProviderUnavailable)
-		
+
 	default:
 		return domain.NewProviderError("gemini", operation, statusCode, errorMsg, domain.ErrRequestFailed)
 	}
@@ -574,26 +574,26 @@ func enhancePromptWithGeminiSchema(prompt string, schema *schemaDomain.Schema) s
 	// Reuse buffer for schema JSON - reduces allocations
 	var schemaBuffer bytes.Buffer
 	schemaBuffer.Grow(1024) // Pre-allocate reasonable buffer size for most schemas
-	
+
 	// Use optimized JSON marshaling with indentation
 	err := json.MarshalIndentWithBuffer(schema, &schemaBuffer, "", "  ")
 	if err != nil {
 		// If we can't marshal the schema, just return the original prompt
 		return prompt
 	}
-	
+
 	// Build enhanced prompt
 	// Estimate the size to pre-allocate the final string builder
 	totalSize := len(prompt) + schemaBuffer.Len() + 200 // 200 for the template text
-	
+
 	var promptBuilder strings.Builder
 	promptBuilder.Grow(totalSize)
-	
+
 	promptBuilder.WriteString(prompt)
 	promptBuilder.WriteString("\n\nYou are to provide a JSON response that conforms to the following JSON schema.")
 	promptBuilder.WriteString("\nRespond ONLY with valid JSON that matches this schema:\n\n")
 	promptBuilder.Write(schemaBuffer.Bytes())
 	promptBuilder.WriteString("\n\nYour response must be valid JSON only, with no explanations, markdown code blocks, or any other text.")
-	
+
 	return promptBuilder.String()
 }

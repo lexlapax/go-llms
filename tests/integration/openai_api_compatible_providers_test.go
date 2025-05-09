@@ -41,9 +41,9 @@ func TestOpenAIAPICompatibleProvidersIntegration(t *testing.T) {
 			baseURLOption := domain.NewBaseURLOption("https://openrouter.ai/api")
 			httpClientOption := domain.NewHTTPClientOption(httpClient)
 			headersOption := domain.NewHeadersOption(map[string]string{
-				"HTTP-Referer":    "https://github.com/lexlapax/go-llms", // OpenRouter attribution
-				"X-Title":         "Go-LLMs Test",                        // Additional OpenRouter headers
-				"Content-Type":    "application/json",
+				"HTTP-Referer": "https://github.com/lexlapax/go-llms", // OpenRouter attribution
+				"X-Title":      "Go-LLMs Test",                        // Additional OpenRouter headers
+				"Content-Type": "application/json",
 			})
 
 			// Create the provider with multiple options
@@ -59,7 +59,7 @@ func TestOpenAIAPICompatibleProvidersIntegration(t *testing.T) {
 			messages := []domain.Message{
 				{Role: domain.RoleUser, Content: "What is the capital of France?"},
 			}
-			
+
 			resp, err := openRouterProvider.GenerateMessage(
 				context.Background(),
 				messages,
@@ -98,7 +98,7 @@ func TestOpenAIAPICompatibleProvidersIntegration(t *testing.T) {
 			messages := []domain.Message{
 				{Role: domain.RoleUser, Content: "What is the capital of France?"},
 			}
-			
+
 			resp, err := openRouterProvider.GenerateMessage(
 				context.Background(),
 				messages,

@@ -16,11 +16,11 @@ import (
 
 // ModelConfig represents a configuration for an LLM model
 type ModelConfig struct {
-	Provider  string                 // Provider identifier (e.g., "openai", "anthropic")
-	Model     string                 // Model name
-	APIKey    string                 // API key
-	BaseURL   string                 // Optional base URL override
-	MaxTokens int                    // Optional max tokens override
+	Provider  string                  // Provider identifier (e.g., "openai", "anthropic")
+	Model     string                  // Model name
+	APIKey    string                  // API key
+	BaseURL   string                  // Optional base URL override
+	MaxTokens int                     // Optional max tokens override
 	Options   []domain.ProviderOption // Optional provider-specific options
 }
 
@@ -71,7 +71,7 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 	}
 
 	// If no options provided in config, try to get them from environment
-	if config.Options == nil || len(config.Options) == 0 {
+	if len(config.Options) == 0 {
 		envOptions := GetProviderOptionsFromEnv(config.Provider)
 		options = append(options, envOptions...)
 	}
@@ -148,7 +148,7 @@ func BatchGenerate(ctx context.Context, provider domain.Provider, prompts []stri
 	results := make([]string, len(prompts))
 	errors := make([]error, len(prompts))
 	var wg sync.WaitGroup
-	
+
 	for i, prompt := range prompts {
 		wg.Add(1)
 		go func(idx int, p string) {
@@ -158,7 +158,7 @@ func BatchGenerate(ctx context.Context, provider domain.Provider, prompts []stri
 			errors[idx] = err
 		}(i, prompt)
 	}
-	
+
 	wg.Wait()
 	return results, errors
 }
@@ -166,21 +166,21 @@ func BatchGenerate(ctx context.Context, provider domain.Provider, prompts []stri
 // GenerateWithRetry attempts generation with automatic retries
 func GenerateWithRetry(ctx context.Context, provider domain.Provider, prompt string, maxRetries int, options ...domain.Option) (string, error) {
 	var lastErr error
-	
+
 	for i := 0; i < maxRetries; i++ {
 		result, err := provider.Generate(ctx, prompt, options...)
 		if err == nil {
 			return result, nil
 		}
-		
+
 		// Check if this is a retryable error
 		if !IsRetryableError(err) {
 			return "", err
 		}
-		
+
 		lastErr = err
 	}
-	
+
 	return "", fmt.Errorf("max retries reached: %w", lastErr)
 }
 
@@ -189,54 +189,54 @@ func IsRetryableError(err error) bool {
 	if err == nil {
 		return false
 	}
-	
+
 	// Network connectivity errors are retryable
 	if domain.IsNetworkConnectivityError(err) {
 		return true
 	}
-	
+
 	// Rate limit errors are retryable
 	if domain.IsRateLimitError(err) {
 		return true
 	}
-	
+
 	// Other errors are not retryable
 	return false
 }
 
 // ProcessTypedWithProvider is a convenience function to generate and process structured output in one step
 func ProcessTypedWithProvider[T any](
-	ctx context.Context, 
+	ctx context.Context,
 	provider domain.Provider,
-	prompt string, 
+	prompt string,
 	target *T,
 	options ...domain.Option,
 ) error {
 	// Create a processor with a validator
 	validator := validation.NewValidator()
 	proc := processor.NewStructuredProcessor(validator)
-	
+
 	// In a real implementation, we would generate schema from the type
 	// For now, use reflection.GenerateSchema which exists in the codebase
-	
+
 	// Create a simple schema for demonstration purposes
 	schema := &schemaDomain.Schema{
-		Type: "object",
+		Type:       "object",
 		Properties: map[string]schemaDomain.Property{},
 	}
-	
+
 	// Generate with schema
 	result, err := provider.GenerateWithSchema(ctx, prompt, schema, options...)
 	if err != nil {
 		return fmt.Errorf("generation failed: %w", err)
 	}
-	
+
 	// Convert result to target type using the processor
 	resultStr, err := json.Marshal(result)
 	if err != nil {
 		return fmt.Errorf("failed to marshal result: %w", err)
 	}
-	
+
 	return proc.ProcessTyped(schema, string(resultStr), target)
 }
 
@@ -252,7 +252,7 @@ func GenerateWithOptions(
 		domain.WithTemperature(temperature),
 		domain.WithMaxTokens(maxTokens),
 	}
-	
+
 	return provider.Generate(ctx, prompt, options...)
 }
 
@@ -266,7 +266,7 @@ func ConcurrentStreamMessages(
 	streams := make([]domain.ResponseStream, len(messageGroups))
 	errors := make([]error, len(messageGroups))
 	var wg sync.WaitGroup
-	
+
 	for i, messages := range messageGroups {
 		wg.Add(1)
 		go func(idx int, msgs []domain.Message) {
@@ -276,7 +276,7 @@ func ConcurrentStreamMessages(
 			errors[idx] = err
 		}(i, messages)
 	}
-	
+
 	wg.Wait()
 	return streams, errors
 }

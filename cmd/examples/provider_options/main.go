@@ -68,7 +68,7 @@ func demoCommonOptions(ctx context.Context, openAIKey, anthropicKey, geminiKey s
 	if openAIKey != "" {
 		fmt.Println("\nCreating OpenAI provider with common options...")
 		openaiProvider := provider.NewOpenAIProvider(openAIKey, "gpt-4o", httpClientOption, headersOption)
-		
+
 		// Use the provider
 		response, err := openaiProvider.Generate(ctx, "Say hello!")
 		if err != nil {
@@ -81,7 +81,7 @@ func demoCommonOptions(ctx context.Context, openAIKey, anthropicKey, geminiKey s
 	if anthropicKey != "" {
 		fmt.Println("\nCreating Anthropic provider with common options...")
 		anthropicProvider := provider.NewAnthropicProvider(anthropicKey, "claude-3-5-sonnet-latest", httpClientOption, headersOption)
-		
+
 		// Use the provider
 		response, err := anthropicProvider.Generate(ctx, "Say hello!")
 		if err != nil {
@@ -94,7 +94,7 @@ func demoCommonOptions(ctx context.Context, openAIKey, anthropicKey, geminiKey s
 	if geminiKey != "" {
 		fmt.Println("\nCreating Gemini provider with common options...")
 		geminiProvider := provider.NewGeminiProvider(geminiKey, "gemini-2.0-flash-lite", httpClientOption, headersOption)
-		
+
 		// Use the provider
 		response, err := geminiProvider.Generate(ctx, "Say hello!")
 		if err != nil {
@@ -115,7 +115,7 @@ func demoProviderSpecificOptions(ctx context.Context, openAIKey, anthropicKey, g
 
 		// Usually you would use your actual org ID
 		orgOption := domain.NewOpenAIOrganizationOption("org-demo")
-		
+
 		// Discourage the token for newline
 		logitBiasOption := domain.NewOpenAILogitBiasOption(map[string]float64{
 			"50256": -100,
@@ -123,7 +123,7 @@ func demoProviderSpecificOptions(ctx context.Context, openAIKey, anthropicKey, g
 
 		// Create the provider with specific options
 		openaiProvider := provider.NewOpenAIProvider(openAIKey, "gpt-4o", orgOption, logitBiasOption)
-		
+
 		// Use the provider
 		response, err := openaiProvider.Generate(ctx, "Say hello in one word!")
 		if err != nil {
@@ -141,16 +141,16 @@ func demoProviderSpecificOptions(ctx context.Context, openAIKey, anthropicKey, g
 
 		systemPromptOption := domain.NewAnthropicSystemPromptOption(
 			"You are a helpful assistant who speaks in a very concise way.")
-		
+
 		metadataOption := domain.NewAnthropicMetadataOption(map[string]string{
 			"user_id":    "user123",
 			"session_id": "session456",
 		})
 
 		// Create the provider with specific options
-		anthropicProvider := provider.NewAnthropicProvider(anthropicKey, "claude-3-5-sonnet-latest", 
+		anthropicProvider := provider.NewAnthropicProvider(anthropicKey, "claude-3-5-sonnet-latest",
 			systemPromptOption, metadataOption)
-		
+
 		// Use the provider
 		response, err := anthropicProvider.Generate(ctx, "Say hello!")
 		if err != nil {
@@ -168,7 +168,7 @@ func demoProviderSpecificOptions(ctx context.Context, openAIKey, anthropicKey, g
 
 		// Generation config with topK
 		generationConfigOption := domain.NewGeminiGenerationConfigOption().WithTopK(20)
-		
+
 		// Safety settings option
 		safetySettings := []map[string]interface{}{
 			{
@@ -179,9 +179,9 @@ func demoProviderSpecificOptions(ctx context.Context, openAIKey, anthropicKey, g
 		safetySettingsOption := domain.NewGeminiSafetySettingsOption(safetySettings)
 
 		// Create the provider with specific options
-		geminiProvider := provider.NewGeminiProvider(geminiKey, "gemini-2.0-flash-lite", 
+		geminiProvider := provider.NewGeminiProvider(geminiKey, "gemini-2.0-flash-lite",
 			generationConfigOption, safetySettingsOption)
-		
+
 		// Use the provider
 		response, err := geminiProvider.Generate(ctx, "Say hello!")
 		if err != nil {

@@ -40,14 +40,14 @@ func NewOpenAIProvider(apiKey, model string, options ...domain.ProviderOption) *
 		httpClient:   http.DefaultClient,
 		messageCache: NewMessageCache(),
 	}
-	
+
 	for _, option := range options {
 		// Check if the option is compatible with OpenAI
 		if openAIOption, ok := option.(domain.OpenAIOption); ok {
 			openAIOption.ApplyToOpenAI(provider)
 		}
 	}
-	
+
 	return provider
 }
 
@@ -207,9 +207,9 @@ func (p *OpenAIProvider) buildOpenAIRequestBody(
 	if options.PresencePenalty != 0 {
 		requestBody["presence_penalty"] = options.PresencePenalty
 	}
-	
+
 	// Add logit bias if provided
-	if p.logitBias != nil && len(p.logitBias) > 0 {
+	if len(p.logitBias) > 0 {
 		requestBody["logit_bias"] = p.logitBias
 	}
 
@@ -247,7 +247,7 @@ func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.apiKey))
-	
+
 	// Set organization header if provided
 	if p.organization != "" {
 		req.Header.Set("OpenAI-Organization", p.organization)
@@ -363,7 +363,7 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.apiKey))
 	req.Header.Set("Accept", "text/event-stream")
-	
+
 	// Set organization header if provided
 	if p.organization != "" {
 		req.Header.Set("OpenAI-Organization", p.organization)

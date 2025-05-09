@@ -125,7 +125,7 @@ Blockchain has applications beyond cryptocurrencies, including supply chain mana
 		b.Run("SimilarityConsensus_Short_"+fmt.Sprintf("%.1f", threshold), func(b *testing.B) {
 			// Reset similarity cache for consistent benchmarking
 			provider.ResetSimilarityCache()
-			
+
 			for i := 0; i < b.N; i++ {
 				_, _ = provider.PublicSelectSimilarityConsensus(shortResponses, threshold)
 			}
@@ -134,7 +134,7 @@ Blockchain has applications beyond cryptocurrencies, including supply chain mana
 		b.Run("SimilarityConsensus_Medium_"+fmt.Sprintf("%.1f", threshold), func(b *testing.B) {
 			// Reset similarity cache for consistent benchmarking
 			provider.ResetSimilarityCache()
-			
+
 			for i := 0; i < b.N; i++ {
 				_, _ = provider.PublicSelectSimilarityConsensus(mediumResponses, threshold)
 			}
@@ -143,7 +143,7 @@ Blockchain has applications beyond cryptocurrencies, including supply chain mana
 		b.Run("SimilarityConsensus_Long_"+fmt.Sprintf("%.1f", threshold), func(b *testing.B) {
 			// Reset similarity cache for consistent benchmarking
 			provider.ResetSimilarityCache()
-			
+
 			for i := 0; i < b.N; i++ {
 				_, _ = provider.PublicSelectSimilarityConsensus(longResponses, threshold)
 			}
@@ -154,10 +154,10 @@ Blockchain has applications beyond cryptocurrencies, including supply chain mana
 	b.Run("SimilarityConsensus_WithCache", func(b *testing.B) {
 		// Reset cache initially
 		provider.ResetSimilarityCache()
-		
+
 		// Pre-warm the cache with one call
 		_, _ = provider.PublicSelectSimilarityConsensus(mediumResponses, 0.7)
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, _ = provider.PublicSelectSimilarityConsensus(mediumResponses, 0.7)
@@ -172,7 +172,7 @@ Blockchain has applications beyond cryptocurrencies, including supply chain mana
 		for i := range equalWeightResponses {
 			equalWeightResponses[i].Weight = 1.0
 		}
-		
+
 		for i := 0; i < b.N; i++ {
 			_, _ = provider.PublicSelectWeightedConsensus(equalWeightResponses)
 		}
@@ -188,10 +188,10 @@ Blockchain has applications beyond cryptocurrencies, including supply chain mana
 	b.Run("SimilarityCalculation_Short", func(b *testing.B) {
 		// Reset similarity cache
 		provider.ResetSimilarityCache()
-		
+
 		text1 := shortResponses[0].Content
 		text2 := shortResponses[1].Content
-		
+
 		for i := 0; i < b.N; i++ {
 			_ = provider.PublicCalculateSimilarity(text1, text2)
 		}
@@ -200,10 +200,10 @@ Blockchain has applications beyond cryptocurrencies, including supply chain mana
 	b.Run("SimilarityCalculation_Medium", func(b *testing.B) {
 		// Reset similarity cache
 		provider.ResetSimilarityCache()
-		
+
 		text1 := mediumResponses[0].Content
 		text2 := mediumResponses[1].Content
-		
+
 		for i := 0; i < b.N; i++ {
 			_ = provider.PublicCalculateSimilarity(text1, text2)
 		}
@@ -212,10 +212,10 @@ Blockchain has applications beyond cryptocurrencies, including supply chain mana
 	b.Run("SimilarityCalculation_Long", func(b *testing.B) {
 		// Reset similarity cache
 		provider.ResetSimilarityCache()
-		
+
 		text1 := longResponses[0].Content
 		text2 := longResponses[1].Content
-		
+
 		for i := 0; i < b.N; i++ {
 			_ = provider.PublicCalculateSimilarity(text1, text2)
 		}
@@ -225,13 +225,13 @@ Blockchain has applications beyond cryptocurrencies, including supply chain mana
 	b.Run("SimilarityCalculation_Cached", func(b *testing.B) {
 		// Reset cache initially
 		provider.ResetSimilarityCache()
-		
+
 		text1 := mediumResponses[0].Content
 		text2 := mediumResponses[1].Content
-		
+
 		// Pre-warm the cache
 		_ = provider.PublicCalculateSimilarity(text1, text2)
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_ = provider.PublicCalculateSimilarity(text1, text2)
@@ -246,7 +246,7 @@ Blockchain has applications beyond cryptocurrencies, including supply chain mana
 			shortResponses[1],
 			shortResponses[2],
 		}
-		
+
 		for i := 0; i < b.N; i++ {
 			_ = provider.PublicSelectBestFromGroup(group)
 		}
@@ -370,7 +370,7 @@ func BenchmarkStructuredConsensus(b *testing.B) {
 		provider.ResetSimilarityCache()
 		json1 := complexStructured[0].Content
 		json2 := complexStructured[1].Content
-		
+
 		for i := 0; i < b.N; i++ {
 			_ = provider.PublicCalculateSimilarity(json1, json2)
 		}
@@ -392,29 +392,29 @@ func BenchmarkConcurrentConsensus(b *testing.B) {
 	// Test similarity consensus in parallel
 	b.Run("ConcurrentSimilarityConsensus", func(b *testing.B) {
 		provider.ResetSimilarityCache()
-		
+
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				_, _ = provider.PublicSelectSimilarityConsensus(responses, 0.7)
 			}
 		})
 	})
-	
+
 	// Test majority consensus in parallel
 	b.Run("ConcurrentMajorityConsensus", func(b *testing.B) {
 		provider.ResetSimilarityCache()
-		
+
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				_, _ = provider.PublicSelectMajorityConsensus(responses)
 			}
 		})
 	})
-	
+
 	// Test weighted consensus in parallel
 	b.Run("ConcurrentWeightedConsensus", func(b *testing.B) {
 		provider.ResetSimilarityCache()
-		
+
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				_, _ = provider.PublicSelectWeightedConsensus(responses)
@@ -425,10 +425,10 @@ func BenchmarkConcurrentConsensus(b *testing.B) {
 	// Test concurrent access to similarity calculation
 	b.Run("ConcurrentSimilarityCalculation", func(b *testing.B) {
 		provider.ResetSimilarityCache()
-		
+
 		text1 := responses[0].Content
 		text2 := responses[1].Content
-		
+
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				_ = provider.PublicCalculateSimilarity(text1, text2)

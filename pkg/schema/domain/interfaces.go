@@ -9,15 +9,15 @@ type Schema struct {
 	AdditionalProperties *bool               `json:"additionalProperties,omitempty"`
 	Description          string              `json:"description,omitempty"`
 	Title                string              `json:"title,omitempty"`
-	
+
 	// Conditional validation
-	If                  *Schema             `json:"if,omitempty"`
-	Then                *Schema             `json:"then,omitempty"`
-	Else                *Schema             `json:"else,omitempty"`
-	AllOf               []*Schema           `json:"allOf,omitempty"`
-	AnyOf               []*Schema           `json:"anyOf,omitempty"`
-	OneOf               []*Schema           `json:"oneOf,omitempty"`
-	Not                 *Schema             `json:"not,omitempty"`
+	If    *Schema   `json:"if,omitempty"`
+	Then  *Schema   `json:"then,omitempty"`
+	Else  *Schema   `json:"else,omitempty"`
+	AllOf []*Schema `json:"allOf,omitempty"`
+	AnyOf []*Schema `json:"anyOf,omitempty"`
+	OneOf []*Schema `json:"oneOf,omitempty"`
+	Not   *Schema   `json:"not,omitempty"`
 }
 
 // Property represents a property in a schema

@@ -5,18 +5,18 @@ import (
 	"fmt"
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
-	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 	"github.com/lexlapax/go-llms/pkg/schema/adapter/reflection"
+	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 	"github.com/lexlapax/go-llms/pkg/schema/validation"
 	"github.com/lexlapax/go-llms/pkg/structured/processor"
 )
 
 // StructuredResponse is a convenient wrapper for structured output operations
 type StructuredResponse[T any] struct {
-	Data    T         // The typed result
+	Data    T                    // The typed result
 	Schema  *schemaDomain.Schema // The schema used for validation
-	Raw     string    // The raw response from the LLM
-	Metrics Metrics   // Performance metrics
+	Raw     string               // The raw response from the LLM
+	Metrics Metrics              // Performance metrics
 }
 
 // Metrics captures performance metrics for structured generation
@@ -139,8 +139,8 @@ func SanitizeStructuredOutput[T any](data T) (T, error) {
 // ExtractField extracts a specific field from a structured response
 func ExtractField[T any, F any](data T, fieldName string) (F, error) {
 	var empty F
-	
-	// This is a placeholder - in a real implementation, 
+
+	// This is a placeholder - in a real implementation,
 	// we would use reflection to extract the field from the struct
 	// For now, we'll return an error
 	return empty, fmt.Errorf("field extraction not implemented")

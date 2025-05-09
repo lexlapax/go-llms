@@ -24,10 +24,10 @@ type Validator struct {
 
 	// validationResultPool provides reusable validation results
 	validationResultPool sync.Pool
-	
+
 	// enableCoercion controls whether the validator attempts to coerce values to the expected type
 	enableCoercion bool
-	
+
 	// enableCustomValidation controls whether the validator supports custom validation functions
 	enableCustomValidation bool
 }
@@ -53,15 +53,15 @@ func NewValidator(options ...func(*Validator)) *Validator {
 				}
 			},
 		},
-		enableCoercion: false, // Disabled by default for backward compatibility
+		enableCoercion:         false, // Disabled by default for backward compatibility
 		enableCustomValidation: false, // Disabled by default for backward compatibility
 	}
-	
+
 	// Apply options
 	for _, option := range options {
 		option(v)
 	}
-	
+
 	return v
 }
 
@@ -125,7 +125,7 @@ func (v *Validator) validateValue(path string, schema *domain.Schema, data inter
 	if schema == nil {
 		return errors
 	}
-	
+
 	// Process conditional validation first
 	errors = v.validateConditional(path, schema, data, errors)
 
@@ -183,10 +183,10 @@ func (v *Validator) validateConditional(path string, schema *domain.Schema, data
 		// Create a copy of errors to check if If schema validation produces errors
 		ifErrors := make([]string, len(errors))
 		copy(ifErrors, errors)
-		
+
 		// Validate against If schema
 		ifErrors = v.validateValue(path, schema.If, data, ifErrors)
-		
+
 		// If If schema is valid (no new errors were added), apply Then schema
 		if len(ifErrors) == len(errors) && schema.Then != nil {
 			errors = v.validateValue(path, schema.Then, data, errors)
@@ -197,32 +197,32 @@ func (v *Validator) validateConditional(path string, schema *domain.Schema, data
 	}
 
 	// AllOf validation - data must be valid against all schemas
-	if schema.AllOf != nil && len(schema.AllOf) > 0 {
+	if len(schema.AllOf) > 0 {
 		for _, subSchema := range schema.AllOf {
 			errors = v.validateValue(path, subSchema, data, errors)
 		}
 	}
 
 	// AnyOf validation - data must be valid against at least one schema
-	if schema.AnyOf != nil && len(schema.AnyOf) > 0 {
+	if len(schema.AnyOf) > 0 {
 		validAgainstAny := false
-		
+
 		// Try all schemas
 		for _, subSchema := range schema.AnyOf {
 			// Make a copy of errors for this schema
 			subErrors := make([]string, len(errors))
 			copy(subErrors, errors)
-			
+
 			// Validate against this schema
 			subErrors = v.validateValue(path, subSchema, data, subErrors)
-			
+
 			// If no new errors were added, this schema validated
 			if len(subErrors) == len(errors) {
 				validAgainstAny = true
 				break
 			}
 		}
-		
+
 		// If not valid against any schema, add a general error
 		if !validAgainstAny {
 			displayPath := path
@@ -234,24 +234,24 @@ func (v *Validator) validateConditional(path string, schema *domain.Schema, data
 	}
 
 	// OneOf validation - data must be valid against exactly one schema
-	if schema.OneOf != nil && len(schema.OneOf) > 0 {
+	if len(schema.OneOf) > 0 {
 		validSchemaCount := 0
-		
+
 		// Try all schemas
 		for _, subSchema := range schema.OneOf {
 			// Make a copy of errors for this schema
 			subErrors := make([]string, len(errors))
 			copy(subErrors, errors)
-			
+
 			// Validate against this schema
 			subErrors = v.validateValue(path, subSchema, data, subErrors)
-			
+
 			// If no new errors were added, this schema validated
 			if len(subErrors) == len(errors) {
 				validSchemaCount++
 			}
 		}
-		
+
 		// Must be valid against exactly one schema
 		if validSchemaCount != 1 {
 			displayPath := path
@@ -271,10 +271,10 @@ func (v *Validator) validateConditional(path string, schema *domain.Schema, data
 		// Make a copy of errors for Not schema
 		notErrors := make([]string, len(errors))
 		copy(notErrors, errors)
-		
+
 		// Validate against Not schema
 		notErrors = v.validateValue(path, schema.Not, data, notErrors)
-		
+
 		// If no new errors were added, the Not schema validated, which is wrong
 		if len(notErrors) == len(errors) {
 			displayPath := path
@@ -328,7 +328,7 @@ func (v *Validator) isCorrectType(expectedType string, value interface{}) bool {
 	return false
 }
 
-// Note: The validateType function has been replaced by isCorrectType 
+// Note: The validateType function has been replaced by isCorrectType
 // and direct type validation in validateValue
 
 // validateObject validates an object against a schema
@@ -340,7 +340,7 @@ func (v *Validator) validateObject(path string, schema *domain.Schema, data inte
 			data = coercedObj
 		}
 	}
-	
+
 	obj, ok := data.(map[string]interface{})
 	if !ok {
 		// This should never happen as we already validated the type
@@ -395,7 +395,7 @@ func (v *Validator) validateObject(path string, schema *domain.Schema, data inte
 
 				// Validate the property value
 				errors = v.validateValue(propPath, subSchema, value, errors)
-				
+
 				// If custom validation is enabled, run custom validators
 				if v.enableCustomValidation && prop.CustomValidator != "" {
 					errors = v.validateWithCustomValidator(propPath, prop, value, errors)
@@ -416,7 +416,7 @@ func (v *Validator) validateArray(path string, schema *domain.Schema, data inter
 			data = coercedArr
 		}
 	}
-	
+
 	arr, ok := data.([]interface{})
 	if !ok {
 		// This should never happen as we already validated the type
@@ -476,14 +476,14 @@ func (v *Validator) validateArray(path string, schema *domain.Schema, data inter
 			// For larger arrays, use a map-based approach for better performance
 			seen := make(map[string]bool)
 			hasDuplicates := false
-			
+
 			for _, item := range arr {
 				// Convert item to string for map key
 				key, err := json.Marshal(item)
 				if err != nil {
 					continue // Skip this item if it can't be marshaled
 				}
-				
+
 				keyStr := string(key)
 				if seen[keyStr] {
 					hasDuplicates = true
@@ -491,7 +491,7 @@ func (v *Validator) validateArray(path string, schema *domain.Schema, data inter
 				}
 				seen[keyStr] = true
 			}
-			
+
 			if hasDuplicates {
 				displayPath := path
 				if displayPath == "" {
@@ -570,15 +570,15 @@ func equalValues(a, b interface{}) bool {
 	case nil:
 		return b == nil
 	}
-	
+
 	// For complex types, use reflection or JSON marshaling
 	aJson, aErr := json.Marshal(a)
 	bJson, bErr := json.Marshal(b)
-	
+
 	if aErr != nil || bErr != nil {
 		return false
 	}
-	
+
 	return string(aJson) == string(bJson)
 }
 
@@ -745,7 +745,7 @@ func (v *Validator) validateStringFormat(format string, str string, displayPath 
 				errors = append(errors, fmt.Sprintf("%s must be a valid IPv4 address", displayPath))
 				return errors
 			}
-			
+
 			// Validate each octet
 			parts := strings.Split(str, ".")
 			for _, part := range parts {
@@ -780,7 +780,7 @@ func (v *Validator) validateStringFormat(format string, str string, displayPath 
 			errors = append(errors, fmt.Sprintf("unsupported format: %s", format))
 		}
 	}
-	
+
 	return errors
 }
 
@@ -867,27 +867,27 @@ func (v *Validator) validateString(path string, schema *domain.Schema, data inte
 			} else {
 				separator = "|"
 			}
-			
+
 			formats := strings.Split(format, separator)
 			validAgainstAny := false
-			
+
 			// Try validating against each format until one succeeds
 			for _, fmt := range formats {
 				fmt = strings.TrimSpace(fmt)
 				// Make a copy of errors for this format
 				tmpErrors := make([]string, len(errors))
 				copy(tmpErrors, errors)
-				
+
 				// Validate against this format
 				tmpErrors = v.validateStringFormat(fmt, str, displayPath, tmpErrors)
-				
+
 				// If no new errors were added, this format is valid
 				if len(tmpErrors) == len(errors) {
 					validAgainstAny = true
 					break
 				}
 			}
-			
+
 			// If not valid against any format, add a general error
 			if !validAgainstAny {
 				errors = append(errors, fmt.Sprintf("%s must match one of these formats: %s", displayPath, format))

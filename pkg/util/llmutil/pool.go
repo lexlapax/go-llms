@@ -25,21 +25,21 @@ type PoolStrategy int
 const (
 	// StrategyRoundRobin cycles through providers
 	StrategyRoundRobin PoolStrategy = iota
-	
+
 	// StrategyFailover uses the first provider until it fails, then moves to the next
 	StrategyFailover
-	
+
 	// StrategyFastest uses the provider with the lowest latency
 	StrategyFastest
 )
 
 // ProviderMetrics tracks performance metrics for a provider
 type ProviderMetrics struct {
-	Requests         int
-	Failures         int
-	AvgLatencyMs     int64
-	TotalLatencyMs   int64
-	LastUsed         time.Time
+	Requests          int
+	Failures          int
+	AvgLatencyMs      int64
+	TotalLatencyMs    int64
+	LastUsed          time.Time
 	ConsecutiveErrors int
 }
 
@@ -51,7 +51,7 @@ func NewProviderPool(providers []domain.Provider, strategy PoolStrategy) *Provid
 			LastUsed: time.Now(),
 		}
 	}
-	
+
 	return &ProviderPool{
 		providers:   providers,
 		strategy:    strategy,
@@ -66,13 +66,13 @@ func (p *ProviderPool) Generate(ctx context.Context, prompt string, options ...d
 	if err != nil {
 		return "", err
 	}
-	
+
 	startTime := time.Now()
 	result, err := provider.Generate(ctx, prompt, options...)
 	duration := time.Since(startTime)
-	
+
 	p.updateMetrics(idx, err, duration)
-	
+
 	if err != nil {
 		// If the selected provider fails, try to find another one
 		if p.strategy == StrategyFailover {
@@ -80,23 +80,23 @@ func (p *ProviderPool) Generate(ctx context.Context, prompt string, options ...d
 			if fallbackErr != nil {
 				return "", err // Return original error if no fallback
 			}
-			
+
 			fallbackStartTime := time.Now()
 			fallbackResult, fallbackErr := fallbackProvider.Generate(ctx, prompt, options...)
 			fallbackDuration := time.Since(fallbackStartTime)
-			
+
 			p.updateMetrics(fallbackIdx, fallbackErr, fallbackDuration)
-			
+
 			if fallbackErr != nil {
 				return "", err // Return original error if fallback also fails
 			}
-			
+
 			return fallbackResult, nil
 		}
-		
+
 		return "", err
 	}
-	
+
 	return result, nil
 }
 
@@ -106,13 +106,13 @@ func (p *ProviderPool) GenerateMessage(ctx context.Context, messages []domain.Me
 	if err != nil {
 		return domain.Response{}, err
 	}
-	
+
 	startTime := time.Now()
 	result, err := provider.GenerateMessage(ctx, messages, options...)
 	duration := time.Since(startTime)
-	
+
 	p.updateMetrics(idx, err, duration)
-	
+
 	if err != nil {
 		// If the selected provider fails, try to find another one
 		if p.strategy == StrategyFailover {
@@ -120,23 +120,23 @@ func (p *ProviderPool) GenerateMessage(ctx context.Context, messages []domain.Me
 			if fallbackErr != nil {
 				return domain.Response{}, err // Return original error if no fallback
 			}
-			
+
 			fallbackStartTime := time.Now()
 			fallbackResult, fallbackErr := fallbackProvider.GenerateMessage(ctx, messages, options...)
 			fallbackDuration := time.Since(fallbackStartTime)
-			
+
 			p.updateMetrics(fallbackIdx, fallbackErr, fallbackDuration)
-			
+
 			if fallbackErr != nil {
 				return domain.Response{}, err // Return original error if fallback also fails
 			}
-			
+
 			return fallbackResult, nil
 		}
-		
+
 		return domain.Response{}, err
 	}
-	
+
 	return result, nil
 }
 
@@ -146,24 +146,24 @@ func (p *ProviderPool) GenerateWithSchema(ctx context.Context, prompt string, sc
 	if err != nil {
 		return nil, err
 	}
-	
+
 	startTime := time.Now()
-	
+
 	// Check if the schema is already of the correct type
 	schemaObj, ok := schema.(*schemaDomain.Schema)
 	if !ok {
 		// For non-Schema types, use a default schema
 		schemaObj = &schemaDomain.Schema{
-			Type: "object",
+			Type:       "object",
 			Properties: map[string]schemaDomain.Property{},
 		}
 	}
-	
+
 	result, err := provider.GenerateWithSchema(ctx, prompt, schemaObj, options...)
 	duration := time.Since(startTime)
-	
+
 	p.updateMetrics(idx, err, duration)
-	
+
 	if err != nil {
 		// If the selected provider fails, try to find another one
 		if p.strategy == StrategyFailover {
@@ -171,23 +171,23 @@ func (p *ProviderPool) GenerateWithSchema(ctx context.Context, prompt string, sc
 			if fallbackErr != nil {
 				return nil, err // Return original error if no fallback
 			}
-			
+
 			fallbackStartTime := time.Now()
 			fallbackResult, fallbackErr := fallbackProvider.GenerateWithSchema(ctx, prompt, schemaObj, options...)
 			fallbackDuration := time.Since(fallbackStartTime)
-			
+
 			p.updateMetrics(fallbackIdx, fallbackErr, fallbackDuration)
-			
+
 			if fallbackErr != nil {
 				return nil, err // Return original error if fallback also fails
 			}
-			
+
 			return fallbackResult, nil
 		}
-		
+
 		return nil, err
 	}
-	
+
 	return result, nil
 }
 
@@ -197,13 +197,13 @@ func (p *ProviderPool) Stream(ctx context.Context, prompt string, options ...dom
 	if err != nil {
 		return nil, err
 	}
-	
+
 	startTime := time.Now()
 	result, err := provider.Stream(ctx, prompt, options...)
 	duration := time.Since(startTime)
-	
+
 	p.updateMetrics(idx, err, duration)
-	
+
 	if err != nil {
 		// If the selected provider fails, try to find another one
 		if p.strategy == StrategyFailover {
@@ -211,23 +211,23 @@ func (p *ProviderPool) Stream(ctx context.Context, prompt string, options ...dom
 			if fallbackErr != nil {
 				return nil, err // Return original error if no fallback
 			}
-			
+
 			fallbackStartTime := time.Now()
 			fallbackResult, fallbackErr := fallbackProvider.Stream(ctx, prompt, options...)
 			fallbackDuration := time.Since(fallbackStartTime)
-			
+
 			p.updateMetrics(fallbackIdx, fallbackErr, fallbackDuration)
-			
+
 			if fallbackErr != nil {
 				return nil, err // Return original error if fallback also fails
 			}
-			
+
 			return fallbackResult, nil
 		}
-		
+
 		return nil, err
 	}
-	
+
 	return result, nil
 }
 
@@ -237,13 +237,13 @@ func (p *ProviderPool) StreamMessage(ctx context.Context, messages []domain.Mess
 	if err != nil {
 		return nil, err
 	}
-	
+
 	startTime := time.Now()
 	result, err := provider.StreamMessage(ctx, messages, options...)
 	duration := time.Since(startTime)
-	
+
 	p.updateMetrics(idx, err, duration)
-	
+
 	if err != nil {
 		// If the selected provider fails, try to find another one
 		if p.strategy == StrategyFailover {
@@ -251,23 +251,23 @@ func (p *ProviderPool) StreamMessage(ctx context.Context, messages []domain.Mess
 			if fallbackErr != nil {
 				return nil, err // Return original error if no fallback
 			}
-			
+
 			fallbackStartTime := time.Now()
 			fallbackResult, fallbackErr := fallbackProvider.StreamMessage(ctx, messages, options...)
 			fallbackDuration := time.Since(fallbackStartTime)
-			
+
 			p.updateMetrics(fallbackIdx, fallbackErr, fallbackDuration)
-			
+
 			if fallbackErr != nil {
 				return nil, err // Return original error if fallback also fails
 			}
-			
+
 			return fallbackResult, nil
 		}
-		
+
 		return nil, err
 	}
-	
+
 	return result, nil
 }
 
@@ -275,43 +275,43 @@ func (p *ProviderPool) StreamMessage(ctx context.Context, messages []domain.Mess
 func (p *ProviderPool) getProvider() (int, domain.Provider, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	
+
 	if len(p.providers) == 0 {
 		return -1, nil, fmt.Errorf("no providers available")
 	}
-	
+
 	switch p.strategy {
 	case StrategyRoundRobin:
 		idx := p.activeIndex
 		p.activeIndex = (p.activeIndex + 1) % len(p.providers)
 		return idx, p.providers[idx], nil
-		
+
 	case StrategyFailover:
 		return p.activeIndex, p.providers[p.activeIndex], nil
-		
+
 	case StrategyFastest:
 		var fastestIdx int
 		var fastestLatency int64 = -1
-		
+
 		for i, metrics := range p.metrics {
 			// Skip providers with consecutive errors
 			if metrics.ConsecutiveErrors > 3 {
 				continue
 			}
-			
+
 			if fastestLatency == -1 || (metrics.AvgLatencyMs > 0 && metrics.AvgLatencyMs < fastestLatency) {
 				fastestLatency = metrics.AvgLatencyMs
 				fastestIdx = i
 			}
 		}
-		
+
 		// If all providers have consecutive errors, use the first one
 		if fastestLatency == -1 {
 			return 0, p.providers[0], nil
 		}
-		
+
 		return fastestIdx, p.providers[fastestIdx], nil
-		
+
 	default:
 		return 0, p.providers[0], nil
 	}
@@ -322,17 +322,17 @@ func (p *ProviderPool) getFallbackProvider(currentIdx int) (int, domain.Provider
 	if len(p.providers) <= 1 {
 		return -1, nil, fmt.Errorf("no fallback providers available")
 	}
-	
+
 	// In failover strategy, move to the next provider
 	if p.strategy == StrategyFailover {
 		p.mu.Lock()
 		p.activeIndex = (currentIdx + 1) % len(p.providers)
 		idx := p.activeIndex
 		p.mu.Unlock()
-		
+
 		return idx, p.providers[idx], nil
 	}
-	
+
 	// Otherwise just pick a different provider
 	nextIdx := (currentIdx + 1) % len(p.providers)
 	return nextIdx, p.providers[nextIdx], nil
@@ -342,11 +342,11 @@ func (p *ProviderPool) getFallbackProvider(currentIdx int) (int, domain.Provider
 func (p *ProviderPool) updateMetrics(idx int, err error, duration time.Duration) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	
+
 	metrics := p.metrics[idx]
 	metrics.Requests++
 	metrics.LastUsed = time.Now()
-	
+
 	if err != nil {
 		metrics.Failures++
 		metrics.ConsecutiveErrors++
@@ -361,19 +361,19 @@ func (p *ProviderPool) updateMetrics(idx int, err error, duration time.Duration)
 func (p *ProviderPool) GetMetrics() map[int]*ProviderMetrics {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	
+
 	// Make a copy to avoid race conditions
 	metricsCopy := make(map[int]*ProviderMetrics)
 	for i, m := range p.metrics {
 		metricsCopy[i] = &ProviderMetrics{
-			Requests:         m.Requests,
-			Failures:         m.Failures,
-			AvgLatencyMs:     m.AvgLatencyMs,
-			TotalLatencyMs:   m.TotalLatencyMs,
-			LastUsed:         m.LastUsed,
+			Requests:          m.Requests,
+			Failures:          m.Failures,
+			AvgLatencyMs:      m.AvgLatencyMs,
+			TotalLatencyMs:    m.TotalLatencyMs,
+			LastUsed:          m.LastUsed,
 			ConsecutiveErrors: m.ConsecutiveErrors,
 		}
 	}
-	
+
 	return metricsCopy
 }

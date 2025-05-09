@@ -22,11 +22,11 @@ type MockProvider struct {
 	// Predefined responses for testing
 	predefinedResponses map[string]string
 	// Options storage for testing
-	httpClient      *http.Client
-	baseURL         string
-	headers         map[string]string
-	safetySettings  []map[string]interface{}
-	customSettings  map[string]interface{}
+	httpClient     *http.Client
+	baseURL        string
+	headers        map[string]string
+	safetySettings []map[string]interface{}
+	customSettings map[string]interface{}
 }
 
 // NewMockProvider creates a new mock provider with default implementations and options

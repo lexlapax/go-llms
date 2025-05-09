@@ -22,7 +22,7 @@ func WithPerformanceOptions() []domain.ProviderOption {
 			DisableKeepAlives:   false,
 		},
 	}
-	
+
 	return []domain.ProviderOption{
 		domain.NewHTTPClientOption(httpClient),
 		domain.NewTimeoutOption(15),
@@ -43,7 +43,7 @@ func WithReliabilityOptions() []domain.ProviderOption {
 			DisableKeepAlives:   false,
 		},
 	}
-	
+
 	return []domain.ProviderOption{
 		domain.NewHTTPClientOption(httpClient),
 		domain.NewTimeoutOption(30),
@@ -58,18 +58,18 @@ func WithReliabilityOptions() []domain.ProviderOption {
 func WithOpenAIDefaultOptions(organizationID string) []domain.ProviderOption {
 	// Start with common options
 	options := WithReliabilityOptions()
-	
+
 	// Add OpenAI-specific options if an organization is provided
 	if organizationID != "" {
 		options = append(options, domain.NewOpenAIOrganizationOption(organizationID))
 	}
-	
+
 	// Add common headers for OpenAI API
 	headers := map[string]string{
 		"User-Agent": "go-llms/1.0",
 	}
 	options = append(options, domain.NewHeadersOption(headers))
-	
+
 	return options
 }
 
@@ -78,7 +78,7 @@ func WithOpenAIDefaultOptions(organizationID string) []domain.ProviderOption {
 func WithAnthropicDefaultOptions(systemPrompt string) []domain.ProviderOption {
 	// Start with common options
 	options := WithReliabilityOptions()
-	
+
 	// Add Anthropic-specific options if a system prompt is provided
 	if systemPrompt != "" {
 		options = append(options, domain.NewAnthropicSystemPromptOption(systemPrompt))
@@ -87,13 +87,13 @@ func WithAnthropicDefaultOptions(systemPrompt string) []domain.ProviderOption {
 		options = append(options, domain.NewAnthropicSystemPromptOption(
 			"You are a helpful, harmless, and honest AI assistant."))
 	}
-	
+
 	// Add common headers for Anthropic API
 	headers := map[string]string{
 		"User-Agent": "go-llms/1.0",
 	}
 	options = append(options, domain.NewHeadersOption(headers))
-	
+
 	return options
 }
 
@@ -102,15 +102,15 @@ func WithAnthropicDefaultOptions(systemPrompt string) []domain.ProviderOption {
 func WithGeminiDefaultOptions() []domain.ProviderOption {
 	// Start with common options
 	options := WithReliabilityOptions()
-	
+
 	// Add Gemini-specific options
 	generationConfig := domain.NewGeminiGenerationConfigOption().
 		WithTemperature(0.7).
 		WithTopK(40).
 		WithTopP(0.95)
-	
+
 	options = append(options, generationConfig)
-	
+
 	// Default safety settings
 	safetySettings := []map[string]interface{}{
 		{
@@ -132,7 +132,7 @@ func WithGeminiDefaultOptions() []domain.ProviderOption {
 	}
 	safetySettingsOption := domain.NewGeminiSafetySettingsOption(safetySettings)
 	options = append(options, safetySettingsOption)
-	
+
 	return options
 }
 
@@ -151,14 +151,14 @@ func WithStreamingOptions() []domain.ProviderOption {
 			DisableKeepAlives:   false,
 		},
 	}
-	
+
 	// Add common headers for streaming APIs
 	headers := map[string]string{
 		"User-Agent":    "go-llms/1.0",
 		"Accept":        "text/event-stream",
 		"Cache-Control": "no-cache",
 	}
-	
+
 	return []domain.ProviderOption{
 		domain.NewHTTPClientOption(httpClient),
 		domain.NewTimeoutOption(60),
@@ -170,21 +170,21 @@ func WithStreamingOptions() []domain.ProviderOption {
 // This includes custom base URL and headers needed for proxy authentication.
 func WithProxyOptions(baseURL string, proxyAPIKey string) []domain.ProviderOption {
 	options := []domain.ProviderOption{}
-	
+
 	// Add base URL if provided
 	if baseURL != "" {
 		options = append(options, domain.NewBaseURLOption(baseURL))
 	}
-	
+
 	// Add headers for proxy authentication if API key is provided
 	if proxyAPIKey != "" {
 		headers := map[string]string{
-			"User-Agent":     "go-llms/1.0",
+			"User-Agent":      "go-llms/1.0",
 			"X-Proxy-API-Key": proxyAPIKey,
 		}
 		options = append(options, domain.NewHeadersOption(headers))
 	}
-	
+
 	return options
 }
 
@@ -194,7 +194,7 @@ func WithProxyOptions(baseURL string, proxyAPIKey string) []domain.ProviderOptio
 func WithOpenAIStreamingOptions(organizationID string) []domain.ProviderOption {
 	options := WithOpenAIDefaultOptions(organizationID)
 	streamingOptions := WithStreamingOptions()
-	
+
 	// Replace HTTP client and timeout with streaming-optimized versions
 	return append(options, streamingOptions...)
 }
@@ -203,7 +203,7 @@ func WithOpenAIStreamingOptions(organizationID string) []domain.ProviderOption {
 func WithAnthropicStreamingOptions(systemPrompt string) []domain.ProviderOption {
 	options := WithAnthropicDefaultOptions(systemPrompt)
 	streamingOptions := WithStreamingOptions()
-	
+
 	// Replace HTTP client and timeout with streaming-optimized versions
 	return append(options, streamingOptions...)
 }

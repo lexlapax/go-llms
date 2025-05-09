@@ -166,14 +166,14 @@ func TestPoolMessageGeneration(t *testing.T) {
 		err:       domain.ErrNetworkConnectivity,
 		failCount: 1,
 	}
-	
+
 	providers := []domain.Provider{mockProvider, successAfterFailProvider}
 	pool := NewProviderPool(providers, StrategyRoundRobin)
-	
+
 	messages := []domain.Message{
 		{Role: "user", Content: "Hello"},
 	}
-	
+
 	response, err := pool.GenerateMessage(context.Background(), messages)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -186,19 +186,19 @@ func TestPoolMessageGeneration(t *testing.T) {
 func TestPoolSchemaGeneration(t *testing.T) {
 	// Skip this test since we're having issues with the mock failing
 	t.Skip("Skipping schema generation test due to mock issues")
-	
+
 	mockProvider := provider.NewMockProvider()
-	
+
 	providers := []domain.Provider{mockProvider}
 	pool := NewProviderPool(providers, StrategyRoundRobin)
-	
+
 	schema := &schemaDomain.Schema{
 		Type: "object",
 		Properties: map[string]schemaDomain.Property{
 			"name": {Type: "string"},
 		},
 	}
-	
+
 	result, err := pool.GenerateWithSchema(context.Background(), "Test prompt", schema)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -206,7 +206,7 @@ func TestPoolSchemaGeneration(t *testing.T) {
 	if result == nil {
 		t.Errorf("Expected non-nil result but got nil")
 	}
-	
+
 	// Not testing with non-schema types to avoid mock issues
 }
 
@@ -217,11 +217,11 @@ func TestPoolStreaming(t *testing.T) {
 		err:       domain.ErrNetworkConnectivity,
 		failCount: 1,
 	}
-	
+
 	t.Run("Stream", func(t *testing.T) {
 		providers := []domain.Provider{mockProvider, successAfterFailProvider}
 		pool := NewProviderPool(providers, StrategyRoundRobin)
-		
+
 		stream, err := pool.Stream(context.Background(), "Test prompt")
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
@@ -229,7 +229,7 @@ func TestPoolStreaming(t *testing.T) {
 		if stream == nil {
 			t.Errorf("Expected non-nil stream but got nil")
 		}
-		
+
 		// Read from stream
 		select {
 		case token, ok := <-stream:
@@ -243,15 +243,15 @@ func TestPoolStreaming(t *testing.T) {
 			t.Errorf("Timed out waiting for stream token")
 		}
 	})
-	
+
 	t.Run("StreamMessage", func(t *testing.T) {
 		providers := []domain.Provider{mockProvider, successAfterFailProvider}
 		pool := NewProviderPool(providers, StrategyRoundRobin)
-		
+
 		messages := []domain.Message{
 			{Role: "user", Content: "Hello"},
 		}
-		
+
 		stream, err := pool.StreamMessage(context.Background(), messages)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
@@ -259,7 +259,7 @@ func TestPoolStreaming(t *testing.T) {
 		if stream == nil {
 			t.Errorf("Expected non-nil stream but got nil")
 		}
-		
+
 		// Read from stream
 		select {
 		case token, ok := <-stream:
@@ -279,10 +279,10 @@ func TestPoolProviderSelection(t *testing.T) {
 	mockProvider1 := provider.NewMockProvider()
 	mockProvider2 := provider.NewMockProvider()
 	providers := []domain.Provider{mockProvider1, mockProvider2}
-	
+
 	t.Run("getProvider with RoundRobin", func(t *testing.T) {
 		pool := NewProviderPool(providers, StrategyRoundRobin)
-		
+
 		idx1, _, err := pool.getProvider()
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -290,7 +290,7 @@ func TestPoolProviderSelection(t *testing.T) {
 		if idx1 != 0 {
 			t.Errorf("Expected provider index 0, got %d", idx1)
 		}
-		
+
 		idx2, _, err := pool.getProvider()
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -298,7 +298,7 @@ func TestPoolProviderSelection(t *testing.T) {
 		if idx2 != 1 {
 			t.Errorf("Expected provider index 1, got %d", idx2)
 		}
-		
+
 		// Should wrap around
 		idx3, _, err := pool.getProvider()
 		if err != nil {
@@ -308,10 +308,10 @@ func TestPoolProviderSelection(t *testing.T) {
 			t.Errorf("Expected provider index 0 (wrap around), got %d", idx3)
 		}
 	})
-	
+
 	t.Run("getProvider with Failover", func(t *testing.T) {
 		pool := NewProviderPool(providers, StrategyFailover)
-		
+
 		idx, _, err := pool.getProvider()
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -319,7 +319,7 @@ func TestPoolProviderSelection(t *testing.T) {
 		if idx != 0 {
 			t.Errorf("Expected provider index 0, got %d", idx)
 		}
-		
+
 		// Should stay on first provider
 		idx2, _, err := pool.getProvider()
 		if err != nil {
@@ -329,14 +329,14 @@ func TestPoolProviderSelection(t *testing.T) {
 			t.Errorf("Expected provider index 0 (failover stays on first), got %d", idx2)
 		}
 	})
-	
+
 	t.Run("getProvider with Fastest", func(t *testing.T) {
 		pool := NewProviderPool(providers, StrategyFastest)
-		
+
 		// Update metrics for the providers
 		pool.updateMetrics(0, nil, 100*time.Millisecond)
 		pool.updateMetrics(1, nil, 50*time.Millisecond)
-		
+
 		idx, _, err := pool.getProvider()
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -345,10 +345,10 @@ func TestPoolProviderSelection(t *testing.T) {
 			t.Errorf("Expected provider index 1 (faster), got %d", idx)
 		}
 	})
-	
+
 	t.Run("getFallbackProvider", func(t *testing.T) {
 		pool := NewProviderPool(providers, StrategyFailover)
-		
+
 		// Get fallback for provider 0
 		idx, _, err := pool.getFallbackProvider(0)
 		if err != nil {
@@ -357,7 +357,7 @@ func TestPoolProviderSelection(t *testing.T) {
 		if idx != 1 {
 			t.Errorf("Expected fallback index 1, got %d", idx)
 		}
-		
+
 		// Get fallback for last provider (should wrap)
 		idx, _, err = pool.getFallbackProvider(1)
 		if err != nil {
@@ -367,10 +367,10 @@ func TestPoolProviderSelection(t *testing.T) {
 			t.Errorf("Expected fallback index 0 (wrap), got %d", idx)
 		}
 	})
-	
+
 	t.Run("getFallbackProvider with single provider", func(t *testing.T) {
 		pool := NewProviderPool([]domain.Provider{mockProvider1}, StrategyFailover)
-		
+
 		_, _, err := pool.getFallbackProvider(0)
 		if err == nil {
 			t.Errorf("Expected error for no fallback available but got nil")
@@ -382,16 +382,16 @@ func TestPoolMetrics(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
 	providers := []domain.Provider{mockProvider}
 	pool := NewProviderPool(providers, StrategyRoundRobin)
-	
+
 	// Test initial metrics
 	initialMetrics := pool.GetMetrics()
 	if initialMetrics[0].Requests != 0 {
 		t.Errorf("Expected 0 initial requests, got %d", initialMetrics[0].Requests)
 	}
-	
+
 	// Test successful update
 	pool.updateMetrics(0, nil, 100*time.Millisecond)
-	
+
 	updatedMetrics := pool.GetMetrics()
 	if updatedMetrics[0].Requests != 1 {
 		t.Errorf("Expected 1 request after update, got %d", updatedMetrics[0].Requests)
@@ -399,11 +399,11 @@ func TestPoolMetrics(t *testing.T) {
 	if updatedMetrics[0].Failures != 0 {
 		t.Errorf("Expected 0 failures after success, got %d", updatedMetrics[0].Failures)
 	}
-	
+
 	// Test failure update
 	testErr := errors.New("test error")
 	pool.updateMetrics(0, testErr, 0)
-	
+
 	failureMetrics := pool.GetMetrics()
 	if failureMetrics[0].Requests != 2 {
 		t.Errorf("Expected 2 requests after second update, got %d", failureMetrics[0].Requests)
@@ -414,10 +414,10 @@ func TestPoolMetrics(t *testing.T) {
 	if failureMetrics[0].ConsecutiveErrors != 1 {
 		t.Errorf("Expected 1 consecutive error, got %d", failureMetrics[0].ConsecutiveErrors)
 	}
-	
+
 	// Test successful update resets consecutive errors
 	pool.updateMetrics(0, nil, 50*time.Millisecond)
-	
+
 	resetMetrics := pool.GetMetrics()
 	if resetMetrics[0].ConsecutiveErrors != 0 {
 		t.Errorf("Expected consecutive errors reset to 0, got %d", resetMetrics[0].ConsecutiveErrors)

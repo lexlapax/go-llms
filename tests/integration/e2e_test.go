@@ -26,7 +26,7 @@ func TestEndToEndWorkflow(t *testing.T) {
 	if apiKey == "" {
 		t.Skip("OPENAI_API_KEY environment variable not set, skipping end-to-end test")
 	}
-	
+
 	// Create custom HTTP client with longer timeouts for reliability
 	httpClient := &http.Client{
 		Timeout: 60 * time.Second,
@@ -115,7 +115,7 @@ func TestLiveEndToEndAgent(t *testing.T) {
 	if apiKey == "" {
 		t.Skip("OPENAI_API_KEY environment variable not set, skipping live end-to-end agent test")
 	}
-	
+
 	// Create custom HTTP client with longer timeouts for reliability
 	httpClient := &http.Client{
 		Timeout: 60 * time.Second,

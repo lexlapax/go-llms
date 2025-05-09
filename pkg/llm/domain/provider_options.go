@@ -220,7 +220,9 @@ func (o *HeadersOption) ApplyToGemini(provider interface{}) {
 }
 
 func (o *HeadersOption) ApplyToMock(provider interface{}) {
-	if p, ok := provider.(interface{ SetHeaders(headers map[string]string) }); ok {
+	if p, ok := provider.(interface {
+		SetHeaders(headers map[string]string)
+	}); ok {
 		p.SetHeaders(o.Headers)
 	}
 }
@@ -294,7 +296,9 @@ func NewOpenAILogitBiasOption(logitBias map[string]float64) *OpenAILogitBiasOpti
 func (o *OpenAILogitBiasOption) ProviderType() string { return "openai" }
 
 func (o *OpenAILogitBiasOption) ApplyToOpenAI(provider interface{}) {
-	if p, ok := provider.(interface{ SetLogitBias(logitBias map[string]float64) }); ok {
+	if p, ok := provider.(interface {
+		SetLogitBias(logitBias map[string]float64)
+	}); ok {
 		p.SetLogitBias(o.LogitBias)
 	}
 }
@@ -332,7 +336,9 @@ func NewAnthropicMetadataOption(metadata map[string]string) *AnthropicMetadataOp
 func (o *AnthropicMetadataOption) ProviderType() string { return "anthropic" }
 
 func (o *AnthropicMetadataOption) ApplyToAnthropic(provider interface{}) {
-	if p, ok := provider.(interface{ SetMetadata(metadata map[string]string) }); ok {
+	if p, ok := provider.(interface {
+		SetMetadata(metadata map[string]string)
+	}); ok {
 		p.SetMetadata(o.Metadata)
 	}
 }
@@ -431,7 +437,9 @@ func NewGeminiSafetySettingsOption(settings []map[string]interface{}) *GeminiSaf
 func (o *GeminiSafetySettingsOption) ProviderType() string { return "gemini" }
 
 func (o *GeminiSafetySettingsOption) ApplyToGemini(provider interface{}) {
-	if p, ok := provider.(interface{ SetSafetySettings(settings []map[string]interface{}) }); ok {
+	if p, ok := provider.(interface {
+		SetSafetySettings(settings []map[string]interface{})
+	}); ok {
 		p.SetSafetySettings(o.Settings)
 	}
 }

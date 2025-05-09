@@ -53,7 +53,7 @@ func (v *Validator) validateWithCustomValidator(path string, prop domain.Propert
 	// This requires unmarshaling the raw property to access extensions
 	// For simplicity, we'll assume the customValidator field is added to the Property type
 	var customValidatorName string
-	
+
 	// Get the property value and check for a JSON field named "customValidator"
 	propValue := reflect.ValueOf(prop)
 	if propValue.Kind() == reflect.Struct {
@@ -66,7 +66,7 @@ func (v *Validator) validateWithCustomValidator(path string, prop domain.Propert
 			}
 		}
 	}
-	
+
 	// If no custom validator is specified, return the original errors
 	if customValidatorName == "" {
 		return errors
@@ -100,7 +100,7 @@ func (v *Validator) validateWithCustomValidator(path string, prop domain.Propert
 // ValidateNonEmpty checks if a string is not empty
 func ValidateNonEmpty(value interface{}, displayPath string) []string {
 	var errors []string
-	
+
 	if str, ok := value.(string); ok {
 		if strings.TrimSpace(str) == "" {
 			errors = append(errors, fmt.Sprintf("%s cannot be empty or whitespace only", displayPath))
@@ -108,14 +108,14 @@ func ValidateNonEmpty(value interface{}, displayPath string) []string {
 	} else {
 		errors = append(errors, fmt.Sprintf("%s must be a string", displayPath))
 	}
-	
+
 	return errors
 }
 
 // ValidateAlphanumeric checks if a string contains only alphanumeric characters
 func ValidateAlphanumeric(value interface{}, displayPath string) []string {
 	var errors []string
-	
+
 	if str, ok := value.(string); ok {
 		for _, char := range str {
 			if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9')) {
@@ -126,14 +126,14 @@ func ValidateAlphanumeric(value interface{}, displayPath string) []string {
 	} else {
 		errors = append(errors, fmt.Sprintf("%s must be a string", displayPath))
 	}
-	
+
 	return errors
 }
 
 // ValidateNoWhitespace checks if a string contains no whitespace
 func ValidateNoWhitespace(value interface{}, displayPath string) []string {
 	var errors []string
-	
+
 	if str, ok := value.(string); ok {
 		if strings.ContainsAny(str, " \t\n\r") {
 			errors = append(errors, fmt.Sprintf("%s must not contain whitespace", displayPath))
@@ -141,14 +141,14 @@ func ValidateNoWhitespace(value interface{}, displayPath string) []string {
 	} else {
 		errors = append(errors, fmt.Sprintf("%s must be a string", displayPath))
 	}
-	
+
 	return errors
 }
 
 // ValidatePositive checks if a number is positive (greater than zero)
 func ValidatePositive(value interface{}, displayPath string) []string {
 	var errors []string
-	
+
 	switch v := value.(type) {
 	case float64:
 		if v <= 0 {
@@ -165,14 +165,14 @@ func ValidatePositive(value interface{}, displayPath string) []string {
 	default:
 		errors = append(errors, fmt.Sprintf("%s must be a number", displayPath))
 	}
-	
+
 	return errors
 }
 
 // ValidateNonNegative checks if a number is non-negative (greater than or equal to zero)
 func ValidateNonNegative(value interface{}, displayPath string) []string {
 	var errors []string
-	
+
 	switch v := value.(type) {
 	case float64:
 		if v < 0 {
@@ -189,7 +189,7 @@ func ValidateNonNegative(value interface{}, displayPath string) []string {
 	default:
 		errors = append(errors, fmt.Sprintf("%s must be a number", displayPath))
 	}
-	
+
 	return errors
 }
 

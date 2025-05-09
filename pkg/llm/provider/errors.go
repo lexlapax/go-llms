@@ -19,33 +19,33 @@ func mapOpenAIErrorToStandard(statusCode int, errorMsg string, operation string)
 	switch {
 	case statusCode == http.StatusUnauthorized || strings.Contains(lowerErrorMsg, "invalid api key"):
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrAuthenticationFailed)
-		
+
 	case statusCode == http.StatusTooManyRequests || strings.Contains(lowerErrorMsg, "rate limit"):
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrRateLimitExceeded)
-		
+
 	case strings.Contains(lowerErrorMsg, "context length"):
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrContextTooLong)
-		
+
 	case strings.Contains(lowerErrorMsg, "content filter"):
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrContentFiltered)
-		
+
 	case strings.Contains(lowerErrorMsg, "model not found"):
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrModelNotFound)
-		
+
 	case strings.Contains(lowerErrorMsg, "quota") || strings.Contains(lowerErrorMsg, "billing"):
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrTokenQuotaExceeded)
-		
+
 	case strings.Contains(lowerErrorMsg, "invalid parameter") || strings.Contains(lowerErrorMsg, "invalid request"):
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrInvalidModelParameters)
-		
-	case statusCode == http.StatusServiceUnavailable || 
-		 statusCode == http.StatusBadGateway || 
-		 statusCode == http.StatusGatewayTimeout:
+
+	case statusCode == http.StatusServiceUnavailable ||
+		statusCode == http.StatusBadGateway ||
+		statusCode == http.StatusGatewayTimeout:
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrNetworkConnectivity)
-		
+
 	case statusCode >= 500:
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrProviderUnavailable)
-		
+
 	default:
 		return domain.NewProviderError("openai", operation, statusCode, errorMsg, domain.ErrRequestFailed)
 	}
@@ -59,52 +59,52 @@ func mapAnthropicErrorToStandard(statusCode int, errorType, errorMsg string, ope
 
 	// Common error patterns for Anthropic
 	switch {
-	case statusCode == http.StatusUnauthorized || 
-	     strings.Contains(lowerErrorType, "authentication") || 
-	     strings.Contains(lowerErrorMsg, "api key"):
+	case statusCode == http.StatusUnauthorized ||
+		strings.Contains(lowerErrorType, "authentication") ||
+		strings.Contains(lowerErrorMsg, "api key"):
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrAuthenticationFailed)
-		
-	case statusCode == http.StatusTooManyRequests || 
-	     strings.Contains(lowerErrorType, "rate_limit") || 
-	     strings.Contains(lowerErrorMsg, "rate limit"):
+
+	case statusCode == http.StatusTooManyRequests ||
+		strings.Contains(lowerErrorType, "rate_limit") ||
+		strings.Contains(lowerErrorMsg, "rate limit"):
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrRateLimitExceeded)
-		
-	case strings.Contains(lowerErrorType, "context_length") || 
-	     strings.Contains(lowerErrorMsg, "context length") || 
-	     strings.Contains(lowerErrorMsg, "too long"):
+
+	case strings.Contains(lowerErrorType, "context_length") ||
+		strings.Contains(lowerErrorMsg, "context length") ||
+		strings.Contains(lowerErrorMsg, "too long"):
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrContextTooLong)
-		
-	case strings.Contains(lowerErrorType, "content_filter") || 
-	     strings.Contains(lowerErrorMsg, "content filtered") || 
-	     strings.Contains(lowerErrorMsg, "content policy"):
+
+	case strings.Contains(lowerErrorType, "content_filter") ||
+		strings.Contains(lowerErrorMsg, "content filtered") ||
+		strings.Contains(lowerErrorMsg, "content policy"):
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrContentFiltered)
-		
-	case strings.Contains(lowerErrorType, "model_not_found") || 
-	     strings.Contains(lowerErrorMsg, "model not found"):
+
+	case strings.Contains(lowerErrorType, "model_not_found") ||
+		strings.Contains(lowerErrorMsg, "model not found"):
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrModelNotFound)
-		
-	case strings.Contains(lowerErrorType, "quota") || 
-	     strings.Contains(lowerErrorMsg, "quota") || 
-	     strings.Contains(lowerErrorMsg, "billing") || 
-	     strings.Contains(lowerErrorMsg, "payment"):
+
+	case strings.Contains(lowerErrorType, "quota") ||
+		strings.Contains(lowerErrorMsg, "quota") ||
+		strings.Contains(lowerErrorMsg, "billing") ||
+		strings.Contains(lowerErrorMsg, "payment"):
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrTokenQuotaExceeded)
-		
-	case strings.Contains(lowerErrorType, "invalid_param") || 
-	     strings.Contains(lowerErrorMsg, "invalid parameter") || 
-	     strings.Contains(lowerErrorMsg, "invalid request"):
+
+	case strings.Contains(lowerErrorType, "invalid_param") ||
+		strings.Contains(lowerErrorMsg, "invalid parameter") ||
+		strings.Contains(lowerErrorMsg, "invalid request"):
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrInvalidModelParameters)
-		
-	case statusCode == http.StatusServiceUnavailable || 
-	     statusCode == http.StatusBadGateway || 
-	     statusCode == http.StatusGatewayTimeout || 
-	     strings.Contains(lowerErrorMsg, "network") || 
-	     strings.Contains(lowerErrorMsg, "connection") || 
-	     strings.Contains(lowerErrorType, "connection"):
+
+	case statusCode == http.StatusServiceUnavailable ||
+		statusCode == http.StatusBadGateway ||
+		statusCode == http.StatusGatewayTimeout ||
+		strings.Contains(lowerErrorMsg, "network") ||
+		strings.Contains(lowerErrorMsg, "connection") ||
+		strings.Contains(lowerErrorType, "connection"):
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrNetworkConnectivity)
-		
+
 	case statusCode >= 500:
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrProviderUnavailable)
-		
+
 	default:
 		return domain.NewProviderError("anthropic", operation, statusCode, errorMsg, domain.ErrRequestFailed)
 	}
@@ -116,10 +116,10 @@ func ParseJSONError(body []byte, statusCode int, provider, operation string) err
 	if len(body) == 0 {
 		// If no body, create a generic error based on status code
 		return domain.NewProviderError(
-			provider, 
-			operation, 
-			statusCode, 
-			fmt.Sprintf("HTTP error: %d", statusCode), 
+			provider,
+			operation,
+			statusCode,
+			fmt.Sprintf("HTTP error: %d", statusCode),
 			nil,
 		)
 	}
@@ -127,10 +127,10 @@ func ParseJSONError(body []byte, statusCode int, provider, operation string) err
 	// Look for common error patterns in JSON
 	errorRegex := regexp.MustCompile(`"error":\s*\{\s*"message":\s*"([^"]+)"`)
 	matches := errorRegex.FindSubmatch(body)
-	
+
 	if len(matches) > 1 {
 		errorMsg := string(matches[1])
-		
+
 		switch provider {
 		case "openai":
 			return mapOpenAIErrorToStandard(statusCode, errorMsg, operation)
@@ -139,25 +139,25 @@ func ParseJSONError(body []byte, statusCode int, provider, operation string) err
 			// Try to extract it from the JSON
 			typeRegex := regexp.MustCompile(`"error":\s*\{\s*"type":\s*"([^"]+)"`)
 			typeMatches := typeRegex.FindSubmatch(body)
-			
+
 			var errorType string
 			if len(typeMatches) > 1 {
 				errorType = string(typeMatches[1])
 			}
-			
+
 			return mapAnthropicErrorToStandard(statusCode, errorType, errorMsg, operation)
 		default:
 			// For other providers, use a generic approach
 			return domain.NewProviderError(provider, operation, statusCode, errorMsg, nil)
 		}
 	}
-	
+
 	// If we couldn't parse the error message, return a generic error
 	return domain.NewProviderError(
-		provider, 
-		operation, 
-		statusCode, 
-		fmt.Sprintf("Unknown error (status: %d)", statusCode), 
+		provider,
+		operation,
+		statusCode,
+		fmt.Sprintf("Unknown error (status: %d)", statusCode),
 		nil,
 	)
 }
@@ -166,7 +166,7 @@ func ParseJSONError(body []byte, statusCode int, provider, operation string) err
 type MultiProviderError struct {
 	// ProviderErrors contains the errors from each provider
 	ProviderErrors map[string]error
-	
+
 	// Message is the overall error message
 	Message string
 }
@@ -176,13 +176,13 @@ func (e *MultiProviderError) Error() string {
 	if e.Message != "" {
 		return e.Message
 	}
-	
+
 	// Build a detailed error message from all provider errors
 	var errMsgs []string
 	for provider, err := range e.ProviderErrors {
 		errMsgs = append(errMsgs, fmt.Sprintf("[%s: %v]", provider, err))
 	}
-	
+
 	return fmt.Sprintf("multi-provider errors: %s", strings.Join(errMsgs, " "))
 }
 

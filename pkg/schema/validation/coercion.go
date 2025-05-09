@@ -13,12 +13,12 @@ func (v *Validator) Coerce(targetType string, value interface{}, format ...strin
 	if len(format) > 0 {
 		formatStr = format[0]
 	}
-	
+
 	// If format is specified, try to coerce based on format
 	if formatStr != "" {
 		// Check if we're validating a string type
 		isStringType := targetType == "string"
-		
+
 		switch formatStr {
 		case "date", "date-time":
 			date, ok := CoerceToDate(value)
@@ -30,7 +30,7 @@ func (v *Validator) Coerce(targetType string, value interface{}, format ...strin
 				return date.Format(time.RFC3339), true
 			}
 			return date, true
-			
+
 		case "uuid":
 			uuid, ok := CoerceToUUID(value)
 			if !ok {
@@ -41,14 +41,14 @@ func (v *Validator) Coerce(targetType string, value interface{}, format ...strin
 				return uuid.String(), true
 			}
 			return uuid, true
-			
+
 		case "email":
 			email, ok := CoerceToEmail(value)
 			if !ok {
 				return value, false
 			}
 			return email, true
-			
+
 		case "uri", "url":
 			url, ok := CoerceToURL(value)
 			if !ok {
@@ -59,7 +59,7 @@ func (v *Validator) Coerce(targetType string, value interface{}, format ...strin
 				return url.String(), true
 			}
 			return url, true
-			
+
 		case "duration":
 			duration, ok := CoerceToDuration(value)
 			if !ok {
@@ -70,7 +70,7 @@ func (v *Validator) Coerce(targetType string, value interface{}, format ...strin
 				return duration.String(), true
 			}
 			return duration, true
-			
+
 		case "ipv4", "ipv6", "ip":
 			ip, ok := CoerceToIP(value)
 			if !ok {
@@ -83,7 +83,7 @@ func (v *Validator) Coerce(targetType string, value interface{}, format ...strin
 			return ip, true
 		}
 	}
-	
+
 	// Coerce based on target type
 	switch targetType {
 	case "string":

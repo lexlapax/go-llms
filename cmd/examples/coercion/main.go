@@ -12,19 +12,19 @@ import (
 
 // Event represents an event structure with various types that need coercion
 type Event struct {
-	ID          string    `json:"id" validate:"required" format:"uuid" description:"Unique event identifier"`
-	Name        string    `json:"name" validate:"required" description:"Event name"`
-	Description string    `json:"description" description:"Event description"`
-	StartDate   time.Time `json:"startDate" validate:"required" format:"date-time" description:"Event start date and time"`
-	EndDate     time.Time `json:"endDate" validate:"required" format:"date-time" description:"Event end date and time"`
-	Location    string    `json:"location" description:"Event location"`
-	URL         url.URL   `json:"url" format:"uri" description:"Event website URL"`
-	Duration    string    `json:"duration" format:"duration" description:"Event duration"`
-	MaxAttendees int      `json:"maxAttendees" validate:"min=1" description:"Maximum number of attendees"`
-	Categories  []string  `json:"categories" description:"Event categories"`
-	Tags        []string  `json:"tags" description:"Event tags"`
-	IsFree      bool      `json:"isFree" description:"Whether the event is free to attend"`
-	Organizer   Organizer `json:"organizer" validate:"required" description:"Event organizer"`
+	ID           string    `json:"id" validate:"required" format:"uuid" description:"Unique event identifier"`
+	Name         string    `json:"name" validate:"required" description:"Event name"`
+	Description  string    `json:"description" description:"Event description"`
+	StartDate    time.Time `json:"startDate" validate:"required" format:"date-time" description:"Event start date and time"`
+	EndDate      time.Time `json:"endDate" validate:"required" format:"date-time" description:"Event end date and time"`
+	Location     string    `json:"location" description:"Event location"`
+	URL          url.URL   `json:"url" format:"uri" description:"Event website URL"`
+	Duration     string    `json:"duration" format:"duration" description:"Event duration"`
+	MaxAttendees int       `json:"maxAttendees" validate:"min=1" description:"Maximum number of attendees"`
+	Categories   []string  `json:"categories" description:"Event categories"`
+	Tags         []string  `json:"tags" description:"Event tags"`
+	IsFree       bool      `json:"isFree" description:"Whether the event is free to attend"`
+	Organizer    Organizer `json:"organizer" validate:"required" description:"Event organizer"`
 }
 
 // Organizer represents the event organizer

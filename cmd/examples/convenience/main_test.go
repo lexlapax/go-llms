@@ -122,7 +122,7 @@ func TestGenerateWithRetry(t *testing.T) {
 
 func TestAgentCreation(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
-	
+
 	// Create a simple calculator tool
 	calculatorTool := tools.NewTool(
 		"calculator",
@@ -147,10 +147,10 @@ func TestAgentCreation(t *testing.T) {
 			Required: []string{"expression"},
 		},
 	)
-	
+
 	// Create a metrics hook
 	metricsHook := workflow.NewMetricsHook()
-	
+
 	// Create an agent config
 	agentConfig := llmutil.AgentConfig{
 		Provider:      mockProvider,
@@ -159,24 +159,24 @@ func TestAgentCreation(t *testing.T) {
 		Tools:         []agentDomain.Tool{calculatorTool},
 		Hooks:         []agentDomain.Hook{metricsHook},
 	}
-	
+
 	// Create the agent
 	agent := llmutil.CreateAgent(agentConfig)
-	
+
 	if agent == nil {
 		t.Error("Agent creation failed, agent is nil")
 	}
-	
+
 	// Test running the agent with a timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	result, err := agent.Run(ctx, "What is 7 * 6?")
-	
+
 	if err != nil {
 		t.Errorf("Error running agent: %v", err)
 	}
-	
+
 	if result == nil {
 		t.Error("Agent result is nil")
 	}
@@ -184,26 +184,26 @@ func TestAgentCreation(t *testing.T) {
 
 func TestRunWithTimeout(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
-	
+
 	// Create a simple agent
 	agent := workflow.NewAgent(mockProvider)
 	agent.SetSystemPrompt("You are a helpful assistant.")
-	
+
 	// Run with a reasonable timeout
 	result, err := llmutil.RunWithTimeout(
 		agent,
 		"What is 7 * 6?",
 		5*time.Second,
 	)
-	
+
 	if err != nil {
 		t.Errorf("Error running with timeout: %v", err)
 	}
-	
+
 	if result == nil {
 		t.Error("Result from RunWithTimeout is nil")
 	}
-	
+
 	// Run with a very short timeout to test timeout handling
 	// Note: This is expected to fail with a timeout error
 	_, err = llmutil.RunWithTimeout(
@@ -211,7 +211,7 @@ func TestRunWithTimeout(t *testing.T) {
 		"Complex question that requires thinking",
 		1*time.Millisecond, // Extremely short timeout
 	)
-	
+
 	// This may or may not timeout depending on the mock implementation speed
 	// So we don't test the error condition here as it's not deterministic
 }

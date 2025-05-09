@@ -26,33 +26,33 @@ var dateFormats = []string{
 	time.ANSIC,
 	time.UnixDate,
 	time.RubyDate,
-	"2006-01-02",                         // ISO 8601 date
-	"2006-01-02T15:04:05",                // ISO 8601 with time
-	"2006-01-02 15:04:05",                // Common SQL datetime format
-	"01/02/2006",                         // MM/DD/YYYY
-	"02/01/2006",                         // DD/MM/YYYY
-	"Jan 2, 2006",                        // Month Day, Year
-	"January 2, 2006",                    // Full Month Day, Year
-	"2006-01-02T15:04:05-07:00",          // ISO 8601 with timezone
+	"2006-01-02",                          // ISO 8601 date
+	"2006-01-02T15:04:05",                 // ISO 8601 with time
+	"2006-01-02 15:04:05",                 // Common SQL datetime format
+	"01/02/2006",                          // MM/DD/YYYY
+	"02/01/2006",                          // DD/MM/YYYY
+	"Jan 2, 2006",                         // Month Day, Year
+	"January 2, 2006",                     // Full Month Day, Year
+	"2006-01-02T15:04:05-07:00",           // ISO 8601 with timezone
 	"2006-01-02T15:04:05.999999999-07:00", // ISO 8601 with fractional seconds
 }
 
 // Common duration formats for parsing
 var durationRegexps = []*regexp.Regexp{
-	regexp.MustCompile(`^(\d+)h$`),               // Hours
-	regexp.MustCompile(`^(\d+)m$`),               // Minutes
-	regexp.MustCompile(`^(\d+)s$`),               // Seconds
-	regexp.MustCompile(`^(\d+)ms$`),              // Milliseconds
-	regexp.MustCompile(`^(\d+)h(\d+)m$`),         // Hours and minutes
-	regexp.MustCompile(`^(\d+)h(\d+)m(\d+)s$`),   // Hours, minutes, and seconds
-	regexp.MustCompile(`^(\d+)m(\d+)s$`),         // Minutes and seconds
-	regexp.MustCompile(`^(\d+):(\d+)$`),          // HH:MM
-	regexp.MustCompile(`^(\d+):(\d+):(\d+)$`),    // HH:MM:SS
-	regexp.MustCompile(`^(\d+)d(\d+)h$`),         // Days and hours
-	regexp.MustCompile(`^(\d+) days?$`),          // Days (natural language)
-	regexp.MustCompile(`^(\d+) hours?$`),         // Hours (natural language)
-	regexp.MustCompile(`^(\d+) minutes?$`),       // Minutes (natural language)
-	regexp.MustCompile(`^(\d+) seconds?$`),       // Seconds (natural language)
+	regexp.MustCompile(`^(\d+)h$`),             // Hours
+	regexp.MustCompile(`^(\d+)m$`),             // Minutes
+	regexp.MustCompile(`^(\d+)s$`),             // Seconds
+	regexp.MustCompile(`^(\d+)ms$`),            // Milliseconds
+	regexp.MustCompile(`^(\d+)h(\d+)m$`),       // Hours and minutes
+	regexp.MustCompile(`^(\d+)h(\d+)m(\d+)s$`), // Hours, minutes, and seconds
+	regexp.MustCompile(`^(\d+)m(\d+)s$`),       // Minutes and seconds
+	regexp.MustCompile(`^(\d+):(\d+)$`),        // HH:MM
+	regexp.MustCompile(`^(\d+):(\d+):(\d+)$`),  // HH:MM:SS
+	regexp.MustCompile(`^(\d+)d(\d+)h$`),       // Days and hours
+	regexp.MustCompile(`^(\d+) days?$`),        // Days (natural language)
+	regexp.MustCompile(`^(\d+) hours?$`),       // Hours (natural language)
+	regexp.MustCompile(`^(\d+) minutes?$`),     // Minutes (natural language)
+	regexp.MustCompile(`^(\d+) seconds?$`),     // Seconds (natural language)
 }
 
 // CoerceToDate attempts to convert a string to a time.Time object
@@ -67,12 +67,12 @@ func CoerceToDate(value interface{}) (time.Time, bool) {
 				return t, true
 			}
 		}
-		
+
 		// Try to parse Unix timestamp if it's numeric
 		if timestamp, err := CoerceToInt64(v); err == nil {
 			return time.Unix(timestamp, 0), true
 		}
-		
+
 		return time.Time{}, false
 	case float64:
 		// Assume Unix timestamp
@@ -137,7 +137,7 @@ func CoerceToURL(value interface{}) (*url.URL, bool) {
 			// If not, assume http://
 			v = "http://" + v
 		}
-		
+
 		// Parse the URL
 		if u, err := url.Parse(v); err == nil && u.Host != "" {
 			return u, true
@@ -174,7 +174,7 @@ func CoerceToDuration(value interface{}) (time.Duration, bool) {
 		if d, err := time.ParseDuration(v); err == nil {
 			return d, true
 		}
-		
+
 		// Try to match custom duration formats
 		for _, re := range durationRegexps {
 			matches := re.FindStringSubmatch(v)
@@ -188,7 +188,7 @@ func CoerceToDuration(value interface{}) (time.Duration, bool) {
 					if err != nil {
 						continue
 					}
-					
+
 					switch unit {
 					case "h":
 						return time.Duration(i) * time.Hour, true
@@ -213,12 +213,12 @@ func CoerceToDuration(value interface{}) (time.Duration, bool) {
 					if err1 != nil || err2 != nil {
 						continue
 					}
-					
+
 					if strings.Contains(v, ":") {
 						// HH:MM format
 						return time.Duration(v1)*time.Hour + time.Duration(v2)*time.Minute, true
 					}
-					
+
 					// Formats like "1h30m", "5m30s"
 					if strings.Contains(v, "h") && strings.Contains(v, "m") {
 						return time.Duration(v1)*time.Hour + time.Duration(v2)*time.Minute, true
@@ -236,18 +236,18 @@ func CoerceToDuration(value interface{}) (time.Duration, bool) {
 					if err1 != nil || err2 != nil || err3 != nil {
 						continue
 					}
-					
+
 					if strings.Contains(v, ":") {
 						// HH:MM:SS format
 						return time.Duration(v1)*time.Hour + time.Duration(v2)*time.Minute + time.Duration(v3)*time.Second, true
 					}
-					
+
 					// Format like "1h30m45s"
 					return time.Duration(v1)*time.Hour + time.Duration(v2)*time.Minute + time.Duration(v3)*time.Second, true
 				}
 			}
 		}
-		
+
 		return 0, false
 	default:
 		return 0, false
@@ -314,7 +314,7 @@ func CoerceToHostname(value interface{}) (string, bool) {
 		if len(v) < 1 || len(v) > 253 {
 			return "", false
 		}
-		
+
 		// Each label must be between 1 and 63 characters and consist of letters, numbers, and hyphens
 		// Labels cannot start or end with hyphens
 		labels := strings.Split(v, ".")
@@ -331,7 +331,7 @@ func CoerceToHostname(value interface{}) (string, bool) {
 				}
 			}
 		}
-		
+
 		return v, true
 	default:
 		// Try to convert to string first

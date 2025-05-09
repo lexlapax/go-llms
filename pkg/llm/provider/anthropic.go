@@ -172,7 +172,7 @@ func (p *AnthropicProvider) buildAnthropicRequestBody(
 	} else if p.systemPrompt != "" {
 		requestBody["system"] = p.systemPrompt
 	}
-	
+
 	// Add metadata if present
 	if len(p.metadata) > 0 {
 		requestBody["metadata"] = p.metadata

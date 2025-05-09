@@ -40,17 +40,17 @@ func main() {
 
 	// Create the OpenAI provider with organization option
 	var openaiProvider *provider.OpenAIProvider
-	
+
 	if orgID != "" {
 		// Include the organization option if provided
 		orgOption := domain.NewOpenAIOrganizationOption(orgID)
-		
+
 		openaiProvider = provider.NewOpenAIProvider(
 			apiKey,
 			"gpt-4o",
 			orgOption,
 		)
-		
+
 		fmt.Println("Using OpenAI organization ID:", orgID)
 	} else {
 		// No organization ID provided
@@ -205,7 +205,7 @@ func main() {
 func runWithMockProvider() {
 	// Create a mock provider with organization option
 	orgOption := domain.NewOpenAIOrganizationOption("mock-org-id")
-	
+
 	mockProvider := provider.NewMockProvider(orgOption)
 
 	// Set a custom response for recipe generation

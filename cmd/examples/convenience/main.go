@@ -39,15 +39,15 @@ type Review struct {
 func main() {
 	// Example 1: Simple provider creation with convenience function
 	fmt.Println("\n=== Example 1: Provider Creation ===")
-	
+
 	// Try to create a provider using environment variables
 	llmProvider, providerName, modelName, err := llmutil.ProviderFromEnv()
 	if err != nil {
 		log.Fatalf("Failed to create provider: %v", err)
 	}
-	
+
 	fmt.Printf("Using %s provider with model %s\n", providerName, modelName)
-	
+
 	// Example 2: Using batch generation
 	fmt.Println("\n=== Example 2: Batch Generation ===")
 	prompts := []string{
@@ -55,9 +55,9 @@ func main() {
 		"Give me a recipe for pancakes",
 		"How many planets are in our solar system?",
 	}
-	
+
 	results, errors := llmutil.BatchGenerate(context.Background(), llmProvider, prompts)
-	
+
 	for i, result := range results {
 		if errors[i] != nil {
 			fmt.Printf("Prompt %d error: %v\n", i+1, errors[i])
@@ -65,56 +65,56 @@ func main() {
 			fmt.Printf("Prompt %d result snippet: %s...\n", i+1, truncate(result, 50))
 		}
 	}
-	
+
 	// Example 3: Generation with retry
 	fmt.Println("\n=== Example 3: Generation with Retry ===")
 	result, err := llmutil.GenerateWithRetry(
-		context.Background(), 
-		llmProvider, 
+		context.Background(),
+		llmProvider,
 		"Write a haiku about programming",
 		3, // max retries
 	)
-	
+
 	if err != nil {
 		fmt.Printf("Generation with retry failed: %v\n", err)
 	} else {
 		fmt.Printf("Result: %s\n", result)
 	}
-	
+
 	// Example 4: Provider pool
 	fmt.Println("\n=== Example 4: Provider Pool ===")
-	
+
 	// Create multiple providers (for demonstration purposes)
 	mockProvider1 := provider.NewMockProvider()
 	mockProvider2 := provider.NewMockProvider()
 	mockProvider3 := provider.NewMockProvider()
-	
+
 	// Create a provider pool with round-robin strategy
 	providerPool := llmutil.NewProviderPool(
 		[]domain.Provider{mockProvider1, mockProvider2, mockProvider3},
 		llmutil.StrategyRoundRobin,
 	)
-	
+
 	// Generate multiple responses using the pool
 	for i := 0; i < 5; i++ {
 		poolResult, poolErr := providerPool.Generate(
 			context.Background(),
 			fmt.Sprintf("This is test prompt %d", i+1),
 		)
-		
+
 		if poolErr != nil {
 			fmt.Printf("Pool generation %d error: %v\n", i+1, poolErr)
 		} else {
 			fmt.Printf("Pool generation %d result snippet: %s...\n", i+1, truncate(poolResult, 50))
 		}
 	}
-	
+
 	// Example 5: Typed generation
 	fmt.Println("\n=== Example 5: Typed Generation ===")
-	
+
 	// Generate a product with typed output
 	productPrompt := "Create a product listing for a high-end coffee maker"
-	
+
 	// Define a schema for the product
 	productSchema := &schemaDomain.Schema{
 		Type: "object",
@@ -150,24 +150,24 @@ func main() {
 		},
 		Required: []string{"id", "name", "description", "price"},
 	}
-	
+
 	// Generate with schema
 	productResult, productErr := llmProvider.GenerateWithSchema(
 		context.Background(),
 		productPrompt,
 		productSchema,
 	)
-	
+
 	if productErr != nil {
 		fmt.Printf("Product generation error: %v\n", productErr)
 	} else {
 		// Convert to JSON for display
 		productJSON, _ := json.MarshalIndent(productResult, "", "  ")
 		fmt.Printf("Generated product:\n%s\n", string(productJSON))
-		
+
 		// Convert result to product
 		var product Product
-		
+
 		// This is simplified - in a real application we would use the structured processor
 		productBytes, _ := json.Marshal(productResult)
 		if err := json.Unmarshal(productBytes, &product); err != nil {
@@ -177,10 +177,10 @@ func main() {
 			fmt.Printf("Product Price: $%.2f\n", product.Price)
 		}
 	}
-	
+
 	// Example 6: Agent creation with convenience function
 	fmt.Println("\n=== Example 6: Agent Creation ===")
-	
+
 	// Create a simple calculator tool
 	calculatorTool := tools.NewTool(
 		"calculator",
@@ -205,7 +205,7 @@ func main() {
 			Required: []string{"expression"},
 		},
 	)
-	
+
 	// Create an agent config
 	agentConfig := llmutil.AgentConfig{
 		Provider:      llmProvider,
@@ -214,23 +214,23 @@ func main() {
 		Tools:         []agentDomain.Tool{calculatorTool},
 		Hooks:         []agentDomain.Hook{workflow.NewMetricsHook()},
 	}
-	
+
 	// Create the agent using the convenience function
 	agent := llmutil.CreateAgent(agentConfig)
-	
+
 	// Run the agent with a timeout
 	agentResult, agentErr := llmutil.RunWithTimeout(
 		agent,
 		"What is 7 * 6?",
 		10*time.Second, // timeout
 	)
-	
+
 	if agentErr != nil {
 		fmt.Printf("Agent error: %v\n", agentErr)
 	} else {
 		fmt.Printf("Agent result: %v\n", agentResult)
 	}
-	
+
 	fmt.Println("\nUtility Functions Demo Completed")
 }
 

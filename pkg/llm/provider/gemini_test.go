@@ -134,7 +134,7 @@ func TestBuildGeminiRequestBody(t *testing.T) {
 	if !ok {
 		t.Errorf("Expected contents to be present in the request body")
 	}
-	
+
 	// Check if it's the same type
 	_, ok = bodyContents.([]map[string]interface{})
 	if !ok {
@@ -202,7 +202,10 @@ func TestGeminiGenerate(t *testing.T) {
 		// Encode response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Error encoding response: %v", err)
+			return
+		}
 	}))
 	defer server.Close()
 
@@ -245,7 +248,10 @@ func TestGeminiGenerateWithSchema(t *testing.T) {
 		// Encode response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Error encoding response: %v", err)
+			return
+		}
 	}))
 	defer server.Close()
 
@@ -392,7 +398,10 @@ func TestGeminiError(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(errorResponse)
+		if err := json.NewEncoder(w).Encode(errorResponse); err != nil {
+			t.Errorf("Error encoding error response: %v", err)
+			return
+		}
 	}))
 	defer server.Close()
 

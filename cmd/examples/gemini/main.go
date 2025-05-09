@@ -74,14 +74,14 @@ func main() {
 // Simple text generation with a prompt
 func simpleTextGeneration(ctx context.Context, provider *provider.GeminiProvider) {
 	prompt := "Explain quantum computing in simple terms"
-	
+
 	// Generate text with the prompt
 	response, err := provider.Generate(ctx, prompt, domain.WithTemperature(0.2))
 	if err != nil {
 		fmt.Printf("Error generating text: %v\n", err)
 		return
 	}
-	
+
 	fmt.Printf("Prompt: %s\n\nResponse:\n%s\n", prompt, response)
 }
 
@@ -92,14 +92,14 @@ func conversation(ctx context.Context, provider *provider.GeminiProvider) {
 		{Role: domain.RoleAssistant, Content: "Hi there! I'd be happy to help you learn about machine learning. What specific aspects are you interested in?"},
 		{Role: domain.RoleUser, Content: "Can you explain what neural networks are?"},
 	}
-	
+
 	// Generate a response to the conversation
 	response, err := provider.GenerateMessage(ctx, messages)
 	if err != nil {
 		fmt.Printf("Error generating conversation response: %v\n", err)
 		return
 	}
-	
+
 	// Display the conversation
 	fmt.Println("Conversation:")
 	for _, msg := range messages {
@@ -109,7 +109,7 @@ func conversation(ctx context.Context, provider *provider.GeminiProvider) {
 		}
 		fmt.Printf("%s: %s\n", role, msg.Content)
 	}
-	
+
 	fmt.Printf("Assistant: %s\n", response.Content)
 }
 
@@ -167,7 +167,7 @@ func structuredOutput(ctx context.Context, provider *provider.GeminiProvider) {
 		},
 		Required: []string{"name", "ingredients", "steps"},
 	}
-	
+
 	// Generate a recipe
 	prompt := "Create a recipe for a quick and healthy vegetarian pasta dish"
 	result, err := provider.GenerateWithSchema(ctx, prompt, recipeSchema)
@@ -175,20 +175,20 @@ func structuredOutput(ctx context.Context, provider *provider.GeminiProvider) {
 		fmt.Printf("Error generating structured output: %v\n", err)
 		return
 	}
-	
+
 	// Convert to map for easier access
 	recipe, ok := result.(map[string]interface{})
 	if !ok {
 		fmt.Println("Error: Could not convert result to map")
 		return
 	}
-	
+
 	// Print the recipe details
 	fmt.Printf("Recipe: %s\n", recipe["name"])
 	if desc, ok := recipe["description"].(string); ok {
 		fmt.Printf("Description: %s\n", desc)
 	}
-	
+
 	fmt.Println("\nIngredients:")
 	if ingredients, ok := recipe["ingredients"].([]interface{}); ok {
 		for _, item := range ingredients {
@@ -199,22 +199,22 @@ func structuredOutput(ctx context.Context, provider *provider.GeminiProvider) {
 			}
 		}
 	}
-	
+
 	fmt.Println("\nSteps:")
 	if steps, ok := recipe["steps"].([]interface{}); ok {
 		for i, step := range steps {
 			fmt.Printf("%d. %s\n", i+1, step.(string))
 		}
 	}
-	
+
 	if prepTime, ok := recipe["preparationTime"].(float64); ok {
 		fmt.Printf("\nPreparation Time: %d minutes\n", int(prepTime))
 	}
-	
+
 	if cookTime, ok := recipe["cookingTime"].(float64); ok {
 		fmt.Printf("Cooking Time: %d minutes\n", int(cookTime))
 	}
-	
+
 	if servings, ok := recipe["servings"].(float64); ok {
 		fmt.Printf("Servings: %d\n", int(servings))
 	}
@@ -223,16 +223,16 @@ func structuredOutput(ctx context.Context, provider *provider.GeminiProvider) {
 // Stream responses token by token
 func streamingResponse(ctx context.Context, provider *provider.GeminiProvider) {
 	prompt := "Write a short poem about artificial intelligence"
-	
+
 	// Stream responses
 	stream, err := provider.Stream(ctx, prompt)
 	if err != nil {
 		fmt.Printf("Error creating stream: %v\n", err)
 		return
 	}
-	
+
 	fmt.Printf("Prompt: %s\n\nStreaming response:\n", prompt)
-	
+
 	// Process tokens as they arrive
 	var fullResponse string
 	fmt.Print("Beginning stream: ")
@@ -241,14 +241,14 @@ func streamingResponse(ctx context.Context, provider *provider.GeminiProvider) {
 		// Print token immediately with some debug info
 		fmt.Print(token.Text)
 		tokenCount++
-		
+
 		// Build full response
 		fullResponse += token.Text
-		
+
 		// Small delay to simulate real-time display
 		time.Sleep(5 * time.Millisecond)
 	}
-	
+
 	fmt.Printf("\n\nStream complete. Received %d tokens.\n", tokenCount)
 	fmt.Println("Full response:\n", fullResponse)
 }
@@ -333,4 +333,3 @@ func demonstrateGenerationConfigOptions(ctx context.Context, apiKey, modelName s
 	fmt.Println("- Top-P (nucleus sampling) considers the smallest set of tokens whose cumulative probability exceeds P")
 	fmt.Println("- Adjusting these parameters lets you balance creativity vs determinism")
 }
-
