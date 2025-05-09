@@ -314,6 +314,16 @@ func TestWithProviderOptions(t *testing.T) {
 			expectedOptions: 1,
 		},
 		{
+			name: "Gemini with base URL",
+			config: ModelConfig{
+				Provider: "gemini",
+				Model:    "gemini-2.0-flash-lite",
+				APIKey:   "test-api-key",
+				BaseURL:  "https://custom-gemini.example.com",
+			},
+			expectedOptions: 1,
+		},
+		{
 			name: "OpenAI without base URL",
 			config: ModelConfig{
 				Provider: "openai",
@@ -354,18 +364,27 @@ func TestProviderFromEnv(t *testing.T) {
 	originalOpenAI := os.Getenv("OPENAI_API_KEY")
 	originalAnthropic := os.Getenv("ANTHROPIC_API_KEY")
 	originalGemini := os.Getenv("GEMINI_API_KEY")
+	originalOpenAIBaseURL := os.Getenv("OPENAI_BASE_URL")
+	originalAnthropicBaseURL := os.Getenv("ANTHROPIC_BASE_URL")
+	originalGeminiBaseURL := os.Getenv("GEMINI_BASE_URL")
 
 	// Clean up environment after the test
 	defer func() {
 		os.Setenv("OPENAI_API_KEY", originalOpenAI)
 		os.Setenv("ANTHROPIC_API_KEY", originalAnthropic)
 		os.Setenv("GEMINI_API_KEY", originalGemini)
+		os.Setenv("OPENAI_BASE_URL", originalOpenAIBaseURL)
+		os.Setenv("ANTHROPIC_BASE_URL", originalAnthropicBaseURL)
+		os.Setenv("GEMINI_BASE_URL", originalGeminiBaseURL)
 	}()
 
-	// Clear all API keys to test the mock provider fallback
+	// Clear all API keys and base URLs to test the mock provider fallback
 	os.Setenv("OPENAI_API_KEY", "")
 	os.Setenv("ANTHROPIC_API_KEY", "")
 	os.Setenv("GEMINI_API_KEY", "")
+	os.Setenv("OPENAI_BASE_URL", "")
+	os.Setenv("ANTHROPIC_BASE_URL", "")
+	os.Setenv("GEMINI_BASE_URL", "")
 
 	// Test with no API keys (should return mock provider)
 	prov, provName, modelName, err := ProviderFromEnv()
@@ -391,6 +410,66 @@ func TestProviderFromEnv(t *testing.T) {
 
 	// Test that the right provider type is returned
 	_, ok := prov.(*provider.GeminiProvider)
+	if !ok {
+		t.Errorf("Expected GeminiProvider, got: %T", prov)
+	}
+	
+	// Clear all environment variables again for the next tests
+	os.Setenv("GEMINI_API_KEY", "")
+	
+	// Test OpenAI provider with custom base URL
+	os.Setenv("OPENAI_API_KEY", "test-openai-key")
+	os.Setenv("OPENAI_BASE_URL", "https://custom-openai.example.com")
+	prov, provName, modelName, err = ProviderFromEnv()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if provName != "openai" {
+		t.Errorf("Expected 'openai' provider, got: %s", provName)
+	}
+	
+	// Test that the provider has the custom base URL
+	// Note: We can't directly access the baseURL field since it's private
+	// but we can verify it's the right type
+	_, ok = prov.(*provider.OpenAIProvider)
+	if !ok {
+		t.Errorf("Expected OpenAIProvider, got: %T", prov)
+	}
+	
+	// Test Anthropic provider with custom base URL
+	os.Setenv("OPENAI_API_KEY", "")
+	os.Setenv("OPENAI_BASE_URL", "")
+	os.Setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
+	os.Setenv("ANTHROPIC_BASE_URL", "https://custom-anthropic.example.com")
+	prov, provName, modelName, err = ProviderFromEnv()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if provName != "anthropic" {
+		t.Errorf("Expected 'anthropic' provider, got: %s", provName)
+	}
+	
+	// Test that the provider has the right type
+	_, ok = prov.(*provider.AnthropicProvider)
+	if !ok {
+		t.Errorf("Expected AnthropicProvider, got: %T", prov)
+	}
+	
+	// Test Gemini provider with custom base URL
+	os.Setenv("ANTHROPIC_API_KEY", "")
+	os.Setenv("ANTHROPIC_BASE_URL", "")
+	os.Setenv("GEMINI_API_KEY", "test-gemini-key")
+	os.Setenv("GEMINI_BASE_URL", "https://custom-gemini.example.com")
+	prov, provName, modelName, err = ProviderFromEnv()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if provName != "gemini" {
+		t.Errorf("Expected 'gemini' provider, got: %s", provName)
+	}
+	
+	// Test that the provider has the right type
+	_, ok = prov.(*provider.GeminiProvider)
 	if !ok {
 		t.Errorf("Expected GeminiProvider, got: %T", prov)
 	}

@@ -94,12 +94,18 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 }
 
 // ProviderFromEnv creates a provider using environment variables
-// It looks for OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, etc.
+// It looks for API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY) and
+// custom base URLs (OPENAI_BASE_URL, ANTHROPIC_BASE_URL, GEMINI_BASE_URL)
 func ProviderFromEnv() (domain.Provider, string, string, error) {
 	// Check for API keys in environment variables
 	openAIKey := os.Getenv("OPENAI_API_KEY")
 	anthropicKey := os.Getenv("ANTHROPIC_API_KEY") 
 	geminiKey := os.Getenv("GEMINI_API_KEY")
+	
+	// Check for base URL overrides in environment variables
+	openAIBaseURL := os.Getenv("OPENAI_BASE_URL")
+	anthropicBaseURL := os.Getenv("ANTHROPIC_BASE_URL")
+	geminiBaseURL := os.Getenv("GEMINI_BASE_URL")
 	
 	// Default models for each provider
 	openAIModel := os.Getenv("OPENAI_MODEL")
@@ -119,18 +125,39 @@ func ProviderFromEnv() (domain.Provider, string, string, error) {
 	
 	// Try to create a provider in order of preference
 	if openAIKey != "" {
-		provider := provider.NewOpenAIProvider(openAIKey, openAIModel)
-		return provider, "openai", openAIModel, nil
+		var options []provider.OpenAIOption
+		
+		// Add base URL option if specified
+		if openAIBaseURL != "" {
+			options = append(options, provider.WithBaseURL(openAIBaseURL))
+		}
+		
+		llmProvider := provider.NewOpenAIProvider(openAIKey, openAIModel, options...)
+		return llmProvider, "openai", openAIModel, nil
 	}
 	
 	if anthropicKey != "" {
-		provider := provider.NewAnthropicProvider(anthropicKey, anthropicModel)
-		return provider, "anthropic", anthropicModel, nil
+		var options []provider.AnthropicOption
+		
+		// Add base URL option if specified
+		if anthropicBaseURL != "" {
+			options = append(options, provider.WithAnthropicBaseURL(anthropicBaseURL))
+		}
+		
+		llmProvider := provider.NewAnthropicProvider(anthropicKey, anthropicModel, options...)
+		return llmProvider, "anthropic", anthropicModel, nil
 	}
 	
 	if geminiKey != "" {
-		provider := provider.NewGeminiProvider(geminiKey, geminiModel)
-		return provider, "gemini", geminiModel, nil
+		var options []provider.GeminiOption
+		
+		// Add base URL option if specified
+		if geminiBaseURL != "" {
+			options = append(options, provider.WithGeminiBaseURL(geminiBaseURL))
+		}
+		
+		llmProvider := provider.NewGeminiProvider(geminiKey, geminiModel, options...)
+		return llmProvider, "gemini", geminiModel, nil
 	}
 	
 	// If no API keys are found, create a mock provider
