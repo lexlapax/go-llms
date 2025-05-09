@@ -7,7 +7,7 @@
 
 ## Additional providers
 - [x] Add Google Gemini api based provider
-  - [ ] Fix gemini streaming output
+  - [x] Fix gemini streaming output by adding the required `alt=sse` parameter to streaming URLs
 - [x] Add Ollama support via OpenAI-compatible provider
   - [x] Implemented in openai_api_compatible_providers example
   - [ ] Create dedicated integration test for Ollama

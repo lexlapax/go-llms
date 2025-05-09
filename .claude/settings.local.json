@@ -36,7 +36,11 @@
       "Bash(cp:*)",
       "Bash(git mv:*)",
       "Bash(export GO_TEST_TIMEOUT=5m)",
-      "Bash(OLLAMA_HOST=http://localhost:11434 go test -v ./tests/integration/openai_api_compatible_providers_test.go -run TestOpenAIAPICompatibleProvidersIntegration/Ollama)"
+      "Bash(OLLAMA_HOST=http://localhost:11434 go test -v ./tests/integration/openai_api_compatible_providers_test.go -run TestOpenAIAPICompatibleProvidersIntegration/Ollama)",
+      "Bash(GEMINI_API_KEY=$GEMINI_API_KEY go test -v ./tests/integration/gemini_streaming_test.go -run=TestGeminiStreamingLive)",
+      "Bash(GEMINI_API_KEY=$GEMINI_API_KEY go test -v ./tests/integration/gemini_alt_sse_test.go)",
+      "Bash(GEMINI_API_KEY=$GEMINI_API_KEY go test -v ./tests/integration/gemini_streaming_test.go -run=TestGeminiStreamingLive/ProviderImplementationTest)",
+      "Bash(GEMINI_API_KEY=$GEMINI_API_KEY go test -v ./tests/integration/gemini_streaming_test.go -run=TestGeminiAltSSEParameter)"
     ],
     "deny": []
   }

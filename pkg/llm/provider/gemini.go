@@ -362,7 +362,10 @@ func (p *GeminiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 	}
 
 	// Create HTTP request with API key in URL - use streamGenerateContent endpoint for streaming
-	url := fmt.Sprintf("%s/models/%s:streamGenerateContent?key=%s", p.baseURL, p.model, p.apiKey)
+	// IMPORTANT: The alt=sse parameter is REQUIRED for the Gemini API to return responses in Server-Sent Events format.
+	// Without this parameter, the API returns standard JSON responses that don't conform to SSE protocol,
+	// causing the streaming implementation to fail. This requirement is verified in TestGeminiAltSSEParameter.
+	url := fmt.Sprintf("%s/models/%s:streamGenerateContent?alt=sse&key=%s", p.baseURL, p.model, p.apiKey)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, requestBuffer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
