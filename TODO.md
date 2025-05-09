@@ -38,7 +38,7 @@
 
 ## Testing & Performance
 - [x] Add benchmarks for consensus algorithms
-- [ ] Consolidate and cleanup Makefile
+- [x] Consolidate and cleanup Makefile
 - [ ] Create comprehensive test suite for error conditions
 - [ ] Add benchmarks for remaining components
 - [ ] Implement stress tests for high-load scenarios
