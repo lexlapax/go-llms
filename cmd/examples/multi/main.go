@@ -26,9 +26,20 @@ func main() {
 	var providers []provider.ProviderWeight
 
 	if openaiKey != "" {
+		// Check for optional organization ID
+		orgID := os.Getenv("OPENAI_ORGANIZATION")
+		var openaiOptions []domain.ProviderOption
+
+		if orgID != "" {
+			// Add organization option if provided
+			openaiOptions = append(openaiOptions, domain.NewOpenAIOrganizationOption(orgID))
+			fmt.Println("Using OpenAI with organization ID:", orgID)
+		}
+
 		openaiProvider := provider.NewOpenAIProvider(
 			openaiKey,
 			"gpt-4o", // You can change this to your preferred model
+			openaiOptions...,
 		)
 		providers = append(providers, provider.ProviderWeight{
 			Provider: openaiProvider,
@@ -38,27 +49,42 @@ func main() {
 	}
 
 	if anthropicKey != "" {
+		// Add Anthropic system prompt option
+		systemPromptOption := domain.NewAnthropicSystemPromptOption(
+			"You are a helpful coding assistant specializing in Go programming. You provide clear, concise responses focused on best practices.")
+
 		anthropicProvider := provider.NewAnthropicProvider(
 			anthropicKey,
 			"claude-3-5-sonnet-latest", // You can change this to your preferred model
+			systemPromptOption,
 		)
 		providers = append(providers, provider.ProviderWeight{
 			Provider: anthropicProvider,
 			Weight:   1.0,
 			Name:     "anthropic",
 		})
+
+		fmt.Println("Using Anthropic with system prompt option")
 	}
 
 	if geminiKey != "" {
+		// Add Gemini generation config option
+		generationConfigOption := domain.NewGeminiGenerationConfigOption().
+			WithTopK(20).
+			WithTemperature(0.8)
+
 		geminiProvider := provider.NewGeminiProvider(
 			geminiKey,
 			"gemini-2.0-flash-lite", // You can change this to your preferred model
+			generationConfigOption,
 		)
 		providers = append(providers, provider.ProviderWeight{
 			Provider: geminiProvider,
 			Weight:   1.0,
 			Name:     "gemini",
 		})
+
+		fmt.Println("Using Gemini with generation config options")
 	}
 
 	if len(providers) < 2 {

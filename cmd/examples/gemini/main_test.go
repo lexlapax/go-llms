@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 )
 
@@ -16,8 +17,18 @@ func TestGeminiExample(t *testing.T) {
 		t.Skip("Skipping test: GEMINI_API_KEY environment variable not set")
 	}
 
-	// Create provider
-	geminiProvider := provider.NewGeminiProvider(apiKey, "gemini-2.0-flash-lite")
+	// Create generation config option
+	generationConfigOption := domain.NewGeminiGenerationConfigOption().
+		WithTemperature(0.7).
+		WithTopK(40).
+		WithMaxOutputTokens(256)
+
+	// Create provider with options
+	geminiProvider := provider.NewGeminiProvider(
+		apiKey,
+		"gemini-2.0-flash-lite",
+		generationConfigOption,
+	)
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

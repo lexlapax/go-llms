@@ -6,20 +6,25 @@ This example demonstrates how to use the Multi-Provider functionality of the Go-
 
 The Multi-Provider example showcases:
 
-1. Creating and configuring multiple providers (OpenAI, Anthropic, and/or mock providers)
-2. Using different multi-provider strategies:
+1. Creating and configuring multiple providers (OpenAI, Anthropic, Gemini, and/or mock providers)
+2. Using provider-specific options for each provider:
+   - OpenAI with OpenAIOrganizationOption
+   - Anthropic with AnthropicSystemPromptOption
+   - Gemini with GeminiGenerationConfigOption
+3. Using different multi-provider strategies:
    - Fastest Strategy - Returns the first response from any provider
    - Primary Strategy - Tries the primary provider first, falls back to others if it fails
-3. Working with real API-based providers when credentials are available
-4. Simulating provider behavior with mock providers when no credentials are present
-5. Streaming responses through the multi-provider system
+4. Working with real API-based providers when credentials are available
+5. Simulating provider behavior with mock providers when no credentials are present
+6. Streaming responses through the multi-provider system
 
 ## Features Demonstrated
 
 - **Fastest Strategy** - Racing multiple providers to get the quickest response
 - **Primary Strategy** - Using a preferred provider with fallbacks
 - **Provider Weighting** - Configuring different weights for providers
-- **API Integration** - Working with real LLM providers (OpenAI, Anthropic)
+- **Provider-Specific Options** - Using OpenAIOrganizationOption, AnthropicSystemPromptOption, and GeminiGenerationConfigOption
+- **API Integration** - Working with real LLM providers (OpenAI, Anthropic, Gemini)
 - **Response Timing** - Measuring and comparing response times
 - **Mock Providers** - Simulating different response times and behaviors
 - **Streaming** - Streaming tokens through the multi-provider system
@@ -29,9 +34,14 @@ The Multi-Provider example showcases:
 To run the example:
 
 ```bash
-# With both OpenAI and Anthropic API keys
+# With OpenAI, Anthropic, and Gemini API keys
 export OPENAI_API_KEY=your_openai_key_here
 export ANTHROPIC_API_KEY=your_anthropic_key_here
+export GEMINI_API_KEY=your_gemini_key_here
+
+# Optional: Set organization ID for OpenAI
+export OPENAI_ORGANIZATION=your_organization_id
+
 make example EXAMPLE=multi
 ./bin/multi
 
@@ -58,6 +68,10 @@ When running without API keys, the example creates three mock providers with dif
 - **MultiProvider** - Coordinates multiple LLM providers using different strategies
 - **ProviderWeight** - Configures the weight and name for each provider
 - **ResponseStream** - Handles streaming responses from providers
+- **Provider-Specific Options**:
+  - **OpenAIOrganizationOption** - Sets the organization ID for OpenAI
+  - **AnthropicSystemPromptOption** - Sets system prompt for Anthropic
+  - **GeminiGenerationConfigOption** - Configures generation parameters for Gemini
 
 ## Real-World Applications
 

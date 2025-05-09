@@ -9,6 +9,7 @@ This directory contains user guides for the Go-LLMs library, providing step-by-s
 ## Available Guides
 
 - [Getting Started](getting-started.md) - Introduction to the library and basic usage examples
+- [Provider Options](provider-options.md) - Using the provider option system for configuration
 - [Multi-Provider Guide](multi-provider.md) - Working with multiple LLM providers simultaneously
 - [Advanced Validation](advanced-validation.md) - Advanced schema validation features and usage
 - [Error Handling](error-handling.md) - Error handling patterns and best practices

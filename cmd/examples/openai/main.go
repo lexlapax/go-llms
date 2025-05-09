@@ -27,23 +27,38 @@ type Recipe struct {
 
 func main() {
 	// Check if API key is provided
-	apiKey := os.Getenv("ANTHROPIC_API_KEY")
+	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
 		// If no API key, use mock provider instead
-		fmt.Println("No ANTHROPIC_API_KEY environment variable found. Using mock provider instead.")
+		fmt.Println("No OPENAI_API_KEY environment variable found. Using mock provider instead.")
 		runWithMockProvider()
 		return
 	}
 
-	// Create the Anthropic provider with system prompt option
-	systemPromptOption := domain.NewAnthropicSystemPromptOption(
-		"You are a helpful coding assistant specializing in Go programming. You provide clear, concise responses focused on best practices.")
+	// Optional organization ID
+	orgID := os.Getenv("OPENAI_ORGANIZATION")
 
-	anthropicProvider := provider.NewAnthropicProvider(
-		apiKey,
-		"claude-3-5-sonnet-latest",
-		systemPromptOption,
-	)
+	// Create the OpenAI provider with organization option
+	var openaiProvider *provider.OpenAIProvider
+	
+	if orgID != "" {
+		// Include the organization option if provided
+		orgOption := domain.NewOpenAIOrganizationOption(orgID)
+		
+		openaiProvider = provider.NewOpenAIProvider(
+			apiKey,
+			"gpt-4o",
+			orgOption,
+		)
+		
+		fmt.Println("Using OpenAI organization ID:", orgID)
+	} else {
+		// No organization ID provided
+		openaiProvider = provider.NewOpenAIProvider(
+			apiKey,
+			"gpt-4o",
+		)
+	}
 
 	// Create structured processor components
 	validator := validation.NewValidator()
@@ -96,12 +111,12 @@ func main() {
 		Required: []string{"title", "ingredients", "steps", "cookTime", "servings"},
 	}
 
-	fmt.Println("Go-LLMs Anthropic Example")
-	fmt.Println("=========================")
+	fmt.Println("Go-LLMs OpenAI Example")
+	fmt.Println("======================")
 
 	// Example 1: Simple generation
 	fmt.Println("\nExample 1: Simple generation")
-	response, err := anthropicProvider.Generate(
+	response, err := openaiProvider.Generate(
 		context.Background(),
 		"Explain what Go channels are in a paragraph",
 	)
@@ -110,12 +125,13 @@ func main() {
 	}
 	fmt.Printf("Response: %s\n", response)
 
-	// Example 2: Using message-based conversation
-	fmt.Println("\nExample 2: Message-based conversation (using system prompt option)")
+	// Example 2: Using message-based conversation with system role
+	fmt.Println("\nExample 2: Message-based conversation")
 	messages := []domain.Message{
+		{Role: domain.RoleSystem, Content: "You are a helpful coding assistant specializing in Go."},
 		{Role: domain.RoleUser, Content: "What's the difference between a slice and an array in Go?"},
 	}
-	messageResponse, err := anthropicProvider.GenerateMessage(context.Background(), messages)
+	messageResponse, err := openaiProvider.GenerateMessage(context.Background(), messages)
 	if err != nil {
 		log.Fatalf("Message generation error: %v", err)
 	}
@@ -132,7 +148,7 @@ func main() {
 	}
 
 	// Generate the structured output
-	structuredResponse, err := anthropicProvider.Generate(context.Background(), enhancedPrompt)
+	structuredResponse, err := openaiProvider.Generate(context.Background(), enhancedPrompt)
 	if err != nil {
 		log.Fatalf("Structured generation error: %v", err)
 	}
@@ -168,7 +184,7 @@ func main() {
 
 	// Example 4: Stream the response
 	fmt.Println("\nExample 4: Streaming response")
-	stream, err := anthropicProvider.Stream(
+	stream, err := openaiProvider.Stream(
 		context.Background(),
 		"List 3 benefits of Go's garbage collector in short bullet points",
 	)
@@ -187,11 +203,10 @@ func main() {
 
 // runWithMockProvider runs the example with a mock provider
 func runWithMockProvider() {
-	// Create a mock provider with system prompt option
-	systemPromptOption := domain.NewAnthropicSystemPromptOption(
-		"You are a helpful coding assistant specializing in Go programming. You provide clear, concise responses focused on best practices.")
-
-	mockProvider := provider.NewMockProvider(systemPromptOption)
+	// Create a mock provider with organization option
+	orgOption := domain.NewOpenAIOrganizationOption("mock-org-id")
+	
+	mockProvider := provider.NewMockProvider(orgOption)
 
 	// Set a custom response for recipe generation
 	mockProvider.WithGenerateFunc(func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
@@ -229,8 +244,8 @@ func runWithMockProvider() {
 		return "This is a mock response for prompt: " + prompt, nil
 	})
 
-	fmt.Println("Go-LLMs Mock Example (simulating Anthropic)")
-	fmt.Println("==========================================")
+	fmt.Println("Go-LLMs Mock Example (simulating OpenAI)")
+	fmt.Println("========================================")
 
 	fmt.Println("\nExample 1: Simple generation")
 	response, _ := mockProvider.Generate(

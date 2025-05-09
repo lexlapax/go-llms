@@ -79,7 +79,7 @@ type Provider interface {
 
 The `Provider` interface defines methods for generating text and streaming responses from language models, with support for both simple prompts and message-based conversations.
 
-### Provider Options
+### Request Options
 
 ```go
 type Option func(*ProviderOptions)
@@ -112,23 +112,104 @@ func WithFrequencyPenalty(penalty float64) Option
 func WithPresencePenalty(penalty float64) Option
 ```
 
-These options configure the behavior of the language model, such as the randomness of outputs, length limits, and more.
+These request options configure the behavior of the language model for a specific request, such as the randomness of outputs, length limits, and more.
+
+### Provider Options System
+
+Go-LLMs also features an interface-based provider option system that allows configuring providers with common and provider-specific options:
+
+```go
+// Base interface for all provider options
+type ProviderOption interface {
+    // Identifies which provider type this option is for
+    ProviderType() string
+}
+
+// Provider-specific option interfaces
+type OpenAIOption interface {
+    ProviderOption
+    ApplyToOpenAI(provider interface{})
+}
+
+type AnthropicOption interface {
+    ProviderOption
+    ApplyToAnthropic(provider interface{})
+}
+
+type GeminiOption interface {
+    ProviderOption
+    ApplyToGemini(provider interface{})
+}
+
+type MockOption interface {
+    ProviderOption
+    ApplyToMock(provider interface{})
+}
+```
+
+Common options that work across all providers:
+
+```go
+// Set custom API endpoint
+baseURLOption := domain.NewBaseURLOption("https://custom-endpoint.example.com")
+
+// Create a custom HTTP client with specific timeout
+httpClient := &http.Client{
+    Timeout: 30 * time.Second,
+}
+httpClientOption := domain.NewHTTPClientOption(httpClient)
+
+// Set timeout to 15 seconds
+timeoutOption := domain.NewTimeoutOption(15000) // milliseconds
+
+// Set custom headers
+headersOption := domain.NewHeadersOption(map[string]string{
+    "X-Custom-Header": "custom-value",
+})
+```
+
+Provider-specific options examples:
+
+```go
+// OpenAI organization ID
+orgOption := domain.NewOpenAIOrganizationOption("org-123456")
+
+// Anthropic system prompt
+systemPromptOption := domain.NewAnthropicSystemPromptOption(
+    "You are a helpful coding assistant specializing in Go programming.")
+
+// Gemini generation config
+generationConfigOption := domain.NewGeminiGenerationConfigOption().
+    WithTemperature(0.7).
+    WithTopK(40).
+    WithMaxOutputTokens(1024)
+```
+
+For detailed documentation on the provider options system, see the [Provider Options Guide](/docs/user-guide/provider-options.md).
 
 ## Provider Implementations
 
 ### OpenAI Provider
 
 ```go
-// Create a new OpenAI provider
+// Create a new OpenAI provider with basic configuration
 provider := provider.NewOpenAIProvider(
     "your-api-key",
     "gpt-4o", // Model name
 )
 
+// Create a new OpenAI provider with provider options
+provider := provider.NewOpenAIProvider(
+    "your-api-key",
+    "gpt-4o",
+    domain.NewOpenAIOrganizationOption("org-123456"),
+    domain.NewHTTPClientOption(&http.Client{Timeout: 30 * time.Second}),
+)
+
 // Generate text
 response, err := provider.Generate(ctx, "What is the capital of France?")
 
-// Generate with options
+// Generate with request options
 response, err := provider.Generate(
     ctx,
     "Write a poem about programming.",
@@ -155,15 +236,24 @@ The OpenAI provider supports all OpenAI models including GPT-3.5, GPT-4, and GPT
 ### Anthropic Provider
 
 ```go
-// Create a new Anthropic provider
+// Create a new Anthropic provider with basic configuration
 provider := provider.NewAnthropicProvider(
     "your-api-key",
     "claude-3-5-sonnet-latest", // Model name
 )
 
+// Create a new Anthropic provider with provider options
+provider := provider.NewAnthropicProvider(
+    "your-api-key",
+    "claude-3-5-sonnet-latest",
+    domain.NewAnthropicSystemPromptOption("You are a helpful assistant."),
+    domain.NewAnthropicMetadataOption(map[string]string{
+        "user_id": "user123",
+    }),
+)
+
 // Message-based conversation
 messages := []domain.Message{
-    {Role: domain.RoleSystem, Content: "You are a helpful assistant."},
     {Role: domain.RoleUser, Content: "What is the meaning of life?"},
 }
 
@@ -172,11 +262,49 @@ response, err := provider.GenerateMessage(ctx, messages)
 
 The Anthropic provider supports Claude models including Claude 3 Opus, Sonnet, and Haiku.
 
+### Gemini Provider
+
+```go
+// Create a new Gemini provider with basic configuration
+provider := provider.NewGeminiProvider(
+    "your-api-key",
+    "gemini-2.0-flash-lite", // Model name
+)
+
+// Create a new Gemini provider with provider options
+provider := provider.NewGeminiProvider(
+    "your-api-key",
+    "gemini-2.0-flash-lite",
+    domain.NewGeminiGenerationConfigOption().
+        WithTemperature(0.7).
+        WithTopK(40).
+        WithMaxOutputTokens(1024),
+    domain.NewBaseURLOption("https://custom-endpoint.example.com"),
+)
+
+// Generate text
+response, err := provider.Generate(ctx, "What are the major features of Go?")
+
+// Message-based conversation
+messages := []domain.Message{
+    {Role: domain.RoleUser, Content: "Tell me about machine learning."},
+}
+response, err := provider.GenerateMessage(ctx, messages)
+```
+
+The Gemini provider supports Google's Gemini models.
+
 ### Mock Provider
 
 ```go
 // Create a mock provider with default responses
 provider := provider.NewMockProvider()
+
+// Create a mock provider with options
+provider := provider.NewMockProvider(
+    domain.NewHTTPClientOption(&http.Client{Timeout: 30 * time.Second}),
+    domain.NewBaseURLOption("https://mock-api.example.com"),
+)
 
 // Customize the mock provider's behavior
 provider.WithGenerateFunc(func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
@@ -191,10 +319,30 @@ The mock provider is useful for testing and development without making actual AP
 The multi provider allows using multiple LLM providers together with different strategies:
 
 ```go
+// Create providers with their specific options
+openAIProvider := provider.NewOpenAIProvider(
+    openaiKey,
+    "gpt-4o",
+    domain.NewOpenAIOrganizationOption("org-123456"),
+)
+
+anthropicProvider := provider.NewAnthropicProvider(
+    anthropicKey,
+    "claude-3-5-sonnet-latest",
+    domain.NewAnthropicSystemPromptOption("You are a helpful assistant."),
+)
+
+geminiProvider := provider.NewGeminiProvider(
+    geminiKey,
+    "gemini-2.0-flash-lite",
+    domain.NewGeminiGenerationConfigOption().WithTemperature(0.7),
+)
+
 // Create provider weights
 providers := []provider.ProviderWeight{
     {Provider: openAIProvider, Weight: 1.0, Name: "openai"},
     {Provider: anthropicProvider, Weight: 1.0, Name: "anthropic"},
+    {Provider: geminiProvider, Weight: 1.0, Name: "gemini"},
 }
 
 // Create a multi-provider with the fastest strategy

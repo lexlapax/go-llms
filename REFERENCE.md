@@ -5,6 +5,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 ## User Guides
 
 - [Getting Started](/docs/user-guide/getting-started.md) - Introduction and basic usage examples
+- [Provider Options](/docs/user-guide/provider-options.md) - Using the provider option system for configuration
 - [Multi-Provider Guide](/docs/user-guide/multi-provider.md) - Working with multiple LLM providers
 - [Advanced Validation](/docs/user-guide/advanced-validation.md) - Advanced schema validation features
 - [Error Handling](/docs/user-guide/error-handling.md) - Error handling patterns and best practices
@@ -30,10 +31,17 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 
 - [Simple Example](/cmd/examples/simple/README.md) - Basic usage with mock providers
 - [Anthropic Example](/cmd/examples/anthropic/README.md) - Integration with Anthropic Claude
+- [OpenAI Example](/cmd/examples/openai/README.md) - Integration with OpenAI models
 - [Gemini Example](/cmd/examples/gemini/README.md) - Integration with Google Gemini
+- [Provider Options Example](/cmd/examples/provider_options/README.md) - Demonstration of provider options system
+- [OpenAI API Compatible Providers](/cmd/examples/openai_api_compatible_providers/README.md) - Using OpenRouter and Ollama
 - [Agent Example](/cmd/examples/agent/README.md) - Agent with tools
 - [Multi-Provider Example](/cmd/examples/multi/README.md) - Working with multiple providers
 - [Consensus Example](/cmd/examples/consensus/README.md) - Multi-provider consensus strategies
+- [Schema Example](/cmd/examples/schema/README.md) - Schema generation from Go structs
+- [Coercion Example](/cmd/examples/coercion/README.md) - Type coercion for validation
+- [Convenience Example](/cmd/examples/convenience/README.md) - Utility functions for common tasks
+- [Metrics Example](/cmd/examples/metrics/README.md) - Performance monitoring and metrics
 
 ## CLI Documentation
 

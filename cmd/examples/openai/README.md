@@ -1,15 +1,15 @@
-# Anthropic Provider Example
+# OpenAI Provider Example
 
-This example demonstrates how to use the Anthropic Claude provider with the Go-LLMs library to generate text, hold conversations, and create structured outputs.
+This example demonstrates how to use the OpenAI provider with the Go-LLMs library to generate text, hold conversations, and create structured outputs.
 
 ## Overview
 
-The Anthropic example showcases:
+The OpenAI example showcases:
 
-1. Creating and configuring the Anthropic provider with the claude-3-5-sonnet-latest model
-2. Using the AnthropicSystemPromptOption for consistent system behavior
+1. Creating and configuring the OpenAI provider with the gpt-4o model
+2. Using the OpenAIOrganizationOption for organization-specific contexts
 3. Simple text generation with direct prompts
-4. Message-based conversation leveraging the system prompt option
+4. Message-based conversation with system and user roles
 5. Structured output generation with schema validation
 6. Response streaming
 7. Graceful fallback to a mock provider when no API key is available
@@ -17,8 +17,8 @@ The Anthropic example showcases:
 ## Features Demonstrated
 
 - **Simple Text Generation** - Basic text generation with a prompt
-- **Provider Options** - Using the AnthropicSystemPromptOption for consistent system instructions
-- **Conversation** - Using message-based conversation with user roles and system prompt option
+- **Provider Options** - Using the OpenAIOrganizationOption for organization-specific configurations
+- **Conversation** - Using message-based conversation with system and user roles
 - **Structured Output** - Generating structured recipe data with schema validation
 - **Prompt Enhancement** - Enriching prompts with schema information for better results
 - **Response Processing** - Processing raw LLM responses into validated structured data
@@ -29,14 +29,16 @@ The Anthropic example showcases:
 To run the example:
 
 ```bash
-# With Anthropic API key
-export ANTHROPIC_API_KEY=your_api_key_here
-make example EXAMPLE=anthropic
-./bin/anthropic
+# With OpenAI API key
+export OPENAI_API_KEY=your_api_key_here
+# Optional organization ID
+export OPENAI_ORGANIZATION=your_organization_id_here
+make example EXAMPLE=openai
+./bin/openai
 
 # Without API key (uses mock provider)
-make example EXAMPLE=anthropic
-./bin/anthropic
+make example EXAMPLE=openai
+./bin/openai
 ```
 
 ## Structured Data Example
@@ -63,12 +65,12 @@ The schema includes validation rules:
 
 ## Key Components
 
-- **AnthropicProvider** - Handles API communication with Anthropic
-- **AnthropicSystemPromptOption** - Provider-specific option for setting a persistent system prompt
+- **OpenAIProvider** - Handles API communication with OpenAI
+- **OpenAIOrganizationOption** - Provider-specific option for organization settings
 - **StructuredProcessor** - Processes raw responses into structured data
 - **PromptEnhancer** - Enriches prompts with schema information
 - **Validator** - Validates structured outputs against schemas
 
 ## Mock Provider Fallback
 
-When no API key is provided, the example automatically falls back to a mock provider that simulates Anthropic's responses. This is useful for testing and development without API costs.
+When no API key is provided, the example automatically falls back to a mock provider that simulates OpenAI's responses. This is useful for testing and development without API costs.

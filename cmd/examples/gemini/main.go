@@ -18,9 +18,38 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create a Gemini provider with default options
+	// Create a Gemini provider with generation config options
 	model := "gemini-2.0-flash-lite" // Use flash-lite model
-	geminiProvider := provider.NewGeminiProvider(apiKey, model)
+
+	// Create generation config option with multiple settings
+	generationConfigOption := domain.NewGeminiGenerationConfigOption().
+		WithTemperature(0.7).
+		WithTopK(40).
+		WithMaxOutputTokens(1024).
+		WithTopP(0.95)
+
+	// Create safety settings option (optional)
+	safetySettings := []map[string]interface{}{
+		{
+			"category":  "HARM_CATEGORY_HARASSMENT",
+			"threshold": "BLOCK_MEDIUM_AND_ABOVE",
+		},
+		{
+			"category":  "HARM_CATEGORY_HATE_SPEECH",
+			"threshold": "BLOCK_MEDIUM_AND_ABOVE",
+		},
+	}
+	safetySettingsOption := domain.NewGeminiSafetySettingsOption(safetySettings)
+
+	// Create the provider with options
+	geminiProvider := provider.NewGeminiProvider(
+		apiKey,
+		model,
+		generationConfigOption,
+		safetySettingsOption,
+	)
+
+	fmt.Println("Using Gemini with generation config and safety settings options")
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -37,6 +66,9 @@ func main() {
 
 	fmt.Println("\n=== Streaming Response ===")
 	streamingResponse(ctx, geminiProvider)
+
+	fmt.Println("\n=== Generation Config Options Comparison ===")
+	demonstrateGenerationConfigOptions(ctx, apiKey, model)
 }
 
 // Simple text generation with a prompt
@@ -219,5 +251,86 @@ func streamingResponse(ctx context.Context, provider *provider.GeminiProvider) {
 	
 	fmt.Printf("\n\nStream complete. Received %d tokens.\n", tokenCount)
 	fmt.Println("Full response:\n", fullResponse)
+}
+
+// demonstrateGenerationConfigOptions shows the impact of different generation config options
+func demonstrateGenerationConfigOptions(ctx context.Context, apiKey, modelName string) {
+	fmt.Println("Demonstrating the impact of different GeminiGenerationConfigOption settings")
+
+	// Common prompt for comparison
+	prompt := "Tell me a joke about programming"
+
+	// 1. Create a provider with high temperature (more creative/random)
+	highTempConfig := domain.NewGeminiGenerationConfigOption().
+		WithTemperature(1.0).
+		WithTopK(40)
+
+	highTempProvider := provider.NewGeminiProvider(
+		apiKey,
+		modelName,
+		highTempConfig,
+	)
+
+	// 2. Create a provider with low temperature (more focused/deterministic)
+	lowTempConfig := domain.NewGeminiGenerationConfigOption().
+		WithTemperature(0.1).
+		WithTopK(40)
+
+	lowTempProvider := provider.NewGeminiProvider(
+		apiKey,
+		modelName,
+		lowTempConfig,
+	)
+
+	// 3. Create a provider with top-P sampling (nucleus sampling)
+	topPConfig := domain.NewGeminiGenerationConfigOption().
+		WithTemperature(0.7).
+		WithTopP(0.5) // Lower top-P means more focused on higher probability tokens
+
+	topPProvider := provider.NewGeminiProvider(
+		apiKey,
+		modelName,
+		topPConfig,
+	)
+
+	// Generate with high temperature
+	fmt.Println("\n--- High Temperature (1.0) ---")
+	fmt.Println("More creative and varied outputs, potentially less coherent")
+
+	highTempResponse, err := highTempProvider.Generate(ctx, prompt)
+	if err != nil {
+		fmt.Printf("Error generating with high temperature: %v\n", err)
+	} else {
+		fmt.Printf("Response:\n%s\n", highTempResponse)
+	}
+
+	// Generate with low temperature
+	fmt.Println("\n--- Low Temperature (0.1) ---")
+	fmt.Println("More focused and deterministic outputs, potentially more repetitive")
+
+	lowTempResponse, err := lowTempProvider.Generate(ctx, prompt)
+	if err != nil {
+		fmt.Printf("Error generating with low temperature: %v\n", err)
+	} else {
+		fmt.Printf("Response:\n%s\n", lowTempResponse)
+	}
+
+	// Generate with top-P sampling
+	fmt.Println("\n--- Top-P Sampling (0.5) ---")
+	fmt.Println("Nucleus sampling focuses on the most likely tokens")
+
+	topPResponse, err := topPProvider.Generate(ctx, prompt)
+	if err != nil {
+		fmt.Printf("Error generating with top-P sampling: %v\n", err)
+	} else {
+		fmt.Printf("Response:\n%s\n", topPResponse)
+	}
+
+	// Explain the differences
+	fmt.Println("\nSummary:")
+	fmt.Println("- Temperature controls randomness. Higher values (e.g., 1.0) increase diversity")
+	fmt.Println("- Top-K limits the tokens considered to the K most likely")
+	fmt.Println("- Top-P (nucleus sampling) considers the smallest set of tokens whose cumulative probability exceeds P")
+	fmt.Println("- Adjusting these parameters lets you balance creativity vs determinism")
 }
 

@@ -146,12 +146,25 @@ Multiple example applications are provided:
    - Message-based conversation
    - Structured recipe generation
    - Response streaming
+   - AnthropicSystemPromptOption for consistent system behavior
 
-3. **Agent Example** - Demonstrates agent with tools for complex tasks
+3. **OpenAI Example** - Shows integration with OpenAI models (using gpt-4o model)
+   - Text generation
+   - Message-based conversation
+   - Structured recipe generation
+   - Response streaming
+   - OpenAIOrganizationOption for organization-specific configuration
 
-4. **Multi-Provider Example** - Shows working with multiple providers
+4. **Agent Example** - Demonstrates agent with tools for complex tasks
 
-5. **Consensus Example** - Demonstrates multi-provider consensus strategies
+5. **Multi-Provider Example** - Shows working with multiple providers with provider-specific options
+
+6. **Consensus Example** - Demonstrates multi-provider consensus strategies
+
+7. **OpenAI API Compatible Providers Example** - Shows integration with providers implementing the OpenAI API
+   - OpenRouter integration with attribution headers
+   - Ollama local model integration with dummy API key
+   - Best practices for different endpoint configurations
 
 Run examples:
 ```bash
@@ -163,6 +176,14 @@ make example EXAMPLE=simple
 export ANTHROPIC_API_KEY=your_api_key_here
 make example EXAMPLE=anthropic
 ./bin/anthropic
+
+# Build and run the OpenAI API Compatible Providers example
+# For OpenRouter
+export OPENROUTER_API_KEY=your_api_key_here
+# For Ollama
+export OLLAMA_HOST=http://localhost:11434
+make example EXAMPLE=openai_api_compatible_providers
+./bin/openai_api_compatible_providers
 ```
 
 ## Current Next Steps
@@ -177,21 +198,36 @@ The project has successfully implemented all major components from the implement
 ### Additional Providers
 - [x] Add Google Gemini API provider
 - [ ] Fix Gemini streaming output issues
-- [ ] Add Ollama local provider (similar to OpenAI provider)
+- [x] Add Ollama support via OpenAI-compatible API
+  - [x] Implemented in openai_api_compatible_providers example
+  - [ ] Create dedicated integration test for Ollama
 
-### Phase 4: Examples and Documentation for Provider Options
+### Phase 4: Examples and Documentation for Provider Options ✅
 - [x] Create provider_options example to demonstrate the new option system
-- [x] Update custom_providers example to use the new option system
-- [ ] Update all other examples for consistency with the new option system
-- [ ] Update documentation to explain the new provider option system
+- [x] Update openai_api_compatible_providers example (formerly custom_providers)
+- [x] Update all other examples for consistency with the new option system
+  - [x] Update anthropic example with AnthropicSystemPromptOption
+  - [x] Update openai example with OpenAIOrganizationOption
+  - [x] Update gemini example with GeminiGenerationConfigOption
+  - [x] Update multi example with provider-specific options
+- [x] Update documentation to explain the new provider option system
+  - [x] Create detailed guide on using the provider option system
+  - [x] Document all common and provider-specific options
+  - [x] Add examples of combining options across providers
 
-### Testing & Performance (Phase 7: Performance Optimization and Refinement)
+### Phase 5: Provider Options Enhancements 🔄
+- [ ] Add support for passing provider options directly in ModelConfig
+- [ ] Implement environment variable support for provider-specific options
+- [ ] Create option factory functions for common provider configurations
+
+### Phase 7: Testing & Performance Optimization
+- [x] Add benchmarks for consensus algorithms
 - [ ] Create comprehensive test suite for error conditions
 - [ ] Add benchmarks for remaining components
 - [ ] Implement stress tests for high-load scenarios
-- [ ] Performance profiling and further optimization:
-  - Prompt processing and template expansion
-  - Memory pooling for response types
+- [ ] Performance profiling and optimization:
+  - [ ] Prompt processing and template expansion
+  - [ ] Memory pooling for response types
 - [ ] API refinement based on usage feedback
 - [ ] Additional test coverage for edge cases
 - [ ] Final review and preparation for stable release
@@ -225,11 +261,17 @@ The provider option system has been successfully implemented through Phases 1-3:
 - Updated ProviderFromEnv to support provider-specific options via environment variables
 - Added tests for the updated utility functions
 
-### 🔄 Phase 4: Examples and Documentation (Current Focus)
+### ✅ Phase 4: Examples and Documentation
 - ✅ Create provider_options example demonstrating the new option system
-- ✅ Update custom_providers example to use the new approach
-- [ ] Update all other examples for consistency
-- [ ] Update documentation to explain the new system
+- ✅ Update openai_api_compatible_providers example (formerly custom_providers)
+- ✅ Update all other examples for consistency
+  - ✅ Add AnthropicSystemPromptOption to anthropic example
+  - ✅ Add OpenAIOrganizationOption to openai example
+  - ✅ Add GeminiGenerationConfigOption to gemini example
+- ✅ Update documentation to explain the new system
+  - ✅ Create detailed guide on using the provider option system
+  - ✅ Update REFERENCE.md with all new documentation
+  - ✅ Update DOCUMENTATION_CONSOLIDATION.md with recent changes
 
 ### Option System Design
 
@@ -255,6 +297,11 @@ type GeminiOption interface {
     ProviderOption
     ApplyToGemini(*GeminiProvider)
 }
+
+type MockOption interface {
+    ProviderOption
+    ApplyToMock(*MockProvider)
+}
 ```
 
-This approach follows Go's idiomatic interface design and enables type-safe, extensible option handling for all providers while supporting provider-specific options.
+This approach follows Go's idiomatic interface design and enables type-safe, extensible option handling for all providers while supporting provider-specific options. The system has been expanded to include support for Mock providers and OpenAI API compatible providers like Ollama.
