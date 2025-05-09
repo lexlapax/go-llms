@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
@@ -17,19 +16,24 @@ import (
 
 // ModelConfig represents a configuration for an LLM model
 type ModelConfig struct {
-	Provider  string              // Provider identifier (e.g., "openai", "anthropic")
-	Model     string              // Model name
-	APIKey    string              // API key
-	BaseURL   string              // Optional base URL override
-	MaxTokens int                 // Optional max tokens override
-	// TODO: Add Options field that can hold provider-specific options
-	// Options   []domain.ProviderOption // Optional provider-specific options
+	Provider  string                 // Provider identifier (e.g., "openai", "anthropic")
+	Model     string                 // Model name
+	APIKey    string                 // API key
+	BaseURL   string                 // Optional base URL override
+	MaxTokens int                    // Optional max tokens override
+	Options   []domain.ProviderOption // Optional provider-specific options
 }
 
 // WithProviderOptions creates provider-specific options for initialization
 func WithProviderOptions(config ModelConfig) ([]domain.ProviderOption, error) {
 	var interfaceOptions []domain.ProviderOption
-	
+
+	// Add user-provided options
+	if config.Options != nil {
+		interfaceOptions = append(interfaceOptions, config.Options...)
+	}
+
+	// Add base URL option if specified
 	if config.BaseURL != "" {
 		// Only add interface options for valid providers
 		if config.Provider == "openai" || config.Provider == "anthropic" || config.Provider == "gemini" {
@@ -37,36 +41,54 @@ func WithProviderOptions(config ModelConfig) ([]domain.ProviderOption, error) {
 			interfaceOptions = append(interfaceOptions, baseURLOption)
 		}
 	}
-	
+
 	return interfaceOptions, nil
 }
 
 // CreateProvider creates an LLM provider based on configuration
 func CreateProvider(config ModelConfig) (domain.Provider, error) {
-	if config.APIKey == "" {
-		return nil, fmt.Errorf("API key is required")
+	// Skip API key check for mock provider
+	if config.Provider != "mock" && config.APIKey == "" {
+		// Try to get API key from environment if not provided in config
+		apiKey := GetAPIKeyFromEnv(config.Provider)
+		if apiKey == "" {
+			return nil, fmt.Errorf("API key is required (not provided in config or environment)")
+		}
+		config.APIKey = apiKey
+	}
+
+	// If model is not specified, try to get it from environment
+	if config.Model == "" {
+		config.Model = GetModelFromEnv(config.Provider)
 	}
 
 	var llmProvider domain.Provider
-	
+
+	// Get options from configuration
 	options, err := WithProviderOptions(config)
 	if err != nil {
 		return nil, err
 	}
-	
+
+	// If no options provided in config, try to get them from environment
+	if config.Options == nil || len(config.Options) == 0 {
+		envOptions := GetProviderOptionsFromEnv(config.Provider)
+		options = append(options, envOptions...)
+	}
+
 	switch config.Provider {
 	case "openai":
 		llmProvider = provider.NewOpenAIProvider(config.APIKey, config.Model, options...)
-	
+
 	case "anthropic":
 		llmProvider = provider.NewAnthropicProvider(config.APIKey, config.Model, options...)
-	
+
 	case "gemini":
 		llmProvider = provider.NewGeminiProvider(config.APIKey, config.Model, options...)
-	
+
 	case "mock":
 		llmProvider = provider.NewMockProvider()
-	
+
 	default:
 		return nil, fmt.Errorf("unsupported provider: %s", config.Provider)
 	}
@@ -75,72 +97,47 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 }
 
 // ProviderFromEnv creates a provider using environment variables
-// It looks for API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY) and
-// custom base URLs (OPENAI_BASE_URL, ANTHROPIC_BASE_URL, GEMINI_BASE_URL)
+// It looks for API keys, base URLs, models, and other provider-specific options
+// from environment variables and applies them when creating the provider.
 func ProviderFromEnv() (domain.Provider, string, string, error) {
 	// Check for API keys in environment variables
-	openAIKey := os.Getenv("OPENAI_API_KEY")
-	anthropicKey := os.Getenv("ANTHROPIC_API_KEY") 
-	geminiKey := os.Getenv("GEMINI_API_KEY")
-	
-	// Check for base URL overrides in environment variables
-	openAIBaseURL := os.Getenv("OPENAI_BASE_URL")
-	anthropicBaseURL := os.Getenv("ANTHROPIC_BASE_URL")
-	geminiBaseURL := os.Getenv("GEMINI_BASE_URL")
-	
-	// Default models for each provider
-	openAIModel := os.Getenv("OPENAI_MODEL")
-	if openAIModel == "" {
-		openAIModel = "gpt-4o"
-	}
-	
-	anthropicModel := os.Getenv("ANTHROPIC_MODEL")
-	if anthropicModel == "" {
-		anthropicModel = "claude-3-5-sonnet-latest"
-	}
-	
-	geminiModel := os.Getenv("GEMINI_MODEL")
-	if geminiModel == "" {
-		geminiModel = "gemini-2.0-flash-lite"
-	}
-	
+	openAIKey := GetAPIKeyFromEnv("openai")
+	anthropicKey := GetAPIKeyFromEnv("anthropic")
+	geminiKey := GetAPIKeyFromEnv("gemini")
+
+	// Get model names from environment variables (with defaults)
+	openAIModel := GetModelFromEnv("openai")
+	anthropicModel := GetModelFromEnv("anthropic")
+	geminiModel := GetModelFromEnv("gemini")
+
 	// Try to create a provider in order of preference
 	if openAIKey != "" {
-		var options []domain.ProviderOption
-		
-		// Add base URL option if specified
-		if openAIBaseURL != "" {
-			options = append(options, domain.NewBaseURLOption(openAIBaseURL))
-		}
-		
+		// Get OpenAI-specific options from environment variables
+		options := GetOpenAIOptionsFromEnv()
+
+		// Create provider with options
 		llmProvider := provider.NewOpenAIProvider(openAIKey, openAIModel, options...)
 		return llmProvider, "openai", openAIModel, nil
 	}
-	
+
 	if anthropicKey != "" {
-		var options []domain.ProviderOption
-		
-		// Add base URL option if specified
-		if anthropicBaseURL != "" {
-			options = append(options, domain.NewBaseURLOption(anthropicBaseURL))
-		}
-		
+		// Get Anthropic-specific options from environment variables
+		options := GetAnthropicOptionsFromEnv()
+
+		// Create provider with options
 		llmProvider := provider.NewAnthropicProvider(anthropicKey, anthropicModel, options...)
 		return llmProvider, "anthropic", anthropicModel, nil
 	}
-	
+
 	if geminiKey != "" {
-		var options []domain.ProviderOption
+		// Get Gemini-specific options from environment variables
+		options := GetGeminiOptionsFromEnv()
 
-		// Add base URL option if specified
-		if geminiBaseURL != "" {
-			options = append(options, domain.NewBaseURLOption(geminiBaseURL))
-		}
-
+		// Create provider with options
 		llmProvider := provider.NewGeminiProvider(geminiKey, geminiModel, options...)
 		return llmProvider, "gemini", geminiModel, nil
 	}
-	
+
 	// If no API keys are found, create a mock provider
 	mockProvider := provider.NewMockProvider()
 	return mockProvider, "mock", "default", nil

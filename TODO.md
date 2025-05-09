@@ -13,9 +13,9 @@
   - [ ] Create dedicated integration test for Ollama
 
 ## Provider Options Enhancements
-- [ ] Add support for passing provider options directly in ModelConfig
-- [ ] Implement environment variable support for provider-specific options
-- [ ] Create option factory functions for common provider configurations
+- [x] Add support for passing provider options directly in ModelConfig
+- [x] Implement environment variable support for provider-specific options
+- [x] Create option factory functions for common provider configurations
 
 ## Documentation
 - [x] Consolidate documentation and make sure it's consistent

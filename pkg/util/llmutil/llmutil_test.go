@@ -14,9 +14,27 @@ import (
 )
 
 func TestCreateProvider(t *testing.T) {
+	// Save original environment variables
+	origOpenAIKey := os.Getenv("OPENAI_API_KEY")
+	origAnthropicKey := os.Getenv("ANTHROPIC_API_KEY")
+	origGeminiKey := os.Getenv("GEMINI_API_KEY")
+
+	// Clean up environment after test
+	defer func() {
+		os.Setenv("OPENAI_API_KEY", origOpenAIKey)
+		os.Setenv("ANTHROPIC_API_KEY", origAnthropicKey)
+		os.Setenv("GEMINI_API_KEY", origGeminiKey)
+	}()
+
+	// Clear all API keys to prevent environment interference
+	os.Unsetenv("OPENAI_API_KEY")
+	os.Unsetenv("ANTHROPIC_API_KEY")
+	os.Unsetenv("GEMINI_API_KEY")
+
 	tests := []struct {
 		name          string
 		config        ModelConfig
+		envSetup      map[string]string
 		expectError   bool
 		expectedError string
 	}{
@@ -48,6 +66,17 @@ func TestCreateProvider(t *testing.T) {
 			expectError: false,
 		},
 		{
+			name: "Missing API key but available in env",
+			config: ModelConfig{
+				Provider: "openai",
+				Model:    "gpt-4o",
+			},
+			envSetup: map[string]string{
+				"OPENAI_API_KEY": "env-api-key",
+			},
+			expectError: false,
+		},
+		{
 			name: "Missing API key",
 			config: ModelConfig{
 				Provider: "openai",
@@ -66,10 +95,57 @@ func TestCreateProvider(t *testing.T) {
 			expectError:   true,
 			expectedError: "unsupported provider",
 		},
+		{
+			name: "OpenAI with provider options",
+			config: ModelConfig{
+				Provider: "openai",
+				Model:    "gpt-4o",
+				APIKey:   "test-api-key",
+				Options: []domain.ProviderOption{
+					domain.NewTimeoutOption(15),
+					domain.NewOpenAIOrganizationOption("test-org"),
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "Anthropic with provider options",
+			config: ModelConfig{
+				Provider: "anthropic",
+				Model:    "claude-3-5-sonnet-latest",
+				APIKey:   "test-api-key",
+				Options: []domain.ProviderOption{
+					domain.NewAnthropicSystemPromptOption("Test system prompt"),
+					domain.NewRetryOption(3, 500),
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "Missing model with fallback from env",
+			config: ModelConfig{
+				Provider: "openai",
+				APIKey:   "test-api-key",
+			},
+			envSetup: map[string]string{
+				"OPENAI_MODEL": "gpt-4",
+			},
+			expectError: false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Clear all API keys for each test to ensure consistent environment
+			os.Unsetenv("OPENAI_API_KEY")
+			os.Unsetenv("ANTHROPIC_API_KEY")
+			os.Unsetenv("GEMINI_API_KEY")
+			
+			// Set environment variables for this test
+			for k, v := range tt.envSetup {
+				os.Setenv(k, v)
+			}
+
 			provider, err := CreateProvider(tt.config)
 
 			if tt.expectError {
@@ -182,8 +258,8 @@ func TestGenerateWithRetry(t *testing.T) {
 
 func TestIsRetryableError(t *testing.T) {
 	tests := []struct {
-		name          string
-		err           error
+		name           string
+		err            error
 		expectRetryable bool
 	}{
 		{
@@ -342,6 +418,33 @@ func TestWithProviderOptions(t *testing.T) {
 			},
 			expectedOptions: 0,
 		},
+		{
+			name: "OpenAI with base URL and custom options",
+			config: ModelConfig{
+				Provider: "openai",
+				Model:    "gpt-4o",
+				APIKey:   "test-api-key",
+				BaseURL:  "https://custom-openai.example.com",
+				Options: []domain.ProviderOption{
+					domain.NewTimeoutOption(15),
+					domain.NewOpenAIOrganizationOption("test-org"),
+				},
+			},
+			expectedOptions: 3, // Base URL + 2 custom options
+		},
+		{
+			name: "OpenAI with only custom options (no base URL)",
+			config: ModelConfig{
+				Provider: "openai",
+				Model:    "gpt-4o",
+				APIKey:   "test-api-key",
+				Options: []domain.ProviderOption{
+					domain.NewTimeoutOption(15),
+					domain.NewRetryOption(3, 500),
+				},
+			},
+			expectedOptions: 2, // Just the 2 custom options
+		},
 	}
 
 	for _, tt := range tests {
@@ -368,6 +471,10 @@ func TestProviderFromEnv(t *testing.T) {
 	originalOpenAIBaseURL := os.Getenv("OPENAI_BASE_URL")
 	originalAnthropicBaseURL := os.Getenv("ANTHROPIC_BASE_URL")
 	originalGeminiBaseURL := os.Getenv("GEMINI_BASE_URL")
+	originalOpenAIOrg := os.Getenv("OPENAI_ORGANIZATION")
+	originalAnthropicSystemPrompt := os.Getenv("ANTHROPIC_SYSTEM_PROMPT")
+	originalHTTPTimeout := os.Getenv("LLM_HTTP_TIMEOUT")
+	originalRetryAttempts := os.Getenv("LLM_RETRY_ATTEMPTS")
 
 	// Clean up environment after the test
 	defer func() {
@@ -377,15 +484,22 @@ func TestProviderFromEnv(t *testing.T) {
 		os.Setenv("OPENAI_BASE_URL", originalOpenAIBaseURL)
 		os.Setenv("ANTHROPIC_BASE_URL", originalAnthropicBaseURL)
 		os.Setenv("GEMINI_BASE_URL", originalGeminiBaseURL)
+		os.Setenv("OPENAI_ORGANIZATION", originalOpenAIOrg)
+		os.Setenv("ANTHROPIC_SYSTEM_PROMPT", originalAnthropicSystemPrompt)
+		os.Setenv("LLM_HTTP_TIMEOUT", originalHTTPTimeout)
+		os.Setenv("LLM_RETRY_ATTEMPTS", originalRetryAttempts)
 	}()
 
-	// Clear all API keys and base URLs to test the mock provider fallback
-	os.Setenv("OPENAI_API_KEY", "")
-	os.Setenv("ANTHROPIC_API_KEY", "")
-	os.Setenv("GEMINI_API_KEY", "")
-	os.Setenv("OPENAI_BASE_URL", "")
-	os.Setenv("ANTHROPIC_BASE_URL", "")
-	os.Setenv("GEMINI_BASE_URL", "")
+	// Clear all environment variables for clean testing
+	envVars := []string{
+		"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY",
+		"OPENAI_BASE_URL", "ANTHROPIC_BASE_URL", "GEMINI_BASE_URL",
+		"OPENAI_ORGANIZATION", "ANTHROPIC_SYSTEM_PROMPT",
+		"LLM_HTTP_TIMEOUT", "LLM_RETRY_ATTEMPTS",
+	}
+	for _, v := range envVars {
+		os.Unsetenv(v)
+	}
 
 	// Test with no API keys (should return mock provider)
 	prov, provName, modelName, err := ProviderFromEnv()
@@ -414,13 +528,16 @@ func TestProviderFromEnv(t *testing.T) {
 	if !ok {
 		t.Errorf("Expected GeminiProvider, got: %T", prov)
 	}
-	
-	// Clear all environment variables again for the next tests
-	os.Setenv("GEMINI_API_KEY", "")
-	
-	// Test OpenAI provider with custom base URL
+
+	// Clean up environment for next tests
+	for _, v := range envVars {
+		os.Unsetenv(v)
+	}
+
+	// Test OpenAI provider with custom base URL and organization
 	os.Setenv("OPENAI_API_KEY", "test-openai-key")
 	os.Setenv("OPENAI_BASE_URL", "https://custom-openai.example.com")
+	os.Setenv("OPENAI_ORGANIZATION", "test-org")
 	prov, provName, modelName, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
@@ -428,20 +545,22 @@ func TestProviderFromEnv(t *testing.T) {
 	if provName != "openai" {
 		t.Errorf("Expected 'openai' provider, got: %s", provName)
 	}
-	
-	// Test that the provider has the custom base URL
-	// Note: We can't directly access the baseURL field since it's private
-	// but we can verify it's the right type
+
+	// Test that the provider has the right type
 	_, ok = prov.(*provider.OpenAIProvider)
 	if !ok {
 		t.Errorf("Expected OpenAIProvider, got: %T", prov)
 	}
-	
-	// Test Anthropic provider with custom base URL
-	os.Setenv("OPENAI_API_KEY", "")
-	os.Setenv("OPENAI_BASE_URL", "")
+
+	// Clean up environment for next tests
+	for _, v := range envVars {
+		os.Unsetenv(v)
+	}
+
+	// Test Anthropic provider with custom base URL and system prompt
 	os.Setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
 	os.Setenv("ANTHROPIC_BASE_URL", "https://custom-anthropic.example.com")
+	os.Setenv("ANTHROPIC_SYSTEM_PROMPT", "Test system prompt")
 	prov, provName, modelName, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
@@ -449,30 +568,34 @@ func TestProviderFromEnv(t *testing.T) {
 	if provName != "anthropic" {
 		t.Errorf("Expected 'anthropic' provider, got: %s", provName)
 	}
-	
+
 	// Test that the provider has the right type
 	_, ok = prov.(*provider.AnthropicProvider)
 	if !ok {
 		t.Errorf("Expected AnthropicProvider, got: %T", prov)
 	}
-	
-	// Test Gemini provider with custom base URL
-	os.Setenv("ANTHROPIC_API_KEY", "")
-	os.Setenv("ANTHROPIC_BASE_URL", "")
-	os.Setenv("GEMINI_API_KEY", "test-gemini-key")
-	os.Setenv("GEMINI_BASE_URL", "https://custom-gemini.example.com")
+
+	// Clean up environment for next tests
+	for _, v := range envVars {
+		os.Unsetenv(v)
+	}
+
+	// Test provider with common options
+	os.Setenv("OPENAI_API_KEY", "test-openai-key")
+	os.Setenv("LLM_HTTP_TIMEOUT", "15")
+	os.Setenv("LLM_RETRY_ATTEMPTS", "3")
 	prov, provName, modelName, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	if provName != "gemini" {
-		t.Errorf("Expected 'gemini' provider, got: %s", provName)
+	if provName != "openai" {
+		t.Errorf("Expected 'openai' provider, got: %s", provName)
 	}
-	
+
 	// Test that the provider has the right type
-	_, ok = prov.(*provider.GeminiProvider)
+	_, ok = prov.(*provider.OpenAIProvider)
 	if !ok {
-		t.Errorf("Expected GeminiProvider, got: %T", prov)
+		t.Errorf("Expected OpenAIProvider, got: %T", prov)
 	}
 }
 
