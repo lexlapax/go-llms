@@ -34,7 +34,8 @@
       "Bash(pkg/agent/tools/optimized_tool_test.go)",
       "Bash(go tool cover:*)",
       "Bash(cp:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(export GO_TEST_TIMEOUT=5m)"
     ],
     "deny": []
   }

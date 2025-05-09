@@ -172,9 +172,10 @@ The project has successfully implemented all major components from the implement
 ### Features
 - [ ] Add Model Context Protocol Client support for Agents
 - [ ] Add Model Context Protocol Server support for Workflows or Agents
+- [ ] Implement interface-based provider option system (see plan below)
 
 ### Additional Providers
-- [ ] Add Google Gemini API provider
+- [x] Add Google Gemini API provider
 - [ ] Add Ollama local provider (similar to OpenAI provider)
 
 ### Testing & Performance (Phase 7: Performance Optimization and Refinement)
@@ -192,3 +193,58 @@ The project has successfully implemented all major components from the implement
 - ✅ Agent workflow optimization (message creation, tool extraction, JSON parsing)
 - ✅ LLM provider message handling optimization (caching, fast paths, reduced allocations)
 - ✅ Documentation consolidation and consistency
+
+## Interface-Based Provider Option System Plan
+
+An important enhancement in development is a new interface-based provider option system to support provider-specific options in a type-safe, extensible way.
+
+### Implementation Plan Summary
+
+1. **Design and Core Interfaces (Phase 1)**
+   - Define core ProviderOption interface
+   - Create provider-specific option interfaces (OpenAIOption, AnthropicOption, GeminiOption)
+   - Implement common options (HTTPClient, BaseURL, Timeout, etc.)
+   - Follow TDD approach with tests first
+
+2. **Provider Refactoring (Phase 2)**
+   - Update OpenAI, Anthropic, and Gemini providers to use the new option system
+   - Create provider-specific options for unique features
+   - Update all tests to verify the new option system works correctly
+
+3. **Utility Function Updates (Phase 3)**
+   - Update ModelConfig to include ProviderOptions
+   - Modify CreateProvider to handle the new options
+   - Update ProviderFromEnv to support provider-specific options via environment variables
+
+4. **Examples and Documentation (Phase 4)**
+   - Create examples demonstrating the new option system
+   - Update existing examples to use the new approach
+   - Update documentation to explain the new system
+
+### Option System Design
+
+```go
+// Base interface for all provider options
+type ProviderOption interface {
+    // Identifies which provider type this option is for
+    ProviderType() string
+}
+
+// Provider-specific option interfaces
+type OpenAIOption interface {
+    ProviderOption
+    ApplyToOpenAI(*OpenAIProvider)
+}
+
+type AnthropicOption interface {
+    ProviderOption
+    ApplyToAnthropic(*AnthropicProvider)
+}
+
+type GeminiOption interface {
+    ProviderOption
+    ApplyToGemini(*GeminiProvider)
+}
+```
+
+This approach follows Go's idiomatic interface design and enables type-safe, extensible option handling for all providers while supporting provider-specific options.
