@@ -21,46 +21,56 @@ const (
 
 // AnthropicProvider implements the Provider interface for Anthropic
 type AnthropicProvider struct {
-	apiKey     string
-	model      string
-	baseURL    string
-	httpClient *http.Client
+	apiKey       string
+	model        string
+	baseURL      string
+	httpClient   *http.Client
+	systemPrompt string
+	metadata     map[string]string
 	// Optimization: cache for converted messages
 	messageCache *MessageCache
 }
 
-// AnthropicOption configures the Anthropic provider
-type AnthropicOption func(*AnthropicProvider)
-
-// WithAnthropicBaseURL sets a custom base URL for the Anthropic API
-func WithAnthropicBaseURL(url string) AnthropicOption {
-	return func(p *AnthropicProvider) {
-		p.baseURL = url
-	}
-}
-
-// WithAnthropicHTTPClient sets a custom HTTP client
-func WithAnthropicHTTPClient(client *http.Client) AnthropicOption {
-	return func(p *AnthropicProvider) {
-		p.httpClient = client
-	}
-}
-
 // NewAnthropicProvider creates a new Anthropic provider
-func NewAnthropicProvider(apiKey, model string, options ...AnthropicOption) *AnthropicProvider {
+func NewAnthropicProvider(apiKey, model string, options ...domain.ProviderOption) *AnthropicProvider {
 	provider := &AnthropicProvider{
 		apiKey:       apiKey,
 		model:        model,
 		baseURL:      defaultAnthropicBaseURL,
 		httpClient:   http.DefaultClient,
+		metadata:     make(map[string]string),
 		messageCache: NewMessageCache(),
 	}
 
 	for _, option := range options {
-		option(provider)
+		// Check if the option is compatible with Anthropic
+		if anthropicOption, ok := option.(domain.AnthropicOption); ok {
+			anthropicOption.ApplyToAnthropic(provider)
+		}
 	}
 
 	return provider
+}
+
+// Setter methods for options
+// SetBaseURL sets the base URL for the Anthropic API
+func (p *AnthropicProvider) SetBaseURL(url string) {
+	p.baseURL = url
+}
+
+// SetHTTPClient sets the HTTP client
+func (p *AnthropicProvider) SetHTTPClient(client *http.Client) {
+	p.httpClient = client
+}
+
+// SetSystemPrompt sets the system prompt for Anthropic API calls
+func (p *AnthropicProvider) SetSystemPrompt(systemPrompt string) {
+	p.systemPrompt = systemPrompt
+}
+
+// SetMetadata sets the metadata for Anthropic API calls
+func (p *AnthropicProvider) SetMetadata(metadata map[string]string) {
+	p.metadata = metadata
 }
 
 // Generate produces text from a prompt
@@ -156,9 +166,16 @@ func (p *AnthropicProvider) buildAnthropicRequestBody(
 	requestBody["model"] = p.model
 	requestBody["messages"] = messages
 
-	// Add system message if present
+	// Add system message if present from messages or from provider configuration
 	if systemMessage != "" {
 		requestBody["system"] = systemMessage
+	} else if p.systemPrompt != "" {
+		requestBody["system"] = p.systemPrompt
+	}
+	
+	// Add metadata if present
+	if len(p.metadata) > 0 {
+		requestBody["metadata"] = p.metadata
 	}
 
 	// Add temperature if it differs from default

@@ -57,7 +57,8 @@ func TestAnthropicProvider(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("NewAnthropicProvider", func(t *testing.T) {
-		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", WithAnthropicBaseURL(mockServer.URL))
+		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
+		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", baseURLOption)
 		if provider == nil {
 			t.Fatal("Expected non-nil provider")
 		}
@@ -70,7 +71,8 @@ func TestAnthropicProvider(t *testing.T) {
 	})
 
 	t.Run("Generate", func(t *testing.T) {
-		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", WithAnthropicBaseURL(mockServer.URL))
+		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
+		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", baseURLOption)
 		response, err := provider.Generate(ctx, "Tell me a joke")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -82,7 +84,8 @@ func TestAnthropicProvider(t *testing.T) {
 	})
 
 	t.Run("GenerateMessage", func(t *testing.T) {
-		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", WithAnthropicBaseURL(mockServer.URL))
+		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
+		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", baseURLOption)
 		messages := []domain.Message{
 			{Role: domain.RoleSystem, Content: "You are a helpful assistant"},
 			{Role: domain.RoleUser, Content: "Tell me a joke"},
@@ -98,7 +101,8 @@ func TestAnthropicProvider(t *testing.T) {
 	})
 
 	t.Run("Invalid API key", func(t *testing.T) {
-		provider := NewAnthropicProvider("invalid-key", "claude-3-5-sonnet-latest", WithAnthropicBaseURL(mockServer.URL))
+		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
+		provider := NewAnthropicProvider("invalid-key", "claude-3-5-sonnet-latest", baseURLOption)
 		_, err := provider.Generate(ctx, "Tell me a joke")
 		if err == nil {
 			t.Fatal("Expected error for invalid API key, got nil")
@@ -106,7 +110,8 @@ func TestAnthropicProvider(t *testing.T) {
 	})
 
 	t.Run("Generate with options", func(t *testing.T) {
-		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", WithAnthropicBaseURL(mockServer.URL))
+		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
+		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", baseURLOption)
 
 		// Set custom options
 		options := []domain.Option{
@@ -161,7 +166,8 @@ func TestAnthropicProvider(t *testing.T) {
 	defer streamServer.Close()
 
 	t.Run("Stream", func(t *testing.T) {
-		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", WithAnthropicBaseURL(streamServer.URL))
+		baseURLOption := domain.NewBaseURLOption(streamServer.URL)
+		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", baseURLOption)
 		stream, err := provider.Stream(ctx, "Tell me a joke")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -192,7 +198,8 @@ func TestAnthropicProvider(t *testing.T) {
 	})
 
 	t.Run("StreamMessage", func(t *testing.T) {
-		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", WithAnthropicBaseURL(streamServer.URL))
+		baseURLOption := domain.NewBaseURLOption(streamServer.URL)
+		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", baseURLOption)
 		messages := []domain.Message{
 			{Role: domain.RoleSystem, Content: "You are a helpful assistant"},
 			{Role: domain.RoleUser, Content: "Tell me a joke"},
@@ -247,7 +254,8 @@ func TestAnthropicProvider(t *testing.T) {
 	defer schemaServer.Close()
 
 	t.Run("GenerateWithSchema", func(t *testing.T) {
-		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", WithAnthropicBaseURL(schemaServer.URL))
+		baseURLOption := domain.NewBaseURLOption(schemaServer.URL)
+		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", baseURLOption)
 
 		// Define a simple schema
 		schema := &schemaDomain.Schema{

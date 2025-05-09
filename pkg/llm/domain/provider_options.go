@@ -62,8 +62,9 @@ func (o *BaseURLOption) ApplyToOpenAI(provider interface{}) {
 }
 
 func (o *BaseURLOption) ApplyToAnthropic(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the Anthropic provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	if p, ok := provider.(interface{ SetBaseURL(url string) }); ok {
+		p.SetBaseURL(o.URL)
+	}
 }
 
 func (o *BaseURLOption) ApplyToGemini(provider interface{}) {
@@ -90,8 +91,9 @@ func (o *HTTPClientOption) ApplyToOpenAI(provider interface{}) {
 }
 
 func (o *HTTPClientOption) ApplyToAnthropic(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the Anthropic provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	if p, ok := provider.(interface{ SetHTTPClient(client *http.Client) }); ok {
+		p.SetHTTPClient(o.Client)
+	}
 }
 
 func (o *HTTPClientOption) ApplyToGemini(provider interface{}) {
@@ -268,8 +270,9 @@ func NewAnthropicSystemPromptOption(systemPrompt string) *AnthropicSystemPromptO
 func (o *AnthropicSystemPromptOption) ProviderType() string { return "anthropic" }
 
 func (o *AnthropicSystemPromptOption) ApplyToAnthropic(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the Anthropic provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	if p, ok := provider.(interface{ SetSystemPrompt(prompt string) }); ok {
+		p.SetSystemPrompt(o.SystemPrompt)
+	}
 }
 
 // AnthropicMetadataOption sets the metadata for Anthropic API calls
@@ -285,8 +288,9 @@ func NewAnthropicMetadataOption(metadata map[string]string) *AnthropicMetadataOp
 func (o *AnthropicMetadataOption) ProviderType() string { return "anthropic" }
 
 func (o *AnthropicMetadataOption) ApplyToAnthropic(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the Anthropic provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	if p, ok := provider.(interface{ SetMetadata(metadata map[string]string) }); ok {
+		p.SetMetadata(o.Metadata)
+	}
 }
 
 // Gemini-specific options
