@@ -5,7 +5,8 @@
 - [ ] Add Model Context Protocol Server support for Workflows or Agents
 
 ## Additional providers
-- [ ] Add Google Gemini api based provider
+- [x] Add Google Gemini api based provider
+--  [ ] fix gemini streaming output
 - [ ] Add Ollama local provider which is going to be very similar to OpenAI provider
 
 ## Documentation

@@ -13,6 +13,7 @@ This directory contains technical documentation for the Go-LLMs library, focusin
 - [Sync.Pool Implementation](sync-pool.md) - Detailed guide on sync.Pool usage for memory optimization
 - [Caching Mechanisms](caching.md) - Explanation of caching strategies and implementations
 - [Concurrency Patterns](concurrency.md) - Documentation of thread safety and concurrent execution patterns
+- [Adding a New Provider](new-provider.md) - Step-by-step guide to implementing and integrating a new LLM provider
 
 ## Target Audience
 

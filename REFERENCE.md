@@ -24,11 +24,13 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Sync.Pool Implementation](/docs/technical/sync-pool.md) - Detailed guide on sync.Pool usage
 - [Caching Mechanisms](/docs/technical/caching.md) - Caching strategies and implementations
 - [Concurrency Patterns](/docs/technical/concurrency.md) - Thread safety and concurrent execution
+- [Adding a New Provider](/docs/technical/new-provider.md) - Step-by-step guide to implementing and integrating a new LLM provider
 
 ## Examples
 
 - [Simple Example](/cmd/examples/simple/README.md) - Basic usage with mock providers
 - [Anthropic Example](/cmd/examples/anthropic/README.md) - Integration with Anthropic Claude
+- [Gemini Example](/cmd/examples/gemini/README.md) - Integration with Google Gemini
 - [Agent Example](/cmd/examples/agent/README.md) - Agent with tools
 - [Multi-Provider Example](/cmd/examples/multi/README.md) - Working with multiple providers
 - [Consensus Example](/cmd/examples/consensus/README.md) - Multi-provider consensus strategies
