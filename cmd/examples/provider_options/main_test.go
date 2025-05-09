@@ -137,12 +137,14 @@ func TestProviderOptions(t *testing.T) {
 		origTimeout := os.Getenv("LLM_HTTP_TIMEOUT")
 		origOpenAIKey := os.Getenv("OPENAI_API_KEY")
 		origOpenAIOrg := os.Getenv("OPENAI_ORGANIZATION")
+		origOpenAIUseCase := os.Getenv("OPENAI_USE_CASE")
 
 		// Restore environment variables after test
 		defer func() {
 			os.Setenv("LLM_HTTP_TIMEOUT", origTimeout)
 			os.Setenv("OPENAI_API_KEY", origOpenAIKey)
 			os.Setenv("OPENAI_ORGANIZATION", origOpenAIOrg)
+			os.Setenv("OPENAI_USE_CASE", origOpenAIUseCase)
 		}()
 
 		// Set test environment variables
@@ -175,6 +177,36 @@ func TestProviderOptions(t *testing.T) {
 
 		if response == "" {
 			t.Fatal("Empty response from provider")
+		}
+
+		// Test with use case-specific environment variables
+		os.Setenv("OPENAI_USE_CASE", "streaming")
+
+		// Create a new config with the same parameters
+		streamingConfig := llmutil.ModelConfig{
+			Provider: "mock", // Use mock for testing
+			Model:    "mock-model",
+		}
+
+		// Create provider from config (should use streaming options)
+		streamingProvider, err := llmutil.CreateProvider(streamingConfig)
+		if err != nil {
+			t.Fatalf("Error creating streaming provider: %v", err)
+		}
+
+		// Verify the provider is created correctly
+		if streamingProvider == nil {
+			t.Fatal("Failed to create provider with use case from environment variables")
+		}
+
+		// Test generation with streaming provider
+		streamingResponse, err := streamingProvider.Generate(ctx, "Hello")
+		if err != nil {
+			t.Fatalf("Streaming provider generate failed: %v", err)
+		}
+
+		if streamingResponse == "" {
+			t.Fatal("Empty response from streaming provider")
 		}
 	})
 

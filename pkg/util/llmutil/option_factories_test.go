@@ -348,12 +348,18 @@ func TestCreateOptionFactoryFromEnv(t *testing.T) {
 	origOpenAIOrg := os.Getenv(EnvOpenAIOrganization)
 	origAnthropicSystemPrompt := os.Getenv(EnvAnthropicSystemPrompt)
 	origHTTPTimeout := os.Getenv(EnvHTTPTimeout)
+	origOpenAIUseCase := os.Getenv(EnvOpenAIUseCase)
+	origAnthropicUseCase := os.Getenv(EnvAnthropicUseCase)
+	origGeminiUseCase := os.Getenv(EnvGeminiUseCase)
 
 	// Clean up environment after test
 	defer func() {
 		os.Setenv(EnvOpenAIOrganization, origOpenAIOrg)
 		os.Setenv(EnvAnthropicSystemPrompt, origAnthropicSystemPrompt)
 		os.Setenv(EnvHTTPTimeout, origHTTPTimeout)
+		os.Setenv(EnvOpenAIUseCase, origOpenAIUseCase)
+		os.Setenv(EnvAnthropicUseCase, origAnthropicUseCase)
+		os.Setenv(EnvGeminiUseCase, origGeminiUseCase)
 	}()
 
 	tests := []struct {
@@ -426,14 +432,54 @@ func TestCreateOptionFactoryFromEnv(t *testing.T) {
 			},
 			minOptions: 3,
 		},
+		{
+			name:     "Use Case from Environment",
+			provider: "openai",
+			useCase:  "", // No use case in parameter
+			envVars: map[string]string{
+				EnvOpenAIUseCase:       "streaming", // Use case from environment
+				EnvOpenAIOrganization:  "test-org",
+			},
+			expectedTypes: []string{
+				"*domain.OpenAIOrganizationOption",
+				"*domain.HeadersOption",
+				"*domain.HTTPClientOption",
+				"*domain.TimeoutOption",
+			},
+			minOptions: 4,
+		},
+		{
+			name:     "Use Case from Parameter Overrides Environment",
+			provider: "anthropic",
+			useCase:  "performance", // Use case in parameter takes precedence
+			envVars: map[string]string{
+				EnvAnthropicUseCase:      "streaming", // This should be ignored
+				EnvAnthropicSystemPrompt: "Custom env prompt",
+			},
+			expectedTypes: []string{
+				"*domain.AnthropicSystemPromptOption",
+				"*domain.HTTPClientOption",
+				"*domain.TimeoutOption",
+				"*domain.RetryOption",
+			},
+			minOptions: 4,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clear environment variables first
-			os.Unsetenv(EnvOpenAIOrganization)
-			os.Unsetenv(EnvAnthropicSystemPrompt)
-			os.Unsetenv(EnvHTTPTimeout)
+			varsToUnset := []string{
+				EnvOpenAIOrganization,
+				EnvAnthropicSystemPrompt,
+				EnvHTTPTimeout,
+				EnvOpenAIUseCase,
+				EnvAnthropicUseCase,
+				EnvGeminiUseCase,
+			}
+			for _, v := range varsToUnset {
+				os.Unsetenv(v)
+			}
 
 			// Set environment variables for test
 			for k, v := range tt.envVars {

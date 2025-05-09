@@ -218,6 +218,7 @@ func WithAnthropicStreamingOptions(systemPrompt string) []domain.ProviderOption 
 // Parameters:
 // - providerType: The provider type ("openai", "anthropic", "gemini")
 // - useCase: The use case ("default", "performance", "reliability", "streaming")
+//            If empty, the function will look for a use case in the environment variables
 //
 // The function determines which factory function to use based on the provider and use case,
 // then merges those options with any options found in environment variables.
@@ -226,6 +227,23 @@ func CreateOptionFactoryFromEnv(providerType, useCase string) []domain.ProviderO
 
 	// First, get options from environment variables
 	envOptions := GetProviderOptionsFromEnv(providerType)
+
+	// If useCase is empty, check the environment for provider-specific use case
+	if useCase == "" {
+		switch providerType {
+		case "openai":
+			useCase = os.Getenv(EnvOpenAIUseCase)
+		case "anthropic":
+			useCase = os.Getenv(EnvAnthropicUseCase)
+		case "gemini":
+			useCase = os.Getenv(EnvGeminiUseCase)
+		}
+
+		// If still empty after checking environment, default to "default"
+		if useCase == "" {
+			useCase = "default"
+		}
+	}
 
 	// Next, apply factory function options based on provider and use case
 	var factoryOptions []domain.ProviderOption

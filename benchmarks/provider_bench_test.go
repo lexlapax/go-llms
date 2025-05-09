@@ -96,6 +96,7 @@ func BenchmarkProviderMessageConversion(b *testing.B) {
 	// so we use dummy API keys and models
 	openaiProvider := provider.NewOpenAIProvider("dummy-key", "gpt-4")
 	anthropicProvider := provider.NewAnthropicProvider("dummy-key", "claude-3-5-sonnet-latest")
+	geminiProvider := provider.NewGeminiProvider("dummy-key", "gemini-2.0-flash-lite")
 
 	// Benchmark OpenAI message conversion with different message sizes
 	b.Run("OpenAI_SmallMessages", func(b *testing.B) {
@@ -130,6 +131,23 @@ func BenchmarkProviderMessageConversion(b *testing.B) {
 	b.Run("Anthropic_ToolMessages", func(b *testing.B) {
 		runAnthropicMessageConversionBenchmark(b, anthropicProvider, toolMessages)
 	})
+
+	// Benchmark Gemini message conversion with different message sizes
+	b.Run("Gemini_SmallMessages", func(b *testing.B) {
+		runGeminiMessageConversionBenchmark(b, geminiProvider, smallMessages)
+	})
+
+	b.Run("Gemini_MediumMessages", func(b *testing.B) {
+		runGeminiMessageConversionBenchmark(b, geminiProvider, mediumMessages)
+	})
+
+	b.Run("Gemini_LargeMessages", func(b *testing.B) {
+		runGeminiMessageConversionBenchmark(b, geminiProvider, largeMessages)
+	})
+
+	b.Run("Gemini_ToolMessages", func(b *testing.B) {
+		runGeminiMessageConversionBenchmark(b, geminiProvider, toolMessages)
+	})
 }
 
 // runOpenAIMessageConversionBenchmark benchmarks the message conversion process for OpenAI
@@ -162,6 +180,23 @@ func runAnthropicMessageConversionBenchmark(b *testing.B, p *provider.AnthropicP
 		// We need to use the results to prevent the compiler from optimizing away the call
 		if len(systemMessage) == 0 && len(anthMessages) == 0 {
 			b.Fatalf("Expected non-empty results, got empty data")
+		}
+	}
+}
+
+// runGeminiMessageConversionBenchmark benchmarks the message conversion process for Gemini
+func runGeminiMessageConversionBenchmark(b *testing.B, p *provider.GeminiProvider, messages []domain.Message) {
+	// Run the benchmark with the optimized conversion method
+	b.ResetTimer()
+
+	// Run the benchmark
+	for i := 0; i < b.N; i++ {
+		// Call the optimized conversion method directly
+		geminiMessages := p.ConvertMessagesToGeminiFormat(messages)
+
+		// We need to use the results to prevent the compiler from optimizing away the call
+		if len(geminiMessages) == 0 {
+			b.Fatalf("Expected non-empty geminiMessages, got empty slice")
 		}
 	}
 }

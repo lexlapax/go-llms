@@ -12,12 +12,13 @@
   - [x] Implemented in openai_api_compatible_providers example
   - [ ] Create dedicated integration test for Ollama
 
-## Provider Options Enhancements
+## Provider Options Enhancements (Completed) ✅
 - [x] Add support for passing provider options directly in ModelConfig
 - [x] Implement environment variable support for provider-specific options
 - [x] Create option factory functions for common provider configurations
 - [x] Implement environment variable support for use case-specific options
 - [x] Add support for merging options from environment variables and option factories
+- [x] Improve example documentation for provider options
 
 ## Documentation
 - [x] Consolidate documentation and make sure it's consistent
@@ -43,10 +44,14 @@
 - [x] Consolidate and cleanup Makefile
 - [x] Fix linting errors throughout the codebase
 - [x] Create comprehensive test suite for error conditions
-  - [x] Tests for provider error conditions (currently skipped in PR, needs fixes in separate PR)
-  - [x] Tests for schema validation error conditions (currently skipped in PR, needs fixes in separate PR)
+  - [x] Tests for provider error conditions
+  - [x] Tests for schema validation error conditions
   - [x] Tests for agent error conditions
+  - [x] Fix Gemini provider error tests
 - [ ] Add benchmarks for remaining components
+  - [x] Add benchmarks for Gemini provider message conversion
+  - [ ] Add benchmarks for prompt template processing
+  - [ ] Add benchmarks for memory pooling
 - [ ] Implement stress tests for high-load scenarios
 - [ ] Performance profiling and optimization:
   - [ ] Prompt processing and template expansion

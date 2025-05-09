@@ -206,12 +206,14 @@ func demoOptionsWithEnv() {
 	fmt.Println("- OPENAI_MODEL: Model name (default: gpt-4o)")
 	fmt.Println("- OPENAI_BASE_URL: Base URL override")
 	fmt.Println("- OPENAI_ORGANIZATION: Organization ID")
+	fmt.Println("- OPENAI_USE_CASE: Use case (default, streaming, performance, reliability)")
 
 	fmt.Println("\nAnthropic:")
 	fmt.Println("- ANTHROPIC_API_KEY: API key")
 	fmt.Println("- ANTHROPIC_MODEL: Model name (default: claude-3-5-sonnet-latest)")
 	fmt.Println("- ANTHROPIC_BASE_URL: Base URL override")
 	fmt.Println("- ANTHROPIC_SYSTEM_PROMPT: System prompt")
+	fmt.Println("- ANTHROPIC_USE_CASE: Use case (default, streaming, performance, reliability)")
 
 	fmt.Println("\nGemini:")
 	fmt.Println("- GEMINI_API_KEY: API key")
@@ -219,6 +221,7 @@ func demoOptionsWithEnv() {
 	fmt.Println("- GEMINI_BASE_URL: Base URL override")
 	fmt.Println("- GEMINI_GENERATION_CONFIG: JSON string with generation config")
 	fmt.Println("- GEMINI_SAFETY_SETTINGS: JSON string with safety settings")
+	fmt.Println("- GEMINI_USE_CASE: Use case (default, streaming, performance, reliability)")
 
 	// Example 1: Using ProviderFromEnv
 	fmt.Println("\nExample 1: Using ProviderFromEnv to create a provider with all available options")
@@ -244,8 +247,32 @@ func demoOptionsWithEnv() {
 	}
 	fmt.Println("Successfully created provider with environment variable fallback")
 
-	// Example 3: Mixing explicit config and environment variables
-	fmt.Println("\nExample 3: Mixing explicit config and environment variables")
+	// Example 3: Using use case-specific environment variables
+	fmt.Println("\nExample 3: Using use case-specific environment variables")
+	fmt.Println("Setting OPENAI_USE_CASE=streaming to configure for streaming")
+
+	// Save original value to restore later
+	origUseCase := os.Getenv("OPENAI_USE_CASE")
+	os.Setenv("OPENAI_USE_CASE", "streaming")
+	defer os.Setenv("OPENAI_USE_CASE", origUseCase)
+
+	// Create a configuration that will use the streaming use case from environment
+	streamingConfig := llmutil.ModelConfig{
+		Provider: "openai",
+		// API key from environment
+		// Model from environment
+		// Use case from environment (streaming)
+	}
+
+	_, err = llmutil.CreateProvider(streamingConfig)
+	if err != nil {
+		fmt.Printf("Error creating streaming provider: %v\n", err)
+		return
+	}
+	fmt.Println("Successfully created provider with streaming configuration from OPENAI_USE_CASE=streaming")
+
+	// Example 4: Mixing explicit config and environment variables
+	fmt.Println("\nExample 4: Mixing explicit config and environment variables")
 	mixedConfig := llmutil.ModelConfig{
 		Provider: "openai",
 		Model:    "gpt-4o", // Explicit model

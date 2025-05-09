@@ -30,11 +30,10 @@ type ModelConfig struct {
 func WithProviderOptions(config ModelConfig) ([]domain.ProviderOption, error) {
 	var interfaceOptions []domain.ProviderOption
 
-	// If a use case is specified, get options from the factory
-	if config.UseCase != "" {
-		factoryOptions := CreateOptionFactoryFromEnv(config.Provider, config.UseCase)
-		interfaceOptions = append(interfaceOptions, factoryOptions...)
-	}
+	// Always get options from the factory using the specified use case or fallback to environment
+	// If config.UseCase is empty, CreateOptionFactoryFromEnv will check the environment
+	factoryOptions := CreateOptionFactoryFromEnv(config.Provider, config.UseCase)
+	interfaceOptions = append(interfaceOptions, factoryOptions...)
 
 	// Add user-provided options (these have the highest priority)
 	if config.Options != nil {
