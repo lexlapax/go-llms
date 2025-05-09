@@ -24,25 +24,8 @@ func TestNewGeminiProvider(t *testing.T) {
 	if provider.baseURL != defaultGeminiBaseURL {
 		t.Errorf("Expected default baseURL, got %s", provider.baseURL)
 	}
-
-	// Test creation with all parameters
-	customURL := "https://custom-url.example.com"
-	customClient := &http.Client{}
-	provider = NewGeminiProvider(
-		"test-api-key",
-		"gemini-2.0-flash",
-		WithGeminiBaseURL(customURL),
-		WithGeminiHTTPClient(customClient),
-	)
-
-	if provider.model != "gemini-2.0-flash" {
-		t.Errorf("Expected model to be 'gemini-2.0-flash', got %s", provider.model)
-	}
-	if provider.baseURL != customURL {
-		t.Errorf("Expected baseURL to be '%s', got %s", customURL, provider.baseURL)
-	}
-	if provider.httpClient != customClient {
-		t.Errorf("Expected custom HTTP client")
+	if provider.topK != 40 {
+		t.Errorf("Expected default topK to be 40, got %d", provider.topK)
 	}
 }
 
@@ -224,10 +207,11 @@ func TestGeminiGenerate(t *testing.T) {
 	defer server.Close()
 
 	// Create provider with test server URL
+	baseURLOption := domain.NewBaseURLOption(server.URL)
 	provider := NewGeminiProvider(
 		"test-api-key",
 		"gemini-2.0-flash-lite",
-		WithGeminiBaseURL(server.URL),
+		baseURLOption,
 	)
 
 	// Test Generate method
@@ -266,10 +250,11 @@ func TestGeminiGenerateWithSchema(t *testing.T) {
 	defer server.Close()
 
 	// Create provider with test server URL
+	baseURLOption := domain.NewBaseURLOption(server.URL)
 	provider := NewGeminiProvider(
 		"test-api-key",
 		"gemini-2.0-flash-lite",
-		WithGeminiBaseURL(server.URL),
+		baseURLOption,
 	)
 
 	// Create schema
@@ -340,10 +325,11 @@ func TestGeminiStreamMessage(t *testing.T) {
 	defer server.Close()
 
 	// Create provider with test server URL
+	baseURLOption := domain.NewBaseURLOption(server.URL)
 	provider := NewGeminiProvider(
 		"test-api-key",
 		"gemini-2.0-flash-lite",
-		WithGeminiBaseURL(server.URL),
+		baseURLOption,
 	)
 
 	// Test StreamMessage method
@@ -411,10 +397,11 @@ func TestGeminiError(t *testing.T) {
 	defer server.Close()
 
 	// Create provider with test server URL
+	baseURLOption := domain.NewBaseURLOption(server.URL)
 	provider := NewGeminiProvider(
 		"invalid-api-key",
 		"gemini-2.0-flash-lite",
-		WithGeminiBaseURL(server.URL),
+		baseURLOption,
 	)
 
 	// Test error handling

@@ -31,7 +31,7 @@ TEST_FLAGS=-v -race -coverprofile=coverage.out -covermode=atomic
 DEP_FLAGS=-v
 
 # Commands
-.PHONY: all build clean test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg benchmark-consensus profile-cpu profile-mem profile-block coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples example examples-all test-integration test-integration-mock test-cmd test-examples
+.PHONY: all build clean clean-all test test-pkg test-verbose test-verbose-pkg test-race test-race-pkg test-short test-short-pkg test-func benchmark benchmark-pkg benchmark-consensus profile-cpu profile-mem profile-block coverage coverage-pkg lint fmt vet mod-tidy mod-download help examples example examples-all test-integration test-integration-mock test-cmd test-examples
 
 # Default target
 all: clean test build examples-all
@@ -207,6 +207,11 @@ clean:
 	mkdir -p $(BINARY_DIR)
 	rm -f coverage.out coverage.html
 
+# Clean everything including Go cache
+clean-all: clean
+	$(GOCMD) clean -cache -testcache -modcache
+	@echo "Cleaned all build artifacts and Go cache"
+
 # Install golangci-lint
 install-lint:
 	$(GOGET) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
@@ -295,4 +300,5 @@ help:
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make clean            Clean build artifacts"
+	@echo "  make clean-all        Clean everything including Go cache (cache, testcache, modcache)"
 	@echo "  make help             Show this help message"

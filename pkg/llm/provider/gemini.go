@@ -21,51 +21,62 @@ const (
 
 // GeminiProvider implements the Provider interface for Google Gemini
 type GeminiProvider struct {
-	apiKey      string
-	model       string
-	baseURL     string
-	httpClient  *http.Client
-	messageCache *MessageCache
-}
-
-// GeminiOption configures the Gemini provider
-type GeminiOption func(*GeminiProvider)
-
-// WithGeminiBaseURL sets a custom base URL for the Gemini API
-func WithGeminiBaseURL(url string) GeminiOption {
-	return func(p *GeminiProvider) {
-		p.baseURL = url
-	}
-}
-
-// WithGeminiHTTPClient sets a custom HTTP client
-func WithGeminiHTTPClient(client *http.Client) GeminiOption {
-	return func(p *GeminiProvider) {
-		p.httpClient = client
-	}
+	apiKey        string
+	model         string
+	baseURL       string
+	httpClient    *http.Client
+	messageCache  *MessageCache
+	topK          int
+	safetySettings []map[string]interface{}
 }
 
 // NewGeminiProvider creates a new Google Gemini provider
 // Default model is "gemini-2.0-flash-lite"
-func NewGeminiProvider(apiKey, model string, options ...GeminiOption) *GeminiProvider {
+func NewGeminiProvider(apiKey, model string, options ...domain.ProviderOption) *GeminiProvider {
 	// Default to Gemini 2.0 Flash Lite if no model is specified
 	if model == "" {
 		model = "gemini-2.0-flash-lite"
 	}
 
 	provider := &GeminiProvider{
-		apiKey:      apiKey,
-		model:       model,
-		baseURL:     defaultGeminiBaseURL,
-		httpClient:  http.DefaultClient,
-		messageCache: NewMessageCache(),
+		apiKey:        apiKey,
+		model:         model,
+		baseURL:       defaultGeminiBaseURL,
+		httpClient:    http.DefaultClient,
+		messageCache:  NewMessageCache(),
+		topK:          40, // Default topK value
+		safetySettings: nil,
 	}
 
 	for _, option := range options {
-		option(provider)
+		// Check if the option is compatible with Gemini
+		if geminiOption, ok := option.(domain.GeminiOption); ok {
+			geminiOption.ApplyToGemini(provider)
+		}
 	}
 
 	return provider
+}
+
+// Setter methods for options
+// SetBaseURL sets the base URL for the Gemini API
+func (p *GeminiProvider) SetBaseURL(url string) {
+	p.baseURL = url
+}
+
+// SetHTTPClient sets the HTTP client
+func (p *GeminiProvider) SetHTTPClient(client *http.Client) {
+	p.httpClient = client
+}
+
+// SetTopK sets the topK parameter for Gemini API calls
+func (p *GeminiProvider) SetTopK(topK int) {
+	p.topK = topK
+}
+
+// SetSafetySettings sets the safety settings for Gemini API calls
+func (p *GeminiProvider) SetSafetySettings(settings []map[string]interface{}) {
+	p.safetySettings = settings
 }
 
 // ConvertMessagesToGeminiFormat converts domain messages to Gemini API format
@@ -127,42 +138,43 @@ func (p *GeminiProvider) buildGeminiRequestBody(
 ) map[string]interface{} {
 	// Pre-allocate the map with the right capacity for efficiency
 	requestBody := make(map[string]interface{}, 3)
-	
+
 	// Add contents to the request body
 	requestBody["contents"] = contents
-	
+
 	// Add generation config with various parameters
 	generationConfig := make(map[string]interface{}, 5)
-	
+
 	if options.Temperature != 0.7 {
 		generationConfig["temperature"] = options.Temperature
 	}
-	
+
 	if options.MaxTokens != 1024 {
 		generationConfig["maxOutputTokens"] = options.MaxTokens
 	}
-	
+
 	if options.TopP != 1.0 {
 		generationConfig["topP"] = options.TopP
 	}
-	
+
 	// Add top K if it's set
-	// Note: Adding a placeholder as Gemini has a topK parameter
-	// This should be made configurable in the domain.ProviderOptions
-	generationConfig["topK"] = 40 // Default topK value
-	
+	generationConfig["topK"] = p.topK
+
 	// Add stop sequences if provided
 	if len(options.StopSequences) > 0 {
 		generationConfig["stopSequences"] = options.StopSequences
 	}
-	
+
 	// Only add the generationConfig if it has entries
 	if len(generationConfig) > 0 {
 		requestBody["generationConfig"] = generationConfig
 	}
-	
-	// Safety settings could be added here if needed
-	
+
+	// Add safety settings if configured
+	if p.safetySettings != nil && len(p.safetySettings) > 0 {
+		requestBody["safetySettings"] = p.safetySettings
+	}
+
 	return requestBody
 }
 

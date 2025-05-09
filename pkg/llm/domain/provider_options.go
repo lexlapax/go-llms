@@ -68,8 +68,9 @@ func (o *BaseURLOption) ApplyToAnthropic(provider interface{}) {
 }
 
 func (o *BaseURLOption) ApplyToGemini(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the Gemini provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	if p, ok := provider.(interface{ SetBaseURL(url string) }); ok {
+		p.SetBaseURL(o.URL)
+	}
 }
 
 // HTTPClientOption sets a custom HTTP client for the provider
@@ -97,8 +98,9 @@ func (o *HTTPClientOption) ApplyToAnthropic(provider interface{}) {
 }
 
 func (o *HTTPClientOption) ApplyToGemini(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the Gemini provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	if p, ok := provider.(interface{ SetHTTPClient(client *http.Client) }); ok {
+		p.SetHTTPClient(o.Client)
+	}
 }
 
 // TimeoutOption sets a timeout for API requests
@@ -363,8 +365,15 @@ func (o *GeminiGenerationConfigOption) WithFrequencyPenalty(frequencyPenalty flo
 func (o *GeminiGenerationConfigOption) ProviderType() string { return "gemini" }
 
 func (o *GeminiGenerationConfigOption) ApplyToGemini(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the Gemini provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	// Set topK if configured
+	if o.TopK != nil {
+		if p, ok := provider.(interface{ SetTopK(topK int) }); ok {
+			p.SetTopK(*o.TopK)
+		}
+	}
+
+	// Other Gemini-specific generation parameters can be implemented
+	// when the GeminiProvider supports them
 }
 
 // GeminiSafetySettingsOption sets the safety settings for Gemini API calls
@@ -380,6 +389,7 @@ func NewGeminiSafetySettingsOption(settings []map[string]interface{}) *GeminiSaf
 func (o *GeminiSafetySettingsOption) ProviderType() string { return "gemini" }
 
 func (o *GeminiSafetySettingsOption) ApplyToGemini(provider interface{}) {
-	// We'll implement the actual functionality when refactoring the Gemini provider
-	// For now, we leave this as a stub that will be accessed by reflection in tests
+	if p, ok := provider.(interface{ SetSafetySettings(settings []map[string]interface{}) }); ok {
+		p.SetSafetySettings(o.Settings)
+	}
 }

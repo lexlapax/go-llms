@@ -60,18 +60,7 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 		llmProvider = provider.NewAnthropicProvider(config.APIKey, config.Model, options...)
 	
 	case "gemini":
-		// TODO: Refactor Gemini provider to use interface-based options
-		// For now, fall back to the old functional options
-		var geminiOptions []provider.GeminiOption
-		
-		// Manually convert interface options to functional options
-		for _, opt := range options {
-			if baseURLOpt, ok := opt.(*domain.BaseURLOption); ok {
-				geminiOptions = append(geminiOptions, provider.WithGeminiBaseURL(baseURLOpt.URL))
-			}
-		}
-		
-		llmProvider = provider.NewGeminiProvider(config.APIKey, config.Model, geminiOptions...)
+		llmProvider = provider.NewGeminiProvider(config.APIKey, config.Model, options...)
 	
 	case "mock":
 		llmProvider = provider.NewMockProvider()
@@ -139,13 +128,13 @@ func ProviderFromEnv() (domain.Provider, string, string, error) {
 	}
 	
 	if geminiKey != "" {
-		var options []provider.GeminiOption
-		
+		var options []domain.ProviderOption
+
 		// Add base URL option if specified
 		if geminiBaseURL != "" {
-			options = append(options, provider.WithGeminiBaseURL(geminiBaseURL))
+			options = append(options, domain.NewBaseURLOption(geminiBaseURL))
 		}
-		
+
 		llmProvider := provider.NewGeminiProvider(geminiKey, geminiModel, options...)
 		return llmProvider, "gemini", geminiModel, nil
 	}
