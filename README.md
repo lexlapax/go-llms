@@ -1,6 +1,6 @@
-# Go-LLMs: A Go Implementation of Pydantic-AI
+# Go-LLMs: A Unified Go Library for LLM Integration
 
-Go-LLMs is a Go library for creating LLM-powered applications with structured outputs and type safety. It aims to port the core functionality of pydantic-ai to Go while embracing Go's idioms and strengths.
+Go-LLMs is a Go library that provides a simplified, unified interface to interact with various LLM providers while offering robust data validation and agent tooling. It combines structured output processing (inspired by pydantic-ai), a consistent provider interface, and flexible agent workflows in a single, cohesive Go package.
 
 ## Features
 
@@ -17,11 +17,12 @@ Go-LLMs is a Go library for creating LLM-powered applications with structured ou
 
 ## Project Goals
 
-1. Create an idiomatic Go implementation of pydantic-ai
-2. Minimize external dependencies by leveraging Go's standard library
+1. Provide a unified, idiomatic Go interface for LLM integration
+2. Implement robust schema validation and structured output processing
 3. Support modern LLM providers (OpenAI, Anthropic, Google Gemini, etc.)
-4. Provide comprehensive validation for LLM outputs
-5. Follow clean architecture principles with vertical feature slices
+4. Create flexible agent workflows with tool integration
+5. Minimize external dependencies by leveraging Go's standard library
+6. Follow clean architecture principles with vertical feature slices
 
 ## Architecture
 
@@ -376,9 +377,9 @@ For a complete reference of all documentation, see the [REFERENCE.md](REFERENCE.
 
 ### Project Planning
 
-The following documents provide insight into the project's origins and planning:
+The following documents provide insight into the project's design and planning:
 
-- [Pydantic-AI to Go](docs/plan/pydantic-ai-to-go.md) - Original blueprint for porting pydantic-ai to Go
+- [Design Inspirations](docs/plan/pydantic-ai-to-go.md) - Key inspirations and design decisions
 - [Coding Practices](docs/plan/coding-practices.md) - Coding standards and guidelines for the project
 - [Implementation Plan](docs/plan/implementation-plan.md) - Detailed implementation plan with phases and milestones
 

@@ -1,6 +1,6 @@
-# Blueprint for go-llms: A Pydantic-like Validation Framework for Go
+# Blueprint for go-llms: A Unified Library for LLM Integration with Go
 
-Go-llms offers a robust framework for validating and structuring LLM outputs in Go applications. This blueprint details how to implement a system that captures pydantic-ai's core functionality while embracing Go's idioms and best practices.
+Go-llms offers a robust framework for integrating with LLMs, validating structured outputs, and building agent workflows in Go applications. This blueprint details how to implement a comprehensive system that provides unified LLM interfaces while embracing Go's idioms and best practices.
 
 ## Core architecture follows clean design with vertical slices
 
@@ -8,7 +8,11 @@ Go-llms implements a clean architecture organized by feature rather than technic
 
 The system's core remains isolated from external dependencies through interfaces, allowing for a highly testable system that can evolve independently of specific LLM providers or validation technologies.
 
-**The primary goal of the library is simple**: validate structured outputs from LLMs against predefined schemas while following Go idioms and best practices.
+**The primary goals of the library are**:
+1. Provide a unified interface for multiple LLM providers
+2. Validate structured outputs against predefined schemas
+3. Support flexible agent workflows with tool integration
+4. Follow Go idioms and best practices
 
 ## Directory structure
 
@@ -864,8 +868,13 @@ func main() {
 
 ## Conclusion
 
-This blueprint provides a comprehensive guide for implementing "go-llms", a Go port of pydantic-ai that follows test-driven development principles, feature-based vertical slicing, and clean architecture patterns. 
+This blueprint provides a comprehensive guide for implementing "go-llms", a unified library for LLM integration in Go that follows test-driven development principles, feature-based vertical slicing, and clean architecture patterns.
 
-By following this approach, you'll create a robust library that validates LLM outputs against predefined schemas, supports multiple LLM providers, and follows Go best practices. The modular design and clear separation of concerns make the codebase maintainable and extensible, while comprehensive testing ensures reliability.
+By following this approach, you'll create a robust library with three main pillars:
+1. A unified interface for multiple LLM providers with consistent behavior
+2. Strong schema validation for structured outputs with type safety
+3. Flexible agent workflows with tool integration capabilities
 
-With go-llms, Go developers can build LLM-powered applications with strong typing and data validation, bringing the powerful validation capabilities of pydantic-ai to the Go ecosystem.
+The modular design and clear separation of concerns make the codebase maintainable and extensible, while comprehensive testing ensures reliability.
+
+With go-llms, Go developers can build sophisticated LLM-powered applications with strong typing, data validation, and agent workflows - all through a consistent, idiomatic Go interface.

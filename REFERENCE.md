@@ -41,7 +41,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 
 ## Project Planning
 
-- [Pydantic-AI to Go](/docs/plan/pydantic-ai-to-go.md) - Original blueprint for porting pydantic-ai to Go
+- [Design Inspirations](/docs/plan/design-inspirations.md) - Key inspirations and design decisions
 - [Coding Practices](/docs/plan/coding-practices.md) - Coding standards and guidelines
-- [Implementation Plan](/docs/plan/implementation-plan.md) - Original implementation plan
+- [Implementation Plan](/docs/plan/implementation-plan.md) - Detailed implementation plan
 - [Project Planning Overview](/docs/plan/README.md) - Overview of planning documents

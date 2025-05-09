@@ -1,10 +1,10 @@
 # Claude.md - Go-LLMs Project Guide
 
-This document serves as a guide for Claude Code when working on the Go-LLMs project (a port of pydantic-ai to Go).
+This document serves as a guide for Claude Code when working on the Go-LLMs project.
 
 ## Project Overview
 
-Go-LLMs is a Go library for creating LLM-powered applications with structured outputs and type safety. It aims to port the core functionality of pydantic-ai to Go while embracing Go's idioms and strengths.
+Go-LLMs is a unified Go library for LLM integration that provides a simplified interface to interact with various LLM providers while offering robust data validation and agent tooling. It combines structured output processing (inspired by pydantic-ai), a consistent provider interface, and flexible agent workflows in a single, cohesive package.
 
 ## Project Structure
 

@@ -1,5 +1,5 @@
-# Step-by-Step Implementation Plan for go-llms: A Pydantic-ai Port to Go
-This implementation plan outlines the specific steps needed to create a Go port of pydantic-ai (go-llms), following Go's idioms and best practices. The plan adopts a test-driven development approach with vertical feature slices, ensuring that each component is properly tested before integration.
+# Step-by-Step Implementation Plan for go-llms: A Unified LLM Integration Library
+This implementation plan outlines the specific steps needed to create a comprehensive Go library for LLM integration (go-llms), following Go's idioms and best practices. The plan adopts a test-driven development approach with vertical feature slices, ensuring that each component is properly tested before integration.
 ## Phase 1: Project Setup and Architecture (1-2 weeks)
 
 ### Step 1: Initialize project structure
@@ -851,4 +851,13 @@ Phase 6: Integration and Examples (1-2 weeks)
 Phase 7: Performance Optimization and Refinement (1-2 weeks)
 
 Total estimated time: 10-17 weeks
-This implementation plan provides a structured, step-by-step approach to creating go-llms, a Go port of pydantic-ai, using test-driven development with a clean architecture organized by vertical feature slices. Each phase builds on the previous one, ensuring a solid foundation for the library while maintaining proper separation of concerns throughout the development process.
+
+## The Three Main Pillars of Go-LLMs
+
+This implementation plan reflects the three core pillars of the Go-LLMs project:
+
+1. **Provider Integration** - Creating a unified interface for multiple LLM providers with consistent behavior
+2. **Schema Validation** - Implementing robust data validation for structured outputs using JSON schema
+3. **Agent Framework** - Building flexible workflows for tools, function calling, and complex interactions
+
+Each phase builds on the previous one, ensuring a solid foundation for the library while maintaining proper separation of concerns throughout the development process.
