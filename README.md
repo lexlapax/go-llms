@@ -9,7 +9,9 @@ Go-LLMs is a Go library that provides a simplified, unified interface to interac
 - **Type safety**: Leverages Go's type system for better developer experience
 - **Dependency injection**: Enables passing data and services into agents
 - **Tool integration**: Allows LLMs to interact with external systems through function calls
-- **Multiple providers**: Support for OpenAI, Anthropic, Google Gemini, and extensible for other providers
+- **Multiple providers**: Support for OpenAI, Anthropic, Google Gemini, and OpenAI API compatible providers (like OpenRouter and Ollama)
+- **Provider options system**: Configure providers with type-safe interface-based options (common and provider-specific)
+- **Environment variable support**: Configure providers through environment variables and option factories
 - **Schema validation**: Comprehensive JSON schema validation with type coercion
 - **Monitoring hooks**: Hooks for logging, metrics, and debugging
 - **Multi-provider strategies**: Combine providers using fastest, primary, or consensus approaches
@@ -160,6 +162,38 @@ person := result.(map[string]interface{})
 fmt.Printf("Generated person: %s (%d)\n", person["name"], person["age"])
 ```
 
+### Configuring Providers with Options
+
+```go
+// Create an HTTP client with custom timeout
+httpClient := &http.Client{
+    Timeout: 30 * time.Second,
+}
+
+// Create common options that work for any provider
+httpClientOption := domain.NewHTTPClientOption(httpClient)
+timeoutOption := domain.NewTimeoutOption(15000) // 15 seconds
+
+// Create provider-specific options
+systemPromptOption := domain.NewAnthropicSystemPromptOption(
+    "You are a helpful assistant who speaks in a very concise way.")
+
+// Create provider with options
+anthropicProvider := provider.NewAnthropicProvider(
+    os.Getenv("ANTHROPIC_API_KEY"),
+    "claude-3-5-sonnet-latest",
+    httpClientOption,         // Common option
+    timeoutOption,            // Common option
+    systemPromptOption,       // Anthropic-specific option
+)
+
+// Generate with the configured provider
+response, err := anthropicProvider.Generate(
+    context.Background(),
+    "Explain the theory of relativity",
+)
+```
+
 ### Processing Structured Outputs
 
 ```go
@@ -278,16 +312,42 @@ if err != nil {
 response, err := provider.Generate(context.Background(), enhancedPrompt)
 ```
 
+### Environment Variable Support
+
+```go
+// Set environment variables for configuration
+os.Setenv("OPENAI_API_KEY", "your-api-key")
+os.Setenv("OPENAI_MODEL", "gpt-4o")                // Default model
+os.Setenv("OPENAI_ORGANIZATION", "org-123456")     // Organization ID
+os.Setenv("OPENAI_BASE_URL", "https://custom.api") // Custom API endpoint
+os.Setenv("LLM_HTTP_TIMEOUT", "30")                // Global HTTP timeout in seconds
+os.Setenv("LLM_RETRY_ATTEMPTS", "3")               // Global retry attempts
+
+// Create a provider using environment variables
+// This will automatically apply all options from the environment
+provider, providerName, modelName, err := llmutil.ProviderFromEnv()
+if err != nil {
+    log.Fatalf("Failed to create provider: %v", err)
+}
+fmt.Printf("Created %s provider with model %s\n", providerName, modelName)
+
+// Use the configured provider
+response, err := provider.Generate(context.Background(), "Hello, world!")
+```
+
 ### Convenience Utilities
 
 ```go
-// Create a provider from config
+// Create a provider from config with options
 config := llmutil.ModelConfig{
     Provider: "openai",
     Model:    "gpt-4o",
     APIKey:   os.Getenv("OPENAI_API_KEY"),
+    BaseURL:  "https://api.openai.com", // Creates a BaseURLOption
 }
-provider, err := llmutil.CreateProvider(config)
+// Add provider-specific options
+orgOption := domain.NewOpenAIOrganizationOption("org-123456")
+provider, err := llmutil.CreateProvider(config, orgOption)
 
 // Generate responses in parallel
 prompts := []string{
@@ -299,8 +359,8 @@ results, errors := llmutil.BatchGenerate(context.Background(), provider, prompts
 
 // Generate with retry for transient errors
 result, err := llmutil.GenerateWithRetry(
-    context.Background(), 
-    provider, 
+    context.Background(),
+    provider,
     "Write a haiku about programming",
     3, // max retries
 )
@@ -338,6 +398,7 @@ Go-LLMs provides comprehensive documentation for users and contributors:
 ### User Guides
 
 - [Getting Started](docs/user-guide/getting-started.md) - Introduction and basic usage examples
+- [Provider Options](docs/user-guide/provider-options.md) - Using the provider option system for configuration
 - [Multi-Provider Guide](docs/user-guide/multi-provider.md) - Working with multiple LLM providers
 - [Advanced Validation](docs/user-guide/advanced-validation.md) - Advanced schema validation features
 - [Error Handling](docs/user-guide/error-handling.md) - Error handling patterns and best practices
@@ -368,10 +429,17 @@ The library includes several example applications that demonstrate key features:
 
 - [Simple Example](cmd/examples/simple/README.md) - Basic usage with mock providers
 - [Anthropic Example](cmd/examples/anthropic/README.md) - Integration with Anthropic Claude
+- [OpenAI Example](cmd/examples/openai/README.md) - Integration with OpenAI models
 - [Gemini Example](cmd/examples/gemini/README.md) - Integration with Google Gemini
+- [Provider Options Example](cmd/examples/provider_options/README.md) - Using the provider option system
+- [OpenAI API Compatible Providers](cmd/examples/openai_api_compatible_providers/README.md) - Using OpenRouter and Ollama
 - [Agent Example](cmd/examples/agent/README.md) - Agent with tools for complex tasks
 - [Multi-Provider Example](cmd/examples/multi/README.md) - Working with multiple providers
 - [Consensus Example](cmd/examples/consensus/README.md) - Multi-provider consensus strategies
+- [Schema Example](cmd/examples/schema/README.md) - Schema generation from Go structs
+- [Coercion Example](cmd/examples/coercion/README.md) - Type coercion for validation
+- [Convenience Example](cmd/examples/convenience/README.md) - Utility functions for common tasks
+- [Metrics Example](cmd/examples/metrics/README.md) - Performance monitoring and metrics
 
 For a complete reference of all documentation, see the [REFERENCE.md](REFERENCE.md) file.
 
@@ -387,10 +455,17 @@ The following documents provide insight into the project's design and planning:
 
 The core functionality is complete and working. Current focus is on:
 
-1. Enhanced API documentation
-2. Additional examples
-3. Performance optimization
-4. Error handling standardization
+1. Model Context Protocol support for Agents
+2. Testing and performance optimization
+   - Comprehensive test suite for error conditions
+   - Benchmarks for remaining components
+   - Stress testing for high-load scenarios
+3. Performance profiling and optimization
+   - Prompt processing and template expansion
+   - Memory pooling for response types
+4. API refinement based on usage feedback
+
+For the latest status and upcoming features, see the [TODO.md](TODO.md) file.
 
 ## License
 
