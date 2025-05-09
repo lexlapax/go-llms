@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -12,10 +13,10 @@ import (
 )
 
 func main() {
-	fmt.Println("=== Custom Providers Example ===")
-	fmt.Println("This example demonstrates how to use custom LLM providers with go-llms")
+	fmt.Println("=== OpenAI API Compatible Providers Example ===")
+	fmt.Println("This example demonstrates how to use providers that implement the OpenAI API specification")
 	fmt.Println("1. OpenRouter API (OpenAI API-compatible)")
-	fmt.Println("2. Ollama (local LLM provider)")
+	fmt.Println("2. Ollama (local LLM provider with OpenAI API compatibility)")
 	fmt.Println()
 
 	// Check which examples to run
@@ -46,37 +47,65 @@ func runOpenRouterExample() {
 	fmt.Println("OpenRouter provides access to various LLM providers with an OpenAI-compatible API")
 
 	apiKey := os.Getenv("OPENROUTER_API_KEY")
-	
+
 	// Get the model name from environment variable or use default
 	model := os.Getenv("OPENROUTER_MODEL")
 	if model == "" {
-		model = "anthropic/claude-3-5-sonnet"
+		model = "mistralai/mistral-small-3.1-24b-instruct:free"
 	}
 
 	// Method 1: Direct provider instantiation with interface-based options
-	fmt.Println("\nMethod 1: Direct provider instantiation")
+	fmt.Println("\nMethod 1: Direct provider instantiation with interface-based options")
+
+	// Create a custom HTTP client with timeout
+	httpClient := &http.Client{
+		Timeout: 15 * time.Second,
+	}
+
+	// Create the provider options
+	// For OpenRouter, we need to omit the "/v1" as the OpenAI provider will add it
 	baseURLOption := domain.NewBaseURLOption("https://openrouter.ai/api")
+	httpClientOption := domain.NewHTTPClientOption(httpClient)
+	headersOption := domain.NewHeadersOption(map[string]string{
+		"HTTP-Referer": "https://github.com/lexlapax/go-llms", // OpenRouter attribution
+		"X-Title":      "Go-LLMs Example",                     // Additional OpenRouter headers
+	})
+
+	// Create the provider with multiple options
 	openRouterProvider := provider.NewOpenAIProvider(
 		apiKey,
 		model,
 		baseURLOption,
+		httpClientOption,
+		headersOption,
 	)
 
-	// Use the provider to generate a response
-	response, err := openRouterProvider.Generate(
+	// Use the provider to generate a response with messages (preferred for OpenRouter)
+	messages := []domain.Message{
+		{Role: domain.RoleUser, Content: "What models do you provide access to?"},
+	}
+
+	messageResp, err := openRouterProvider.GenerateMessage(
 		context.Background(),
-		"What models do you provide access to?",
+		messages,
 		domain.WithMaxTokens(150),
 	)
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
-		fmt.Printf("Response from model %s:\n%s\n", model, response)
+		fmt.Printf("Response from model %s:\n%s\n", model, messageResp.Content)
 	}
 
 	// Method 2: Using ModelConfig and CreateProvider
 	fmt.Println("\nMethod 2: Using ModelConfig and CreateProvider")
+
+	// NOTE: With future ModelConfig improvements, we'd use the HeadersOption with ModelConfig
+	// For now, this is just shown as an example of the option pattern
+	// openRouterHeaders := domain.NewHeadersOption(map[string]string{
+	//    "HTTP-Referer": "https://github.com/lexlapax/go-llms",
+	// })
+
 	config := llmutil.ModelConfig{
 		Provider: "openai",
 		Model:    model,
@@ -90,17 +119,21 @@ func runOpenRouterExample() {
 		return
 	}
 
-	// Use the provider to generate a response
-	response2, err := openRouterProvider2.Generate(
+	// Use the provider to generate a response with messages (preferred for OpenRouter)
+	messages2 := []domain.Message{
+		{Role: domain.RoleUser, Content: "What is your latency like?"},
+	}
+
+	messageResp2, err := openRouterProvider2.GenerateMessage(
 		context.Background(),
-		"What is your latency like?",
+		messages2,
 		domain.WithMaxTokens(150),
 	)
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
-		fmt.Printf("Response:\n%s\n", response2)
+		fmt.Printf("Response:\n%s\n", messageResp2.Content)
 	}
 
 	// Method 3: Using environment variables
@@ -109,7 +142,7 @@ func runOpenRouterExample() {
 	fmt.Println("Example:")
 	fmt.Println("export OPENAI_BASE_URL=https://openrouter.ai/api")
 	fmt.Println("export OPENAI_API_KEY=your_openrouter_key")
-	fmt.Println("export OPENAI_MODEL=anthropic/claude-3-5-sonnet")
+	fmt.Println("export OPENAI_MODEL=mistralai/mistral-small-3.1-24b-instruct:free")
 }
 
 // Ollama Example
@@ -126,19 +159,30 @@ func runOllamaExample() {
 
 	ollamaModel := os.Getenv("OLLAMA_MODEL")
 	if ollamaModel == "" {
-		ollamaModel = "llama3"
+		ollamaModel = "llama3.2:3b"
 	}
 
-	// No API key is typically needed for Ollama
-	apiKey := ""
+	// Ollama doesn't need a real API key, but the OpenAI provider requires a non-empty string
+	apiKey := "dummy-key" // This key is ignored by Ollama but prevents errors in the provider
 
-	// Method 1: Direct provider instantiation with options
-	fmt.Println("\nMethod 1: Direct provider instantiation")
-	baseURLOption := domain.NewBaseURLOption(ollamaHost)
+	// Method 1: Direct provider instantiation with interface-based options
+	fmt.Println("\nMethod 1: Direct provider instantiation with interface-based options")
+
+	// Create a custom HTTP client with timeout
+	ollamaClient := &http.Client{
+		Timeout: 60 * time.Second, // Longer timeout for local models
+	}
+
+	// Create the provider options
+	ollamaBaseURLOption := domain.NewBaseURLOption(ollamaHost)
+	ollamaHTTPClientOption := domain.NewHTTPClientOption(ollamaClient)
+
+	// Create the provider with multiple options
 	ollamaProvider := provider.NewOpenAIProvider(
 		apiKey,
 		ollamaModel,
-		baseURLOption,
+		ollamaBaseURLOption,
+		ollamaHTTPClientOption,
 	)
 
 	// Use the provider to generate a response
@@ -163,7 +207,7 @@ func runOllamaExample() {
 	config := llmutil.ModelConfig{
 		Provider: "openai",
 		Model:    ollamaModel,
-		APIKey:   apiKey, // Empty string for Ollama
+		APIKey:   apiKey, // Dummy key for Ollama
 		BaseURL:  ollamaHost,
 	}
 
@@ -175,10 +219,10 @@ func runOllamaExample() {
 
 	// Use the provider for streaming
 	fmt.Println("\nStreaming with Ollama:")
-	
+
 	stream, err := ollamaProvider2.Stream(
 		ctx,
-		"List three projects that use Ollama",
+		"List three projects that use llama",
 		domain.WithMaxTokens(150),
 	)
 
@@ -201,5 +245,5 @@ func runOllamaExample() {
 	fmt.Println("Example:")
 	fmt.Println("export OPENAI_BASE_URL=http://localhost:11434")
 	fmt.Println("export OPENAI_API_KEY=\"\"")
-	fmt.Println("export OPENAI_MODEL=llama3")
+	fmt.Println("export OPENAI_MODEL=llama3.2:3b")
 }

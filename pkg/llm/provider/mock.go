@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -20,11 +21,17 @@ type MockProvider struct {
 	generateWithSchemaFunc func(ctx context.Context, prompt string, schema *schemaDomain.Schema, options ...domain.Option) (interface{}, error)
 	// Predefined responses for testing
 	predefinedResponses map[string]string
+	// Options storage for testing
+	httpClient      *http.Client
+	baseURL         string
+	headers         map[string]string
+	safetySettings  []map[string]interface{}
+	customSettings  map[string]interface{}
 }
 
-// NewMockProvider creates a new mock provider with default implementations
-func NewMockProvider() *MockProvider {
-	return &MockProvider{
+// NewMockProvider creates a new mock provider with default implementations and options
+func NewMockProvider(options ...domain.ProviderOption) *MockProvider {
+	provider := &MockProvider{
 		generateFunc: func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
 			return `{"result": "This is a mock response"}`, nil
 		},
@@ -130,7 +137,20 @@ func NewMockProvider() *MockProvider {
 			// Default for non-object schemas
 			return map[string]interface{}{"result": "mock response"}, nil
 		},
+		// Initialize the headers map
+		headers: make(map[string]string),
+		// Initialize the custom settings map
+		customSettings: make(map[string]interface{}),
 	}
+
+	// Apply provider options
+	for _, option := range options {
+		if mockOption, ok := option.(domain.MockOption); ok {
+			mockOption.ApplyToMock(provider)
+		}
+	}
+
+	return provider
 }
 
 // Generate produces text from a prompt
@@ -210,6 +230,33 @@ func (p *MockProvider) WithPredefinedResponses(responses map[string]string) *Moc
 	}
 
 	return p
+}
+
+// Getter and setter methods for MockProvider options
+
+// SetHTTPClient sets the HTTP client for the provider
+func (p *MockProvider) SetHTTPClient(client *http.Client) {
+	p.httpClient = client
+}
+
+// SetBaseURL sets the base URL for the provider
+func (p *MockProvider) SetBaseURL(url string) {
+	p.baseURL = url
+}
+
+// SetHeaders sets custom HTTP headers for the provider
+func (p *MockProvider) SetHeaders(headers map[string]string) {
+	p.headers = headers
+}
+
+// SetSafetySettings sets safety settings for the provider
+func (p *MockProvider) SetSafetySettings(settings []map[string]interface{}) {
+	p.safetySettings = settings
+}
+
+// SetCustomSetting sets a custom setting for the provider
+func (p *MockProvider) SetCustomSetting(key string, value interface{}) {
+	p.customSettings[key] = value
 }
 
 // GenerateJSONResponse generates a mock JSON response for testing

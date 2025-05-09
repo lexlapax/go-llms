@@ -17,11 +17,13 @@ import (
 
 // ModelConfig represents a configuration for an LLM model
 type ModelConfig struct {
-	Provider  string // Provider identifier (e.g., "openai", "anthropic")
-	Model     string // Model name
-	APIKey    string // API key
-	BaseURL   string // Optional base URL override
-	MaxTokens int    // Optional max tokens override
+	Provider  string              // Provider identifier (e.g., "openai", "anthropic")
+	Model     string              // Model name
+	APIKey    string              // API key
+	BaseURL   string              // Optional base URL override
+	MaxTokens int                 // Optional max tokens override
+	// TODO: Add Options field that can hold provider-specific options
+	// Options   []domain.ProviderOption // Optional provider-specific options
 }
 
 // WithProviderOptions creates provider-specific options for initialization

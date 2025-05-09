@@ -35,11 +35,20 @@ type GeminiOption interface {
 	ApplyToGemini(provider interface{})
 }
 
+// MockOption is an interface for options specific to the Mock provider
+type MockOption interface {
+	ProviderOption
+	// ApplyToMock applies the option to a Mock provider
+	// The actual MockProvider type will be defined in the provider package
+	ApplyToMock(provider interface{})
+}
+
 // CommonOption is an interface for options that apply to all providers
 type CommonOption interface {
 	OpenAIOption
 	AnthropicOption
 	GeminiOption
+	MockOption
 }
 
 // BaseURLOption sets a custom base URL for the provider API
@@ -68,6 +77,12 @@ func (o *BaseURLOption) ApplyToAnthropic(provider interface{}) {
 }
 
 func (o *BaseURLOption) ApplyToGemini(provider interface{}) {
+	if p, ok := provider.(interface{ SetBaseURL(url string) }); ok {
+		p.SetBaseURL(o.URL)
+	}
+}
+
+func (o *BaseURLOption) ApplyToMock(provider interface{}) {
 	if p, ok := provider.(interface{ SetBaseURL(url string) }); ok {
 		p.SetBaseURL(o.URL)
 	}
@@ -103,6 +118,12 @@ func (o *HTTPClientOption) ApplyToGemini(provider interface{}) {
 	}
 }
 
+func (o *HTTPClientOption) ApplyToMock(provider interface{}) {
+	if p, ok := provider.(interface{ SetHTTPClient(client *http.Client) }); ok {
+		p.SetHTTPClient(o.Client)
+	}
+}
+
 // TimeoutOption sets a timeout for API requests
 type TimeoutOption struct {
 	Timeout int // timeout in milliseconds
@@ -127,6 +148,11 @@ func (o *TimeoutOption) ApplyToAnthropic(provider interface{}) {
 
 func (o *TimeoutOption) ApplyToGemini(provider interface{}) {
 	// We'll implement the actual functionality when refactoring the Gemini provider
+	// For now, we leave this as a stub that will be accessed by reflection in tests
+}
+
+func (o *TimeoutOption) ApplyToMock(provider interface{}) {
+	// We'll implement the actual functionality when refactoring the Mock provider
 	// For now, we leave this as a stub that will be accessed by reflection in tests
 }
 
@@ -161,6 +187,11 @@ func (o *RetryOption) ApplyToGemini(provider interface{}) {
 	// For now, we leave this as a stub that will be accessed by reflection in tests
 }
 
+func (o *RetryOption) ApplyToMock(provider interface{}) {
+	// We'll implement the actual functionality when refactoring the Mock provider
+	// For now, we leave this as a stub that will be accessed by reflection in tests
+}
+
 // HeadersOption sets custom HTTP headers for API requests
 type HeadersOption struct {
 	Headers map[string]string
@@ -188,6 +219,12 @@ func (o *HeadersOption) ApplyToGemini(provider interface{}) {
 	// For now, we leave this as a stub that will be accessed by reflection in tests
 }
 
+func (o *HeadersOption) ApplyToMock(provider interface{}) {
+	if p, ok := provider.(interface{ SetHeaders(headers map[string]string) }); ok {
+		p.SetHeaders(o.Headers)
+	}
+}
+
 // ModelOption sets the model for the provider
 type ModelOption struct {
 	Model string
@@ -212,6 +249,11 @@ func (o *ModelOption) ApplyToAnthropic(provider interface{}) {
 
 func (o *ModelOption) ApplyToGemini(provider interface{}) {
 	// We'll implement the actual functionality when refactoring the Gemini provider
+	// For now, we leave this as a stub that will be accessed by reflection in tests
+}
+
+func (o *ModelOption) ApplyToMock(provider interface{}) {
+	// We'll implement the actual functionality when refactoring the Mock provider
 	// For now, we leave this as a stub that will be accessed by reflection in tests
 }
 
