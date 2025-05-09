@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
@@ -54,5 +55,17 @@ func CreateCalculatorTool() domain.Tool {
 			},
 			Required: []string{"expression"},
 		},
+	}
+}
+
+// CreateMockTool is a helper function to create a mock tool for tests
+func CreateMockTool(name string, description string, schema *sdomain.Schema) domain.Tool {
+	return MockTool{
+		ToolName:        name,
+		ToolDescription: description,
+		Executor: func(ctx context.Context, params interface{}) (interface{}, error) {
+			return fmt.Sprintf("Executed %s tool with params: %v", name, params), nil
+		},
+		Schema: schema,
 	}
 }

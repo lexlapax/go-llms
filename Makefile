@@ -37,7 +37,8 @@ BENCH_FLAGS=-bench=. -benchmem
 .PHONY: all help \
 	build build-all build-examples build-example \
 	test test-all test-pkg test-func test-short test-short-pkg test-cmd test-examples \
-	test-integration test-integration-mock test-multi-provider \
+	test-integration test-integration-mock test-multi-provider test-stress test-stress-provider \
+	test-stress-agent test-stress-structured test-stress-pool \
 	benchmark benchmark-all benchmark-pkg benchmark-specific \
 	profile profile-cpu profile-mem profile-block \
 	coverage coverage-pkg coverage-view \
@@ -84,12 +85,12 @@ build-example:
 	fi
 
 # Test targets
-# Run all tests (excluding integration and multi-provider tests)
+# Run all tests (excluding integration, multi-provider, and stress tests)
 test:
-	$(GOTEST) $(TEST_FLAGS) `$(GOCMD) list ./... | grep -v github.com/lexlapax/go-llms/$(TESTS_DIR)/integration | grep -v github.com/lexlapax/go-llms/$(TESTS_DIR)/multi_provider`
+	$(GOTEST) $(TEST_FLAGS) `$(GOCMD) list ./... | grep -v github.com/lexlapax/go-llms/$(TESTS_DIR)/integration | grep -v github.com/lexlapax/go-llms/$(TESTS_DIR)/multi_provider | grep -v github.com/lexlapax/go-llms/$(TESTS_DIR)/stress`
 
-# Run all tests including integration and multi-provider tests
-test-all: test test-integration test-multi-provider
+# Run all tests including integration, multi-provider, and stress tests
+test-all: test test-integration test-multi-provider test-stress
 
 # Run tests for a specific package (usage: make test-pkg PKG=schema/validation)
 test-pkg:
@@ -150,6 +151,26 @@ test-integration-mock:
 # Run multi-provider tests
 test-multi-provider:
 	$(GOTEST) $(TEST_VERBOSE_FLAGS) ./$(TESTS_DIR)/multi_provider/...
+
+# Run all stress tests
+test-stress:
+	$(GOTEST) $(TEST_VERBOSE_FLAGS) ./$(TESTS_DIR)/stress/...
+
+# Run provider stress tests
+test-stress-provider:
+	$(GOTEST) $(TEST_VERBOSE_FLAGS) ./$(TESTS_DIR)/stress/provider_stress_test.go
+
+# Run agent stress tests
+test-stress-agent:
+	$(GOTEST) $(TEST_VERBOSE_FLAGS) ./$(TESTS_DIR)/stress/agent_stress_test.go
+
+# Run structured output processor stress tests
+test-stress-structured:
+	$(GOTEST) $(TEST_VERBOSE_FLAGS) ./$(TESTS_DIR)/stress/structured_stress_test.go
+
+# Run memory pool stress tests
+test-stress-pool:
+	$(GOTEST) $(TEST_VERBOSE_FLAGS) ./$(TESTS_DIR)/stress/pool_stress_test.go
 
 # Benchmark targets
 # Run all benchmarks
@@ -281,8 +302,8 @@ help:
 	@echo "  make build-all        Build main binary and all examples"
 	@echo ""
 	@echo "Testing:"
-	@echo "  make test             Run all tests (excluding integration and multi-provider tests)"
-	@echo "  make test-all         Run all tests including integration and multi-provider tests"
+	@echo "  make test             Run all tests (excluding integration, multi-provider, and stress tests)"
+	@echo "  make test-all         Run all tests including integration, multi-provider, and stress tests"
 	@echo "  make test-pkg         Run tests for a specific package (usage: make test-pkg PKG=schema/validation)"
 	@echo "  make test-func        Run a specific test function (usage: make test-func PKG=schema/validation FUNC=TestValidation)"
 	@echo "  make test-short       Run only short tests (useful for quick checks)"
@@ -292,6 +313,11 @@ help:
 	@echo "  make test-integration Run all integration tests (requires API keys)"
 	@echo "  make test-integration-mock Run integration tests that don't require API keys"
 	@echo "  make test-multi-provider Run multi-provider tests"
+	@echo "  make test-stress      Run all stress tests"
+	@echo "  make test-stress-provider Run provider stress tests"
+	@echo "  make test-stress-agent Run agent workflow stress tests"
+	@echo "  make test-stress-structured Run structured output processor stress tests"
+	@echo "  make test-stress-pool Run memory pool stress tests"
 	@echo ""
 	@echo "Benchmarking:"
 	@echo "  make benchmark        Run benchmarks in the benchmarks directory"
