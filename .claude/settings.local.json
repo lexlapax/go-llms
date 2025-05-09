@@ -40,7 +40,8 @@
       "Bash(GEMINI_API_KEY=$GEMINI_API_KEY go test -v ./tests/integration/gemini_streaming_test.go -run=TestGeminiStreamingLive)",
       "Bash(GEMINI_API_KEY=$GEMINI_API_KEY go test -v ./tests/integration/gemini_alt_sse_test.go)",
       "Bash(GEMINI_API_KEY=$GEMINI_API_KEY go test -v ./tests/integration/gemini_streaming_test.go -run=TestGeminiStreamingLive/ProviderImplementationTest)",
-      "Bash(GEMINI_API_KEY=$GEMINI_API_KEY go test -v ./tests/integration/gemini_streaming_test.go -run=TestGeminiAltSSEParameter)"
+      "Bash(GEMINI_API_KEY=$GEMINI_API_KEY go test -v ./tests/integration/gemini_streaming_test.go -run=TestGeminiAltSSEParameter)",
+      "Bash(go vet:*)"
     ],
     "deny": []
   }

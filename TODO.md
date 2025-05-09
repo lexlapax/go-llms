@@ -50,8 +50,8 @@
   - [x] Fix Gemini provider error tests
 - [ ] Add benchmarks for remaining components
   - [x] Add benchmarks for Gemini provider message conversion
-  - [ ] Add benchmarks for prompt template processing
-  - [ ] Add benchmarks for memory pooling
+  - [x] Add benchmarks for prompt template processing
+  - [x] Add benchmarks for memory pooling
 - [ ] Implement stress tests for high-load scenarios
 - [ ] Performance profiling and optimization:
   - [ ] Prompt processing and template expansion
