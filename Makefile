@@ -38,7 +38,7 @@ BENCH_FLAGS=-bench=. -benchmem
 	build build-all build-examples build-example \
 	test test-all test-pkg test-func test-short test-short-pkg test-cmd test-examples \
 	test-integration test-integration-mock test-multi-provider test-stress test-stress-provider \
-	test-stress-agent test-stress-structured test-stress-pool \
+	test-stress-agent test-stress-structured test-stress-pool test-profiling \
 	benchmark benchmark-all benchmark-pkg benchmark-specific \
 	profile profile-cpu profile-mem profile-block \
 	coverage coverage-pkg coverage-view \
@@ -85,12 +85,12 @@ build-example:
 	fi
 
 # Test targets
-# Run all tests (excluding integration, multi-provider, and stress tests)
+# Run all tests (excluding integration, multi-provider, stress, and profiling tests)
 test:
-	$(GOTEST) $(TEST_FLAGS) `$(GOCMD) list ./... | grep -v github.com/lexlapax/go-llms/$(TESTS_DIR)/integration | grep -v github.com/lexlapax/go-llms/$(TESTS_DIR)/multi_provider | grep -v github.com/lexlapax/go-llms/$(TESTS_DIR)/stress`
+	$(GOTEST) $(TEST_FLAGS) `$(GOCMD) list ./... | grep -v github.com/lexlapax/go-llms/$(TESTS_DIR)/integration | grep -v github.com/lexlapax/go-llms/$(TESTS_DIR)/multi_provider | grep -v github.com/lexlapax/go-llms/$(TESTS_DIR)/stress | grep -v github.com/lexlapax/go-llms/pkg/util/profiling`
 
-# Run all tests including integration, multi-provider, and stress tests
-test-all: test test-integration test-multi-provider test-stress
+# Run all tests including integration, multi-provider, stress, and profiling tests
+test-all: test test-integration test-multi-provider test-stress test-profiling
 
 # Run tests for a specific package (usage: make test-pkg PKG=schema/validation)
 test-pkg:
@@ -171,6 +171,10 @@ test-stress-structured:
 # Run memory pool stress tests
 test-stress-pool:
 	$(GOTEST) $(TEST_VERBOSE_FLAGS) ./$(TESTS_DIR)/stress/pool_stress_test.go
+
+# Run profiling package tests
+test-profiling:
+	$(GOTEST) $(TEST_VERBOSE_FLAGS) ./pkg/util/profiling
 
 # Benchmark targets
 # Run all benchmarks
@@ -318,6 +322,7 @@ help:
 	@echo "  make test-stress-agent Run agent workflow stress tests"
 	@echo "  make test-stress-structured Run structured output processor stress tests"
 	@echo "  make test-stress-pool Run memory pool stress tests"
+	@echo "  make test-profiling   Run profiling package tests"
 	@echo ""
 	@echo "Benchmarking:"
 	@echo "  make benchmark        Run benchmarks in the benchmarks directory"

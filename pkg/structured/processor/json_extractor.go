@@ -1,8 +1,11 @@
 package processor
 
 import (
+	"context"
 	"regexp"
 	"strings"
+
+	"github.com/lexlapax/go-llms/pkg/util/profiling"
 )
 
 var (
@@ -13,6 +16,23 @@ var (
 // ExtractJSON is an optimized version of JSON extraction that handles various formats
 // It uses a tiered approach, starting with fast methods and falling back to more complex ones
 func ExtractJSON(s string) string {
+	// Skip profiling if profiling is disabled (improves performance)
+	if !profiling.IsProfilingEnabled() {
+		return extractJSONImpl(s)
+	}
+
+	// Use profiling to measure performance with a background context
+	result, _ := profiling.ProfileStructuredOp(context.Background(), profiling.OpStructuredExtraction, func(ctx context.Context) (interface{}, error) {
+		return extractJSONImpl(s), nil
+	})
+
+	// Return the extracted JSON string
+	return result.(string)
+}
+
+// extractJSONImpl implements the actual JSON extraction logic
+// This was extracted from ExtractJSON to allow for profiling
+func extractJSONImpl(s string) string {
 	// Fast path: Try to find the first complete JSON object in the string
 	// This handles the case of multiple JSON objects in the same string
 	if startIdx := strings.Index(s, "{"); startIdx >= 0 {
