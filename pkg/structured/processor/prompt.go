@@ -71,17 +71,35 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 	enhancedPrompt := NewSchemaPromptBuilder(prompt, schema, len(schemaJSON))
 
 	// Add the base prompt
-	enhancedPrompt.WriteString(prompt)
-	enhancedPrompt.WriteString("\n\n")
-	enhancedPrompt.WriteString("Please provide your response as a valid JSON object that conforms to the following JSON schema:\n\n")
-	enhancedPrompt.WriteString("```json\n")
-	enhancedPrompt.Write(schemaJSON)
-	enhancedPrompt.WriteString("\n```\n\n")
+	if _, err := enhancedPrompt.WriteString(prompt); err != nil {
+		return "", fmt.Errorf("failed to write prompt: %w", err)
+	}
+	if _, err := enhancedPrompt.WriteString("\n\n"); err != nil {
+		return "", fmt.Errorf("failed to write newline: %w", err)
+	}
+	if _, err := enhancedPrompt.WriteString("Please provide your response as a valid JSON object that conforms to the following JSON schema:\n\n"); err != nil {
+		return "", fmt.Errorf("failed to write instructions: %w", err)
+	}
+	if _, err := enhancedPrompt.WriteString("```json\n"); err != nil {
+		return "", fmt.Errorf("failed to write code block start: %w", err)
+	}
+	if _, err := enhancedPrompt.Write(schemaJSON); err != nil {
+		return "", fmt.Errorf("failed to write schema JSON: %w", err)
+	}
+	if _, err := enhancedPrompt.WriteString("\n```\n\n"); err != nil {
+		return "", fmt.Errorf("failed to write code block end: %w", err)
+	}
 
 	// Add requirements for the output
-	enhancedPrompt.WriteString("Your response must be valid JSON only, following these guidelines:\n")
-	enhancedPrompt.WriteString("1. Do not include any explanations, markdown code blocks, or additional text before or after the JSON.\n")
-	enhancedPrompt.WriteString("2. Ensure all required fields are included.\n")
+	if _, err := enhancedPrompt.WriteString("Your response must be valid JSON only, following these guidelines:\n"); err != nil {
+		return "", fmt.Errorf("failed to write guidelines header: %w", err)
+	}
+	if _, err := enhancedPrompt.WriteString("1. Do not include any explanations, markdown code blocks, or additional text before or after the JSON.\n"); err != nil {
+		return "", fmt.Errorf("failed to write guideline 1: %w", err)
+	}
+	if _, err := enhancedPrompt.WriteString("2. Ensure all required fields are included.\n"); err != nil {
+		return "", fmt.Errorf("failed to write guideline 2: %w", err)
+	}
 
 	// Add type-specific instructions
 	switch schema.Type {
@@ -89,14 +107,22 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 		if len(schema.Required) > 0 {
 			// Pre-join required fields to reduce allocations
 			requiredFields := strings.Join(schema.Required, ", ")
-			enhancedPrompt.WriteString("3. The required fields are: ")
-			enhancedPrompt.WriteString(requiredFields)
-			enhancedPrompt.WriteString(".\n")
+			if _, err := enhancedPrompt.WriteString("3. The required fields are: "); err != nil {
+				return "", fmt.Errorf("failed to write required fields prefix: %w", err)
+			}
+			if _, err := enhancedPrompt.WriteString(requiredFields); err != nil {
+				return "", fmt.Errorf("failed to write required fields list: %w", err)
+			}
+			if _, err := enhancedPrompt.WriteString(".\n"); err != nil {
+				return "", fmt.Errorf("failed to write required fields suffix: %w", err)
+			}
 		}
 
 		// Add descriptions for properties if available
 		if len(schema.Properties) > 0 {
-			enhancedPrompt.WriteString("4. Field descriptions:\n")
+			if _, err := enhancedPrompt.WriteString("4. Field descriptions:\n"); err != nil {
+				return "", fmt.Errorf("failed to write field descriptions header: %w", err)
+			}
 
 			// Fast path: only process properties with descriptions
 			hasDescriptions := false
@@ -110,11 +136,21 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 			if hasDescriptions {
 				for name, prop := range schema.Properties {
 					if prop.Description != "" {
-						enhancedPrompt.WriteString("   - ")
-						enhancedPrompt.WriteString(name)
-						enhancedPrompt.WriteString(": ")
-						enhancedPrompt.WriteString(prop.Description)
-						enhancedPrompt.WriteString("\n")
+						if _, err := enhancedPrompt.WriteString("   - "); err != nil {
+							return "", fmt.Errorf("failed to write description indent: %w", err)
+						}
+						if _, err := enhancedPrompt.WriteString(name); err != nil {
+							return "", fmt.Errorf("failed to write property name: %w", err)
+						}
+						if _, err := enhancedPrompt.WriteString(": "); err != nil {
+							return "", fmt.Errorf("failed to write separator: %w", err)
+						}
+						if _, err := enhancedPrompt.WriteString(prop.Description); err != nil {
+							return "", fmt.Errorf("failed to write property description: %w", err)
+						}
+						if _, err := enhancedPrompt.WriteString("\n"); err != nil {
+							return "", fmt.Errorf("failed to write newline: %w", err)
+						}
 					}
 				}
 			}
@@ -125,21 +161,39 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 			if len(prop.Enum) > 0 {
 				// Pre-join enum values to reduce allocations
 				enumValues := strings.Join(prop.Enum, ", ")
-				enhancedPrompt.WriteString("   - ")
-				enhancedPrompt.WriteString(name)
-				enhancedPrompt.WriteString(" must be one of: ")
-				enhancedPrompt.WriteString(enumValues)
-				enhancedPrompt.WriteString("\n")
+				if _, err := enhancedPrompt.WriteString("   - "); err != nil {
+					return "", fmt.Errorf("failed to write enum indent: %w", err)
+				}
+				if _, err := enhancedPrompt.WriteString(name); err != nil {
+					return "", fmt.Errorf("failed to write enum property name: %w", err)
+				}
+				if _, err := enhancedPrompt.WriteString(" must be one of: "); err != nil {
+					return "", fmt.Errorf("failed to write enum prefix: %w", err)
+				}
+				if _, err := enhancedPrompt.WriteString(enumValues); err != nil {
+					return "", fmt.Errorf("failed to write enum values: %w", err)
+				}
+				if _, err := enhancedPrompt.WriteString("\n"); err != nil {
+					return "", fmt.Errorf("failed to write enum newline: %w", err)
+				}
 			}
 		}
 
 	case "array":
-		enhancedPrompt.WriteString("3. Format your response as a JSON array of items.\n")
+		if _, err := enhancedPrompt.WriteString("3. Format your response as a JSON array of items.\n"); err != nil {
+			return "", fmt.Errorf("failed to write array format instruction: %w", err)
+		}
 		if schema.Properties != nil && schema.Properties[""].Items != nil {
 			itemType := schema.Properties[""].Items.Type
-			enhancedPrompt.WriteString("4. Each item should be a ")
-			enhancedPrompt.WriteString(itemType)
-			enhancedPrompt.WriteString(".\n")
+			if _, err := enhancedPrompt.WriteString("4. Each item should be a "); err != nil {
+				return "", fmt.Errorf("failed to write item type prefix: %w", err)
+			}
+			if _, err := enhancedPrompt.WriteString(itemType); err != nil {
+				return "", fmt.Errorf("failed to write item type: %w", err)
+			}
+			if _, err := enhancedPrompt.WriteString(".\n"); err != nil {
+				return "", fmt.Errorf("failed to write item type suffix: %w", err)
+			}
 		}
 	}
 

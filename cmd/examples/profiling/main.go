@@ -42,7 +42,7 @@ func main() {
 		fmt.Println("  Extracting JSON...")
 		time.Sleep(20 * time.Millisecond) // Simulate work
 		inputText := `Here's the data you requested: {"name":"John","age":30,"city":"New York"}`
-		
+
 		// Simple extraction (similar to the actual extractor)
 		startIdx := strings.Index(inputText, "{")
 		endIdx := strings.LastIndex(inputText, "}")
@@ -70,29 +70,29 @@ func main() {
 	// Profile a component with the component enabler
 	fmt.Println("\nProfiling a specific component:")
 	disableFn := profiling.EnableProfilingForComponent("json_processor")
-	
+
 	// Start CPU profiling for the component
 	err = profiler.StartCPUProfile()
 	if err != nil {
 		fmt.Printf("Error starting CPU profile: %v\n", err)
 	}
-	
+
 	// Simulate component work
 	fmt.Println("  Running JSON processing work...")
 	time.Sleep(50 * time.Millisecond)
-	
+
 	// Stop CPU profiling
 	profiler.StopCPUProfile()
-	
+
 	// Take a memory profile
 	err = profiler.WriteHeapProfile()
 	if err != nil {
 		fmt.Printf("Error writing heap profile: %v\n", err)
 	}
-	
+
 	// Disable profiling for the component
 	disableFn()
-	
+
 	// Display where profiles were saved
 	fmt.Printf("\nProfile files were saved to: %s\n", profiling.GetProfileDir())
 	fmt.Println("You can view the profiles with 'go tool pprof [profile_file]'")

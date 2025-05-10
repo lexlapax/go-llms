@@ -21,9 +21,9 @@ type SchemaCache struct {
 	metrics        *metrics.CacheMetrics
 	size           int64
 	operations     int64
-	maxSize        int         // Maximum number of entries (0 means unlimited)
+	maxSize        int           // Maximum number of entries (0 means unlimited)
 	expirationTime time.Duration // How long entries live (0 means never expire)
-	lastCleanup    time.Time    // Last time cache was cleaned up
+	lastCleanup    time.Time     // Last time cache was cleaned up
 }
 
 // NewSchemaCache creates a new schema cache with a default capacity
@@ -33,8 +33,8 @@ func NewSchemaCache() *SchemaCache {
 		metrics:        metrics.NewCacheMetrics("schema_cache"),
 		size:           0,
 		operations:     0,
-		maxSize:        1000,                    // Default max size of 1000 entries
-		expirationTime: 30 * time.Minute,        // Default expiration of 30 minutes
+		maxSize:        1000,             // Default max size of 1000 entries
+		expirationTime: 30 * time.Minute, // Default expiration of 30 minutes
 		lastCleanup:    time.Now(),
 	}
 }

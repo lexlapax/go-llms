@@ -132,11 +132,11 @@ func (r *RatioCounter) IncrementDenominatorBy(value int64) {
 func (r *RatioCounter) GetRatio() float64 {
 	num := atomic.LoadInt64(&r.numerator)
 	den := atomic.LoadInt64(&r.denominator)
-	
+
 	if den == 0 {
 		return 0.0
 	}
-	
+
 	return float64(num) / float64(den)
 }
 
@@ -170,7 +170,7 @@ func NewTimer(name string) *Timer {
 func (t *Timer) Start() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	
+
 	if !t.running {
 		t.startTime = time.Now()
 		t.running = true
@@ -181,15 +181,15 @@ func (t *Timer) Start() {
 func (t *Timer) Stop() time.Duration {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	
+
 	if !t.running {
 		return 0
 	}
-	
+
 	duration := time.Since(t.startTime)
 	t.recordDurationLocked(duration)
 	t.running = false
-	
+
 	return duration
 }
 
@@ -197,7 +197,7 @@ func (t *Timer) Stop() time.Duration {
 func (t *Timer) RecordDuration(duration time.Duration) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	
+
 	t.recordDurationLocked(duration)
 }
 
@@ -220,7 +220,7 @@ func (t *Timer) TimeFunction(fn func() interface{}) interface{} {
 func (t *Timer) GetLastDuration() time.Duration {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	
+
 	return time.Duration(t.lastDuration)
 }
 
@@ -228,7 +228,7 @@ func (t *Timer) GetLastDuration() time.Duration {
 func (t *Timer) GetTotalDuration() time.Duration {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	
+
 	return time.Duration(t.totalTime)
 }
 
@@ -236,7 +236,7 @@ func (t *Timer) GetTotalDuration() time.Duration {
 func (t *Timer) GetCount() int64 {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	
+
 	return t.count
 }
 
@@ -244,11 +244,11 @@ func (t *Timer) GetCount() int64 {
 func (t *Timer) GetAverageDuration() time.Duration {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	
+
 	if t.count == 0 {
 		return 0
 	}
-	
+
 	return time.Duration(t.totalTime / t.count)
 }
 
@@ -285,20 +285,20 @@ func (r *Registry) GetOrCreateCounter(name string) *Counter {
 	r.mu.RLock()
 	counter, ok := r.counters[name]
 	r.mu.RUnlock()
-	
+
 	if ok {
 		return counter
 	}
-	
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	// Check again in case another goroutine created it
 	counter, ok = r.counters[name]
 	if ok {
 		return counter
 	}
-	
+
 	counter = NewCounter(name)
 	r.counters[name] = counter
 	return counter
@@ -309,20 +309,20 @@ func (r *Registry) GetOrCreateGauge(name string) *Gauge {
 	r.mu.RLock()
 	gauge, ok := r.gauges[name]
 	r.mu.RUnlock()
-	
+
 	if ok {
 		return gauge
 	}
-	
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	// Check again in case another goroutine created it
 	gauge, ok = r.gauges[name]
 	if ok {
 		return gauge
 	}
-	
+
 	gauge = NewGauge(name)
 	r.gauges[name] = gauge
 	return gauge
@@ -333,20 +333,20 @@ func (r *Registry) GetOrCreateRatioCounter(name string) *RatioCounter {
 	r.mu.RLock()
 	ratio, ok := r.ratioCounters[name]
 	r.mu.RUnlock()
-	
+
 	if ok {
 		return ratio
 	}
-	
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	// Check again in case another goroutine created it
 	ratio, ok = r.ratioCounters[name]
 	if ok {
 		return ratio
 	}
-	
+
 	ratio = NewRatioCounter(name)
 	r.ratioCounters[name] = ratio
 	return ratio
@@ -357,20 +357,20 @@ func (r *Registry) GetOrCreateTimer(name string) *Timer {
 	r.mu.RLock()
 	timer, ok := r.timers[name]
 	r.mu.RUnlock()
-	
+
 	if ok {
 		return timer
 	}
-	
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	// Check again in case another goroutine created it
 	timer, ok = r.timers[name]
 	if ok {
 		return timer
 	}
-	
+
 	timer = NewTimer(name)
 	r.timers[name] = timer
 	return timer
@@ -408,7 +408,7 @@ func (r *Registry) GetTimer(name string) *Timer {
 func (r *Registry) GetAllCounters() map[string]*Counter {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	// Make a copy to avoid race conditions
 	result := make(map[string]*Counter, len(r.counters))
 	for k, v := range r.counters {
@@ -421,7 +421,7 @@ func (r *Registry) GetAllCounters() map[string]*Counter {
 func (r *Registry) GetAllGauges() map[string]*Gauge {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	// Make a copy to avoid race conditions
 	result := make(map[string]*Gauge, len(r.gauges))
 	for k, v := range r.gauges {
@@ -434,7 +434,7 @@ func (r *Registry) GetAllGauges() map[string]*Gauge {
 func (r *Registry) GetAllRatioCounters() map[string]*RatioCounter {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	// Make a copy to avoid race conditions
 	result := make(map[string]*RatioCounter, len(r.ratioCounters))
 	for k, v := range r.ratioCounters {
@@ -447,7 +447,7 @@ func (r *Registry) GetAllRatioCounters() map[string]*RatioCounter {
 func (r *Registry) GetAllTimers() map[string]*Timer {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	// Make a copy to avoid race conditions
 	result := make(map[string]*Timer, len(r.timers))
 	for k, v := range r.timers {
@@ -460,7 +460,7 @@ func (r *Registry) GetAllTimers() map[string]*Timer {
 func (r *Registry) Clear() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	r.counters = make(map[string]*Counter)
 	r.gauges = make(map[string]*Gauge)
 	r.ratioCounters = make(map[string]*RatioCounter)

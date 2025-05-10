@@ -212,11 +212,11 @@ func TestGenerateSchemaKeyArrayItems(t *testing.T) {
 func TestSchemaKeysCollisionResistance(t *testing.T) {
 	// Test that similar schemas produce different keys
 	// Create schemas with small differences to check collision resistance
-	
+
 	// Create a large set of schemas with minor variations
 	var schemas []*schemaDomain.Schema
 	var keys []uint64
-	
+
 	for i := 0; i < 100; i++ {
 		schema := &schemaDomain.Schema{
 			Type:        "object",
@@ -228,21 +228,23 @@ func TestSchemaKeysCollisionResistance(t *testing.T) {
 				},
 			},
 		}
+		// Make sure the append result is assigned back to the variable
 		schemas = append(schemas, schema)
+		_ = schemas // Explicitly use schemas to avoid unused result warning
 		keys = append(keys, GenerateSchemaKey(schema))
 	}
-	
+
 	// Check for collisions
 	keyMap := make(map[uint64]bool)
 	collisions := 0
-	
+
 	for _, key := range keys {
 		if keyMap[key] {
 			collisions++
 		}
 		keyMap[key] = true
 	}
-	
+
 	if collisions > 0 {
 		t.Errorf("Found %d key collisions among 100 similar schemas", collisions)
 	}
@@ -251,7 +253,7 @@ func TestSchemaKeysCollisionResistance(t *testing.T) {
 // Benchmarking the key generation function
 func BenchmarkGenerateSchemaKey(b *testing.B) {
 	schema := createTestSchema()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		GenerateSchemaKey(schema)

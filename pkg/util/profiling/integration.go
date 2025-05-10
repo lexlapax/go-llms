@@ -55,10 +55,10 @@ func ProfilePoolOp(ctx context.Context, op ProfiledOperation, fn func(context.Co
 func EnableProfilingForComponent(componentName string) func() {
 	profiler := NewProfiler(componentName)
 	profiler.Enable()
-	
+
 	fmt.Printf("Profiling enabled for component: %s\n", componentName)
 	fmt.Printf("Profiles will be written to: %s\n", profileDir)
-	
+
 	return func() {
 		profiler.Disable()
 		fmt.Printf("Profiling disabled for component: %s\n", componentName)

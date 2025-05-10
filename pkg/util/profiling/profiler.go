@@ -59,7 +59,7 @@ func (p *Profiler) Enable() {
 func (p *Profiler) Disable() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	
+
 	// Stop CPU profiling if it's running
 	if p.cpuRunning && p.cpuFile != nil {
 		pprof.StopCPUProfile()
@@ -67,7 +67,7 @@ func (p *Profiler) Disable() {
 		p.cpuFile = nil
 		p.cpuRunning = false
 	}
-	
+
 	p.enabled = false
 }
 
@@ -82,11 +82,11 @@ func (p *Profiler) IsEnabled() bool {
 func (p *Profiler) StartCPUProfile() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	
+
 	if !p.enabled {
 		return nil
 	}
-	
+
 	// Stop any existing CPU profile
 	if p.cpuRunning {
 		pprof.StopCPUProfile()
@@ -96,7 +96,7 @@ func (p *Profiler) StartCPUProfile() error {
 		}
 		p.cpuRunning = false
 	}
-	
+
 	// Create the CPU profile file
 	cpuFilePath := filepath.Join(profileDir, fmt.Sprintf("%s.pprof", p.name))
 	var err error
@@ -104,14 +104,14 @@ func (p *Profiler) StartCPUProfile() error {
 	if err != nil {
 		return fmt.Errorf("could not create CPU profile: %v", err)
 	}
-	
+
 	// Start the CPU profile
 	if err := pprof.StartCPUProfile(p.cpuFile); err != nil {
 		p.cpuFile.Close()
 		p.cpuFile = nil
 		return fmt.Errorf("could not start CPU profile: %v", err)
 	}
-	
+
 	p.cpuRunning = true
 	return nil
 }
@@ -120,7 +120,7 @@ func (p *Profiler) StartCPUProfile() error {
 func (p *Profiler) StopCPUProfile() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	
+
 	if p.cpuRunning {
 		pprof.StopCPUProfile()
 		if p.cpuFile != nil {
@@ -135,11 +135,11 @@ func (p *Profiler) StopCPUProfile() {
 func (p *Profiler) WriteHeapProfile() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	
+
 	if !p.enabled {
 		return nil
 	}
-	
+
 	// Create the memory profile file
 	memFilePath := filepath.Join(profileDir, fmt.Sprintf("%s_mem.pprof", p.name))
 	f, err := os.Create(memFilePath)
@@ -152,7 +152,7 @@ func (p *Profiler) WriteHeapProfile() error {
 	if err := pprof.WriteHeapProfile(f); err != nil {
 		return fmt.Errorf("could not write memory profile: %v", err)
 	}
-	
+
 	return nil
 }
 
@@ -163,10 +163,10 @@ func (p *Profiler) ProfileOperation(ctx context.Context, opName string, fn func(
 		// If profiling is disabled, just run the function
 		return fn(ctx)
 	}
-	
+
 	// We create operation-specific file names but don't need a separate profiler instance
 	// opName is used directly in file paths below
-	
+
 	// Start CPU profiling
 	cpuFilePath := filepath.Join(profileDir, fmt.Sprintf("%s_%s_cpu.pprof", p.name, opName))
 	cpuFile, err := os.Create(cpuFilePath)
@@ -184,12 +184,12 @@ func (p *Profiler) ProfileOperation(ctx context.Context, opName string, fn func(
 			}()
 		}
 	}
-	
+
 	// Run the operation
 	startTime := time.Now()
 	result, err := fn(ctx)
 	duration := time.Since(startTime)
-	
+
 	// Write memory profile
 	memFilePath := filepath.Join(profileDir, fmt.Sprintf("%s_%s_mem.pprof", p.name, opName))
 	memFile, memErr := os.Create(memFilePath)
@@ -201,7 +201,7 @@ func (p *Profiler) ProfileOperation(ctx context.Context, opName string, fn func(
 		}
 		memFile.Close()
 	}
-	
+
 	// Log duration and return result
 	fmt.Printf("Operation %s completed in %v\n", opName, duration)
 	return result, err
@@ -212,11 +212,11 @@ func (p *Profiler) ProfileOperation(ctx context.Context, opName string, fn func(
 func GetGlobalProfiler() *Profiler {
 	globalMu.Lock()
 	defer globalMu.Unlock()
-	
+
 	if globalProfiler == nil {
 		globalProfiler = NewProfiler("global")
 	}
-	
+
 	return globalProfiler
 }
 
@@ -228,7 +228,7 @@ func SetProfileDir(dir string) {
 		fmt.Fprintf(os.Stderr, "Warning: profile directory %s doesn't exist\n", dir)
 		return
 	}
-	
+
 	// Check if it's writable
 	testFile := filepath.Join(dir, ".profiler_test")
 	f, err := os.Create(testFile)
@@ -238,7 +238,7 @@ func SetProfileDir(dir string) {
 	}
 	f.Close()
 	os.Remove(testFile)
-	
+
 	// Set the profile directory
 	profileDir = dir
 }

@@ -13,11 +13,11 @@ func TestNewProfiler(t *testing.T) {
 	if profiler == nil {
 		t.Fatal("Expected non-nil profiler")
 	}
-	
+
 	if profiler.name != "test" {
 		t.Errorf("Expected name to be 'test', got '%s'", profiler.name)
 	}
-	
+
 	if profiler.enabled {
 		t.Error("Expected profiler to be disabled by default")
 	}
@@ -25,18 +25,18 @@ func TestNewProfiler(t *testing.T) {
 
 func TestEnableDisable(t *testing.T) {
 	profiler := NewProfiler("test")
-	
+
 	// Test initial state
 	if profiler.IsEnabled() {
 		t.Error("Expected profiler to be disabled initially")
 	}
-	
+
 	// Test enabling
 	profiler.Enable()
 	if !profiler.IsEnabled() {
 		t.Error("Expected profiler to be enabled after Enable() call")
 	}
-	
+
 	// Test disabling
 	profiler.Disable()
 	if profiler.IsEnabled() {
@@ -48,14 +48,14 @@ func TestProfilingWithEnvVar(t *testing.T) {
 	// Save original env and restore after test
 	origEnv := os.Getenv("GO_LLMS_ENABLE_PROFILING")
 	defer os.Setenv("GO_LLMS_ENABLE_PROFILING", origEnv)
-	
+
 	// Test with env var enabled
 	os.Setenv("GO_LLMS_ENABLE_PROFILING", "1")
 	profiler := NewProfiler("test_env")
 	if !profiler.IsEnabled() {
 		t.Error("Expected profiler to be enabled when GO_LLMS_ENABLE_PROFILING=1")
 	}
-	
+
 	// Test with env var disabled
 	os.Setenv("GO_LLMS_ENABLE_PROFILING", "0")
 	profiler = NewProfiler("test_env2")
@@ -71,30 +71,30 @@ func TestStartCPUProfile(t *testing.T) {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
-	
+
 	// Save and restore original profile dir
 	origProfileDir := profileDir
 	defer func() { profileDir = origProfileDir }()
 	profileDir = tempDir
-	
+
 	profiler := NewProfiler("cpu_test")
 	profiler.Enable()
-	
+
 	// Start CPU profiling
 	err = profiler.StartCPUProfile()
 	if err != nil {
 		t.Fatalf("Failed to start CPU profile: %v", err)
 	}
-	
+
 	// Check that CPU profile file was created
 	cpuFile := filepath.Join(tempDir, "cpu_test.pprof")
 	if _, err := os.Stat(cpuFile); os.IsNotExist(err) {
 		t.Error("Expected CPU profile file to be created")
 	}
-	
+
 	// Stop CPU profiling
 	profiler.StopCPUProfile()
-	
+
 	// Verify file has content
 	info, err := os.Stat(cpuFile)
 	if err != nil {
@@ -112,21 +112,21 @@ func TestMemoryProfile(t *testing.T) {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
-	
+
 	// Save and restore original profile dir
 	origProfileDir := profileDir
 	defer func() { profileDir = origProfileDir }()
 	profileDir = tempDir
-	
+
 	profiler := NewProfiler("mem_test")
 	profiler.Enable()
-	
+
 	// Take memory profile
 	err = profiler.WriteHeapProfile()
 	if err != nil {
 		t.Fatalf("Failed to write heap profile: %v", err)
 	}
-	
+
 	// Check that memory profile file was created
 	memFile := filepath.Join(tempDir, "mem_test_mem.pprof")
 	if _, err := os.Stat(memFile); os.IsNotExist(err) {
@@ -150,15 +150,15 @@ func TestProfileOperation(t *testing.T) {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
-	
+
 	// Save and restore original profile dir
 	origProfileDir := profileDir
 	defer func() { profileDir = origProfileDir }()
 	profileDir = tempDir
-	
+
 	profiler := NewProfiler("op_test")
 	profiler.Enable()
-	
+
 	// Test profiling an operation
 	ctx := context.Background()
 	result, err := profiler.ProfileOperation(ctx, "test_operation", func(ctx context.Context) (interface{}, error) {
@@ -166,7 +166,7 @@ func TestProfileOperation(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 		return "result", nil
 	})
-	
+
 	// Check operation result
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
@@ -174,11 +174,11 @@ func TestProfileOperation(t *testing.T) {
 	if result != "result" {
 		t.Errorf("Expected result to be 'result', got: %v", result)
 	}
-	
+
 	// Check that profile files were created
 	cpuFile := filepath.Join(tempDir, "op_test_test_operation_cpu.pprof")
 	memFile := filepath.Join(tempDir, "op_test_test_operation_mem.pprof")
-	
+
 	if _, err := os.Stat(cpuFile); os.IsNotExist(err) {
 		t.Error("Expected CPU profile file to be created")
 	}
@@ -190,12 +190,12 @@ func TestProfileOperation(t *testing.T) {
 func TestProfileOperationWithDisabledProfiler(t *testing.T) {
 	profiler := NewProfiler("disabled_test")
 	// Don't enable the profiler
-	
+
 	ctx := context.Background()
 	result, err := profiler.ProfileOperation(ctx, "test_operation", func(ctx context.Context) (interface{}, error) {
 		return "result", nil
 	})
-	
+
 	// Function should still work even though profiling is disabled
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
@@ -208,13 +208,13 @@ func TestProfileOperationWithDisabledProfiler(t *testing.T) {
 func TestGetGlobalProfiler(t *testing.T) {
 	// Reset global profiler
 	globalProfiler = nil
-	
+
 	// First call should create a new one
 	p1 := GetGlobalProfiler()
 	if p1 == nil {
 		t.Fatal("Expected non-nil global profiler")
 	}
-	
+
 	// Second call should return the same instance
 	p2 := GetGlobalProfiler()
 	if p1 != p2 {
@@ -229,13 +229,13 @@ func TestSetProfileDir(t *testing.T) {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
-	
+
 	// Test setting profile directory
 	SetProfileDir(tempDir)
 	if profileDir != tempDir {
 		t.Errorf("Expected profile dir to be '%s', got '%s'", tempDir, profileDir)
 	}
-	
+
 	// Test with invalid directory (should keep original)
 	invalidDir := "/path/that/does/not/exist"
 	originalDir := profileDir
@@ -249,19 +249,19 @@ func TestIsProfilingEnabled(t *testing.T) {
 	// Save original env and restore after test
 	origEnv := os.Getenv("GO_LLMS_ENABLE_PROFILING")
 	defer os.Setenv("GO_LLMS_ENABLE_PROFILING", origEnv)
-	
+
 	// Test with env var enabled
 	os.Setenv("GO_LLMS_ENABLE_PROFILING", "1")
 	if !IsProfilingEnabled() {
 		t.Error("Expected IsProfilingEnabled() to return true when GO_LLMS_ENABLE_PROFILING=1")
 	}
-	
+
 	// Test with env var disabled
 	os.Setenv("GO_LLMS_ENABLE_PROFILING", "0")
 	if IsProfilingEnabled() {
 		t.Error("Expected IsProfilingEnabled() to return false when GO_LLMS_ENABLE_PROFILING=0")
 	}
-	
+
 	// Test with env var unset
 	os.Unsetenv("GO_LLMS_ENABLE_PROFILING")
 	if IsProfilingEnabled() {
@@ -275,41 +275,41 @@ func TestActualProfilingOutput(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping actual profiling test in short mode")
 	}
-	
+
 	// Create temp dir for profile outputs
 	tempDir, err := os.MkdirTemp("", "profiler_test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
-	
+
 	// Save and restore original profile dir
 	origProfileDir := profileDir
 	defer func() { profileDir = origProfileDir }()
 	profileDir = tempDir
-	
+
 	profiler := NewProfiler("actual_test")
 	profiler.Enable()
-	
+
 	// Start CPU profiling
 	err = profiler.StartCPUProfile()
 	if err != nil {
 		t.Fatalf("Failed to start CPU profile: %v", err)
 	}
-	
+
 	// Do some measurable work
 	doSomeCPUWork()
-	
+
 	// Stop CPU profiling
 	profiler.StopCPUProfile()
-	
+
 	// Take memory profile
 	doSomeMemoryWork()
 	err = profiler.WriteHeapProfile()
 	if err != nil {
 		t.Fatalf("Failed to write heap profile: %v", err)
 	}
-	
+
 	// Check that profile files have meaningful content
 	cpuFile := filepath.Join(tempDir, "actual_test.pprof")
 	memFile := filepath.Join(tempDir, "actual_test_mem.pprof")
@@ -324,7 +324,7 @@ func TestActualProfilingOutput(t *testing.T) {
 	if len(cpuData) < 100 {
 		t.Error("CPU profile file seems too small to be valid")
 	}
-	
+
 	// Check memory profile file size
 	memInfo, err := os.Stat(memFile)
 	if err != nil {

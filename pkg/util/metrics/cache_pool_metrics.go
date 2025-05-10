@@ -17,7 +17,7 @@ type CacheMetrics struct {
 // NewCacheMetrics creates a new cache metrics collector with the given name
 func NewCacheMetrics(name string) *CacheMetrics {
 	registry := GetRegistry()
-	
+
 	return &CacheMetrics{
 		name:       name,
 		hits:       0,
@@ -50,13 +50,13 @@ func (c *CacheMetrics) TimeAccess(fn func() (interface{}, bool)) (interface{}, b
 	c.accessTime.Start()
 	result, hit := fn()
 	c.accessTime.Stop()
-	
+
 	if hit {
 		c.RecordHit()
 	} else {
 		c.RecordMiss()
 	}
-	
+
 	return result, hit
 }
 
@@ -81,7 +81,7 @@ func (c *CacheMetrics) GetAverageAccessTime() time.Duration {
 func (c *CacheMetrics) Reset() {
 	atomic.StoreInt64(&c.hits, 0)
 	atomic.StoreInt64(&c.misses, 0)
-	
+
 	// Create new metrics in the registry with the same names
 	registry := GetRegistry()
 	c.hitRate = registry.GetOrCreateRatioCounter(c.name + ".hit_rate")
@@ -101,7 +101,7 @@ type PoolMetrics struct {
 // NewPoolMetrics creates a new pool metrics collector with the given name
 func NewPoolMetrics(name string) *PoolMetrics {
 	registry := GetRegistry()
-	
+
 	return &PoolMetrics{
 		name:           name,
 		poolSize:       0,
@@ -147,7 +147,7 @@ func (p *PoolMetrics) TimeAllocation(fn func() interface{}) interface{} {
 	p.allocationTime.Start()
 	result := fn()
 	p.allocationTime.Stop()
-	
+
 	p.RecordAllocation()
 	return result
 }
@@ -179,7 +179,7 @@ func (p *PoolMetrics) Reset() {
 	atomic.StoreInt64(&p.poolSize, 0)
 	atomic.StoreInt64(&p.allocations, 0)
 	atomic.StoreInt64(&p.returns, 0)
-	
+
 	// Create new metrics in the registry with the same names
 	registry := GetRegistry()
 	p.waitTime = registry.GetOrCreateTimer(p.name + ".wait_time")

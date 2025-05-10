@@ -88,17 +88,17 @@ func BenchmarkStringBuilderCapacity(b *testing.B) {
 // Sample implementation with no pre-allocation (baseline)
 func buildPromptDefault(prompt string, schema *schemaDomain.Schema) string {
 	var builder strings.Builder
-	
+
 	// Add base prompt
 	builder.WriteString(prompt)
 	builder.WriteString("\n\n")
 	builder.WriteString("Please provide a JSON response according to this schema:\n\n")
-	
+
 	// Add schema details
 	builder.WriteString("Type: ")
 	builder.WriteString(schema.Type)
 	builder.WriteString("\n")
-	
+
 	// Add properties
 	if schema.Type == "object" && len(schema.Properties) > 0 {
 		builder.WriteString("Properties:\n")
@@ -115,40 +115,40 @@ func buildPromptDefault(prompt string, schema *schemaDomain.Schema) string {
 			builder.WriteString("\n")
 		}
 	}
-	
+
 	// Add required fields
 	if len(schema.Required) > 0 {
 		builder.WriteString("Required fields: ")
 		builder.WriteString(strings.Join(schema.Required, ", "))
 		builder.WriteString("\n")
 	}
-	
+
 	return builder.String()
 }
 
 // Sample implementation with current capacity estimation
 func buildPromptCurrentStrategy(prompt string, schema *schemaDomain.Schema) string {
 	// Calculate initial capacity based on input sizes
-	initialCapacity := len(prompt) + 500  // Base prompt + standard text
-	
+	initialCapacity := len(prompt) + 500 // Base prompt + standard text
+
 	// Account for property descriptions (est. ~50 bytes per property)
 	if schema.Type == "object" {
 		initialCapacity += len(schema.Properties) * 50
 	}
-	
+
 	var builder strings.Builder
 	builder.Grow(initialCapacity)
-	
+
 	// Add base prompt
 	builder.WriteString(prompt)
 	builder.WriteString("\n\n")
 	builder.WriteString("Please provide a JSON response according to this schema:\n\n")
-	
+
 	// Add schema details
 	builder.WriteString("Type: ")
 	builder.WriteString(schema.Type)
 	builder.WriteString("\n")
-	
+
 	// Add properties
 	if schema.Type == "object" && len(schema.Properties) > 0 {
 		builder.WriteString("Properties:\n")
@@ -165,14 +165,14 @@ func buildPromptCurrentStrategy(prompt string, schema *schemaDomain.Schema) stri
 			builder.WriteString("\n")
 		}
 	}
-	
+
 	// Add required fields
 	if len(schema.Required) > 0 {
 		builder.WriteString("Required fields: ")
 		builder.WriteString(strings.Join(schema.Required, ", "))
 		builder.WriteString("\n")
 	}
-	
+
 	return builder.String()
 }
 

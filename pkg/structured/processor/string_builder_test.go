@@ -30,20 +30,40 @@ func TestOptimizedStringBuilder(t *testing.T) {
 	t.Run("CompareBuilders", func(t *testing.T) {
 		// Standard builder
 		var stdBuilder strings.Builder
-		stdBuilder.WriteString(prompt)
-		stdBuilder.WriteString("\n")
-		stdBuilder.WriteString("Schema type: ")
-		stdBuilder.WriteString(schema.Type)
-		stdBuilder.WriteString("\n")
+		if _, err := stdBuilder.WriteString(prompt); err != nil {
+			t.Fatalf("Failed to write to standard builder: %v", err)
+		}
+		if _, err := stdBuilder.WriteString("\n"); err != nil {
+			t.Fatalf("Failed to write newline to standard builder: %v", err)
+		}
+		if _, err := stdBuilder.WriteString("Schema type: "); err != nil {
+			t.Fatalf("Failed to write schema type prefix to standard builder: %v", err)
+		}
+		if _, err := stdBuilder.WriteString(schema.Type); err != nil {
+			t.Fatalf("Failed to write schema type to standard builder: %v", err)
+		}
+		if _, err := stdBuilder.WriteString("\n"); err != nil {
+			t.Fatalf("Failed to write final newline to standard builder: %v", err)
+		}
 		stdResult := stdBuilder.String()
 
 		// Optimized builder
 		optBuilder := NewSchemaPromptBuilder(prompt, schema, len(schemaJSON))
-		optBuilder.WriteString(prompt)
-		optBuilder.WriteString("\n")
-		optBuilder.WriteString("Schema type: ")
-		optBuilder.WriteString(schema.Type)
-		optBuilder.WriteString("\n")
+		if _, err := optBuilder.WriteString(prompt); err != nil {
+			t.Fatalf("Failed to write to optimized builder: %v", err)
+		}
+		if _, err := optBuilder.WriteString("\n"); err != nil {
+			t.Fatalf("Failed to write newline to optimized builder: %v", err)
+		}
+		if _, err := optBuilder.WriteString("Schema type: "); err != nil {
+			t.Fatalf("Failed to write schema type prefix to optimized builder: %v", err)
+		}
+		if _, err := optBuilder.WriteString(schema.Type); err != nil {
+			t.Fatalf("Failed to write schema type to optimized builder: %v", err)
+		}
+		if _, err := optBuilder.WriteString("\n"); err != nil {
+			t.Fatalf("Failed to write final newline to optimized builder: %v", err)
+		}
 		optResult := optBuilder.String()
 
 		// Check that the results are identical
@@ -53,7 +73,7 @@ func TestOptimizedStringBuilder(t *testing.T) {
 
 		// Check that the optimized builder has a reasonable capacity
 		if optBuilder.Cap() < len(optResult) {
-			t.Errorf("Optimized builder capacity is too small: cap=%d, len=%d", 
+			t.Errorf("Optimized builder capacity is too small: cap=%d, len=%d",
 				optBuilder.Cap(), len(optResult))
 		}
 	})
@@ -121,7 +141,9 @@ func TestOptimizedStringBuilder(t *testing.T) {
 
 		// Write a large amount of content
 		for i := 0; i < 50; i++ {
-			optBuilder.WriteString("Line " + strings.Repeat("abcdefghij", 2) + "\n")
+			if _, err := optBuilder.WriteString("Line " + strings.Repeat("abcdefghij", 2) + "\n"); err != nil {
+				t.Fatalf("Failed to write content line: %v", err)
+			}
 		}
 
 		// Check that we didn't have to resize (capacity >= length)
@@ -133,7 +155,7 @@ func TestOptimizedStringBuilder(t *testing.T) {
 		}
 
 		// For debugging: see how much extra capacity we allocated
-		// t.Logf("Length: %d, Capacity: %d, Ratio: %.2f", 
+		// t.Logf("Length: %d, Capacity: %d, Ratio: %.2f",
 		//    finalLength, finalCapacity, float64(finalCapacity)/float64(finalLength))
 	})
 }
@@ -144,7 +166,7 @@ func createComplexTestSchema() *schemaDomain.Schema {
 		Type:        "object",
 		Description: "A recipe schema",
 		Properties: map[string]schemaDomain.Property{
-			"title": {Type: "string", Description: "Recipe title"},
+			"title":       {Type: "string", Description: "Recipe title"},
 			"description": {Type: "string", Description: "Brief description"},
 			"ingredients": {
 				Type: "array",
@@ -169,8 +191,8 @@ func createComplexTestSchema() *schemaDomain.Schema {
 			"cookTime": {Type: "integer", Description: "Cooking time in minutes"},
 			"servings": {Type: "integer", Description: "Number of servings"},
 			"difficulty": {
-				Type: "string",
-				Enum: []string{"easy", "medium", "hard"},
+				Type:        "string",
+				Enum:        []string{"easy", "medium", "hard"},
 				Description: "Recipe difficulty",
 			},
 		},

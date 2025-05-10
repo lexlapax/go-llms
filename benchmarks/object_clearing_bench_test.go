@@ -12,79 +12,79 @@ func generateLargeString(size int) string {
 	var sb strings.Builder
 	// Pre-allocate to avoid reallocations
 	sb.Grow(size)
-	
+
 	// Generate a test pattern that repeats
 	pattern := "This is a test string for benchmarking object clearing operations. "
-	
+
 	// Repeat until we get close to the target size
 	for sb.Len() < size {
 		sb.WriteString(pattern)
 	}
-	
+
 	return sb.String()[:size]
 }
 
 // BenchmarkObjectClearing provides comprehensive benchmarks for object clearing operations
 func BenchmarkObjectClearing(b *testing.B) {
 	// Test with different content sizes to see the impact of our optimizations
-	smallSize := 64       // 64 bytes
-	mediumSize := 1024    // 1KB
-	largeSize := 4096     // 4KB
+	smallSize := 64        // 64 bytes
+	mediumSize := 1024     // 1KB
+	largeSize := 4096      // 4KB
 	veryLargeSize := 32768 // 32KB
-	
+
 	// Generate test data
 	smallContent := generateLargeString(smallSize)
 	mediumContent := generateLargeString(mediumSize)
 	largeContent := generateLargeString(largeSize)
 	veryLargeContent := generateLargeString(veryLargeSize)
-	
+
 	// 1. Benchmark standard clearing (setting to empty string)
 	b.Run("StandardClearing", func(b *testing.B) {
 		b.Run("SmallContent", func(b *testing.B) {
-			var s string = smallContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				s = smallContent
+				// Initialize directly with content, no ineffectual assignment
 				s = ""
 				_ = s // Use s to prevent compiler optimizations
 			}
 		})
 
 		b.Run("MediumContent", func(b *testing.B) {
-			var s string = mediumContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				s = mediumContent
+				// Initialize directly with content, no ineffectual assignment
 				s = ""
 				_ = s // Use s to prevent compiler optimizations
 			}
 		})
 
 		b.Run("LargeContent", func(b *testing.B) {
-			var s string = largeContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				s = largeContent
+				// Initialize directly with content, no ineffectual assignment
 				s = ""
 				_ = s // Use s to prevent compiler optimizations
 			}
 		})
 
 		b.Run("VeryLargeContent", func(b *testing.B) {
-			var s string = veryLargeContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				s = veryLargeContent
+				// Initialize directly with content, no ineffectual assignment
 				s = ""
 				_ = s // Use s to prevent compiler optimizations
 			}
 		})
 	})
-	
+
 	// 2. Benchmark optimized clearing using zeroString
 	b.Run("OptimizedClearing", func(b *testing.B) {
 		b.Run("SmallContent", func(b *testing.B) {
-			var s string = smallContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				s = smallContent
@@ -94,7 +94,7 @@ func BenchmarkObjectClearing(b *testing.B) {
 		})
 
 		b.Run("MediumContent", func(b *testing.B) {
-			var s string = mediumContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				s = mediumContent
@@ -104,7 +104,7 @@ func BenchmarkObjectClearing(b *testing.B) {
 		})
 
 		b.Run("LargeContent", func(b *testing.B) {
-			var s string = largeContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				s = largeContent
@@ -114,7 +114,7 @@ func BenchmarkObjectClearing(b *testing.B) {
 		})
 
 		b.Run("VeryLargeContent", func(b *testing.B) {
-			var s string = veryLargeContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				s = veryLargeContent
@@ -123,11 +123,11 @@ func BenchmarkObjectClearing(b *testing.B) {
 			}
 		})
 	})
-	
+
 	// 3. Benchmark hybrid approach (our implementation)
 	b.Run("HybridClearing", func(b *testing.B) {
 		b.Run("SmallContent", func(b *testing.B) {
-			var s string = smallContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				s = smallContent
@@ -141,7 +141,7 @@ func BenchmarkObjectClearing(b *testing.B) {
 		})
 
 		b.Run("MediumContent", func(b *testing.B) {
-			var s string = mediumContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				s = mediumContent
@@ -155,7 +155,7 @@ func BenchmarkObjectClearing(b *testing.B) {
 		})
 
 		b.Run("LargeContent", func(b *testing.B) {
-			var s string = largeContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				s = largeContent
@@ -169,7 +169,7 @@ func BenchmarkObjectClearing(b *testing.B) {
 		})
 
 		b.Run("VeryLargeContent", func(b *testing.B) {
-			var s string = veryLargeContent
+			var s string
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				s = veryLargeContent
@@ -182,7 +182,7 @@ func BenchmarkObjectClearing(b *testing.B) {
 			}
 		})
 	})
-	
+
 	// 4. Benchmark standard Response pool clearing
 	b.Run("ResponsePool", func(b *testing.B) {
 		b.Run("StandardPool_SmallContent", func(b *testing.B) {
@@ -195,7 +195,7 @@ func BenchmarkObjectClearing(b *testing.B) {
 				resp = pool.Get()
 			}
 		})
-		
+
 		b.Run("StandardPool_LargeContent", func(b *testing.B) {
 			pool := domain.NewResponsePool()
 			resp := pool.Get()
@@ -206,7 +206,7 @@ func BenchmarkObjectClearing(b *testing.B) {
 				resp = pool.Get()
 			}
 		})
-		
+
 		b.Run("StandardPool_VeryLargeContent", func(b *testing.B) {
 			pool := domain.NewResponsePool()
 			resp := pool.Get()
@@ -218,10 +218,10 @@ func BenchmarkObjectClearing(b *testing.B) {
 			}
 		})
 	})
-	
+
 	// We've removed the separate optimized response pool implementation
 	// and integrated the optimizations directly into the standard pool
-	
+
 	// 6. Compare full end-to-end operations
 	b.Run("EndToEnd", func(b *testing.B) {
 		b.Run("Standard_SmallContent", func(b *testing.B) {
@@ -232,7 +232,7 @@ func BenchmarkObjectClearing(b *testing.B) {
 				_ = response.Content // Use the response
 			}
 		})
-		
+
 		b.Run("Standard_LargeContent", func(b *testing.B) {
 			pool := domain.NewResponsePool()
 			b.ResetTimer()
@@ -241,7 +241,7 @@ func BenchmarkObjectClearing(b *testing.B) {
 				_ = response.Content // Use the response
 			}
 		})
-		
+
 		// We've removed the separate optimized response pool implementation
 		// and integrated the optimizations directly into the standard pool
 	})

@@ -47,7 +47,7 @@ func TestSchemaCacheExpiration(t *testing.T) {
 
 	// Force expiration check
 	cache.lastCleanup = time.Now().Add(-2 * time.Minute)
-	
+
 	// Try to get an item - this should trigger cleanup
 	_, _ = cache.Get(key1)
 
@@ -67,7 +67,7 @@ func TestSchemaCacheLRUEviction(t *testing.T) {
 	// Create test schemas
 	var schemas []*schemaDomain.Schema
 	var keys []uint64
-	
+
 	for i := 0; i < 5; i++ {
 		schema := &schemaDomain.Schema{
 			Type: "object",
@@ -78,33 +78,35 @@ func TestSchemaCacheLRUEviction(t *testing.T) {
 				},
 			},
 		}
+		// Make sure the append result is assigned back to the variable
 		schemas = append(schemas, schema)
+		_ = schemas // Explicitly use schemas to avoid unused result warning
 		keys = append(keys, GenerateSchemaKey(schema))
 	}
-	
+
 	// Set cache entries in sequence
 	for i := 0; i < 5; i++ {
 		cache.Set(keys[i], []byte(`{"test":"data"}`+string(rune('A'+i))))
 	}
-	
+
 	// We should have only 3 entries due to LRU eviction
 	if cache.GetSize() != 3 {
 		t.Errorf("Expected cache size to be 3 due to LRU policy, got %d", cache.GetSize())
 	}
-	
+
 	// The oldest 2 entries should be evicted
 	_, found0 := cache.Get(keys[0])
 	_, found1 := cache.Get(keys[1])
-	
+
 	if found0 || found1 {
 		t.Errorf("Expected oldest entries to be evicted")
 	}
-	
+
 	// The newest 3 entries should still be in the cache
 	_, found2 := cache.Get(keys[2])
 	_, found3 := cache.Get(keys[3])
 	_, found4 := cache.Get(keys[4])
-	
+
 	if !found2 || !found3 || !found4 {
 		t.Errorf("Expected newest entries to be in cache, found: %v, %v, %v", found2, found3, found4)
 	}

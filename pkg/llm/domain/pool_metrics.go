@@ -23,14 +23,14 @@ func NewResponsePoolWithMetrics() *ResponsePoolWithMetrics {
 // Get retrieves a Response from the pool with metrics
 func (p *ResponsePoolWithMetrics) Get() *Response {
 	startTime := time.Now()
-	
+
 	// Either create a new object or get one from the pool
 	resp := p.ResponsePool.Get()
-	
+
 	// Record metrics
 	p.metrics.RecordAllocation()
 	p.metrics.RecordAllocationTime(time.Since(startTime))
-	
+
 	return resp
 }
 
@@ -39,10 +39,10 @@ func (p *ResponsePoolWithMetrics) Put(resp *Response) {
 	if resp == nil {
 		return
 	}
-	
+
 	// Return to the pool
 	p.ResponsePool.Put(resp)
-	
+
 	// Record metrics
 	p.metrics.RecordReturn()
 }
@@ -50,20 +50,20 @@ func (p *ResponsePoolWithMetrics) Put(resp *Response) {
 // NewResponse creates a new Response with the given content using the pool with metrics
 func (p *ResponsePoolWithMetrics) NewResponse(content string) Response {
 	startTime := time.Now()
-	
+
 	// Get from pool
 	resp := p.Get()
 	resp.Content = content
-	
+
 	// Create a copy to return by value (Response, not *Response)
 	result := *resp
-	
+
 	// Return the object to the pool
 	p.Put(resp)
-	
+
 	// Record allocation time
 	p.metrics.RecordAllocationTime(time.Since(startTime))
-	
+
 	return result
 }
 
@@ -101,14 +101,14 @@ func NewTokenPoolWithMetrics() *TokenPoolWithMetrics {
 // Get retrieves a Token from the pool with metrics
 func (p *TokenPoolWithMetrics) Get() *Token {
 	startTime := time.Now()
-	
+
 	// Either create a new object or get one from the pool
 	token := p.TokenPool.Get()
-	
+
 	// Record metrics
 	p.metrics.RecordAllocation()
 	p.metrics.RecordAllocationTime(time.Since(startTime))
-	
+
 	return token
 }
 
@@ -117,10 +117,10 @@ func (p *TokenPoolWithMetrics) Put(token *Token) {
 	if token == nil {
 		return
 	}
-	
+
 	// Return to the pool
 	p.TokenPool.Put(token)
-	
+
 	// Record metrics
 	p.metrics.RecordReturn()
 }
@@ -128,21 +128,21 @@ func (p *TokenPoolWithMetrics) Put(token *Token) {
 // NewToken creates a new Token with the given text and finished flag using the pool with metrics
 func (p *TokenPoolWithMetrics) NewToken(text string, finished bool) Token {
 	startTime := time.Now()
-	
+
 	// Get from pool
 	token := p.Get()
 	token.Text = text
 	token.Finished = finished
-	
+
 	// Create a copy to return by value (Token, not *Token)
 	result := *token
-	
+
 	// Return the object to the pool
 	p.Put(token)
-	
+
 	// Record allocation time
 	p.metrics.RecordAllocationTime(time.Since(startTime))
-	
+
 	return result
 }
 
@@ -180,14 +180,14 @@ func NewChannelPoolWithMetrics() *ChannelPoolWithMetrics {
 // Get retrieves a channel from the pool with metrics
 func (p *ChannelPoolWithMetrics) Get() chan Token {
 	startTime := time.Now()
-	
+
 	// Either create a new channel or get one from the pool
 	ch := p.ChannelPool.Get()
-	
+
 	// Record metrics
 	p.metrics.RecordAllocation()
 	p.metrics.RecordAllocationTime(time.Since(startTime))
-	
+
 	return ch
 }
 
@@ -196,10 +196,10 @@ func (p *ChannelPoolWithMetrics) Put(ch chan Token) {
 	if ch == nil {
 		return
 	}
-	
+
 	// Return to the pool
 	p.ChannelPool.Put(ch)
-	
+
 	// Record metrics
 	p.metrics.RecordReturn()
 }

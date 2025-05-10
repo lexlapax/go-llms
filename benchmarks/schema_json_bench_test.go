@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	optimizedJson "github.com/lexlapax/go-llms/pkg/util/json"
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 	"github.com/lexlapax/go-llms/pkg/testutils"
+	optimizedJson "github.com/lexlapax/go-llms/pkg/util/json"
 )
 
 // createTestSchema creates a schema for benchmark testing

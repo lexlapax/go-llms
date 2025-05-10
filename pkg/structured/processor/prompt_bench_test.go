@@ -67,15 +67,15 @@ func BenchmarkPromptEnhancer(b *testing.B) {
 func BenchmarkPromptEnhancerWithOptions(b *testing.B) {
 	schema := createBenchmarkSchema()
 	prompt := "Write a recipe with ingredients and steps."
-	
+
 	options := map[string]interface{}{
 		"instructions": "Make sure the recipe is vegetarian.",
-		"format": "JSON",
+		"format":       "JSON",
 		"examples": []map[string]interface{}{
 			{
-				"name": "Pasta Primavera",
+				"name":        "Pasta Primavera",
 				"ingredients": []string{"pasta", "vegetables", "olive oil"},
-				"steps": []string{"Cook pasta", "Sauté vegetables", "Mix together"},
+				"steps":       []string{"Cook pasta", "Sauté vegetables", "Mix together"},
 			},
 		},
 	}

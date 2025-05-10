@@ -18,7 +18,7 @@ func TestSchemaCacheMetrics(t *testing.T) {
 
 	// Generate a test schema
 	schema := &schemaDomain.Schema{
-		Type: "object",
+		Type:  "object",
 		Title: "Test Schema",
 	}
 
@@ -54,19 +54,21 @@ func TestSchemaCacheMetrics(t *testing.T) {
 	if total != 2 {
 		t.Errorf("Expected 2 total, got %d", total)
 	}
-	
+	// Use hits to avoid ineffectual assignment lint error
+	_ = hits
+
 	// Warm up the cache metrics
 	for i := 0; i < 10; i++ {
 		// A mix of hits and misses
-		cache.Get(key)        // hit
-		cache.Get(key + 1)    // miss
-		cache.Get(key)        // hit
-		cache.Get(key)        // hit
+		cache.Get(key)     // hit
+		cache.Get(key + 1) // miss
+		cache.Get(key)     // hit
+		cache.Get(key)     // hit
 	}
-	
+
 	// Check metrics again
 	hits, misses, total = cache.GetHitRate()
-	expectedHits := int64(1 + 10*3) // Initial + 3 hits per iteration
+	expectedHits := int64(1 + 10*3)   // Initial + 3 hits per iteration
 	expectedMisses := int64(1 + 10*1) // Initial + 1 miss per iteration
 	expectedTotal := expectedHits + expectedMisses
 
@@ -79,26 +81,29 @@ func TestSchemaCacheMetrics(t *testing.T) {
 	if total != expectedTotal {
 		t.Errorf("Expected %d total, got %d", expectedTotal, total)
 	}
-	
+
 	// Check for non-zero cache operation times
 	if avgTime := cache.GetAverageAccessTime(); avgTime == 0 {
 		t.Error("Expected non-zero average access time")
 	}
-	
+
 	// Test cache clear
 	cache.Clear()
-	
+
 	// After clear, cache should be empty but metrics should persist
 	_, found = cache.Get(key)
 	if found {
 		t.Error("Expected cache to be empty after clear")
 	}
-	
+
 	// Metrics should still be available after clear
 	hits, misses, total = cache.GetHitRate()
 	if total == 0 {
 		t.Error("Expected metrics to persist after cache clear")
 	}
+	// Use all variables to avoid ineffectual assignment lint warning
+	_ = hits
+	_ = misses
 }
 
 func TestSchemaCacheConcurrency(t *testing.T) {
@@ -120,10 +125,10 @@ func TestSchemaCacheConcurrency(t *testing.T) {
 	cache.Set(key, []byte(`{"type":"object"}`))
 
 	// Directly test the metrics
-	cache.Get(key)       // hit
-	cache.Get(key)       // hit
-	cache.Get(key + 1)   // miss
-	cache.Get(key + 2)   // miss
+	cache.Get(key)     // hit
+	cache.Get(key)     // hit
+	cache.Get(key + 1) // miss
+	cache.Get(key + 2) // miss
 
 	// Verify the metrics
 	hits, misses, total := cache.GetHitRate()
@@ -145,10 +150,10 @@ func TestSchemaKeySizeAndPerformance(t *testing.T) {
 		Type:        "object",
 		Title:       "Complex Schema",
 		Description: "A very complex schema with many properties",
-		Properties: map[string]schemaDomain.Property{},
+		Properties:  map[string]schemaDomain.Property{},
 		Required:    []string{},
 	}
-	
+
 	// Add many properties to the schema
 	for i := 0; i < 100; i++ {
 		propName := fmt.Sprintf("property_%d", i)
@@ -158,17 +163,17 @@ func TestSchemaKeySizeAndPerformance(t *testing.T) {
 		}
 		schema.Required = append(schema.Required, propName)
 	}
-	
+
 	// Generate a key for the schema
 	start := time.Now()
 	key := GenerateSchemaKey(schema)
 	duration := time.Since(start)
-	
+
 	// Key generation should be fast even for large schemas
 	if duration > 5*time.Millisecond {
 		t.Errorf("Schema key generation took too long: %v", duration)
 	}
-	
+
 	// Key should be non-zero
 	if key == 0 {
 		t.Error("Generated key is zero")
