@@ -1,13 +1,13 @@
 package processor
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 	"github.com/lexlapax/go-llms/pkg/structured/domain"
+	optimizedJson "github.com/lexlapax/go-llms/pkg/util/json"
 )
 
 // Global schema cache for reuse across all enhancers
@@ -48,7 +48,7 @@ func getSchemaJSON(schema *schemaDomain.Schema) ([]byte, error) {
 	}
 
 	// Cache miss - marshal the schema to JSON
-	schemaJSON, err := json.MarshalIndent(schema, "", "  ")
+	schemaJSON, err := optimizedJson.MarshalSchemaIndent(schema)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal schema: %w", err)
 	}
@@ -207,7 +207,7 @@ func (p *PromptEnhancer) EnhanceWithOptions(prompt string, schema *schemaDomain.
 
 		for i, example := range examples {
 			// Try to reuse the JSON marshaling if possible (future optimization)
-			exampleJSON, err := json.MarshalIndent(example, "", "  ")
+			exampleJSON, err := optimizedJson.MarshalIndent(example, "", "  ")
 			if err != nil {
 				return "", fmt.Errorf("failed to marshal example %d: %w", i, err)
 			}
