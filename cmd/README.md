@@ -365,22 +365,68 @@ go-llms --provider gemini --model gemini-2.0-pro-latest complete "Explain quantu
 
 ### Shell Autocompletion
 
-Generate shell autocompletion scripts to enable tab-completion for commands, flags, and arguments:
+The `completion` command generates shell autocompletion scripts to enable tab-completion for commands, flags, and arguments. This makes the CLI much more user-friendly by allowing you to discover available options with the Tab key.
+
+#### Installation by Shell
+
+Choose the instructions for your shell:
+
+##### Bash
 
 ```bash
-# For Bash
-go-llms completion bash > ~/.bash_completion
-source ~/.bash_completion
+# Option 1: Source completion in current session only
+source <(go-llms completion bash)
 
-# For Zsh
-go-llms completion zsh > "${fpath[1]}/_go-llms"
-source ~/.zshrc
+# Option 2: Install permanently (Linux)
+go-llms completion bash > /etc/bash_completion.d/go-llms
 
-# For Fish
-go-llms completion fish > ~/.config/fish/completions/go-llms.fish
-
-# For PowerShell
-go-llms completion powershell > go-llms.ps1
+# Option 3: Install permanently (macOS with Homebrew)
+go-llms completion bash > $(brew --prefix)/etc/bash_completion.d/go-llms
 ```
 
-This enables tab-completion for all commands, subcommands, and flags, making the CLI easier to use interactively.
+Note: For macOS, you need to have the bash-completion package installed via Homebrew.
+
+##### Zsh
+
+```bash
+# Step 1: Enable shell completion if not already enabled
+echo "autoload -U compinit; compinit" >> ~/.zshrc
+
+# Step 2: Install completion script
+go-llms completion zsh > "${fpath[1]}/_go-llms"
+
+# Step 3: Start a new shell or source your zshrc
+source ~/.zshrc
+```
+
+##### Fish
+
+```bash
+# Option 1: Source for current session only
+go-llms completion fish | source
+
+# Option 2: Install permanently
+mkdir -p ~/.config/fish/completions
+go-llms completion fish > ~/.config/fish/completions/go-llms.fish
+```
+
+##### PowerShell
+
+```powershell
+# Option 1: Load in current session
+go-llms completion powershell | Out-String | Invoke-Expression
+
+# Option 2: Add to your PowerShell profile
+go-llms completion powershell > go-llms.ps1
+# Then add the following to your PowerShell profile
+# . /path/to/go-llms.ps1
+```
+
+#### Usage Examples
+
+After installation, you can use tab completion for:
+
+- Commands: `go-llms [TAB]` shows available commands (chat, complete, agent, structured, completion)
+- Flags: `go-llms chat --[TAB]` shows available flags
+- Flag values: `go-llms --provider [TAB]` shows available provider options
+- Command arguments: `go-llms completion [TAB]` shows available shell options
