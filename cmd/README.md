@@ -4,14 +4,15 @@ This directory contains the command line interface (CLI) for the Go-LLMs library
 
 ## Overview
 
-The Go-LLMs CLI offers four main commands:
+The Go-LLMs CLI offers five main commands:
 
 1. **chat** - Interactive chat session with an LLM
 2. **complete** - One-shot text completion
 3. **agent** - Tool-equipped agent for complex tasks
 4. **structured** - Schema-based structured output generation
+5. **completion** - Generate shell autocompletion scripts
 
-All commands support multiple LLM providers (OpenAI, Anthropic, or mock providers for testing) and various configuration options.
+All commands support multiple LLM providers (OpenAI, Anthropic, Gemini, or mock providers for testing) and various configuration options.
 
 ## Installation
 
@@ -52,10 +53,14 @@ providers:
   openai:
     api_key: "your-openai-api-key"
     default_model: "gpt-4o"
-  
+
   anthropic:
     api_key: "your-anthropic-api-key"
     default_model: "claude-3-5-sonnet-latest"
+
+  gemini:
+    api_key: "your-gemini-api-key"
+    default_model: "gemini-2.0-flash-lite"
 ```
 
 ## Global Flags
@@ -64,7 +69,7 @@ These flags apply to all commands:
 
 ```
 --config string    Configuration file path
---provider string  LLM provider to use (openai, anthropic, mock) (default: "openai")
+--provider string  LLM provider to use (openai, anthropic, gemini, mock) (default: "openai")
 --model string     Model to use with the provider
 --verbose, -v      Enable verbose output
 --output, -o       Output format (text, json) (default: "text")
@@ -206,6 +211,9 @@ export OPENAI_API_KEY=your-openai-api-key
 
 # For Anthropic
 export ANTHROPIC_API_KEY=your-anthropic-api-key
+
+# For Google Gemini
+export GEMINI_API_KEY=your-gemini-api-key
 ```
 
 ## Tools Reference
@@ -330,6 +338,9 @@ go-llms --provider openai chat
 # Use Anthropic
 go-llms --provider anthropic complete "Explain concurrency in Go"
 
+# Use Google Gemini
+go-llms --provider gemini complete "Explain Go interfaces"
+
 # Use mock provider for testing
 go-llms --provider mock agent "What is 2+2?"
 ```
@@ -349,4 +360,27 @@ Override the default model:
 ```bash
 go-llms --provider openai --model gpt-4-turbo-preview chat
 go-llms --provider anthropic --model claude-3-opus-20240229 complete "Tell me a story"
+go-llms --provider gemini --model gemini-2.0-pro-latest complete "Explain quantum computing"
 ```
+
+### Shell Autocompletion
+
+Generate shell autocompletion scripts to enable tab-completion for commands, flags, and arguments:
+
+```bash
+# For Bash
+go-llms completion bash > ~/.bash_completion
+source ~/.bash_completion
+
+# For Zsh
+go-llms completion zsh > "${fpath[1]}/_go-llms"
+source ~/.zshrc
+
+# For Fish
+go-llms completion fish > ~/.config/fish/completions/go-llms.fish
+
+# For PowerShell
+go-llms completion powershell > go-llms.ps1
+```
+
+This enables tab-completion for all commands, subcommands, and flags, making the CLI easier to use interactively.

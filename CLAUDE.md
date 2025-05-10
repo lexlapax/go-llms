@@ -235,18 +235,41 @@ The following features are planned for future development:
 ### Features
 - [ ] Model Context Protocol Client support for Agents
 - [ ] Model Context Protocol Server support for Workflows or Agents
-- [ ] Dedicated integration test for Ollama
 
 ### Performance Optimizations
-- [ ] Adaptive channel buffer sizing based on usage patterns
-- [ ] Pool prewarming for high-throughput scenarios
-- [ ] Reduced redundant property iterations in schema processing
-- [ ] More granular locking in cached objects
-- [ ] Buffer pooling for string builders
+This work is organized into phases:
+
+#### Phase 1: Baseline Profiling Infrastructure
+- [x] Add CPU and memory profiling hooks to key operations
+- [x] Add monitoring for cache hit rates and pool statistics
+- [ ] Create benchmark harness for A/B testing optimizations
+- [ ] Implement visualization for memory allocation patterns
+- [ ] Create real-world test scenarios for end-to-end performance
+
+#### Phase 2: High-Impact Optimizations (Quick Wins)
+- [x] Optimize schema JSON marshaling with faster alternatives
+- [x] Improve schema caching with better key generation
+- [x] Optimize object clearing operations for large response objects
+- [x] Add expiration policy to schema cache to prevent unbounded growth
+- [x] Optimize string builder capacity estimation for complex schemas
+
+#### Phase 3: Advanced Optimizations
+- [ ] Implement adaptive channel buffer sizing based on usage patterns
+- [ ] Add pool prewarming for high-throughput scenarios
+- [ ] Reduce redundant property iterations in schema processing
+- [ ] Implement more granular locking in cached objects
+- [ ] Optimize zero-initialization patterns for pooled objects
+- [ ] Introduce buffer pooling for string builders
+
+#### Phase 4: Integration and Validation
+- [ ] Document performance improvements with metrics
+- [ ] Verify optimizations in high-concurrency scenarios
+- [ ] Create benchmark comparison charts for before/after
+- [ ] Implement regression testing to prevent performance degradation
+- [ ] Add performance acceptance criteria to CI pipeline
 
 ### Documentation and Testing
-- [ ] Additional test coverage for edge cases
-- [ ] Fixed cross-link issues (path inconsistencies, broken links)
-- [ ] Final consistency check across all documentation
+- [ ] Fix identified cross-link issues (path inconsistencies, broken links)
+- [ ] Perform final consistency check across all documentation
 - [ ] API refinement based on usage feedback
 - [ ] Final review and preparation for stable release
