@@ -2,6 +2,7 @@ package domain
 
 import (
 	"sync"
+	"unsafe"
 )
 
 // ResponsePool is a pool of Response objects that can be reused to reduce memory allocations
@@ -48,7 +49,15 @@ func (p *ResponsePool) Put(resp *Response) {
 	}
 
 	// Clear the Response fields before returning to the pool
-	resp.Content = ""
+	// For large content, this is optimized to minimize allocations
+	if len(resp.Content) > 1024 {
+		// Use optimized clearing for large content
+		// This just changes the length to 0 without allocation
+		ZeroString(&resp.Content)
+	} else {
+		// For smaller content, simple assignment is faster
+		resp.Content = ""
+	}
 
 	p.pool.Put(resp)
 }
@@ -110,9 +119,16 @@ func (p *TokenPool) Put(token *Token) {
 	}
 
 	// Clear the Token fields before returning to the pool
-	token.Text = ""
-	token.Finished = false
+	// For large content, this is optimized to minimize allocations
+	if len(token.Text) > 1024 {
+		// Use optimized clearing for large content
+		ZeroString(&token.Text)
+	} else {
+		// For smaller content, simple assignment is faster
+		token.Text = ""
+	}
 
+	token.Finished = false
 	p.pool.Put(token)
 }
 
@@ -202,4 +218,31 @@ func (p *ChannelPool) Put(ch chan Token) {
 func (p *ChannelPool) GetResponseStream() (ResponseStream, chan Token) {
 	ch := p.Get()
 	return ch, ch
+}
+
+// StringHeader represents the internal header structure of a string
+// This is equivalent to the reflect.StringHeader structure
+type StringHeader struct {
+	Data uintptr
+	Len  int
+}
+
+// ZeroString clears a string's content without allocation
+// This is an unsafe operation that should be used with caution
+// It works by manipulating the string header to point to an empty string
+func ZeroString(s *string) {
+	if s == nil || *s == "" {
+		return
+	}
+
+	// Create a new empty string
+	empty := ""
+
+	// Get the string headers
+	emptyHeader := (*StringHeader)(unsafe.Pointer(&empty))
+	sHeader := (*StringHeader)(unsafe.Pointer(s))
+
+	// Make the target string point to the empty string data
+	sHeader.Data = emptyHeader.Data
+	sHeader.Len = 0
 }
