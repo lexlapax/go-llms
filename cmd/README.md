@@ -85,12 +85,22 @@ Flags:
 -s, --system string        System prompt for the chat
 -t, --temperature float32  Temperature for generation (default 0.7)
 --max-tokens int           Maximum tokens to generate (default 1000)
+--stream                   Stream responses in real-time (auto-enabled in interactive terminals)
+--no-stream                Disable streaming (useful for scripts or logging)
 ```
+
+By default, streaming is automatically enabled when running in an interactive terminal and disabled when the output is redirected or piped. This provides a natural conversational experience while allowing flexibility for scripting.
 
 Example:
 ```bash
-# Start a chat session with default provider
+# Start a chat session with default provider (auto-streaming in terminal)
 go-llms chat
+
+# Start a chat with streaming explicitly enabled
+go-llms chat --stream
+
+# Start a chat with streaming disabled
+go-llms chat --no-stream
 
 # Start a chat with a custom system prompt and Anthropic provider
 go-llms chat --provider anthropic --system "You are a helpful coding assistant."
@@ -244,6 +254,7 @@ The `structured` command and `agent` command (with `--schema`) require a schema 
 ```bash
 $ go-llms chat --provider anthropic
 Chat session started with anthropic using claude-3-5-sonnet-latest
+Streaming mode enabled: responses will appear in real-time
 Type 'exit' or 'quit' to end the session
 -----------------------------------------
 
@@ -266,6 +277,8 @@ These qualities make Go particularly well-suited for building reliable, high-per
 User: exit
 Ending chat session
 ```
+
+With streaming enabled, the response appears progressively in real-time rather than all at once after a delay.
 
 ### Complete Example
 ```bash

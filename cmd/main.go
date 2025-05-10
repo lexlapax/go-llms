@@ -507,6 +507,22 @@ func newChatCmd() *cobra.Command {
 			systemPrompt, _ := cmd.Flags().GetString("system")
 			temperature, _ := cmd.Flags().GetFloat32("temperature")
 			maxTokens, _ := cmd.Flags().GetInt("max-tokens")
+			useStreaming, _ := cmd.Flags().GetBool("stream")
+			noStreaming, _ := cmd.Flags().GetBool("no-stream")
+
+			// Handle the no-stream flag explicitly
+			if noStreaming {
+				useStreaming = false
+			} else {
+				// Auto-detect if we should use streaming (if not explicitly set and we're in a terminal)
+				if !cmd.Flags().Changed("stream") && !cmd.Flags().Changed("no-stream") {
+					// Default to streaming if output is a terminal
+					fileInfo, _ := os.Stdout.Stat()
+					if (fileInfo.Mode() & os.ModeCharDevice) != 0 {
+						useStreaming = true
+					}
+				}
+			}
 
 			// Create the LLM provider based on provider type
 			var llmProvider llmDomain.Provider
@@ -534,6 +550,9 @@ func newChatCmd() *cobra.Command {
 			}
 
 			fmt.Printf("Chat session started with %s using %s\n", providerType, modelName)
+			if useStreaming {
+				fmt.Println("Streaming mode enabled: responses will appear in real-time")
+			}
 			fmt.Println("Type 'exit' or 'quit' to end the session")
 			fmt.Println("-----------------------------------------")
 
@@ -564,28 +583,58 @@ func newChatCmd() *cobra.Command {
 					Content: userInput,
 				})
 
-				// Generate assistant response
-				response, err := llmProvider.GenerateMessage(ctx, messages, options...)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-					continue
-				}
-
-				// Print response
 				fmt.Print("Assistant: ")
-				fmt.Println(response.Content)
 
-				// Add assistant response to context for next round
-				messages = append(messages, llmDomain.Message{
-					Role:    llmDomain.RoleAssistant,
-					Content: response.Content,
-				})
+				if useStreaming {
+					// Use streaming API
+					var fullResponse strings.Builder
+					tokenStream, err := llmProvider.StreamMessage(ctx, messages, options...)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "\nError: %v\n", err)
+						continue
+					}
+
+					for token := range tokenStream {
+						fmt.Print(token.Text)
+						fullResponse.WriteString(token.Text)
+						if token.Finished {
+							fmt.Println()
+						}
+					}
+
+					// Add assistant response to context for next round
+					messages = append(messages, llmDomain.Message{
+						Role:    llmDomain.RoleAssistant,
+						Content: fullResponse.String(),
+					})
+				} else {
+					// Use standard API
+					response, err := llmProvider.GenerateMessage(ctx, messages, options...)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "\nError: %v\n", err)
+						continue
+					}
+
+					// Print response
+					fmt.Println(response.Content)
+
+					// Add assistant response to context for next round
+					messages = append(messages, llmDomain.Message{
+						Role:    llmDomain.RoleAssistant,
+						Content: response.Content,
+					})
+				}
 			}
 		},
 	}
 	cmd.Flags().StringP("system", "s", "", "System prompt for the chat")
 	cmd.Flags().Float32P("temperature", "t", 0.7, "Temperature for generation")
 	cmd.Flags().Int("max-tokens", 1000, "Maximum tokens to generate")
+	cmd.Flags().Bool("stream", false, "Stream responses in real-time (auto-enabled in interactive terminals)")
+	// Add a "--no-stream" flag as the negative of "--stream"
+	cmd.Flags().Bool("no-stream", false, "Disable streaming (useful for scripts or logging)")
+	// Make these flags mutually exclusive
+	cmd.MarkFlagsMutuallyExclusive("stream", "no-stream")
 	return cmd
 }
 

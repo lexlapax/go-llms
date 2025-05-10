@@ -84,3 +84,83 @@ func TestGetAPIKey(t *testing.T) {
 		}
 	})
 }
+
+func TestChatCmdStreamingFlag(t *testing.T) {
+	// Create a new chat command
+	chatCmd := newChatCmd()
+
+	// Verify the stream flag exists
+	streamFlag := chatCmd.Flags().Lookup("stream")
+	if streamFlag == nil {
+		t.Fatal("Expected 'stream' flag to exist on chat command")
+	}
+	
+	// Verify the no-stream flag exists
+	noStreamFlag := chatCmd.Flags().Lookup("no-stream")
+	if noStreamFlag == nil {
+		t.Fatal("Expected 'no-stream' flag to exist on chat command")
+	}
+
+	// Check default values (should be false)
+	defaultStreamValue, err := chatCmd.Flags().GetBool("stream")
+	if err != nil {
+		t.Fatalf("Error getting stream flag value: %v", err)
+	}
+	if defaultStreamValue {
+		t.Errorf("Expected default stream flag value to be false, got true")
+	}
+	
+	defaultNoStreamValue, err := chatCmd.Flags().GetBool("no-stream")
+	if err != nil {
+		t.Fatalf("Error getting no-stream flag value: %v", err)
+	}
+	if defaultNoStreamValue {
+		t.Errorf("Expected default no-stream flag value to be false, got true")
+	}
+
+	// Test with stream flag explicitly set
+	t.Run("WithStreamFlag", func(t *testing.T) {
+		cmd := newChatCmd()
+		args := []string{"--stream"}
+		cmd.SetArgs(args)
+		flags := cmd.Flags()
+		
+		// We need to manually parse the flags since we're not executing the command
+		err = flags.Parse(args)
+		if err != nil {
+			t.Fatalf("Error parsing flags: %v", err)
+		}
+		
+		// Check that the flag value was correctly set
+		streamValue, err := flags.GetBool("stream")
+		if err != nil {
+			t.Fatalf("Error getting stream flag value: %v", err)
+		}
+		if !streamValue {
+			t.Errorf("Expected stream flag value to be true after setting, got false")
+		}
+	})
+	
+	// Test with no-stream flag explicitly set
+	t.Run("WithNoStreamFlag", func(t *testing.T) {
+		cmd := newChatCmd()
+		args := []string{"--no-stream"}
+		cmd.SetArgs(args)
+		flags := cmd.Flags()
+		
+		// We need to manually parse the flags since we're not executing the command
+		err = flags.Parse(args)
+		if err != nil {
+			t.Fatalf("Error parsing flags: %v", err)
+		}
+		
+		// Check that the flag value was correctly set
+		noStreamValue, err := flags.GetBool("no-stream")
+		if err != nil {
+			t.Fatalf("Error getting no-stream flag value: %v", err)
+		}
+		if !noStreamValue {
+			t.Errorf("Expected no-stream flag value to be true after setting, got false")
+		}
+	})
+}
