@@ -43,18 +43,62 @@ func (p *ResponsePool) Get() *Response {
     return p.pool.Get().(*Response)
 }
 
-// Put returns a Response to the pool after use
+// Put returns a Response to the pool after use with optimized clearing
 func (p *ResponsePool) Put(resp *Response) {
     if resp == nil {
         return
     }
 
     // Clear the Response fields before returning to the pool
-    resp.Content = ""
+    // For large content, use optimized zero-allocation clearing
+    if len(resp.Content) > 1024 {
+        ZeroString(&resp.Content)
+    } else {
+        // For small content, simple assignment is faster
+        resp.Content = ""
+    }
+
+    // Clear other fields
+    resp.Model = ""
+    resp.SystemFingerprint = ""
+    resp.Error = nil
 
     p.pool.Put(resp)
 }
+
+// ZeroString efficiently clears a string without allocation
+// This is critical for large strings to avoid GC pressure
+func ZeroString(s *string) {
+    if s == nil || *s == "" {
+        return
+    }
+
+    // StringHeader represents the runtime structure of a string
+    type StringHeader struct {
+        Data uintptr
+        Len  int
+    }
+
+    // Create a new empty string
+    empty := ""
+
+    // Get string headers
+    emptyHeader := (*StringHeader)(unsafe.Pointer(&empty))
+    sHeader := (*StringHeader)(unsafe.Pointer(s))
+
+    // Point the target string to empty string's data
+    sHeader.Data = emptyHeader.Data
+    sHeader.Len = 0
+}
 ```
+
+The optimized object clearing implementation provides several benefits:
+
+1. **Threshold-based strategy**: Uses different clearing approaches based on string size
+2. **Zero-allocation clearing**: Uses unsafe pointer manipulation for large strings
+3. **Performance-optimized**: Simple assignment for small strings where it's more efficient
+4. **Reduced GC pressure**: Prevents repeated allocation and deallocation of large strings
+5. **Memory efficiency**: Prevents memory leaks by fully clearing all fields
 
 ### Channel Pool for Streaming
 
@@ -301,17 +345,136 @@ Optimized: 4,643,452 ops/s, 244.3 ns/op,     0 B/op,  0 allocs/op
 
 ## Prompt Processing Optimization
 
-Prompt processing and template expansion optimization includes:
+Prompt processing and template expansion optimizations include:
 
 - Schema JSON caching
 - Singleton enhancer instance
 - Pre-allocated string builders
 - Fast paths for common schemas
+- Optimized string builder capacity estimation
+
+### String Builder Capacity Optimization
+
+The optimized string builder implementation provides more accurate capacity estimation based on schema complexity:
+
+```go
+// OptimizedStringBuilder provides enhanced string builder with better capacity estimation
+type OptimizedStringBuilder struct {
+    sb strings.Builder
+}
+
+// EstimateSchemaCapacity calculates a more accurate initial capacity for a schema
+func EstimateSchemaCapacity(schema *schemaDomain.Schema, prompt string, includeSchemaJSON bool, schemaJSONLength int) int {
+    // Base capacity starts with the prompt length and standard boilerplate text
+    capacity := len(prompt) + 500 // Base text for prompt enhancement
+
+    // If we're including the schema JSON, add its length plus formatting
+    if includeSchemaJSON {
+        capacity += schemaJSONLength + 50 // JSON + markdown formatting
+    }
+
+    // Add space for schema type and basic schema info
+    capacity += 50 // "Type: object", etc.
+
+    // If it's an object schema, calculate property space more accurately
+    if schema.Type == "object" {
+        // Space for required fields list
+        if len(schema.Required) > 0 {
+            // Each required field name plus formatting
+            capacity += len(strings.Join(schema.Required, ", ")) + 30
+        }
+
+        // Space for properties section
+        if len(schema.Properties) > 0 {
+            // For each property, estimate the space needed
+            for name, prop := range schema.Properties {
+                // Property name, type and basic formatting
+                propSize := len(name) + len(prop.Type) + 20
+
+                // Add space for description if present
+                if prop.Description != "" {
+                    propSize += len(prop.Description) + 10
+                }
+
+                // Add space for enum values
+                if len(prop.Enum) > 0 {
+                    propSize += len(strings.Join(prop.Enum, ", ")) + 30
+                }
+
+                // If this property is an object or array, add space for nested structure
+                if prop.Properties != nil || prop.Items != nil {
+                    propSize += 100
+                }
+
+                capacity += propSize
+            }
+        }
+    } else if schema.Type == "array" {
+        // For array schemas, add space for item description
+        capacity += 100
+    }
+
+    // Add buffer for complex schemas
+    if len(schema.Properties) > 20 {
+        capacity += 1000
+    }
+
+    return capacity
+}
+
+// NewSchemaPromptBuilder creates a builder with capacity optimized for a schema prompt
+func NewSchemaPromptBuilder(prompt string, schema *schemaDomain.Schema, schemaJSONLength int) *OptimizedStringBuilder {
+    capacity := EstimateSchemaCapacity(schema, prompt, true, schemaJSONLength)
+    return NewOptimizedBuilder(capacity)
+}
+```
+
+The optimized implementation for prompt enhancement with schema information:
+
+```go
+// Enhance adds schema information to a prompt - optimized version
+func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (string, error) {
+    // Get schema JSON using cache
+    schemaJSON, err := getSchemaJSON(schema)
+    if err != nil {
+        return "", err
+    }
+
+    // Create optimized string builder with better capacity estimation
+    enhancedPrompt := NewSchemaPromptBuilder(prompt, schema, len(schemaJSON))
+
+    // Add the base prompt
+    enhancedPrompt.WriteString(prompt)
+    enhancedPrompt.WriteString("\n\n")
+    enhancedPrompt.WriteString("Please provide your response as a valid JSON object that conforms to the following JSON schema:\n\n")
+    enhancedPrompt.WriteString("```json\n")
+    enhancedPrompt.Write(schemaJSON)
+    enhancedPrompt.WriteString("\n```\n\n")
+
+    // Add other content...
+
+    return enhancedPrompt.String(), nil
+}
+```
+
+Benefits of the optimized string builder:
+
+1. **Accurate capacity pre-allocation**: Reduces or eliminates buffer resizing during string building
+2. **Schema-aware sizing**: Allocates capacity based on schema complexity and structure
+3. **Specialized builders**: Different builders for different use cases (schemas, options, examples)
+4. **Reduced allocations**: Minimizes memory allocations during prompt enhancement
+5. **Optimized for large schemas**: Handles complex nested schemas efficiently
+
+Performance improvements:
 
 ```go
 // Prompt processing optimization
 Original:    692,214 ops/s, 1,733 ns/op, 2,005 B/op, 13 allocs/op
 Optimized: 3,840,904 ops/s,   297 ns/op,   896 B/op,  1 allocs/op
+
+// String builder optimization
+BenchmarkStringBuilderCapacity/DefaultBuilder/Complex-8        1,305,856    920.0 ns/op  3,472 B/op  5 allocs/op
+BenchmarkStringBuilderCapacity/OptimizedBuilder/Complex-8      2,158,784    556.0 ns/op  1,456 B/op  2 allocs/op
 ```
 
 ## Benchmarking

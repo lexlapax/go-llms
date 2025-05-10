@@ -27,7 +27,7 @@
     - [x] P0: Improve schema caching with better key generation
     - [x] P0: Optimize object clearing operations for large response objects
     - [x] P1: Add expiration policy to schema cache to prevent unbounded growth
-    - [ ] P1: Optimize string builder capacity estimation for complex schemas
+    - [x] P1: Optimize string builder capacity estimation for complex schemas
 
   - [ ] Phase 3: Advanced Optimizations (After Initial Improvements)
     - [ ] P1: Implement adaptive channel buffer sizing based on usage patterns
