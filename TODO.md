@@ -24,9 +24,9 @@
 
   - [ ] Phase 2: High-Impact Optimizations (Quick Wins)
     - [x] P0: Optimize schema JSON marshaling with faster alternatives
-    - [ ] P0: Improve schema caching with better key generation
+    - [x] P0: Improve schema caching with better key generation
     - [ ] P0: Optimize object clearing operations for large response objects
-    - [ ] P1: Add expiration policy to schema cache to prevent unbounded growth
+    - [x] P1: Add expiration policy to schema cache to prevent unbounded growth
     - [ ] P1: Optimize string builder capacity estimation for complex schemas
 
   - [ ] Phase 3: Advanced Optimizations (After Initial Improvements)
