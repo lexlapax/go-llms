@@ -290,9 +290,137 @@ messages := []domain.Message{
     {Role: domain.RoleUser, Content: "Tell me about machine learning."},
 }
 response, err := provider.GenerateMessage(ctx, messages)
+
+// Stream a response
+stream, err := provider.Stream(ctx, "Explain quantum computing step by step.")
+if err != nil {
+    // Handle error
+}
+
+for token := range stream {
+    fmt.Print(token.Text)
+    if token.Finished {
+        fmt.Println()
+    }
+}
+
+// Generate structured output
+type Recipe struct {
+    Name        string   `json:"name"`
+    Ingredients []string `json:"ingredients"`
+    Steps       []string `json:"steps"`
+    PrepTime    int      `json:"prepTime"`
+}
+
+schema := schema.GenerateSchema(Recipe{})
+result, err := provider.GenerateWithSchema(
+    ctx,
+    "Create a recipe for chocolate chip cookies",
+    schema,
+)
 ```
 
-The Gemini provider supports Google's Gemini models.
+The Gemini provider supports Google's AI models including:
+
+- **gemini-2.0-flash-lite** - Fast, cost-effective model for everyday tasks (recommended default)
+- **gemini-2.0-flash** - Balanced model for general use cases
+- **gemini-2.0-pro** - Advanced model for complex reasoning and generation
+- **gemini-1.5-flash** - Legacy model for basic tasks
+- **gemini-1.5-pro** - Legacy model with strong capabilities
+
+#### Gemini-Specific Features
+
+**1. Generation Configuration Options**
+
+Gemini's generation parameters can be fine-tuned using the `GeminiGenerationConfigOption`:
+
+```go
+generationConfig := domain.NewGeminiGenerationConfigOption().
+    WithTemperature(0.7).           // Controls randomness (0.0-1.0)
+    WithTopK(40).                   // Limits token selection to top K candidates
+    WithTopP(0.95).                 // Nucleus sampling parameter (0.0-1.0)
+    WithMaxOutputTokens(1024).      // Maximum response length
+    WithCandidateCount(1).          // Number of response candidates
+    WithStopSequences([]string{"END"}) // Custom stop sequences
+```
+
+**2. Safety Settings**
+
+Control content filtering with detailed safety settings:
+
+```go
+safetySettings := []map[string]interface{}{
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_ONLY_HIGH",
+    },
+    {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+}
+safetySettingsOption := domain.NewGeminiSafetySettingsOption(safetySettings)
+
+// Apply the safety settings when creating the provider
+provider := provider.NewGeminiProvider(
+    apiKey,
+    "gemini-2.0-flash-lite",
+    safetySettingsOption,
+)
+```
+
+Available safety categories:
+- `HARM_CATEGORY_HARASSMENT`
+- `HARM_CATEGORY_HATE_SPEECH`
+- `HARM_CATEGORY_SEXUALLY_EXPLICIT`
+- `HARM_CATEGORY_DANGEROUS_CONTENT`
+
+Available threshold levels (from most to least restrictive):
+- `BLOCK_LOW_AND_ABOVE`
+- `BLOCK_MEDIUM_AND_ABOVE`
+- `BLOCK_ONLY_HIGH`
+- `BLOCK_NONE`
+
+**3. Message Conversion**
+
+The Gemini provider handles role mapping from Go-LLMs standard roles to Gemini's format:
+- `RoleUser` → Mapped to Gemini's "user" role
+- `RoleAssistant` → Mapped to Gemini's "model" role
+- `RoleSystem` → Handled as a "user" message with special formatting
+
+**4. Streaming with Server-Sent Events**
+
+Gemini streaming uses Server-Sent Events (SSE) format with the required `alt=sse` parameter:
+
+```go
+// The streaming implementation automatically adds the alt=sse parameter
+stream, err := provider.Stream(ctx, "Tell me a story about a dragon.")
+```
+
+**5. Error Handling**
+
+Gemini-specific errors are mapped to standard error types for consistent handling:
+
+```go
+// Example of catching a specific error type
+response, err := provider.Generate(ctx, "Complex prompt that might be filtered")
+if err != nil {
+    if errors.Is(err, domain.ErrContentFiltered) {
+        fmt.Println("Content was filtered by Gemini's safety system")
+        // Handle appropriately...
+    } else {
+        fmt.Printf("Other error: %v\n", err)
+    }
+}
+```
 
 ### Mock Provider
 
