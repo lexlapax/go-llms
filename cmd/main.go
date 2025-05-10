@@ -66,6 +66,7 @@ func init() {
 	rootCmd.AddCommand(newCompleteCmd())
 	rootCmd.AddCommand(newAgentCmd())
 	rootCmd.AddCommand(newStructuredCmd())
+	rootCmd.AddCommand(newCompletionCmd())
 }
 
 func initConfig() {
@@ -1026,5 +1027,63 @@ func newStructuredCmd() *cobra.Command {
 	cmd.Flags().Bool("validate", true, "Validate output against schema")
 	cmd.Flags().Float32P("temperature", "t", 0.7, "Temperature for generation")
 	cmd.Flags().Int("max-tokens", 1000, "Maximum tokens to generate")
+	return cmd
+}
+
+func newCompletionCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "completion [bash|zsh|fish|powershell]",
+		Short: "Generate shell completion scripts",
+		Long: `To load completions:
+
+Bash:
+  $ source <(go-llms completion bash)
+
+  # To load completions for each session, execute once:
+  # Linux:
+  $ go-llms completion bash > /etc/bash_completion.d/go-llms
+  
+  # macOS (requires bash-completion package):
+  $ go-llms completion bash > $(brew --prefix)/etc/bash_completion.d/go-llms
+
+Zsh:
+  # If shell completion is not already enabled in your environment,
+  # you will need to enable it. You can execute the following once:
+  $ echo "autoload -U compinit; compinit" >> ~/.zshrc
+
+  # To load completions for each session, execute once:
+  $ go-llms completion zsh > "${fpath[1]}/_go-llms"
+
+  # You will need to start a new shell for this setup to take effect.
+
+Fish:
+  $ go-llms completion fish | source
+
+  # To load completions for each session, execute once:
+  $ go-llms completion fish > ~/.config/fish/completions/go-llms.fish
+
+PowerShell:
+  PS> go-llms completion powershell | Out-String | Invoke-Expression
+
+  # To load completions for every new session, run:
+  PS> go-llms completion powershell > go-llms.ps1
+  # and source this file from your PowerShell profile.
+`,
+		DisableFlagsInUseLine: true,
+		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+		Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+		Run: func(cmd *cobra.Command, args []string) {
+			switch args[0] {
+			case "bash":
+				cmd.Root().GenBashCompletion(os.Stdout)
+			case "zsh":
+				cmd.Root().GenZshCompletion(os.Stdout)
+			case "fish":
+				cmd.Root().GenFishCompletion(os.Stdout, true)
+			case "powershell":
+				cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+			}
+		},
+	}
 	return cmd
 }

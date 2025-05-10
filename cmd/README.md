@@ -161,7 +161,7 @@ Example:
 go-llms agent "What is 25 * 42?"
 
 # Agent with web tool enabled
-go-llms agent --tools calculator,date,web "What is today's date and what is the title of example.com?"
+go-llms agent --tools calculator,date,web_fetch "What is today's date and what is the title of example.com?"
 
 # Agent with file tools and custom system prompt
 go-llms agent --tools calculator,date,read_file,write_file \
