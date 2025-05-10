@@ -66,7 +66,7 @@
     <!-- LLM Provider Box -->
     <rect x="350" y="40" width="200" height="60" class="box llm" />
     <text x="450" y="70" class="title">LLM Provider</text>
-    <text x="450" y="90" class="subtitle">(OpenAI, Anthropic, etc.)</text>
+    <text x="450" y="90" class="subtitle">(OpenAI, Anthropic, Gemini, etc.)</text>
     
     <!-- Tools Boxes -->
     <rect x="50" y="150" width="150" height="60" class="box tool" />

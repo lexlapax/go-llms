@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="900" height="650" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="1050" height="650" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <style>
         .box {
             fill: #f0f0f0;
@@ -22,6 +22,9 @@
             fill: #fff2e6;
         }
         .provider3 {
+            fill: #e6fff2;
+        }
+        .provider4 {
             fill: #f2e6ff;
         }
         .strategy {
@@ -68,39 +71,43 @@
     <text x="450" y="90" class="subtitle">User Code</text>
     
     <!-- Multi Provider Box -->
-    <rect x="300" y="150" width="300" height="80" class="box multi" />
+    <rect x="250" y="150" width="400" height="80" class="box multi" />
     <text x="450" y="180" class="title">Multi-Provider</text>
     <text x="450" y="200" class="subtitle">Provider Orchestration</text>
     <text x="450" y="220" class="subtitle">Result Processing</text>
     
     <!-- Provider Boxes -->
-    <rect x="100" y="300" width="150" height="70" class="box provider1" />
-    <text x="175" y="330" class="title">OpenAI Provider</text>
-    <text x="175" y="350" class="subtitle">Fast, Reliable</text>
-    
-    <rect x="375" y="300" width="150" height="70" class="box provider2" />
-    <text x="450" y="330" class="title">Anthropic Provider</text>
-    <text x="450" y="350" class="subtitle">High Quality</text>
-    
-    <rect x="650" y="300" width="150" height="70" class="box provider3" />
-    <text x="725" y="330" class="title">Custom Provider</text>
-    <text x="725" y="350" class="subtitle">Specialized Tasks</text>
+    <rect x="75" y="300" width="150" height="70" class="box provider1" />
+    <text x="150" y="330" class="title">OpenAI Provider</text>
+    <text x="150" y="350" class="subtitle">Fast, Reliable</text>
+
+    <rect x="275" y="300" width="150" height="70" class="box provider2" />
+    <text x="350" y="330" class="title">Anthropic Provider</text>
+    <text x="350" y="350" class="subtitle">High Quality</text>
+
+    <rect x="475" y="300" width="150" height="70" class="box provider3" />
+    <text x="550" y="330" class="title">Gemini Provider</text>
+    <text x="550" y="350" class="subtitle">Google AI Models</text>
+
+    <rect x="675" y="300" width="150" height="70" class="box provider4" />
+    <text x="750" y="330" class="title">Custom Provider</text>
+    <text x="750" y="350" class="subtitle">Specialized Tasks</text>
     
     <!-- Strategy Boxes -->
-    <rect x="150" y="500" width="180" height="80" class="box strategy" />
-    <text x="240" y="530" class="title">Fastest Strategy</text>
-    <text x="240" y="550" class="subtitle">Returns first response</text>
-    <text x="240" y="570" class="subtitle">Race providers</text>
-    
+    <rect x="100" y="500" width="180" height="80" class="box strategy" />
+    <text x="190" y="530" class="title">Fastest Strategy</text>
+    <text x="190" y="550" class="subtitle">Returns first response</text>
+    <text x="190" y="570" class="subtitle">Race providers</text>
+
     <rect x="360" y="500" width="180" height="80" class="box strategy" />
     <text x="450" y="530" class="title">Primary Strategy</text>
     <text x="450" y="550" class="subtitle">Try primary first</text>
     <text x="450" y="570" class="subtitle">Fallback to others on error</text>
-    
-    <rect x="570" y="500" width="180" height="80" class="box strategy" />
-    <text x="660" y="530" class="title">Consensus Strategy</text>
-    <text x="660" y="550" class="subtitle">Compare results</text>
-    <text x="660" y="570" class="subtitle">Return most common/similar</text>
+
+    <rect x="620" y="500" width="180" height="80" class="box strategy" />
+    <text x="710" y="530" class="title">Consensus Strategy</text>
+    <text x="710" y="550" class="subtitle">Compare results</text>
+    <text x="710" y="570" class="subtitle">Return most common/similar</text>
     
     <!-- Arrows -->
     <!-- Client to Multi-Provider -->
@@ -112,19 +119,21 @@
     <text x="495" y="130" class="label" style="fill: #007700">Result</text>
     
     <!-- Multi-Provider to Individual Providers -->
-    <path d="M 300 190 L 175 190 L 175 300" class="arrow" />
-    <path d="M 450 230 L 450 300" class="arrow" />
-    <path d="M 600 190 L 725 190 L 725 300" class="arrow" />
-    
+    <path d="M 280 190 L 150 190 L 150 300" class="arrow" />
+    <path d="M 350 230 L 350 300" class="arrow" />
+    <path d="M 550 230 L 550 300" class="arrow" />
+    <path d="M 620 190 L 750 190 L 750 300" class="arrow" />
+
     <!-- Providers to Multi-Provider -->
-    <path d="M 175 300 L 175 240 L 300 240" class="arrow" style="stroke: #007700" />
-    <path d="M 450 300 L 450 230" class="arrow" style="stroke: #007700" />
-    <path d="M 725 300 L 725 240 L 600 240" class="arrow" style="stroke: #007700" />
+    <path d="M 150 300 L 150 240 L 280 240" class="arrow" style="stroke: #007700" />
+    <path d="M 350 300 L 350 230" class="arrow" style="stroke: #007700" />
+    <path d="M 550 300 L 550 230" class="arrow" style="stroke: #007700" />
+    <path d="M 750 300 L 750 240 L 620 240" class="arrow" style="stroke: #007700" />
     
     <!-- Strategies to Multi-Provider -->
-    <path d="M 240 500 L 240 400 L 360 400 L 360 230" class="arrow strategy-arrow" style="stroke: #0000aa" />
+    <path d="M 190 500 L 190 400 L 350 400 L 350 230" class="arrow strategy-arrow" style="stroke: #0000aa" />
     <path d="M 450 500 L 450 230" class="arrow strategy-arrow" style="stroke: #0000aa" />
-    <path d="M 660 500 L 660 400 L 540 400 L 540 230" class="arrow strategy-arrow" style="stroke: #0000aa" />
+    <path d="M 710 500 L 710 400 L 550 400 L 550 230" class="arrow strategy-arrow" style="stroke: #0000aa" />
     
     <!-- Strategy Configuration Label -->
     <text x="450" y="420" class="label" style="fill: #0000aa; font-size: 14px;">Strategy Configuration</text>

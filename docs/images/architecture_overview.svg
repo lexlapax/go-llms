@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="800" height="620" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <style>
         .box {
             fill: #f0f0f0;
@@ -75,28 +75,29 @@
     <line x1="670" y1="180" x2="670" y2="230" class="arrow" />
     
     <!-- Component Details -->
-    <rect x="50" y="340" width="160" height="120" class="box" />
+    <rect x="50" y="340" width="160" height="140" class="box" />
     <text x="130" y="365" class="title">Schema Features</text>
     <text x="130" y="390" class="subtitle">- Schema Definitions</text>
     <text x="130" y="410" class="subtitle">- Validation Rules</text>
     <text x="130" y="430" class="subtitle">- Type Coercion</text>
     <text x="130" y="450" class="subtitle">- Code Generation</text>
     
-    <rect x="230" y="340" width="160" height="120" class="box" />
+    <rect x="230" y="340" width="160" height="140" class="box" />
     <text x="310" y="365" class="title">Provider Features</text>
     <text x="310" y="390" class="subtitle">- OpenAI Integration</text>
     <text x="310" y="410" class="subtitle">- Anthropic Integration</text>
-    <text x="310" y="430" class="subtitle">- Multi-Provider</text>
-    <text x="310" y="450" class="subtitle">- Message Handling</text>
+    <text x="310" y="430" class="subtitle">- Gemini Integration</text>
+    <text x="310" y="450" class="subtitle">- Multi-Provider</text>
+    <text x="310" y="470" class="subtitle">- Message Handling</text>
     
-    <rect x="410" y="340" width="160" height="120" class="box" />
+    <rect x="410" y="340" width="160" height="140" class="box" />
     <text x="490" y="365" class="title">Processor Features</text>
     <text x="490" y="390" class="subtitle">- JSON Extraction</text>
     <text x="490" y="410" class="subtitle">- Prompt Enhancement</text>
     <text x="490" y="430" class="subtitle">- Schema References</text>
     <text x="490" y="450" class="subtitle">- Type Mapping</text>
     
-    <rect x="590" y="340" width="160" height="120" class="box" />
+    <rect x="590" y="340" width="160" height="140" class="box" />
     <text x="670" y="365" class="title">Agent Features</text>
     <text x="670" y="390" class="subtitle">- Tool Integration</text>
     <text x="670" y="410" class="subtitle">- Execution Flow</text>
@@ -110,5 +111,5 @@
     <line x1="670" y1="290" x2="670" y2="340" class="arrow" />
     
     <!-- Title -->
-    <text x="400" y="520" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle">Go-LLMs Architecture Overview</text>
+    <text x="400" y="540" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle">Go-LLMs Architecture Overview</text>
 </svg>
