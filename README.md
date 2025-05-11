@@ -1,6 +1,11 @@
 # Go-LLMs: A Unified Go Library for LLM Integration
-Was looking for a way to talk to various llm provider via go, but didn't want heavy sdk dependencies. Also didn't want largish agentic frameworks, which are good, but was going to be too much to handle.
-At the end of the day, ended up creating this framework/library to use internally. Please use at your own risk, it's used internally by me. Will try to minimize library API changes as the needs evolve, but no guarantees. I do have acknowledge help from various llm based coding tools, esp in documentation and testing - aider, claude code, chatgtp, claude desktop, gemini code. thnx much. 
+Was looking for a way to talk to various llm provider via go, but didn't want heavy sdk dependencies. Also didn't want largish agentic frameworks, most of which are good. They were too much to handle.
+
+At the end of the day, ended up creating this framework/library to use internally. 
+
+Please use at your own risk, it's used internally by me. Will try to minimize library API changes as the needs evolve, but no guarantees. 
+
+I do have to acknowledge help from various llm based coding tools, esp in documentation and testing - aider, claude code, chatgtp, claude desktop, gemini code. thnx much. Much kudos to the various forums/communities in reddit, hackernews, x (twitter) and youtube, mucho gracias for insights. and google - search still rocks.
 
 ## Introduction
 
