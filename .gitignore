@@ -30,10 +30,13 @@ coverage.html
 *.swp
 *.swo
 .DS_Store
+.aider/
+.claude/
+CLAUDE.md
 
 # Debug files
 debug
 __debug_bin
-**/.claude/settings.local.json
 *.log
 *.prof
+
