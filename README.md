@@ -1,4 +1,8 @@
 # Go-LLMs: A Unified Go Library for LLM Integration
+Was looking for a way to talk to various llm provider via go, but didn't want heavy sdk dependencies. Also didn't want largish agentic frameworks, which are good, but was going to be too much to handle.
+At the end of the day, ended up creating this framework/library to use internally. Please use at your own risk, it's used internally by me. Will try to minimize library API changes as the needs evolve, but no guarantees. I do have acknowledge help from various llm based coding tools, esp in documentation and testing - aider, claude code, chatgtp, claude desktop, gemini code. thnx much. 
+
+## Introduction
 
 Go-LLMs is a Go library that provides a simplified, unified interface to interact with various LLM providers while offering robust data validation and agent tooling. It combines structured output processing (inspired by pydantic-ai), a consistent provider interface, and flexible agent workflows in a single, cohesive Go package.
 
