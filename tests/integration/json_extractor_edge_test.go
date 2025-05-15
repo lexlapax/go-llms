@@ -10,8 +10,6 @@ import (
 
 func TestJSONExtractorEdgeCases(t *testing.T) {
 	t.Run("MultipleJSONObjects", func(t *testing.T) {
-		// Skip test as the current JSON extractor doesn't fully support multiple objects
-		t.Skip("Multiple JSON objects extraction not fully implemented yet")
 		// Test extracting the first of multiple JSON objects
 		input := `{"first": true} {"second": true} {"third": true}`
 		result := processor.ExtractJSON(input)
@@ -24,8 +22,6 @@ func TestJSONExtractorEdgeCases(t *testing.T) {
 	})
 
 	t.Run("MalformedButRecoverableJSON", func(t *testing.T) {
-		// Skip test as the current JSON extractor doesn't support malformed JSON recovery
-		t.Skip("Malformed JSON recovery not fully implemented yet")
 		// Extra comma is technically invalid JSON but common in LLM responses
 		input := `{"name": "John", "age": 30, }`
 		result := processor.ExtractJSON(input)
@@ -58,19 +54,19 @@ func TestJSONExtractorEdgeCases(t *testing.T) {
 
 	t.Run("SpecialCharacters", func(t *testing.T) {
 		// JSON with Unicode characters
-		input := `{"text": "Unicode: 你好, ñ, é, ß, 🚀"}`
-		result := processor.ExtractJSON(input)
-		assert.JSONEq(t, input, result)
+		unicodeInput := `{"text": "Unicode: 你好, ñ, é, ß, 🚀"}`
+		unicodeResult := processor.ExtractJSON(unicodeInput)
+		assert.JSONEq(t, unicodeInput, unicodeResult)
 
 		// Escaped characters
-		input = `{"text": "Escaped: \"quotes\" and \\backslashes\\"}`
-		result = processor.ExtractJSON(input)
-		assert.JSONEq(t, input, result)
+		escapedInput := `{"text": "Escaped: \"quotes\" and \\backslashes\\"}`
+		escapedResult := processor.ExtractJSON(escapedInput)
+		assert.JSONEq(t, escapedInput, escapedResult)
 
 		// Escaped Unicode
-		input = `{"text": "\u00F1 \u0259"}`
-		result = processor.ExtractJSON(input)
-		assert.JSONEq(t, input, result)
+		unicodeEscapedInput := `{"text": "\u00F1 \u0259"}`
+		unicodeEscapedResult := processor.ExtractJSON(unicodeEscapedInput)
+		assert.JSONEq(t, unicodeEscapedInput, unicodeEscapedResult)
 	})
 
 	t.Run("VeryLargeJSON", func(t *testing.T) {
@@ -106,45 +102,43 @@ func TestJSONExtractorEdgeCases(t *testing.T) {
 	})
 
 	t.Run("JSONFragments", func(t *testing.T) {
-		// Skip test as the JSON fragment handling is not fully implemented
-		t.Skip("JSON fragment handling not fully implemented yet")
 		// Test with key without value
-		input := `{"key":}`
-		result := processor.ExtractJSON(input)
-		assert.Equal(t, "", result, "Invalid JSON key without value should not be extracted")
+		input1 := `{"key":}`
+		result1 := processor.ExtractJSON(input1)
+		assert.Equal(t, "", result1, "Invalid JSON key without value should not be extracted")
 
 		// Test with proper key but missing comma
-		input = `{"key1": true "key2": false}`
-		result = processor.ExtractJSON(input)
-		assert.Equal(t, "", result, "Invalid JSON with missing comma should not be extracted")
+		input2 := `{"key1": true "key2": false}`
+		result2 := processor.ExtractJSON(input2)
+		assert.Equal(t, "", result2, "Invalid JSON with missing comma should not be extracted")
 
 		// Test with JSON fragment but not a complete object
-		input = `"key": "value"`
-		result = processor.ExtractJSON(input)
-		assert.Equal(t, "", result, "JSON fragment should not be extracted")
+		input3 := `"key": "value"`
+		result3 := processor.ExtractJSON(input3)
+		assert.Equal(t, "", result3, "JSON fragment should not be extracted")
 	})
 
 	t.Run("EdgeWhitespace", func(t *testing.T) {
 		// Test with whitespace at various positions
-		input := `
+		input1 := `
 		
 		
 		{"spaced": true}
 		
 		
 		`
-		result := processor.ExtractJSON(input)
-		assert.JSONEq(t, `{"spaced": true}`, result)
+		result1 := processor.ExtractJSON(input1)
+		assert.JSONEq(t, `{"spaced": true}`, result1)
 
 		// Test with tabs and other whitespace characters
-		input = "\t\t\t{\"tabbed\": true}\t\t\t"
-		result = processor.ExtractJSON(input)
-		assert.JSONEq(t, `{"tabbed": true}`, result)
+		input2 := "\t\t\t{\"tabbed\": true}\t\t\t"
+		result2 := processor.ExtractJSON(input2)
+		assert.JSONEq(t, `{"tabbed": true}`, result2)
 
 		// Test with no whitespace
-		input = `{"compact":true}`
-		result = processor.ExtractJSON(input)
-		assert.JSONEq(t, `{"compact": true}`, result)
+		input3 := `{"compact":true}`
+		result3 := processor.ExtractJSON(input3)
+		assert.JSONEq(t, `{"compact": true}`, result3)
 	})
 
 	t.Run("ObjectsWithArraysContainingObjects", func(t *testing.T) {

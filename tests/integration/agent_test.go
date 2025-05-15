@@ -28,7 +28,7 @@ func TestEndToEndAgent(t *testing.T) {
 	calculatorTool := tools.NewTool(
 		"calculator",
 		"Perform arithmetic calculations",
-		func(params map[string]interface{}) (interface{}, error) {
+		func(ctx context.Context, params map[string]interface{}) (interface{}, error) {
 			operation, ok := params["operation"].(string)
 			if !ok {
 				return nil, fmt.Errorf("operation must be a string")
@@ -115,7 +115,16 @@ func TestEndToEndAgent(t *testing.T) {
 		// Process tool response
 		var calculationMentioned bool
 		for _, msg := range messages {
-			if msg.Role == ldomain.RoleTool || strings.Contains(msg.Content, "calculator") {
+			// Extract text content from the ContentPart array
+			var textContent string
+			for _, part := range msg.Content {
+				if part.Type == ldomain.ContentTypeText {
+					textContent = part.Text
+					break
+				}
+			}
+			
+			if msg.Role == ldomain.RoleTool || strings.Contains(textContent, "calculator") {
 				calculationMentioned = true
 				break
 			}
@@ -137,107 +146,32 @@ func TestEndToEndAgent(t *testing.T) {
 	// response to decide which tools to call, but here we just want to test
 	// that our test mock works properly
 
-	// First call to simulate the initial prompt
-	response1, err := mockProvider.GenerateMessage(
-		context.Background(),
-		[]ldomain.Message{
-			{Role: ldomain.RoleUser, Content: "Calculate 21 times 2"},
-		},
-	)
+	// Run the agent with the test query
+	result, err := agent.Run(context.Background(), "Calculate 21 times 2")
 	if err != nil {
-		t.Fatalf("First GenerateMessage call failed: %v", err)
+		t.Fatalf("Agent Run failed: %v", err)
 	}
 
-	// Second call to simulate getting the final result
-	response2, err := mockProvider.GenerateMessage(
-		context.Background(),
-		[]ldomain.Message{
-			{Role: ldomain.RoleUser, Content: "Calculate 21 times 2"},
-			{Role: ldomain.RoleAssistant, Content: response1.Content},
-		},
-	)
-	if err != nil {
-		t.Fatalf("Second GenerateMessage call failed: %v", err)
-	}
-
-	// Verify the responses contain the expected information
-	if !contains(response1.Content, "calculator") {
-		t.Errorf("Expected first response to mention calculator, got: %s", response1.Content)
-	}
-
-	if !contains(response2.Content, "42") {
-		t.Errorf("Expected second response to contain '42', got: %s", response2.Content)
-	}
-
-	// Check that the provider was called the expected number of times
-	if callCount != 2 {
-		t.Errorf("Expected 2 calls to GenerateMessage, got: %d", callCount)
-	}
-}
-
-// TestAgentWithSchema tests the agent with schema validation
-func TestAgentWithSchema(t *testing.T) {
-	// Create a mock provider
-	mockProvider := provider.NewMockProvider()
-
-	// Create an agent
-	agent := workflow.NewAgent(mockProvider)
-
-	// Add a system prompt
-	agent.SetSystemPrompt("You are a helpful assistant that can answer questions.")
-
-	// Set up the mock provider to return a valid schema result
-	mockProvider.WithGenerateWithSchemaFunc(func(ctx context.Context, prompt string, schema *sdomain.Schema, options ...ldomain.Option) (interface{}, error) {
-		// Return a valid schema result
-		return map[string]interface{}{
-			"answer":    "The calculation result is 42.",
-			"reasoning": "I used the calculator tool to multiply 21 by 2.",
-		}, nil
-	})
-
-	// Define a schema for the output
-	schema := &sdomain.Schema{
-		Type: "object",
-		Properties: map[string]sdomain.Property{
-			"answer": {
-				Type:        "string",
-				Description: "The final answer",
-			},
-			"reasoning": {
-				Type:        "string",
-				Description: "The reasoning process",
-			},
-		},
-		Required: []string{"answer"},
-	}
-
-	// Run the agent with a schema
-	result, err := agent.RunWithSchema(context.Background(), "Calculate 21*2", schema)
-	if err != nil {
-		t.Fatalf("Agent run with schema failed: %v", err)
-	}
-
-	// Check the result
-	data, ok := result.(map[string]interface{})
+	// Verify the agent responded with calculator tool call and result
+	strResult, ok := result.(string)
 	if !ok {
-		t.Fatalf("Expected map[string]interface{}, got: %T", result)
+		t.Fatalf("Expected string result, got: %T", result)
 	}
 
-	// Verify the structure
-	answer, ok := data["answer"].(string)
-	if !ok || !contains(answer, "42") {
-		t.Errorf("Expected answer to contain '42', got: %v", data["answer"])
+	if !strings.Contains(strResult, "42") {
+		t.Errorf("Expected result to contain '42', got: %s", strResult)
 	}
 
-	reasoning, ok := data["reasoning"].(string)
-	if !ok || !contains(reasoning, "calculator") {
-		t.Errorf("Expected reasoning to mention calculator, got: %v", data["reasoning"])
+	// Check that the agent used the calculator tool (will be mentioned in mock)
+	if !strings.Contains(strResult, "calculator") {
+		t.Errorf("Expected result to mention calculator tool, got: %s", strResult)
 	}
 }
 
-// TestAgentWithMultipleTools tests the agent with multiple tools
-func TestAgentWithMultipleTools(t *testing.T) {
-	// Create a mock provider with controlled responses
+// TestAgentWithMultipleMessagesAndTools demonstrates a more complex agent workflow
+// with multiple messages and tool invocations
+func TestAgentWithMultipleMessagesAndTools(t *testing.T) {
+	// Create a mock provider
 	mockProvider := provider.NewMockProvider()
 
 	// Create an agent
@@ -246,13 +180,11 @@ func TestAgentWithMultipleTools(t *testing.T) {
 	// Set system prompt
 	agent.SetSystemPrompt("You are a helpful assistant that can answer questions and use tools.")
 
-	// Create a set of test tools
-
-	// Calculator tool
+	// Create a calculator tool
 	calculatorTool := tools.NewTool(
 		"calculator",
 		"Perform arithmetic calculations",
-		func(params map[string]interface{}) (interface{}, error) {
+		func(ctx context.Context, params map[string]interface{}) (interface{}, error) {
 			operation, ok := params["operation"].(string)
 			if !ok {
 				return nil, fmt.Errorf("operation must be a string")
@@ -268,21 +200,24 @@ func TestAgentWithMultipleTools(t *testing.T) {
 				return nil, fmt.Errorf("b must be a number")
 			}
 
+			var result float64
 			switch operation {
 			case "add":
-				return a + b, nil
+				result = a + b
 			case "subtract":
-				return a - b, nil
+				result = a - b
 			case "multiply":
-				return a * b, nil
+				result = a * b
 			case "divide":
 				if b == 0 {
 					return nil, fmt.Errorf("division by zero")
 				}
-				return a / b, nil
+				result = a / b
 			default:
 				return nil, fmt.Errorf("unknown operation: %s", operation)
 			}
+			
+			return result, nil
 		},
 		&sdomain.Schema{
 			Type: "object",
@@ -305,43 +240,23 @@ func TestAgentWithMultipleTools(t *testing.T) {
 		},
 	)
 
-	// Weather tool
+	// Create a weather tool (mock)
 	weatherTool := tools.NewTool(
 		"weather",
-		"Get the weather for a location",
-		func(params map[string]interface{}) (interface{}, error) {
+		"Get the current weather for a location",
+		func(ctx context.Context, params map[string]interface{}) (interface{}, error) {
 			location, ok := params["location"].(string)
 			if !ok {
 				return nil, fmt.Errorf("location must be a string")
 			}
 
-			// Mock weather data based on location
-			switch location {
-			case "New York":
-				return map[string]interface{}{
-					"temperature": 72.5,
-					"condition":   "sunny",
-					"humidity":    45,
-				}, nil
-			case "London":
-				return map[string]interface{}{
-					"temperature": 62.3,
-					"condition":   "rainy",
-					"humidity":    80,
-				}, nil
-			case "Tokyo":
-				return map[string]interface{}{
-					"temperature": 82.1,
-					"condition":   "cloudy",
-					"humidity":    65,
-				}, nil
-			default:
-				return map[string]interface{}{
-					"temperature": 70.0,
-					"condition":   "unknown",
-					"humidity":    50,
-				}, nil
-			}
+			// Return mock weather data
+			return map[string]interface{}{
+				"location":    location,
+				"temperature": 22.5,
+				"conditions":  "Sunny",
+				"humidity":    45,
+			}, nil
 		},
 		&sdomain.Schema{
 			Type: "object",
@@ -355,158 +270,192 @@ func TestAgentWithMultipleTools(t *testing.T) {
 		},
 	)
 
-	// Add tools to the agent
+	// Add the tools to the agent
 	agent.AddTool(calculatorTool)
 	agent.AddTool(weatherTool)
 
-	// Create a metrics hook to track tool usage
-	metricsHook := workflow.NewMetricsHook()
-	agent.WithHook(metricsHook)
-
-	// Mock the provider's GenerateMessage response for a multi-tool scenario
-	// The scenario: User asks about weather in New York and also wants to calculate 21 * 2
-	callCount := 0
-	toolCalls := map[string]bool{}
-
+	// Sequence determines the flow of calls: weather -> calculator -> final answer
+	stage := 0
 	mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.Response, error) {
-		callCount++
-
-		// First call - simulate using weather tool
-		if callCount == 1 {
-			// Directly execute the weather tool for testing
-			params := map[string]interface{}{
-				"location": "New York",
-			}
-
-			_, _ = weatherTool.Execute(ctx, params) // Execute but ignore the result for the test
-			toolCalls["weather"] = true
-
+		stage++
+		
+		// First stage - call the weather tool
+		if stage == 1 {
+			// Return a response indicating we'll use the weather tool
 			return ldomain.Response{
-				Content: "I'll help you with the weather in New York and calculate 21 times 2. The weather in New York is sunny with a temperature of 72.5°F.",
+				Content: `{"tool": "weather", "params": {"location": "New York"}}`,
 			}, nil
 		}
-
-		// Second call - simulate using calculator tool
-		if callCount == 2 {
-			// Directly execute the calculator tool for testing
-			params := map[string]interface{}{
-				"operation": "multiply",
-				"a":         21.0,
-				"b":         2.0,
+		
+		// Second stage - weather result received, call the calculator tool
+		if stage == 2 {
+			// Check if we received the weather tool response
+			var weatherResultFound bool
+			for _, msg := range messages {
+				var textContent string
+				for _, part := range msg.Content {
+					if part.Type == ldomain.ContentTypeText {
+						textContent = part.Text
+						break
+					}
+				}
+				
+				if strings.Contains(textContent, "temperature") && strings.Contains(textContent, "New York") {
+					weatherResultFound = true
+					break
+				}
 			}
-
-			_, _ = calculatorTool.Execute(ctx, params) // Execute but ignore the result for the test
-			toolCalls["calculator"] = true
-
+			
+			if !weatherResultFound {
+				t.Logf("Weather result not found in conversation")
+			}
+			
+			// Call the calculator next
 			return ldomain.Response{
-				Content: "Now let me calculate 21 times 2. The result is 42.",
+				Content: `{"tool": "calculator", "params": {"operation": "add", "a": 15, "b": 27}}`,
 			}, nil
 		}
-
-		// Third call - provide final answer combining both tool results
+		
+		// Third stage - calculator result received, provide final answer
+		if stage >= 3 {
+			// Check if we received the calculator result
+			var calculatorResultFound bool
+			for _, msg := range messages {
+				var textContent string
+				for _, part := range msg.Content {
+					if part.Type == ldomain.ContentTypeText {
+						textContent = part.Text
+						break
+					}
+				}
+				
+				if strings.Contains(textContent, "42") && msg.Role == ldomain.RoleUser {
+					calculatorResultFound = true
+					break
+				}
+			}
+			
+			if !calculatorResultFound {
+				t.Logf("Calculator result not found in conversation")
+			}
+			
+			// Final response with no tool calls
+			return ldomain.Response{
+				Content: "I've completed the tasks. The weather in New York is 22.5°C and Sunny with 45% humidity. The sum of 15 + 27 equals 42.",
+			}, nil
+		}
+		
+		// Should never get here
 		return ldomain.Response{
-			Content: "I have both pieces of information now. The weather in New York is sunny with a temperature of 72.5°F and humidity of 45%. Also, 21 times 2 equals 42.",
+			Content: "Something went wrong.",
 		}, nil
 	})
 
-	// For the purpose of this test, we'll simulate multiple sequential interactions
-	// directly with the mock provider rather than using the agent
-
-	// First call to get weather
-	response1, err := mockProvider.GenerateMessage(
-		context.Background(),
-		[]ldomain.Message{
-			{Role: ldomain.RoleUser, Content: "What's the weather in New York? Also, calculate 21 times 2."},
-		},
-	)
+	// Run the agent with a combined query
+	result, err := agent.Run(context.Background(), "Check the weather in New York and calculate 15 + 27")
 	if err != nil {
-		t.Fatalf("First GenerateMessage call failed: %v", err)
+		t.Fatalf("Agent Run failed: %v", err)
 	}
 
-	// Verify first response has weather info
-	if !contains(response1.Content, "New York") || !contains(response1.Content, "weather") {
-		t.Errorf("Expected first response to contain weather info, got: %s", response1.Content)
+	// Verify the agent responded with both results
+	strResult, ok := result.(string)
+	if !ok {
+		t.Fatalf("Expected string result, got: %T", result)
 	}
 
-	// Manually trigger the weather tool execution for testing
-	weatherParams := map[string]interface{}{
-		"location": "New York",
+	// Output should contain weather info
+	if !strings.Contains(strings.ToLower(strResult), "new york") {
+		t.Errorf("Expected result to mention New York weather, got: %s", strResult)
 	}
-
-	var weatherErr error
-	_, weatherErr = weatherTool.Execute(context.Background(), weatherParams)
-	if weatherErr != nil {
-		t.Fatalf("Weather tool execution failed: %v", weatherErr)
+	
+	// Output should contain calculation result
+	if !strings.Contains(strResult, "42") {
+		t.Errorf("Expected result to contain '42', got: %s", strResult)
 	}
-	toolCalls["weather"] = true
-
-	// Second call for calculation
-	response2, err := mockProvider.GenerateMessage(
-		context.Background(),
-		[]ldomain.Message{
-			{Role: ldomain.RoleUser, Content: "What's the weather in New York? Also, calculate 21 times 2."},
-			{Role: ldomain.RoleAssistant, Content: response1.Content},
-		},
-	)
-	if err != nil {
-		t.Fatalf("Second GenerateMessage call failed: %v", err)
+	
+	// Verify we went through all stages
+	if stage < 3 {
+		t.Errorf("Expected to go through at least 3 stages, only went through %d", stage)
 	}
-
-	// Manually trigger the calculator tool execution for testing
-	calcParams := map[string]interface{}{
-		"operation": "multiply",
-		"a":         21.0,
-		"b":         2.0,
-	}
-
-	var calcErr error
-	_, calcErr = calculatorTool.Execute(context.Background(), calcParams)
-	if calcErr != nil {
-		t.Fatalf("Calculator tool execution failed: %v", calcErr)
-	}
-	toolCalls["calculator"] = true
-
-	// Third call for final answer
-	response3, err := mockProvider.GenerateMessage(
-		context.Background(),
-		[]ldomain.Message{
-			{Role: ldomain.RoleUser, Content: "What's the weather in New York? Also, calculate 21 times 2."},
-			{Role: ldomain.RoleAssistant, Content: response1.Content},
-			{Role: ldomain.RoleAssistant, Content: response2.Content},
-		},
-	)
-	if err != nil {
-		t.Fatalf("Third GenerateMessage call failed: %v", err)
-	}
-
-	// Check that the provider was called the expected number of times
-	if callCount != 3 {
-		t.Errorf("Expected 3 calls to GenerateMessage, got: %d", callCount)
-	}
-
-	// Check that both tools were successfully called
-	if !toolCalls["weather"] {
-		t.Errorf("Weather tool was not called")
-	}
-	if !toolCalls["calculator"] {
-		t.Errorf("Calculator tool was not called")
-	}
-
-	// Verify final response has combined info
-	finalResponse := response3.Content
-
-	if !contains(finalResponse, "New York") || !contains(finalResponse, "72.5") {
-		t.Errorf("Expected final response to contain weather info, got: %s", finalResponse)
-	}
-
-	if !contains(finalResponse, "42") {
-		t.Errorf("Expected final response to contain calculation result, got: %s", finalResponse)
-	}
+	
+	t.Logf("Successfully completed multi-step agent workflow with %d stages", stage)
 }
 
-// Helper functions
+// TestAgentWithOutputValidation verifies that the agent can validate outputs against schemas
+func TestAgentWithOutputValidation(t *testing.T) {
+	// Create a mock provider
+	mockProvider := provider.NewMockProvider()
 
-// contains checks if a string contains a substring
-func contains(s, substr string) bool {
-	return strings.Contains(s, substr)
+	// Create an agent
+	agent := workflow.NewAgent(mockProvider)
+
+	// Schema for a weather response
+	weatherSchema := &sdomain.Schema{
+		Type: "object",
+		Properties: map[string]sdomain.Property{
+			"location": {
+				Type:        "string",
+				Description: "The city name",
+			},
+			"temperature": {
+				Type:        "number",
+				Description: "The temperature in Celsius",
+			},
+			"conditions": {
+				Type:        "string",
+				Description: "Current weather conditions",
+				Enum:        []string{"Sunny", "Cloudy", "Rainy", "Snowy", "Windy"},
+			},
+		},
+		Required: []string{"location", "temperature", "conditions"},
+	}
+
+	// Mock generation with schema validation - including options parameter
+	mockProvider.WithGenerateWithSchemaFunc(func(ctx context.Context, prompt string, schema *sdomain.Schema, options ...ldomain.Option) (interface{}, error) {
+		// Validate the schema is what we expect
+		if schema.Type != "object" || len(schema.Required) != 3 {
+			return nil, fmt.Errorf("unexpected schema: %v", schema)
+		}
+
+		// Return a valid response matching the schema
+		return map[string]interface{}{
+			"location":    "New York",
+			"temperature": 22.5,
+			"conditions":  "Sunny",
+		}, nil
+	})
+
+	// Run the agent with output validation via schema
+	result, err := agent.RunWithSchema(
+		context.Background(),
+		"What's the weather in New York?",
+		weatherSchema,
+	)
+	if err != nil {
+		t.Fatalf("Agent RunWithSchema failed: %v", err)
+	}
+
+	// Verify we got a structured result conforming to the schema
+	resultMap, ok := result.(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected map result, got: %T", result)
+	}
+
+	// Check specific fields match expected values
+	loc, hasLoc := resultMap["location"]
+	if !hasLoc || loc != "New York" {
+		t.Errorf("Expected location to be 'New York', got: %v", loc)
+	}
+
+	temp, hasTemp := resultMap["temperature"]
+	if !hasTemp || temp.(float64) != 22.5 {
+		t.Errorf("Expected temperature to be 22.5, got: %v", temp)
+	}
+
+	conditions, hasConditions := resultMap["conditions"]
+	if !hasConditions || conditions != "Sunny" {
+		t.Errorf("Expected conditions to be 'Sunny', got: %v", conditions)
+	}
+
+	t.Logf("Successfully validated output against schema: %v", resultMap)
 }

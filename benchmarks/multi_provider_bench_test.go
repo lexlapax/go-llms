@@ -48,7 +48,7 @@ func BenchmarkProviderTypes(b *testing.B) {
 	// Test input data
 	prompt := "Test prompt for benchmarking"
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: "Test message for benchmarking"},
+		domain.NewTextMessage(domain.RoleUser, "Test message for benchmarking"),
 	}
 	schema := &schemaDomain.Schema{
 		Type: "object",
@@ -239,7 +239,7 @@ func BenchmarkProviderTimeout(b *testing.B) {
 	// Test input data
 	prompt := "Test prompt for timeout benchmarking"
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: "Test message for timeout benchmarking"},
+		domain.NewTextMessage(domain.RoleUser, "Test message for timeout benchmarking"),
 	}
 
 	// Timeout duration will be used for each test context
@@ -340,8 +340,8 @@ func (p *countingMockProvider) GenerateMessage(ctx context.Context, messages []d
 
 	// Create response with message content
 	var content string
-	if len(messages) > 0 {
-		content = "Mock response for message: " + messages[len(messages)-1].Content
+	if len(messages) > 0 && len(messages[len(messages)-1].Content) > 0 {
+		content = "Mock response for message: " + messages[len(messages)-1].Content[0].Text
 	} else {
 		content = "Mock response for empty messages"
 	}
@@ -424,8 +424,8 @@ func (p *countingMockProvider) StreamMessage(ctx context.Context, messages []dom
 
 		// Get the last message content for the response
 		var lastContent string
-		if len(messages) > 0 {
-			lastContent = messages[len(messages)-1].Content
+		if len(messages) > 0 && len(messages[len(messages)-1].Content) > 0 {
+			lastContent = messages[len(messages)-1].Content[0].Text
 		} else {
 			lastContent = "empty messages"
 		}
@@ -506,8 +506,8 @@ func (p *variableDelayMockProvider) GenerateMessage(ctx context.Context, message
 		return domain.Response{}, ctx.Err()
 	case <-time.After(delay):
 		var content string
-		if len(messages) > 0 {
-			content = fmt.Sprintf("Response after %v delay for: %s", delay, messages[len(messages)-1].Content)
+		if len(messages) > 0 && len(messages[len(messages)-1].Content) > 0 {
+			content = fmt.Sprintf("Response after %v delay for: %s", delay, messages[len(messages)-1].Content[0].Text)
 		} else {
 			content = fmt.Sprintf("Response after %v delay for empty messages", delay)
 		}
@@ -568,8 +568,8 @@ func (p *variableDelayMockProvider) StreamMessage(ctx context.Context, messages 
 		defer close(tokenCh)
 
 		var lastContent string
-		if len(messages) > 0 {
-			lastContent = messages[len(messages)-1].Content
+		if len(messages) > 0 && len(messages[len(messages)-1].Content) > 0 {
+			lastContent = messages[len(messages)-1].Content[0].Text
 		} else {
 			lastContent = "empty messages"
 		}

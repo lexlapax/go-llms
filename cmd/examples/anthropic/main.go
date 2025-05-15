@@ -113,7 +113,7 @@ func main() {
 	// Example 2: Using message-based conversation
 	fmt.Println("\nExample 2: Message-based conversation (using system prompt option)")
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: "What's the difference between a slice and an array in Go?"},
+		domain.NewTextMessage(domain.RoleUser, "What's the difference between a slice and an array in Go?"),
 	}
 	messageResponse, err := anthropicProvider.GenerateMessage(context.Background(), messages)
 	if err != nil {

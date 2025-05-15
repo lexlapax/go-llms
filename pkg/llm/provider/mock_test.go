@@ -53,8 +53,8 @@ func TestMockProvider(t *testing.T) {
 		mock := NewMockProvider()
 
 		messages := []domain.Message{
-			{Role: domain.RoleSystem, Content: "You are a helpful assistant."},
-			{Role: domain.RoleUser, Content: "Tell me about Go"},
+			domain.NewTextMessage(domain.RoleSystem, "You are a helpful assistant."),
+			domain.NewTextMessage(domain.RoleUser, "Tell me about Go"),
 		}
 
 		response, err := mock.GenerateMessage(ctx, messages)

@@ -63,7 +63,7 @@ func TestOpenAIAPICompatibleProvidersIntegration(t *testing.T) {
 
 			// Use the provider to generate a response with messages (preferred for OpenRouter)
 			messages := []domain.Message{
-				{Role: domain.RoleUser, Content: "What is the capital of France?"},
+				domain.NewTextMessage(domain.RoleUser, "What is the capital of France?"),
 			}
 
 			resp, err := openRouterProvider.GenerateMessage(
@@ -102,7 +102,7 @@ func TestOpenAIAPICompatibleProvidersIntegration(t *testing.T) {
 
 			// Use the provider to generate a response with messages (preferred for OpenRouter)
 			messages := []domain.Message{
-				{Role: domain.RoleUser, Content: "What is the capital of France?"},
+				domain.NewTextMessage(domain.RoleUser, "What is the capital of France?"),
 			}
 
 			resp, err := openRouterProvider.GenerateMessage(

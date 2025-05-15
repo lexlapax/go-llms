@@ -88,9 +88,9 @@ func simpleTextGeneration(ctx context.Context, provider *provider.GeminiProvider
 // Conversation with multiple messages
 func conversation(ctx context.Context, provider *provider.GeminiProvider) {
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: "Hello, I'd like to learn about machine learning."},
-		{Role: domain.RoleAssistant, Content: "Hi there! I'd be happy to help you learn about machine learning. What specific aspects are you interested in?"},
-		{Role: domain.RoleUser, Content: "Can you explain what neural networks are?"},
+		domain.NewTextMessage(domain.RoleUser, "Hello, I'd like to learn about machine learning."),
+		domain.NewTextMessage(domain.RoleAssistant, "Hi there! I'd be happy to help you learn about machine learning. What specific aspects are you interested in?"),
+		domain.NewTextMessage(domain.RoleUser, "Can you explain what neural networks are?"),
 	}
 
 	// Generate a response to the conversation
@@ -107,7 +107,12 @@ func conversation(ctx context.Context, provider *provider.GeminiProvider) {
 		if msg.Role == domain.RoleAssistant {
 			role = "Assistant"
 		}
-		fmt.Printf("%s: %s\n", role, msg.Content)
+		// Extract text content from the first ContentPart if it exists
+		content := ""
+		if len(msg.Content) > 0 && msg.Content[0].Type == domain.ContentTypeText {
+			content = msg.Content[0].Text
+		}
+		fmt.Printf("%s: %s\n", role, content)
 	}
 
 	fmt.Printf("Assistant: %s\n", response.Content)

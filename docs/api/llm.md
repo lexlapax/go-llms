@@ -18,13 +18,51 @@ const (
     RoleTool      Role = "tool"
 )
 
+// Content type constants
+type ContentType string
+
+const (
+    ContentTypeText  ContentType = "text"
+    ContentTypeImage ContentType = "image"
+    ContentTypeFile  ContentType = "file"
+    ContentTypeVideo ContentType = "video"
+    ContentTypeAudio ContentType = "audio"
+)
+
+// Source type constants
+type SourceType string
+
+const (
+    SourceTypeBase64 SourceType = "base64"
+    SourceTypeURL    SourceType = "url"
+)
+
+// Message represents a message in a conversation with multimodal support
 type Message struct {
-    Role    Role   `json:"role"`
-    Content string `json:"content"`
+    Role    Role         `json:"role"`
+    Content []ContentPart `json:"content"`
 }
+
+// ContentPart represents a part of a message's content
+type ContentPart struct {
+    Type  ContentType  `json:"type"`
+    Text  string       `json:"text,omitempty"`
+    Image *ImageContent `json:"image,omitempty"`
+    File  *FileContent  `json:"file,omitempty"`
+    Video *VideoContent `json:"video,omitempty"`
+    Audio *AudioContent `json:"audio,omitempty"`
+}
+
+// Helper functions for creating messages
+func NewTextMessage(role Role, text string) Message
+func NewImageMessage(role Role, imageData []byte, mimeType string, text string) Message
+func NewImageURLMessage(role Role, imageURL string, text string) Message
+func NewFileMessage(role Role, fileName string, fileData []byte, mimeType string, text string) Message
+func NewVideoMessage(role Role, videoData []byte, mimeType string, text string) Message
+func NewAudioMessage(role Role, audioData []byte, mimeType string, text string) Message
 ```
 
-The `Message` struct represents a message in a conversation with a language model, with different roles such as system, user, assistant, or tool.
+The `Message` struct represents a message in a conversation with a language model, with support for multimodal content including text, images, files, videos, and audio. Messages can have different roles such as system, user, assistant, or tool. Helper functions are provided for creating different types of messages.
 
 #### Response
 
@@ -416,10 +454,47 @@ if err != nil {
     if errors.Is(err, domain.ErrContentFiltered) {
         fmt.Println("Content was filtered by Gemini's safety system")
         // Handle appropriately...
+    } else if domain.IsUnsupportedContentTypeError(err) {
+        // Handle unsupported content type error
+        fmt.Printf("Content type not supported by provider: %v\n", err)
     } else {
         fmt.Printf("Other error: %v\n", err)
     }
 }
+```
+
+**6. Content Type Support**
+
+Gemini supports text, image, and video content types:
+
+```go
+// Create a message with an image
+imageData, _ := ioutil.ReadFile("image.jpg")
+imageMessage := domain.NewImageMessage(
+    domain.RoleUser,
+    imageData,
+    "image/jpeg",
+    "What's in this image?"
+)
+
+// Create a message with a video
+videoData, _ := ioutil.ReadFile("video.mp4")
+videoMessage := domain.NewVideoMessage(
+    domain.RoleUser,
+    videoData,
+    "video/mp4",
+    "What's happening in this video?"
+)
+
+// Use in a conversation
+messages := []domain.Message{
+    domain.NewTextMessage(domain.RoleUser, "I'll show you some media."),
+    imageMessage,
+    videoMessage,
+}
+
+// Generate a response
+response, err := provider.GenerateMessage(ctx, messages)
 ```
 
 ### Mock Provider

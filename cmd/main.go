@@ -544,10 +544,7 @@ func newChatCmd() *cobra.Command {
 			// Initialize chat with system message if provided
 			messages := make([]llmDomain.Message, 0)
 			if systemPrompt != "" {
-				messages = append(messages, llmDomain.Message{
-					Role:    llmDomain.RoleSystem,
-					Content: systemPrompt,
-				})
+				messages = append(messages, llmDomain.NewTextMessage(llmDomain.RoleSystem, systemPrompt))
 			}
 
 			fmt.Printf("Chat session started with %s using %s\n", providerType, modelName)
@@ -579,10 +576,7 @@ func newChatCmd() *cobra.Command {
 				}
 
 				// Add user message to context
-				messages = append(messages, llmDomain.Message{
-					Role:    llmDomain.RoleUser,
-					Content: userInput,
-				})
+				messages = append(messages, llmDomain.NewTextMessage(llmDomain.RoleUser, userInput))
 
 				fmt.Print("Assistant: ")
 
@@ -604,10 +598,7 @@ func newChatCmd() *cobra.Command {
 					}
 
 					// Add assistant response to context for next round
-					messages = append(messages, llmDomain.Message{
-						Role:    llmDomain.RoleAssistant,
-						Content: fullResponse.String(),
-					})
+					messages = append(messages, llmDomain.NewTextMessage(llmDomain.RoleAssistant, fullResponse.String()))
 				} else {
 					// Use standard API
 					response, err := llmProvider.GenerateMessage(ctx, messages, options...)
@@ -620,10 +611,7 @@ func newChatCmd() *cobra.Command {
 					fmt.Println(response.Content)
 
 					// Add assistant response to context for next round
-					messages = append(messages, llmDomain.Message{
-						Role:    llmDomain.RoleAssistant,
-						Content: response.Content,
-					})
+					messages = append(messages, llmDomain.NewTextMessage(llmDomain.RoleAssistant, response.Content))
 				}
 			}
 		},

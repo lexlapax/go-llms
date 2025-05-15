@@ -1,9 +1,16 @@
 # Go-LLMs Project TODOs
 
 ## Features
+- [x] Implement interface-based provider option system
+- [x] Add multimodal content support to the llm core
+  - [x] Research a common way to provide files via base64 and mime/type encapsulation to the three major provider apis
+  - [x] Implement ContentPart structure with support for text, images, files, videos, and audio
+  - [x] Create helper functions for creating different message types (NewTextMessage, NewImageMessage, etc.)
+  - [x] Write tests to test multimodal content support
+  - [x] Implement provider-specific conversions for each provider
+  - [x] Document in MULTIMODAL_IMPLEMENTATION.md and update existing documentation
 - [ ] Add Model Context Protocol Client support for Agents
 - [ ] Add Model Context Protocol Server support for Workflows or Agents
-- [x] Implement interface-based provider option system
 
 ## Documentation
 - [x] Consolidate documentation and make sure it's consistent

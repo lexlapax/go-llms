@@ -81,10 +81,10 @@ func TestOllamaIntegration(t *testing.T) {
 		defer cancel()
 
 		messages := []domain.Message{
-			{Role: domain.RoleSystem, Content: "You are a helpful assistant."},
-			{Role: domain.RoleUser, Content: "What is the capital of France?"},
-			{Role: domain.RoleAssistant, Content: "The capital of France is Paris."},
-			{Role: domain.RoleUser, Content: "What is its population?"},
+			domain.NewTextMessage(domain.RoleSystem, "You are a helpful assistant."),
+			domain.NewTextMessage(domain.RoleUser, "What is the capital of France?"),
+			domain.NewTextMessage(domain.RoleAssistant, "The capital of France is Paris."),
+			domain.NewTextMessage(domain.RoleUser, "What is its population?"),
 		}
 
 		response, err := ollamaProvider.GenerateMessage(ctx, messages)

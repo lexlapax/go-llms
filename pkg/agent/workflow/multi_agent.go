@@ -138,13 +138,13 @@ func (a *MultiAgent) run(ctx context.Context, input string, schema *sdomain.Sche
 			// Add the assistant message and all tool results
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleAssistant,
-				Content: resp.Content,
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 			})
 
 			// Add tool results as user message
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleUser,
-				Content: toolResponses,
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: toolResponses}},
 			})
 
 			continue
@@ -166,13 +166,13 @@ func (a *MultiAgent) run(ctx context.Context, input string, schema *sdomain.Sche
 
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleAssistant,
-				Content: resp.Content,
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 			})
 
 			// Use user role instead of tool role for better OpenAI compatibility
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleUser,
-				Content: fmt.Sprintf("Tool error: %s", errMsg),
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: fmt.Sprintf("Tool error: %s", errMsg)}},
 			})
 			continue
 		}
@@ -211,13 +211,13 @@ func (a *MultiAgent) run(ctx context.Context, input string, schema *sdomain.Sche
 		// Add the assistant message and tool result to the conversation
 		messages = append(messages, ldomain.Message{
 			Role:    ldomain.RoleAssistant,
-			Content: resp.Content,
+			Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 		})
 
 		// Use user role instead of tool role for better OpenAI compatibility
 		messages = append(messages, ldomain.Message{
 			Role:    ldomain.RoleUser,
-			Content: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent),
+			Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent)}},
 		})
 	}
 

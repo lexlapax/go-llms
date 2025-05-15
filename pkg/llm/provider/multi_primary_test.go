@@ -108,7 +108,7 @@ func TestPrimaryProviderDeterministic(t *testing.T) {
 
 	// Test GenerateMessage
 	msgResult, err := multiProvider.GenerateMessage(context.Background(), []ldomain.Message{
-		{Role: "user", Content: "test message"},
+		ldomain.NewTextMessage(ldomain.RoleUser, "test message"),
 	})
 	if err != nil {
 		t.Fatalf("GenerateMessage failed: %v", err)

@@ -703,10 +703,10 @@ func TestConcurrentStreamMessages(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
 	messageGroups := [][]domain.Message{
 		{
-			{Role: "user", Content: "Message 1"},
+			domain.NewTextMessage(domain.RoleUser, "Message 1"),
 		},
 		{
-			{Role: "user", Content: "Message 2"},
+			domain.NewTextMessage(domain.RoleUser, "Message 2"),
 		},
 	}
 

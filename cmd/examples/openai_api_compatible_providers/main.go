@@ -82,7 +82,7 @@ func runOpenRouterExample() {
 
 	// Use the provider to generate a response with messages (preferred for OpenRouter)
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: "What models do you provide access to?"},
+		domain.NewTextMessage(domain.RoleUser, "What models do you provide access to?"),
 	}
 
 	messageResp, err := openRouterProvider.GenerateMessage(
@@ -121,7 +121,7 @@ func runOpenRouterExample() {
 
 	// Use the provider to generate a response with messages (preferred for OpenRouter)
 	messages2 := []domain.Message{
-		{Role: domain.RoleUser, Content: "What is your latency like?"},
+		domain.NewTextMessage(domain.RoleUser, "What is your latency like?"),
 	}
 
 	messageResp2, err := openRouterProvider2.GenerateMessage(

@@ -16,8 +16,6 @@ import (
 
 // TestLiveEndToEndAgentGemini tests the agent with Gemini provider
 func TestLiveEndToEndAgentGemini(t *testing.T) {
-	// Skip Gemini agent tests due to service availability issues
-	t.Skip("Skipping Gemini agent tests due to potential service availability issues")
 	// Skip if we don't have API keys
 	apiKey := os.Getenv("GEMINI_API_KEY")
 	if apiKey == "" {

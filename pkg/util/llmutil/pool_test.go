@@ -171,7 +171,7 @@ func TestPoolMessageGeneration(t *testing.T) {
 	pool := NewProviderPool(providers, StrategyRoundRobin)
 
 	messages := []domain.Message{
-		{Role: "user", Content: "Hello"},
+		domain.NewTextMessage(domain.RoleUser, "Hello"),
 	}
 
 	response, err := pool.GenerateMessage(context.Background(), messages)
@@ -249,7 +249,7 @@ func TestPoolStreaming(t *testing.T) {
 		pool := NewProviderPool(providers, StrategyRoundRobin)
 
 		messages := []domain.Message{
-			{Role: "user", Content: "Hello"},
+			domain.NewTextMessage(domain.RoleUser, "Hello"),
 		}
 
 		stream, err := pool.StreamMessage(context.Background(), messages)

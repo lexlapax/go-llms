@@ -14,8 +14,6 @@ import (
 
 // TestGeminiE2E tests basic Gemini provider functionality
 func TestGeminiE2E(t *testing.T) {
-	// Skip Gemini tests due to service availability issues
-	t.Skip("Skipping Gemini tests due to potential service availability issues")
 	// Skip test if GEMINI_API_KEY is not set
 	apiKey := os.Getenv("GEMINI_API_KEY")
 	if apiKey == "" {
@@ -46,9 +44,9 @@ func TestGeminiE2E(t *testing.T) {
 
 	t.Run("MessageGeneration", func(t *testing.T) {
 		messages := []domain.Message{
-			{Role: domain.RoleUser, Content: "Tell me about the Eiffel Tower"},
-			{Role: domain.RoleAssistant, Content: "The Eiffel Tower is a wrought-iron lattice tower in Paris, France."},
-			{Role: domain.RoleUser, Content: "How tall is it?"},
+			domain.NewTextMessage(domain.RoleUser, "Tell me about the Eiffel Tower"),
+			domain.NewTextMessage(domain.RoleAssistant, "The Eiffel Tower is a wrought-iron lattice tower in Paris, France."),
+			domain.NewTextMessage(domain.RoleUser, "How tall is it?"),
 		}
 
 		response, err := geminiProvider.GenerateMessage(ctx, messages)

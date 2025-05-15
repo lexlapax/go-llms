@@ -75,14 +75,30 @@ func (p *AnthropicProvider) SetMetadata(metadata map[string]string) {
 
 // Generate produces text from a prompt
 func (p *AnthropicProvider) Generate(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+	// Create a simple text message using the new structure
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: prompt},
+		domain.NewTextMessage(domain.RoleUser, prompt),
 	}
 	response, err := p.GenerateMessage(ctx, messages, options...)
 	if err != nil {
 		return "", err
 	}
 	return response.Content, nil
+}
+
+// validateContentTypesForAnthropic checks if the content types in the messages are supported by Anthropic
+func (p *AnthropicProvider) validateContentTypesForAnthropic(messages []domain.Message) error {
+	for _, msg := range messages {
+		if msg.Content != nil {
+			for _, part := range msg.Content {
+				// Anthropic currently supports text and image content types
+				if part.Type != domain.ContentTypeText && part.Type != domain.ContentTypeImage {
+					return domain.NewUnsupportedContentTypeError("Anthropic", part.Type)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // ConvertMessagesToAnthropicFormat converts domain messages to Anthropic format
@@ -101,43 +117,62 @@ func (p *AnthropicProvider) ConvertMessagesToAnthropicFormat(messages []domain.M
 	anthMessages := make([]map[string]interface{}, 0, len(messages))
 	var systemMessage string
 
-	// Fast path for single message
-	if len(messages) == 1 {
-		if messages[0].Role == domain.RoleSystem {
-			systemMessage = messages[0].Content
-			// Cache and return
-			result := map[string]interface{}{
-				"messages": anthMessages,
-				"system":   systemMessage,
-			}
-			p.messageCache.Set(cacheKey, result)
-			return anthMessages, systemMessage
-		} else {
-			message := make(map[string]interface{}, 2)
-			message["role"] = string(messages[0].Role)
-			message["content"] = messages[0].Content
-			anthMessages = append(anthMessages, message)
-
-			// Cache and return
-			result := map[string]interface{}{
-				"messages": anthMessages,
-				"system":   systemMessage,
-			}
-			p.messageCache.Set(cacheKey, result)
-			return anthMessages, systemMessage
-		}
-	}
-
 	// Process all messages
 	for _, msg := range messages {
 		if msg.Role == domain.RoleSystem {
-			// Anthropic handles system message separately
-			systemMessage = msg.Content
+			// Extract text content for system message
+			if msg.Content != nil && len(msg.Content) > 0 {
+				for _, part := range msg.Content {
+					if part.Type == domain.ContentTypeText {
+						systemMessage = part.Text
+						break
+					}
+				}
+			}
 		} else {
 			// Regular message (user or assistant)
 			message := make(map[string]interface{}, 2)
 			message["role"] = string(msg.Role)
-			message["content"] = msg.Content
+			
+			// Handle multimodal content
+			if msg.Content != nil && len(msg.Content) > 0 {
+				contentParts := make([]map[string]interface{}, 0, len(msg.Content))
+				
+				for _, part := range msg.Content {
+					switch part.Type {
+					case domain.ContentTypeText:
+						// Text part
+						contentParts = append(contentParts, map[string]interface{}{
+							"type": "text",
+							"text": part.Text,
+						})
+					case domain.ContentTypeImage:
+						// Image part - Anthropic format
+						imagePart := map[string]interface{}{
+							"type": "image",
+						}
+						
+						sourcePart := make(map[string]interface{})
+						if part.Image.Source.Type == domain.SourceTypeURL {
+							// URL-based image
+							sourcePart["type"] = "url"
+							sourcePart["url"] = part.Image.Source.URL
+						} else {
+							// Base64-encoded image
+							sourcePart["type"] = "base64"
+							sourcePart["media_type"] = part.Image.Source.MediaType
+							sourcePart["data"] = part.Image.Source.Data
+						}
+						
+						imagePart["source"] = sourcePart
+						contentParts = append(contentParts, imagePart)
+					}
+				}
+				
+				// Add content parts to the message
+				message["content"] = contentParts
+			}
+			
 			anthMessages = append(anthMessages, message)
 		}
 	}
@@ -201,6 +236,11 @@ func (p *AnthropicProvider) buildAnthropicRequestBody(
 
 // GenerateMessage produces text from a list of messages - optimized version
 func (p *AnthropicProvider) GenerateMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
+	// Validate content types
+	if err := p.validateContentTypesForAnthropic(messages); err != nil {
+		return domain.Response{}, err
+	}
+
 	// Apply options
 	providerOptions := domain.DefaultOptions()
 	for _, option := range options {
@@ -303,14 +343,20 @@ func (p *AnthropicProvider) GenerateWithSchema(ctx context.Context, prompt strin
 
 // Stream streams responses token by token
 func (p *AnthropicProvider) Stream(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
+	// Create a simple text message using the new structure
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: prompt},
+		domain.NewTextMessage(domain.RoleUser, prompt),
 	}
 	return p.StreamMessage(ctx, messages, options...)
 }
 
 // StreamMessage streams responses from a list of messages
 func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.ResponseStream, error) {
+	// Validate content types
+	if err := p.validateContentTypesForAnthropic(messages); err != nil {
+		return nil, err
+	}
+
 	// Apply options
 	providerOptions := domain.DefaultOptions()
 	for _, option := range options {

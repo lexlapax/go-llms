@@ -18,8 +18,8 @@ func BenchmarkAgentContextInit(b *testing.B) {
 	var systemMessages []string
 	messageHook := &testHook{
 		beforeGenerateFunc: func(ctx context.Context, messages []ldomain.Message) {
-			if len(messages) > 0 && messages[0].Role == ldomain.RoleSystem {
-				systemMessages = append(systemMessages, messages[0].Content)
+			if len(messages) > 0 && messages[0].Role == ldomain.RoleSystem && len(messages[0].Content) > 0 {
+				systemMessages = append(systemMessages, messages[0].Content[0].Text)
 			}
 		},
 	}

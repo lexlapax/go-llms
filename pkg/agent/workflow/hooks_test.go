@@ -26,8 +26,8 @@ func TestLoggingHook(t *testing.T) {
 
 	// Create test messages and response
 	messages := []ldomain.Message{
-		{Role: ldomain.RoleSystem, Content: "You are a helpful assistant."},
-		{Role: ldomain.RoleUser, Content: "What is the capital of France?"},
+		ldomain.NewTextMessage(ldomain.RoleSystem, "You are a helpful assistant."),
+		ldomain.NewTextMessage(ldomain.RoleUser, "What is the capital of France?"),
 	}
 	response := ldomain.Response{Content: "The capital of France is Paris."}
 
@@ -113,8 +113,8 @@ func TestMetricsHook(t *testing.T) {
 	// Test BeforeGenerate and AfterGenerate
 	t.Run("GenerateMetrics", func(t *testing.T) {
 		messages := []ldomain.Message{
-			{Role: ldomain.RoleSystem, Content: "You are a helpful assistant."},
-			{Role: ldomain.RoleUser, Content: "What is the capital of France?"},
+			ldomain.NewTextMessage(ldomain.RoleSystem, "You are a helpful assistant."),
+			ldomain.NewTextMessage(ldomain.RoleUser, "What is the capital of France?"),
 		}
 		response := ldomain.Response{Content: "The capital of France is Paris."}
 

@@ -118,8 +118,14 @@ func TestMultiProvider_GenerateMessage(t *testing.T) {
 	fastProvider := provider.NewMockProvider().WithGenerateMessageFunc(
 		func(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
 			content := "FAST: "
-			if len(messages) > 0 {
-				content += messages[len(messages)-1].Content
+			if len(messages) > 0 && len(messages[len(messages)-1].Content) > 0 {
+				// Extract the text content if it exists in the older multimodal format
+				for _, part := range messages[len(messages)-1].Content {
+					if part.Type == domain.ContentTypeText {
+						content += part.Text
+						break
+					}
+				}
 			}
 			return domain.GetResponsePool().NewResponse(content), nil
 		})
@@ -132,8 +138,14 @@ func TestMultiProvider_GenerateMessage(t *testing.T) {
 				return domain.Response{}, ctx.Err()
 			case <-time.After(300 * time.Millisecond):
 				content := "SLOW: "
-				if len(messages) > 0 {
-					content += messages[len(messages)-1].Content
+				if len(messages) > 0 && len(messages[len(messages)-1].Content) > 0 {
+					// Extract the text content if it exists in the older multimodal format
+					for _, part := range messages[len(messages)-1].Content {
+						if part.Type == domain.ContentTypeText {
+							content += part.Text
+							break
+						}
+					}
 				}
 				return domain.GetResponsePool().NewResponse(content), nil
 			}
@@ -141,7 +153,7 @@ func TestMultiProvider_GenerateMessage(t *testing.T) {
 
 	// Test data
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: "Test message"},
+		domain.NewTextMessage(domain.RoleUser, "Test message"),
 	}
 
 	t.Run("StrategyFastest", func(t *testing.T) {

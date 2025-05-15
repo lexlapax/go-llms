@@ -114,14 +114,68 @@ func (p *GeminiProvider) ConvertMessagesToGeminiFormat(messages []domain.Message
 
 		message["role"] = role
 
-		// Create a parts array with the text content
-		parts := []map[string]interface{}{
-			{
-				"text": msg.Content,
-			},
+		// Handle multimodal content
+		if msg.Content != nil && len(msg.Content) > 0 {
+			parts := make([]map[string]interface{}, 0, len(msg.Content))
+			
+			for _, part := range msg.Content {
+				switch part.Type {
+				case domain.ContentTypeText:
+					// Text part
+					parts = append(parts, map[string]interface{}{
+						"text": part.Text,
+					})
+				case domain.ContentTypeImage:
+					// Image part
+					if part.Image.Source.Type == domain.SourceTypeURL {
+						// URL-based image
+						parts = append(parts, map[string]interface{}{
+							"inline_data": map[string]interface{}{
+								"mime_type": part.Image.Source.MediaType,
+								"url": part.Image.Source.URL,
+							},
+						})
+					} else {
+						// Base64-encoded image
+						parts = append(parts, map[string]interface{}{
+							"inline_data": map[string]interface{}{
+								"mime_type": part.Image.Source.MediaType,
+								"data": part.Image.Source.Data,
+							},
+						})
+					}
+				case domain.ContentTypeVideo:
+					// Video part
+					if part.Video.Source.Type == domain.SourceTypeURL {
+						// URL-based video
+						parts = append(parts, map[string]interface{}{
+							"inline_data": map[string]interface{}{
+								"mime_type": part.Video.Source.MediaType,
+								"url": part.Video.Source.URL,
+							},
+						})
+					} else {
+						// Base64-encoded video
+						parts = append(parts, map[string]interface{}{
+							"inline_data": map[string]interface{}{
+								"mime_type": part.Video.Source.MediaType,
+								"data": part.Video.Source.Data,
+							},
+						})
+					}
+				}
+			}
+			
+			message["parts"] = parts
+		} else {
+			// Legacy compatibility for old message format
+			message["parts"] = []map[string]interface{}{
+				{
+					"text": "",
+				},
+			}
 		}
-
-		message["parts"] = parts
+		
 		contents = append(contents, message)
 	}
 
@@ -178,10 +232,28 @@ func (p *GeminiProvider) buildGeminiRequestBody(
 	return requestBody
 }
 
+// validateContentTypesForGemini checks if the content types in the messages are supported by Gemini
+func (p *GeminiProvider) validateContentTypesForGemini(messages []domain.Message) error {
+	for _, msg := range messages {
+		if msg.Content != nil {
+			for _, part := range msg.Content {
+				// Gemini currently supports text, image, and video content types
+				if part.Type != domain.ContentTypeText && 
+				   part.Type != domain.ContentTypeImage && 
+				   part.Type != domain.ContentTypeVideo {
+					return domain.NewUnsupportedContentTypeError("Gemini", part.Type)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // Generate produces text from a prompt
 func (p *GeminiProvider) Generate(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+	// Create a simple text message using the new structure
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: prompt},
+		domain.NewTextMessage(domain.RoleUser, prompt),
 	}
 	response, err := p.GenerateMessage(ctx, messages, options...)
 	if err != nil {
@@ -192,6 +264,11 @@ func (p *GeminiProvider) Generate(ctx context.Context, prompt string, options ..
 
 // GenerateMessage produces text from a list of messages
 func (p *GeminiProvider) GenerateMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
+	// Validate content types
+	if err := p.validateContentTypesForGemini(messages); err != nil {
+		return domain.Response{}, err
+	}
+
 	// Apply options
 	providerOptions := domain.DefaultOptions()
 	for _, option := range options {
@@ -334,14 +411,20 @@ func (p *GeminiProvider) GenerateWithSchema(ctx context.Context, prompt string, 
 
 // Stream streams responses token by token
 func (p *GeminiProvider) Stream(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
+	// Create a simple text message using the new structure
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: prompt},
+		domain.NewTextMessage(domain.RoleUser, prompt),
 	}
 	return p.StreamMessage(ctx, messages, options...)
 }
 
 // StreamMessage streams responses from a list of messages
 func (p *GeminiProvider) StreamMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.ResponseStream, error) {
+	// Validate content types
+	if err := p.validateContentTypesForGemini(messages); err != nil {
+		return nil, err
+	}
+
 	// Apply options
 	providerOptions := domain.DefaultOptions()
 	for _, option := range options {

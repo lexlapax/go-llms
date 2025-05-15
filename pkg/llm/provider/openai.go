@@ -74,8 +74,9 @@ func (p *OpenAIProvider) SetLogitBias(logitBias map[string]float64) {
 
 // Generate produces text from a prompt
 func (p *OpenAIProvider) Generate(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+	// Create a simple text message using the new structure
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: prompt},
+		domain.NewTextMessage(domain.RoleUser, prompt),
 	}
 	response, err := p.GenerateMessage(ctx, messages, options...)
 	if err != nil {
@@ -97,50 +98,132 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 	// Pre-allocate the slice with exact capacity
 	oaiMessages := make([]map[string]interface{}, 0, len(messages))
 
-	// Fast path for simple cases: single message or system+user
-	if len(messages) == 1 {
-		message := make(map[string]interface{}, 2)
-		message["role"] = string(messages[0].Role)
-		message["content"] = messages[0].Content
-
-		result := []map[string]interface{}{message}
-		p.messageCache.Set(cacheKey, result)
-		return result
-	}
-
-	// Find the last assistant message index (used for tool message handling)
-	var lastAssistantIdx int = -1
-	for i, msg := range messages {
-		if msg.Role == domain.RoleAssistant {
-			lastAssistantIdx = i
-		}
-	}
-
 	// Process all messages
 	for i, msg := range messages {
-		// Special handling for tool messages - they must follow an assistant message with tool_calls
-		if msg.Role == domain.RoleTool {
-			// If this is a tool message without a preceding assistant message with tool_calls,
-			// we need to convert it to a different format or skip it
+		// Create the basic message with role
+		message := make(map[string]interface{})
+		message["role"] = string(msg.Role)
+
+		// Check if this is a multimodal message (has Content slice)
+		if msg.Content != nil && len(msg.Content) > 0 {
+			// This is a multimodal message
+			contentParts := make([]map[string]interface{}, 0, len(msg.Content))
+			
+			// Process each content part
+			for _, part := range msg.Content {
+				switch part.Type {
+				case domain.ContentTypeText:
+					// Text part
+					contentParts = append(contentParts, map[string]interface{}{
+						"type": "text",
+						"text": part.Text,
+					})
+				case domain.ContentTypeImage:
+					// Image part - OpenAI uses image_url format
+					imagePart := map[string]interface{}{
+						"type": "image_url",
+					}
+					
+					imageURL := make(map[string]interface{})
+					if part.Image.Source.Type == domain.SourceTypeURL {
+						// URL-based image
+						imageURL["url"] = part.Image.Source.URL
+					} else {
+						// Base64-encoded image - requires data URL format
+						imageURL["url"] = fmt.Sprintf(
+							"data:%s;base64,%s",
+							part.Image.Source.MediaType,
+							part.Image.Source.Data,
+						)
+					}
+					
+					imagePart["image_url"] = imageURL
+					contentParts = append(contentParts, imagePart)
+				case domain.ContentTypeFile:
+					// File part
+					contentParts = append(contentParts, map[string]interface{}{
+						"type": "file",
+						"file": map[string]interface{}{
+							"file_name": part.File.FileName,
+							"file_data": part.File.FileData,
+						},
+					})
+				case domain.ContentTypeVideo:
+					// Video part
+					contentParts = append(contentParts, map[string]interface{}{
+						"type": "video",
+						"video": map[string]interface{}{
+							"media_type": part.Video.Source.MediaType,
+							"data": part.Video.Source.Data,
+						},
+					})
+				case domain.ContentTypeAudio:
+					// Audio part
+					contentParts = append(contentParts, map[string]interface{}{
+						"type": "audio",
+						"audio": map[string]interface{}{
+							"media_type": part.Audio.Source.MediaType,
+							"data": part.Audio.Source.Data,
+						},
+					})
+				}
+			}
+			
+			// Add the content parts to the message
+			message["content"] = contentParts
+		} else if msg.Role == domain.RoleTool {
+			// Special handling for tool messages - they must follow an assistant message with tool_calls
+			// Find the last assistant message index
+			var lastAssistantIdx int = -1
+			for j, m := range messages {
+				if m.Role == domain.RoleAssistant {
+					lastAssistantIdx = j
+				}
+			}
+			
 			if lastAssistantIdx == -1 || i == 0 || messages[i-1].Role != domain.RoleAssistant {
-				// Convert to user message instead as a fallback
-				message := make(map[string]interface{}, 2)
+				// If this is a tool message without a preceding assistant message with tool_calls,
+				// convert to user message as a fallback
 				message["role"] = string(domain.RoleUser)
-				message["content"] = "Tool result: " + msg.Content
-				oaiMessages = append(oaiMessages, message)
+				// Legacy format for backward compatibility - uses first text content part or empty string
+				textContent := ""
+				if msg.Content != nil && len(msg.Content) > 0 {
+					for _, part := range msg.Content {
+						if part.Type == domain.ContentTypeText {
+							textContent = part.Text
+							break
+						}
+					}
+				}
+				message["content"] = "Tool result: " + textContent
 			} else {
 				// This is a valid tool message following an assistant
-				message := make(map[string]interface{}, 3)
-				message["role"] = string(msg.Role)
-				message["content"] = msg.Content
+				// Legacy format for backward compatibility - uses first text content part or empty string
+				textContent := ""
+				if msg.Content != nil && len(msg.Content) > 0 {
+					for _, part := range msg.Content {
+						if part.Type == domain.ContentTypeText {
+							textContent = part.Text
+							break
+						}
+					}
+				}
+				message["content"] = textContent
 				message["tool_call_id"] = "call_" + string(rune(i))
-				oaiMessages = append(oaiMessages, message)
 			}
 		} else if msg.Role == domain.RoleAssistant && i < len(messages)-1 && messages[i+1].Role == domain.RoleTool {
 			// This assistant message is followed by a tool message, add tool_calls
-			message := make(map[string]interface{}, 3)
-			message["role"] = string(msg.Role)
-			message["content"] = msg.Content
+			// Legacy format for backward compatibility - uses first text content part or empty string
+			textContent := ""
+			if msg.Content != nil && len(msg.Content) > 0 {
+				for _, part := range msg.Content {
+					if part.Type == domain.ContentTypeText {
+						textContent = part.Text
+						break
+					}
+				}
+			}
+			message["content"] = textContent
 
 			// Create a single tool call
 			functionMap := make(map[string]interface{}, 2)
@@ -154,20 +237,33 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 
 			toolCalls := []map[string]interface{}{toolCall}
 			message["tool_calls"] = toolCalls
-
-			oaiMessages = append(oaiMessages, message)
 		} else {
-			// Regular message
-			message := make(map[string]interface{}, 2)
-			message["role"] = string(msg.Role)
-			message["content"] = msg.Content
-			oaiMessages = append(oaiMessages, message)
+			// Legacy format for backward compatibility - uses first text content part or empty string
+			textContent := ""
+			if msg.Content != nil && len(msg.Content) > 0 {
+				for _, part := range msg.Content {
+					if part.Type == domain.ContentTypeText {
+						textContent = part.Text
+						break
+					}
+				}
+			}
+			message["content"] = textContent
 		}
+		
+		oaiMessages = append(oaiMessages, message)
 	}
 
 	// Cache the result
 	p.messageCache.Set(cacheKey, oaiMessages)
 	return oaiMessages
+}
+
+// validateContentTypesForOpenAI checks if the content types in the messages are supported by OpenAI
+func (p *OpenAIProvider) validateContentTypesForOpenAI(messages []domain.Message) error {
+	// OpenAI supports all content types in our implementation as of now
+	// If there are limitations in the future, we can add checks here
+	return nil
 }
 
 // buildOpenAIRequestBody creates a request body for the OpenAI API
@@ -218,6 +314,11 @@ func (p *OpenAIProvider) buildOpenAIRequestBody(
 
 // GenerateMessage produces text from a list of messages - optimized version
 func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
+	// Validate content types
+	if err := p.validateContentTypesForOpenAI(messages); err != nil {
+		return domain.Response{}, err
+	}
+
 	// Apply options - reuse the same options object for all requests
 	providerOptions := domain.DefaultOptions()
 	for _, option := range options {
@@ -322,14 +423,20 @@ func (p *OpenAIProvider) GenerateWithSchema(ctx context.Context, prompt string, 
 
 // Stream streams responses token by token
 func (p *OpenAIProvider) Stream(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
+	// Create a simple text message using the new structure
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: prompt},
+		domain.NewTextMessage(domain.RoleUser, prompt),
 	}
 	return p.StreamMessage(ctx, messages, options...)
 }
 
 // StreamMessage streams responses from a list of messages
 func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.ResponseStream, error) {
+	// Validate content types
+	if err := p.validateContentTypesForOpenAI(messages); err != nil {
+		return nil, err
+	}
+
 	// Apply options
 	providerOptions := domain.DefaultOptions()
 	for _, option := range options {

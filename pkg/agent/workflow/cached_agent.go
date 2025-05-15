@@ -176,13 +176,13 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 					// Add the assistant message
 					messages = append(messages, ldomain.Message{
 						Role:    ldomain.RoleAssistant,
-						Content: cachedResponse.Content,
+						Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: cachedResponse.Content}},
 					})
 
 					// Add tool results
 					messages = append(messages, ldomain.Message{
 						Role:    ldomain.RoleUser,
-						Content: toolResponses,
+						Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: toolResponses}},
 					})
 
 					// Continue with a new generation for the tool results
@@ -246,12 +246,12 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 					// Add messages and generate a response
 					messages = append(messages, ldomain.Message{
 						Role:    ldomain.RoleAssistant,
-						Content: cachedResponse.Content,
+						Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: cachedResponse.Content}},
 					})
 
 					messages = append(messages, ldomain.Message{
 						Role:    ldomain.RoleUser,
-						Content: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent),
+						Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent)}},
 					})
 
 					// Generate final response - NOT cached
@@ -356,12 +356,12 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 			// Add the assistant message and tool results
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleAssistant,
-				Content: resp.Content,
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 			})
 
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleUser,
-				Content: toolResponses,
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: toolResponses}},
 			})
 
 			continue
@@ -383,12 +383,12 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleAssistant,
-				Content: resp.Content,
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 			})
 
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleUser,
-				Content: fmt.Sprintf("Tool error: %s", errMsg),
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: fmt.Sprintf("Tool error: %s", errMsg)}},
 			})
 			continue
 		}
@@ -427,13 +427,13 @@ func (a *CachedAgent) run(ctx context.Context, input string, schema *sdomain.Sch
 		// Add the assistant message and tool result to the conversation
 		messages = append(messages, ldomain.Message{
 			Role:    ldomain.RoleAssistant,
-			Content: resp.Content,
+			Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 		})
 
 		// Use user role instead of tool role for better OpenAI compatibility
 		messages = append(messages, ldomain.Message{
 			Role:    ldomain.RoleUser,
-			Content: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent),
+			Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent)}},
 		})
 	}
 
@@ -459,7 +459,10 @@ func (a *CachedAgent) getFuzzyMatchFromCache(messages []ldomain.Message, options
 	}
 
 	// Get target message to match
-	targetMsg := messages[1].Content
+	targetMsg := ""
+	if len(messages[1].Content) > 0 && messages[1].Content[0].Type == ldomain.ContentTypeText {
+		targetMsg = messages[1].Content[0].Text
+	}
 	_ = quickHash(targetMsg) // Just compute hash for future implementation
 
 	// TODO: Implement proper fuzzy matching by comparing with other cached entries

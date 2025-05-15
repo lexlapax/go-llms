@@ -254,13 +254,13 @@ func (a *DefaultAgent) run(ctx context.Context, input string, schema *sdomain.Sc
 				// Add the assistant message and all tool results
 				messages = append(messages, ldomain.Message{
 					Role:    ldomain.RoleAssistant,
-					Content: resp.Content,
+					Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 				})
 
 				// Add tool results as user message for compatibility
 				messages = append(messages, ldomain.Message{
 					Role:    ldomain.RoleUser,
-					Content: allToolsOutput.String(),
+					Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: allToolsOutput.String()}},
 				})
 
 				continue
@@ -282,13 +282,13 @@ func (a *DefaultAgent) run(ctx context.Context, input string, schema *sdomain.Sc
 				toolCall, strings.Join(a.getToolNames(), ", "))
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleAssistant,
-				Content: resp.Content,
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 			})
 
 			// Use user role instead of tool role for better OpenAI compatibility
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleUser,
-				Content: fmt.Sprintf("Tool error: %s", errMsg),
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: fmt.Sprintf("Tool error: %s", errMsg)}},
 			})
 			continue
 		}
@@ -327,13 +327,13 @@ func (a *DefaultAgent) run(ctx context.Context, input string, schema *sdomain.Sc
 		// Add the assistant message and tool result to the conversation
 		messages = append(messages, ldomain.Message{
 			Role:    ldomain.RoleAssistant,
-			Content: resp.Content,
+			Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 		})
 
 		// Use user role instead of tool role for better OpenAI compatibility
 		messages = append(messages, ldomain.Message{
 			Role:    ldomain.RoleUser,
-			Content: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent),
+			Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent)}},
 		})
 	}
 
@@ -776,14 +776,14 @@ func (a *DefaultAgent) createInitialMessages(input string) []ldomain.Message {
 	if systemContent != "" {
 		a.messageBuffer = append(a.messageBuffer, ldomain.Message{
 			Role:    ldomain.RoleSystem,
-			Content: systemContent,
+			Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: systemContent}},
 		})
 	}
 
 	// Add user input
 	a.messageBuffer = append(a.messageBuffer, ldomain.Message{
 		Role:    ldomain.RoleUser,
-		Content: input,
+		Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: input}},
 	})
 
 	return a.messageBuffer
@@ -1097,13 +1097,13 @@ func (a *UnoptimizedDefaultAgent) run(ctx context.Context, input string, schema 
 				// Add the assistant message and all tool results
 				messages = append(messages, ldomain.Message{
 					Role:    ldomain.RoleAssistant,
-					Content: resp.Content,
+					Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 				})
 
 				// Add tool results as user message for compatibility
 				messages = append(messages, ldomain.Message{
 					Role:    ldomain.RoleUser,
-					Content: allToolsOutput.String(),
+					Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: allToolsOutput.String()}},
 				})
 
 				continue
@@ -1125,13 +1125,13 @@ func (a *UnoptimizedDefaultAgent) run(ctx context.Context, input string, schema 
 				toolCall, strings.Join(a.getToolNames(), ", "))
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleAssistant,
-				Content: resp.Content,
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 			})
 
 			// Use user role instead of tool role for better OpenAI compatibility
 			messages = append(messages, ldomain.Message{
 				Role:    ldomain.RoleUser,
-				Content: fmt.Sprintf("Tool error: %s", errMsg),
+				Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: fmt.Sprintf("Tool error: %s", errMsg)}},
 			})
 			continue
 		}
@@ -1170,13 +1170,13 @@ func (a *UnoptimizedDefaultAgent) run(ctx context.Context, input string, schema 
 		// Add the assistant message and tool result to the conversation
 		messages = append(messages, ldomain.Message{
 			Role:    ldomain.RoleAssistant,
-			Content: resp.Content,
+			Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: resp.Content}},
 		})
 
 		// Use user role instead of tool role for better OpenAI compatibility
 		messages = append(messages, ldomain.Message{
 			Role:    ldomain.RoleUser,
-			Content: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent),
+			Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: fmt.Sprintf("Tool '%s' result: %s", toolCall, toolRespContent)}},
 		})
 	}
 
@@ -1222,173 +1222,20 @@ func (a *UnoptimizedDefaultAgent) createInitialMessages(input string) []ldomain.
 	if systemContent != "" {
 		messages = append(messages, ldomain.Message{
 			Role:    ldomain.RoleSystem,
-			Content: systemContent,
+			Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: systemContent}},
 		})
 	}
 
 	// Add user input
 	messages = append(messages, ldomain.Message{
 		Role:    ldomain.RoleUser,
-		Content: input,
+		Content: []ldomain.ContentPart{{Type: ldomain.ContentTypeText, Text: input}},
 	})
 
 	return messages
 }
 
-// getToolsDescription creates a description of available tools - optimized version
-func (a *DefaultAgent) getToolsDescription() string {
-	if len(a.tools) == 0 {
-		return ""
-	}
 
-	// Optimization: Use cached description if available
-	if a.cachedToolsDescription != "" {
-		return a.cachedToolsDescription
-	}
-
-	// Estimate the size for pre-allocation (reduce allocations)
-	// Base estimate: 500 characters for standard text + ~200 per tool
-	estimatedSize := 500 + (len(a.tools) * 200)
-
-	var builder strings.Builder
-	// Pre-allocate builder capacity to reduce allocations
-	builder.Grow(estimatedSize)
-	builder.WriteString("You have access to the following tools:\n\n")
-
-	// Pre-allocate tool definitions to avoid resizing
-	toolDefinitions := make([]map[string]interface{}, 0, len(a.tools))
-
-	for name, tool := range a.tools {
-		builder.WriteString(fmt.Sprintf("Tool: %s\n", name))
-		builder.WriteString(fmt.Sprintf("Description: %s\n", tool.Description()))
-
-		// Add parameter schema if available
-		schema := tool.ParameterSchema()
-		if schema != nil {
-			// Optimization: Use MarshalIndent only once per schema
-			paramSchemaJSON, err := json.MarshalIndent(schema, "", "  ")
-			if err == nil {
-				builder.WriteString(fmt.Sprintf("Parameters: %s\n", string(paramSchemaJSON)))
-			}
-
-			// Add to OpenAI-style tool definitions
-			toolDefinitions = append(toolDefinitions, map[string]interface{}{
-				"type": "function",
-				"function": map[string]interface{}{
-					"name":        name,
-					"description": tool.Description(),
-					"parameters":  schema,
-				},
-			})
-		} else {
-			// Add minimal tool definition if no schema is available
-			toolDefinitions = append(toolDefinitions, map[string]interface{}{
-				"type": "function",
-				"function": map[string]interface{}{
-					"name":        name,
-					"description": tool.Description(),
-					"parameters": map[string]interface{}{
-						"type":       "object",
-						"properties": map[string]interface{}{},
-					},
-				},
-			})
-		}
-
-		builder.WriteString("\n")
-	}
-
-	// Add usage instructions - static strings
-	const usageInstructions = "\nTo use a tool, respond with one of these formats:\n" +
-		"```json\n{\"tool\": \"tool_name\", \"params\": {...}}\n```\n" +
-		"\nOR\n\n" +
-		"```json\n{\"tool_calls\": [{\"function\": {\"name\": \"tool_name\", \"arguments\": \"{...}\"}]}\n```\n"
-
-	builder.WriteString(usageInstructions)
-
-	// Add OpenAI-style tool definitions as JSON
-	if len(toolDefinitions) > 0 {
-		toolDefsJSON, err := json.MarshalIndent(toolDefinitions, "", "  ")
-		if err == nil {
-			builder.WriteString("\nTool definitions in OpenAI format:\n```json\n")
-			builder.Write(toolDefsJSON)
-			builder.WriteString("\n```\n")
-		}
-	}
-
-	// Cache the result for future calls
-	a.cachedToolsDescription = builder.String()
-	return a.cachedToolsDescription
-}
-
-// getToolsDescription creates a description of available tools - unoptimized version
-func (a *UnoptimizedDefaultAgent) getToolsDescription() string {
-	if len(a.tools) == 0 {
-		return ""
-	}
-
-	var builder strings.Builder
-	builder.WriteString("You have access to the following tools:\n\n")
-
-	// Also build OpenAI-style tool definitions for the model
-	var toolDefinitions []map[string]interface{}
-
-	for name, tool := range a.tools {
-		builder.WriteString(fmt.Sprintf("Tool: %s\n", name))
-		builder.WriteString(fmt.Sprintf("Description: %s\n", tool.Description()))
-
-		// Add parameter schema if available
-		schema := tool.ParameterSchema()
-		if schema != nil {
-			paramSchemaJSON, err := json.MarshalIndent(schema, "", "  ")
-			if err == nil {
-				builder.WriteString(fmt.Sprintf("Parameters: %s\n", string(paramSchemaJSON)))
-			}
-
-			// Add to OpenAI-style tool definitions
-			toolDefinitions = append(toolDefinitions, map[string]interface{}{
-				"type": "function",
-				"function": map[string]interface{}{
-					"name":        name,
-					"description": tool.Description(),
-					"parameters":  schema,
-				},
-			})
-		} else {
-			// Add minimal tool definition if no schema is available
-			toolDefinitions = append(toolDefinitions, map[string]interface{}{
-				"type": "function",
-				"function": map[string]interface{}{
-					"name":        name,
-					"description": tool.Description(),
-					"parameters": map[string]interface{}{
-						"type":       "object",
-						"properties": map[string]interface{}{},
-					},
-				},
-			})
-		}
-
-		builder.WriteString("\n")
-	}
-
-	builder.WriteString("\nTo use a tool, respond with one of these formats:\n")
-	builder.WriteString("```json\n{\"tool\": \"tool_name\", \"params\": {...}}\n```\n")
-	builder.WriteString("\nOR\n\n")
-	builder.WriteString("```json\n{\"tool_calls\": [{\"function\": {\"name\": \"tool_name\", \"arguments\": \"{...}\"}]}\n```\n")
-
-	// Add OpenAI-style tool definitions as JSON
-	if len(toolDefinitions) > 0 {
-		toolDefsJSON, err := json.MarshalIndent(toolDefinitions, "", "  ")
-		if err == nil {
-			builder.WriteString("\nTool definitions in OpenAI format:\n```json\n")
-			builder.Write(toolDefsJSON)
-			builder.WriteString("\n```\n")
-		}
-	}
-
-	return builder.String()
-}
 
 // Notification functions for hooks
 

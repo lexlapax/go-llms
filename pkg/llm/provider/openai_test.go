@@ -108,8 +108,8 @@ func TestOpenAIProvider(t *testing.T) {
 		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
 		provider := NewOpenAIProvider("test-api-key", "gpt-4o", baseURLOption)
 		messages := []domain.Message{
-			{Role: domain.RoleSystem, Content: "You are a helpful assistant"},
-			{Role: domain.RoleUser, Content: "Tell me a joke"},
+			domain.NewTextMessage(domain.RoleSystem, "You are a helpful assistant"),
+			domain.NewTextMessage(domain.RoleUser, "Tell me a joke"),
 		}
 		response, err := provider.GenerateMessage(ctx, messages)
 		if err != nil {
@@ -225,8 +225,8 @@ func TestOpenAIProvider(t *testing.T) {
 		baseURLOption := domain.NewBaseURLOption(streamServer.URL)
 		provider := NewOpenAIProvider("test-api-key", "gpt-4o", baseURLOption)
 		messages := []domain.Message{
-			{Role: domain.RoleSystem, Content: "You are a helpful assistant"},
-			{Role: domain.RoleUser, Content: "Tell me a joke"},
+			domain.NewTextMessage(domain.RoleSystem, "You are a helpful assistant"),
+			domain.NewTextMessage(domain.RoleUser, "Tell me a joke"),
 		}
 		stream, err := provider.StreamMessage(ctx, messages)
 		if err != nil {

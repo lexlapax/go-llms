@@ -34,7 +34,7 @@ func TestConvertMessagesToGeminiFormat(t *testing.T) {
 
 	// Test with single user message
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: "Hello, world!"},
+		domain.NewTextMessage(domain.RoleUser, "Hello, world!"),
 	}
 
 	geminiFormat := provider.ConvertMessagesToGeminiFormat(messages)
@@ -62,9 +62,9 @@ func TestConvertMessagesToGeminiFormat(t *testing.T) {
 
 	// Test with conversation
 	messages = []domain.Message{
-		{Role: domain.RoleUser, Content: "Hello"},
-		{Role: domain.RoleAssistant, Content: "Hi there!"},
-		{Role: domain.RoleUser, Content: "How are you?"},
+		domain.NewTextMessage(domain.RoleUser, "Hello"),
+		domain.NewTextMessage(domain.RoleAssistant, "Hi there!"),
+		domain.NewTextMessage(domain.RoleUser, "How are you?"),
 	}
 
 	geminiFormat = provider.ConvertMessagesToGeminiFormat(messages)
@@ -90,8 +90,8 @@ func TestConvertMessagesToGeminiFormat(t *testing.T) {
 
 	// Test with system message
 	messages = []domain.Message{
-		{Role: domain.RoleSystem, Content: "You are a helpful assistant"},
-		{Role: domain.RoleUser, Content: "Hello"},
+		domain.NewTextMessage(domain.RoleSystem, "You are a helpful assistant"),
+		domain.NewTextMessage(domain.RoleUser, "Hello"),
 	}
 
 	geminiFormat = provider.ConvertMessagesToGeminiFormat(messages)
@@ -340,7 +340,7 @@ func TestGeminiStreamMessage(t *testing.T) {
 
 	// Test StreamMessage method
 	messages := []domain.Message{
-		{Role: domain.RoleUser, Content: "Hello"},
+		domain.NewTextMessage(domain.RoleUser, "Hello"),
 	}
 
 	stream, err := provider.StreamMessage(context.Background(), messages)

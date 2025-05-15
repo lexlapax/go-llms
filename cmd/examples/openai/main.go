@@ -128,8 +128,8 @@ func main() {
 	// Example 2: Using message-based conversation with system role
 	fmt.Println("\nExample 2: Message-based conversation")
 	messages := []domain.Message{
-		{Role: domain.RoleSystem, Content: "You are a helpful coding assistant specializing in Go."},
-		{Role: domain.RoleUser, Content: "What's the difference between a slice and an array in Go?"},
+		domain.NewTextMessage(domain.RoleSystem, "You are a helpful coding assistant specializing in Go."),
+		domain.NewTextMessage(domain.RoleUser, "What's the difference between a slice and an array in Go?"),
 	}
 	messageResponse, err := openaiProvider.GenerateMessage(context.Background(), messages)
 	if err != nil {

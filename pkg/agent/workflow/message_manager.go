@@ -93,8 +93,9 @@ func (m *MessageManager) AddMessage(message ldomain.Message) {
 	m.messageTimestamps = append(m.messageTimestamps, time.Now())
 
 	// Calculate and cache token count
-	tokens := m.estimateTokens(newMsg.Content)
-	m.tokenCounts[newMsg.Content] = tokens
+	contentKey := getContentKey(newMsg.Content)
+	tokens := m.estimateTokensFromContentParts(newMsg.Content)
+	m.tokenCounts[contentKey] = tokens
 
 	// Apply truncation if needed
 	m.applyTruncation()
@@ -130,8 +131,9 @@ func (m *MessageManager) AddMessages(messages []ldomain.Message) {
 		m.messageTimestamps = append(m.messageTimestamps, now)
 
 		// Cache token count
-		tokens := m.estimateTokens(newMsg.Content)
-		m.tokenCounts[newMsg.Content] = tokens
+		contentKey := getContentKey(newMsg.Content)
+		tokens := m.estimateTokensFromContentParts(newMsg.Content)
+		m.tokenCounts[contentKey] = tokens
 	}
 
 	// Apply truncation if needed
@@ -180,7 +182,7 @@ func (m *MessageManager) GetMessagesForModel(modelTokenLimit int) []ldomain.Mess
 	// Calculate total tokens in system messages
 	systemTokens := 0
 	for _, msg := range systemMessages {
-		systemTokens += m.estimateTokens(msg.Content)
+		systemTokens += m.estimateTokensFromContentParts(msg.Content)
 	}
 
 	// Start with all system messages
@@ -191,7 +193,7 @@ func (m *MessageManager) GetMessagesForModel(modelTokenLimit int) []ldomain.Mess
 	// Start from most recent
 	for i := len(nonSystemMessages) - 1; i >= 0 && remainingTokens > 0; i-- {
 		msg := nonSystemMessages[i]
-		tokens := m.estimateTokens(msg.Content)
+		tokens := m.estimateTokensFromContentParts(msg.Content)
 
 		if tokens <= remainingTokens {
 			result = append(result, msg)
@@ -235,17 +237,15 @@ func (m *MessageManager) SetSystemPrompt(prompt string) {
 
 	// Add the new system message at the beginning
 	if prompt != "" {
-		sysMsg := ldomain.Message{
-			Role:    ldomain.RoleSystem,
-			Content: prompt,
-		}
+		sysMsg := ldomain.NewTextMessage(ldomain.RoleSystem, prompt)
 
 		// Insert at the beginning
 		newMessages = append([]ldomain.Message{sysMsg}, newMessages...)
 		newTimestamps = append([]time.Time{time.Now()}, newTimestamps...)
 
 		// Update token count for the new message
-		m.tokenCounts[prompt] = m.estimateTokens(prompt)
+		contentKey := getContentKey(sysMsg.Content)
+		m.tokenCounts[contentKey] = m.estimateTokensFromContentParts(sysMsg.Content)
 	}
 
 	m.messages = newMessages
@@ -259,7 +259,7 @@ func (m *MessageManager) GetTokenCount() int {
 
 	total := 0
 	for _, msg := range m.messages {
-		total += m.estimateTokens(msg.Content)
+		total += m.estimateTokensFromContentParts(msg.Content)
 	}
 
 	return total
@@ -287,7 +287,7 @@ func (m *MessageManager) applyTruncation() {
 		// Calculate current token usage
 		totalTokens := 0
 		for _, msg := range m.messages {
-			totalTokens += m.estimateTokens(msg.Content)
+			totalTokens += m.estimateTokensFromContentParts(msg.Content)
 		}
 
 		// If under token limit, no need to truncate
@@ -306,7 +306,7 @@ func (m *MessageManager) applyTruncation() {
 				if msg.Role == ldomain.RoleSystem {
 					newMessages = append(newMessages, msg)
 					newTimestamps = append(newTimestamps, m.messageTimestamps[i])
-					totalTokens -= m.estimateTokens(msg.Content)
+					totalTokens -= m.estimateTokensFromContentParts(msg.Content)
 				}
 			}
 		}
@@ -321,7 +321,7 @@ func (m *MessageManager) applyTruncation() {
 			// Add message and update token count
 			newMessages = append([]ldomain.Message{m.messages[i]}, newMessages...)
 			newTimestamps = append([]time.Time{m.messageTimestamps[i]}, newTimestamps...)
-			totalTokens -= m.estimateTokens(m.messages[i].Content)
+			totalTokens -= m.estimateTokensFromContentParts(m.messages[i].Content)
 		}
 
 		m.messages = newMessages
@@ -393,18 +393,136 @@ func (m *MessageManager) estimateTokens(text string) int {
 	return tokenCount
 }
 
+// estimateTokensFromContentParts estimates tokens from ContentPart array
+func (m *MessageManager) estimateTokensFromContentParts(contentParts []ldomain.ContentPart) int {
+	// Generate a key for the content parts
+	contentKey := getContentKey(contentParts)
+	
+	// Check if we already calculated this
+	if count, ok := m.tokenCounts[contentKey]; ok {
+		return count
+	}
+	
+	totalTokens := 0
+	
+	// Add up tokens for each part
+	for _, part := range contentParts {
+		switch part.Type {
+		case ldomain.ContentTypeText:
+			totalTokens += m.estimateTokens(part.Text)
+		case ldomain.ContentTypeImage:
+			// Images typically use more tokens than text
+			// A rough estimate: 1000 tokens per image
+			totalTokens += 1000
+		case ldomain.ContentTypeFile, ldomain.ContentTypeVideo, ldomain.ContentTypeAudio:
+			// Other media types: estimate 500 tokens
+			totalTokens += 500
+		}
+	}
+	
+	// Add overhead for multipart message
+	if len(contentParts) > 1 {
+		totalTokens += 10 * len(contentParts)
+	}
+	
+	// Cache for future reference
+	m.tokenCounts[contentKey] = totalTokens
+	return totalTokens
+}
+
+// getContentKey generates a unique key for content parts for caching
+func getContentKey(contentParts []ldomain.ContentPart) string {
+	if len(contentParts) == 0 {
+		return "empty_content"
+	}
+	
+	// For simple text-only content, use the text directly as the key
+	if len(contentParts) == 1 && contentParts[0].Type == ldomain.ContentTypeText {
+		return contentParts[0].Text
+	}
+	
+	// For multimodal content, build a key that includes type info
+	key := ""
+	for i, part := range contentParts {
+		key += string(part.Type) + ":"
+		
+		switch part.Type {
+		case ldomain.ContentTypeText:
+			key += part.Text
+		case ldomain.ContentTypeImage:
+			if part.Image != nil {
+				if part.Image.Source.Type == ldomain.SourceTypeURL {
+					key += part.Image.Source.URL
+				} else {
+					// Use first 20 chars of base64 data as fingerprint
+					data := part.Image.Source.Data
+					if len(data) > 20 {
+						data = data[:20]
+					}
+					key += data
+				}
+			}
+		case ldomain.ContentTypeFile:
+			if part.File != nil {
+				key += part.File.FileName
+			}
+		case ldomain.ContentTypeVideo, ldomain.ContentTypeAudio:
+			key += string(part.Type) + "_content"
+		}
+		
+		if i < len(contentParts)-1 {
+			key += "|"
+		}
+	}
+	
+	return key
+}
+
 // cloneMessage creates a deep copy of a message
 func (m *MessageManager) cloneMessage(msg ldomain.Message) ldomain.Message {
+	// Clone the ContentParts array
+	clonedContent := make([]ldomain.ContentPart, len(msg.Content))
+	
+	for i, part := range msg.Content {
+		clonedPart := ldomain.ContentPart{
+			Type: part.Type,
+			Text: part.Text,
+		}
+		
+		// Deep copy any media content
+		if part.Image != nil {
+			imgCopy := *part.Image // Copy the struct
+			clonedPart.Image = &imgCopy
+		}
+		
+		if part.File != nil {
+			fileCopy := *part.File // Copy the struct
+			clonedPart.File = &fileCopy
+		}
+		
+		if part.Video != nil {
+			videoCopy := *part.Video // Copy the struct
+			clonedPart.Video = &videoCopy
+		}
+		
+		if part.Audio != nil {
+			audioCopy := *part.Audio // Copy the struct
+			clonedPart.Audio = &audioCopy
+		}
+		
+		clonedContent[i] = clonedPart
+	}
+	
 	return ldomain.Message{
 		Role:    msg.Role,
-		Content: msg.Content,
+		Content: clonedContent,
 	}
 }
 
 // truncateMessage truncates a message to fit within token limit
 func (m *MessageManager) truncateMessage(msg ldomain.Message, tokenLimit int) ldomain.Message {
 	// Calculate how many tokens we currently have
-	currentTokens := m.estimateTokens(msg.Content)
+	currentTokens := m.estimateTokensFromContentParts(msg.Content)
 
 	// If already under limit, return as is
 	if currentTokens <= tokenLimit {
@@ -417,27 +535,38 @@ func (m *MessageManager) truncateMessage(msg ldomain.Message, tokenLimit int) ld
 		charsToKeep = 0
 	}
 
-	// Truncate the content
-	truncatedContent := msg.Content
-	if len(truncatedContent) > charsToKeep {
-		// Try to truncate at a space to avoid cutting words
-		if charsToKeep > 20 {
-			// Look for a space near the truncation point
-			for i := charsToKeep - 1; i > charsToKeep-20 && i >= 0; i-- {
-				if truncatedContent[i] == ' ' {
-					charsToKeep = i
-					break
+	// Create a cloned message with truncated content
+	result := m.cloneMessage(msg)
+	
+	// Only truncate text content parts
+	if len(result.Content) > 0 {
+		for i, part := range result.Content {
+			if part.Type == ldomain.ContentTypeText {
+				// Truncate the text part
+				text := part.Text
+				if len(text) > charsToKeep {
+					// Try to truncate at a space to avoid cutting words
+					if charsToKeep > 20 {
+						// Look for a space near the truncation point
+						for j := charsToKeep - 1; j > charsToKeep-20 && j >= 0; j-- {
+							if text[j] == ' ' {
+								charsToKeep = j
+								break
+							}
+						}
+					}
+					
+					// Apply truncation
+					text = text[:charsToKeep] + "..."
+					result.Content[i].Text = text
 				}
 			}
+			// For non-text parts, we leave them as is for now
+			// In a more sophisticated implementation, we might remove them to save tokens
 		}
-
-		truncatedContent = truncatedContent[:charsToKeep] + "..."
 	}
-
-	return ldomain.Message{
-		Role:    msg.Role,
-		Content: truncatedContent,
-	}
+	
+	return result
 }
 
 // sortMessagesInOrder sorts messages to maintain the correct conversation order

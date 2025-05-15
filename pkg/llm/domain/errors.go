@@ -1,4 +1,6 @@
-// Package domain defines core domain models and interfaces for LLM providers.
+// ABOUTME: This file defines error types related to LLM provider operations.
+// ABOUTME: It includes errors for various failure scenarios including content type support.
+
 package domain
 
 import (
@@ -53,6 +55,9 @@ var (
 
 	// ErrInvalidModelParameters is returned when provided model parameters are invalid.
 	ErrInvalidModelParameters = errors.New("invalid model parameters")
+	
+	// ErrUnsupportedContentType is returned when a provider doesn't support a specific content type.
+	ErrUnsupportedContentType = errors.New("content type not supported by provider")
 )
 
 // ProviderError represents an error from an LLM provider with additional context.
@@ -169,4 +174,33 @@ func IsTokenQuotaExceededError(err error) bool {
 // IsInvalidModelParametersError checks if the error is an invalid model parameters error.
 func IsInvalidModelParametersError(err error) bool {
 	return errors.Is(err, ErrInvalidModelParameters)
+}
+
+// UnsupportedContentTypeError represents an error when a provider doesn't support a specific content type
+type UnsupportedContentTypeError struct {
+	Provider    string
+	ContentType ContentType
+}
+
+// Error implements the error interface
+func (e *UnsupportedContentTypeError) Error() string {
+	return fmt.Sprintf("provider %s does not support content type %s", e.Provider, e.ContentType)
+}
+
+// Unwrap returns the underlying error
+func (e *UnsupportedContentTypeError) Unwrap() error {
+	return ErrUnsupportedContentType
+}
+
+// NewUnsupportedContentTypeError creates a new error for unsupported content types
+func NewUnsupportedContentTypeError(provider string, contentType ContentType) *UnsupportedContentTypeError {
+	return &UnsupportedContentTypeError{
+		Provider:    provider,
+		ContentType: contentType,
+	}
+}
+
+// IsUnsupportedContentTypeError checks if the error is an unsupported content type error
+func IsUnsupportedContentTypeError(err error) bool {
+	return errors.Is(err, ErrUnsupportedContentType)
 }

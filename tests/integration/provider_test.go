@@ -43,8 +43,8 @@ func TestProviderIntegration(t *testing.T) {
 		// Test generation with messages
 		t.Run("GenerateMessage", func(t *testing.T) {
 			messages := []ldomain.Message{
-				{Role: ldomain.RoleSystem, Content: "You are a helpful assistant."},
-				{Role: ldomain.RoleUser, Content: "What is the capital of France?"},
+				ldomain.NewTextMessage(ldomain.RoleSystem, "You are a helpful assistant."),
+				ldomain.NewTextMessage(ldomain.RoleUser, "What is the capital of France?"),
 			}
 
 			resp, err := openai.GenerateMessage(context.Background(), messages)
@@ -131,8 +131,8 @@ func TestProviderIntegration(t *testing.T) {
 		// Test generation with messages
 		t.Run("GenerateMessage", func(t *testing.T) {
 			messages := []ldomain.Message{
-				{Role: ldomain.RoleSystem, Content: "You are a helpful assistant."},
-				{Role: ldomain.RoleUser, Content: "What is the capital of France?"},
+				ldomain.NewTextMessage(ldomain.RoleSystem, "You are a helpful assistant."),
+				ldomain.NewTextMessage(ldomain.RoleUser, "What is the capital of France?"),
 			}
 
 			resp, err := anthropic.GenerateMessage(context.Background(), messages)

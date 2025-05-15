@@ -87,8 +87,8 @@ func TestAnthropicProvider(t *testing.T) {
 		baseURLOption := domain.NewBaseURLOption(mockServer.URL)
 		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", baseURLOption)
 		messages := []domain.Message{
-			{Role: domain.RoleSystem, Content: "You are a helpful assistant"},
-			{Role: domain.RoleUser, Content: "Tell me a joke"},
+			domain.NewTextMessage(domain.RoleSystem, "You are a helpful assistant"),
+			domain.NewTextMessage(domain.RoleUser, "Tell me a joke"),
 		}
 		response, err := provider.GenerateMessage(ctx, messages)
 		if err != nil {
@@ -201,8 +201,8 @@ func TestAnthropicProvider(t *testing.T) {
 		baseURLOption := domain.NewBaseURLOption(streamServer.URL)
 		provider := NewAnthropicProvider("test-api-key", "claude-3-5-sonnet-latest", baseURLOption)
 		messages := []domain.Message{
-			{Role: domain.RoleSystem, Content: "You are a helpful assistant"},
-			{Role: domain.RoleUser, Content: "Tell me a joke"},
+			domain.NewTextMessage(domain.RoleSystem, "You are a helpful assistant"),
+			domain.NewTextMessage(domain.RoleUser, "Tell me a joke"),
 		}
 		stream, err := provider.StreamMessage(ctx, messages)
 		if err != nil {

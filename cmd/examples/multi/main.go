@@ -205,8 +205,8 @@ func runWithRealProviders(providers []provider.ProviderWeight) {
 	// Test message-based conversation
 	fmt.Println("\nMessage-based conversation:")
 	messages := []domain.Message{
-		{Role: domain.RoleSystem, Content: "You are a Go programming expert."},
-		{Role: domain.RoleUser, Content: "What are some best practices for error handling in Go?"},
+		domain.NewTextMessage(domain.RoleSystem, "You are a Go programming expert."),
+		domain.NewTextMessage(domain.RoleUser, "What are some best practices for error handling in Go?"),
 	}
 
 	start = time.Now()

@@ -114,8 +114,8 @@ func TestAnthropicWithMock(t *testing.T) {
 	// Test message-based conversation
 	t.Run("MessageConversation", func(t *testing.T) {
 		messages := []domain.Message{
-			{Role: domain.RoleSystem, Content: "You are a helpful coding assistant."},
-			{Role: domain.RoleUser, Content: "What's the difference between a slice and an array in Go?"},
+			domain.NewTextMessage(domain.RoleSystem, "You are a helpful coding assistant."),
+			domain.NewTextMessage(domain.RoleUser, "What's the difference between a slice and an array in Go?"),
 		}
 		response, err := mockProvider.GenerateMessage(context.Background(), messages)
 		if err != nil {

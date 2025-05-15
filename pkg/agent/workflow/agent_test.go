@@ -18,7 +18,7 @@ type MockProvider struct {
 
 // Generate produces text from a prompt
 func (p *MockProvider) Generate(ctx context.Context, prompt string, options ...ldomain.Option) (string, error) {
-	resp, err := p.GenerateMessage(ctx, []ldomain.Message{{Role: ldomain.RoleUser, Content: prompt}}, options...)
+	resp, err := p.GenerateMessage(ctx, []ldomain.Message{ldomain.NewTextMessage(ldomain.RoleUser, prompt)}, options...)
 	if err != nil {
 		return "", err
 	}

@@ -207,12 +207,52 @@ func (c *ResponseCache) GetStats() map[string]interface{} {
 // It hashes the combination of messages and options
 func (c *ResponseCache) generateCacheKey(messages []ldomain.Message, options []ldomain.Option) string {
 	// Normalize messages to avoid inconsistent caching
-	var messageData []map[string]string
+	var messageData []map[string]interface{}
 	for _, msg := range messages {
-		messageData = append(messageData, map[string]string{
-			"role":    string(msg.Role),
-			"content": msg.Content,
-		})
+		msgData := map[string]interface{}{
+			"role": string(msg.Role),
+		}
+		
+		// Handle content parts
+		if len(msg.Content) > 0 {
+			// For simple messages with just text, use a simpler representation
+			if len(msg.Content) == 1 && msg.Content[0].Type == ldomain.ContentTypeText {
+				msgData["content"] = msg.Content[0].Text
+			} else {
+				// For multimodal content, create a representation of each part
+				var contentParts []map[string]interface{}
+				for _, part := range msg.Content {
+					partData := map[string]interface{}{
+						"type": string(part.Type),
+					}
+					
+					switch part.Type {
+					case ldomain.ContentTypeText:
+						partData["text"] = part.Text
+					case ldomain.ContentTypeImage:
+						if part.Image != nil {
+							// Just use media type and source type as identifiers
+							// to avoid storing large base64 strings in cache keys
+							partData["media_type"] = part.Image.Source.MediaType
+							partData["source_type"] = string(part.Image.Source.Type)
+						}
+					case ldomain.ContentTypeFile:
+						if part.File != nil {
+							partData["file_name"] = part.File.FileName
+							partData["mime_type"] = part.File.MimeType
+						}
+					case ldomain.ContentTypeVideo, ldomain.ContentTypeAudio:
+						// Just include the type
+						partData["media_content"] = true
+					}
+					
+					contentParts = append(contentParts, partData)
+				}
+				msgData["content_parts"] = contentParts
+			}
+		}
+		
+		messageData = append(messageData, msgData)
 	}
 
 	// Add options to the key if present
@@ -243,7 +283,18 @@ func (c *ResponseCache) generateCacheKey(messages []ldomain.Message, options []l
 		for _, msg := range messages {
 			sb.WriteString(string(msg.Role))
 			sb.WriteString(":")
-			sb.WriteString(msg.Content)
+			
+			// Extract text content for the key
+			if len(msg.Content) > 0 {
+				for _, part := range msg.Content {
+					if part.Type == ldomain.ContentTypeText {
+						sb.WriteString(part.Text)
+					} else {
+						sb.WriteString("[" + string(part.Type) + "]")
+					}
+				}
+			}
+			
 			sb.WriteString("|")
 		}
 		return hashString(sb.String())

@@ -15,27 +15,18 @@ func createSampleMessages(size int) []domain.Message {
 	messages := make([]domain.Message, 0, size)
 
 	// Always start with a system message
-	messages = append(messages, domain.Message{
-		Role:    domain.RoleSystem,
-		Content: "You are a helpful assistant that provides accurate and concise information.",
-	})
+	messages = append(messages, domain.NewTextMessage(domain.RoleSystem, "You are a helpful assistant that provides accurate and concise information."))
 
 	// Add user-assistant message pairs
 	for i := 1; i < size; i += 2 {
 		// Add user message
 		if i < size {
-			messages = append(messages, domain.Message{
-				Role:    domain.RoleUser,
-				Content: "This is a user message for testing performance.",
-			})
+			messages = append(messages, domain.NewTextMessage(domain.RoleUser, "This is a user message for testing performance."))
 		}
 
 		// Add assistant message
 		if i+1 < size {
-			messages = append(messages, domain.Message{
-				Role:    domain.RoleAssistant,
-				Content: "This is an assistant response for testing performance.",
-			})
+			messages = append(messages, domain.NewTextMessage(domain.RoleAssistant, "This is an assistant response for testing performance."))
 		}
 	}
 
@@ -48,34 +39,22 @@ func createMessagesWithTools(size int) []domain.Message {
 	messages := make([]domain.Message, 0, size)
 
 	// Add system message
-	messages = append(messages, domain.Message{
-		Role:    domain.RoleSystem,
-		Content: "You are a helpful assistant that can use tools.",
-	})
+	messages = append(messages, domain.NewTextMessage(domain.RoleSystem, "You are a helpful assistant that can use tools."))
 
 	// Add user message first
-	messages = append(messages, domain.Message{
-		Role:    domain.RoleUser,
-		Content: "I need help with a calculation.",
-	})
+	messages = append(messages, domain.NewTextMessage(domain.RoleUser, "I need help with a calculation."))
 
 	// Fill remaining messages with assistant-tool pairs
 	remaining := size - 2
 	for i := 0; i < remaining; i += 2 {
 		// Add assistant message with tool call
 		if i < remaining {
-			messages = append(messages, domain.Message{
-				Role:    domain.RoleAssistant,
-				Content: "I'll use the calculator tool to help you.",
-			})
+			messages = append(messages, domain.NewTextMessage(domain.RoleAssistant, "I'll use the calculator tool to help you."))
 		}
 
 		// Add tool response
 		if i+1 < remaining {
-			messages = append(messages, domain.Message{
-				Role:    domain.RoleTool,
-				Content: "Result: 42",
-			})
+			messages = append(messages, domain.NewTextMessage(domain.RoleTool, "Result: 42"))
 		}
 	}
 

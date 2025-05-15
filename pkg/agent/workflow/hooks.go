@@ -51,7 +51,7 @@ func (h *LoggingHook) BeforeGenerate(ctx context.Context, messages []ldomain.Mes
 				h.logger.Debug("Message details",
 					"index", i,
 					"role", msg.Role,
-					"content", truncateString(msg.Content, 100))
+					"content", getMessageContentText(msg.Content))
 			}
 		}
 	}
@@ -143,4 +143,22 @@ func truncateValue(v interface{}) string {
 	default:
 		return fmt.Sprintf("%v", v)
 	}
+}
+
+// getMessageContentText extracts text from the ContentPart array and truncates it
+func getMessageContentText(content []ldomain.ContentPart) string {
+	if len(content) == 0 {
+		return ""
+	}
+	
+	var allText string
+	for _, part := range content {
+		if part.Type == ldomain.ContentTypeText {
+			allText += part.Text + " "
+		} else {
+			allText += "[" + string(part.Type) + " content] "
+		}
+	}
+	
+	return truncateString(strings.TrimSpace(allText), 100)
 }

@@ -61,9 +61,76 @@ func GenerateMessagesKey(messages []domain.Message) uint64 {
 
 	// Write each message to the hasher
 	for _, msg := range messages {
-		// Add role and content to hash
+		// Add role to hash
 		hasher.Write([]byte(msg.Role))
-		hasher.Write([]byte(msg.Content))
+		
+		// Handle multimodal content
+		for _, part := range msg.Content {
+			// Add content type to hash
+			hasher.Write([]byte(part.Type))
+			
+			// Add content based on type
+			switch part.Type {
+			case domain.ContentTypeText:
+				hasher.Write([]byte(part.Text))
+			case domain.ContentTypeImage:
+				if part.Image != nil {
+					hasher.Write([]byte(part.Image.Source.Type))
+					if part.Image.Source.Type == domain.SourceTypeBase64 {
+						hasher.Write([]byte(part.Image.Source.MediaType))
+						// Only hash a portion of the data to avoid excessive memory usage
+						if len(part.Image.Source.Data) > 100 {
+							hasher.Write([]byte(part.Image.Source.Data[:100]))
+						} else {
+							hasher.Write([]byte(part.Image.Source.Data))
+						}
+					} else {
+						hasher.Write([]byte(part.Image.Source.URL))
+					}
+				}
+			case domain.ContentTypeFile:
+				if part.File != nil {
+					hasher.Write([]byte(part.File.FileName))
+					hasher.Write([]byte(part.File.MimeType))
+					// Only hash a portion of the data to avoid excessive memory usage
+					if len(part.File.FileData) > 100 {
+						hasher.Write([]byte(part.File.FileData[:100]))
+					} else {
+						hasher.Write([]byte(part.File.FileData))
+					}
+				}
+			case domain.ContentTypeVideo:
+				if part.Video != nil {
+					hasher.Write([]byte(part.Video.Source.Type))
+					if part.Video.Source.Type == domain.SourceTypeBase64 {
+						hasher.Write([]byte(part.Video.Source.MediaType))
+						// Only hash a portion of the data to avoid excessive memory usage
+						if len(part.Video.Source.Data) > 100 {
+							hasher.Write([]byte(part.Video.Source.Data[:100]))
+						} else {
+							hasher.Write([]byte(part.Video.Source.Data))
+						}
+					} else {
+						hasher.Write([]byte(part.Video.Source.URL))
+					}
+				}
+			case domain.ContentTypeAudio:
+				if part.Audio != nil {
+					hasher.Write([]byte(part.Audio.Source.Type))
+					if part.Audio.Source.Type == domain.SourceTypeBase64 {
+						hasher.Write([]byte(part.Audio.Source.MediaType))
+						// Only hash a portion of the data to avoid excessive memory usage
+						if len(part.Audio.Source.Data) > 100 {
+							hasher.Write([]byte(part.Audio.Source.Data[:100]))
+						} else {
+							hasher.Write([]byte(part.Audio.Source.Data))
+						}
+					} else {
+						hasher.Write([]byte(part.Audio.Source.URL))
+					}
+				}
+			}
+		}
 	}
 
 	return hasher.Sum64()

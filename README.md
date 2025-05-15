@@ -486,17 +486,19 @@ For more information on testing, see the [Testing Framework documentation](docs/
 
 ## Development Status
 
-The core functionality is complete and working. Current focus is on:
+The core functionality is fairly complete and working. However, apis are subject to change to accomodate new unforeseen developments in upstream apis. 
+Current focus is on:
 
-1. Model Context Protocol support for Agents
-2. Testing and performance optimization
+1. Multimodal file/content support
+2. Model Context Protocol support for Agents
+3. Testing and performance optimization
    - Comprehensive test suite for error conditions
    - Benchmarks for remaining components
    - Stress testing for high-load scenarios
-3. Performance profiling and optimization
+4. Performance profiling and optimization
    - Prompt processing and template expansion
    - Memory pooling for response types
-4. API refinement based on usage feedback
+5. API refinement based on usage feedback
 
 For the latest status and upcoming features, see the [TODO.md](TODO.md) file.
 
