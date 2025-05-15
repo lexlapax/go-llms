@@ -541,23 +541,39 @@ For more information on testing, see the [Testing Framework documentation](docs/
 
 ## Development Status
 
-The core functionality is fairly complete and working. However, apis are subject to change to accomodate new unforeseen developments in upstream apis. 
-Current focus is on:
+### Current Version: v0.2.0
 
-1. ✅ Multimodal content support (implemented)
-   - Support for text, images, files, videos, and audio in messages
-   - Base64 encoding for binary data
-   - Helper functions for creating different message types
-   - Provider-specific conversions for OpenAI, Anthropic, and Gemini
-2. Model Context Protocol support for Agents
-3. Testing and performance optimization
+The core functionality is fairly complete and working. However, APIs are subject to change to accommodate new unforeseen developments in upstream APIs.
+
+#### Changelog
+
+**v0.2.0 (Current)**
+- ✅ Added multimodal content support
+  - Support for text, images, files, videos, and audio in messages
+  - Base64 encoding for binary data
+  - Helper functions for creating different message types
+  - Provider-specific conversions for OpenAI, Anthropic, and Gemini
+- ✅ Complete test suite for multimodal content
+- ✅ Documentation for multimodal implementation
+
+**v0.1.0**
+- Initial release with core functionality
+- Provider implementations (OpenAI, Anthropic, Gemini)
+- Schema validation system
+- Structured output processing
+- Multi-provider strategies
+- Agent workflow system
+
+#### Current Focus
+1. Model Context Protocol support for Agents
+2. Testing and performance optimization
    - Comprehensive test suite for error conditions
    - Benchmarks for remaining components
    - Stress testing for high-load scenarios
-4. Performance profiling and optimization
+3. Performance profiling and optimization
    - Prompt processing and template expansion
    - Memory pooling for response types
-5. API refinement based on usage feedback
+4. API refinement based on usage feedback
 
 For the latest status and upcoming features, see the [TODO.md](TODO.md) file.
 

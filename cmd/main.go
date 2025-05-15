@@ -30,12 +30,14 @@ import (
 
 var (
 	cfgFile string
+	version = "v0.2.0"  // Current version of the library
 	rootCmd = &cobra.Command{
 		Use:   "go-llms",
 		Short: "A Go library for LLM-powered applications with structured outputs",
 		Long: `Go-LLMs is a Go library for creating LLM-powered applications with 
 structured outputs and type safety. It provides interfaces for LLM providers, 
 schema validation, structured output processing, and agent workflows with tools.`,
+		Version: version,  // Set the version for the root command
 	}
 )
 
