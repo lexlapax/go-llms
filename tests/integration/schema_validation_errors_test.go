@@ -355,8 +355,6 @@ func TestSchemaValidationErrors(t *testing.T) {
 
 	// Test conditional validation errors (if/then/else)
 	t.Run("ConditionalValidation", func(t *testing.T) {
-		// Skip test as the if/then/else at the property level still needs implementation work
-		t.Skip("Top-level conditional validation not fully implemented yet")
 		// This is a simplified case just to test if-then-else validation works at schema level
 		schema := &domain.Schema{
 			Type: "object",
@@ -384,8 +382,8 @@ func TestSchemaValidationErrors(t *testing.T) {
 			},
 		}
 
-		// Test with a valid case (type: integer, value: number)
-		validJSON := `{"type": "integer", "value": 42}`
+		// Test with a valid case (type: number, value: number)
+		validJSON := `{"type": "number", "value": 42}`
 		result, err := validator.Validate(schema, validJSON)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -394,8 +392,18 @@ func TestSchemaValidationErrors(t *testing.T) {
 			t.Errorf("Expected validation to pass but got errors: %v", result.Errors)
 		}
 
-		// Test with an invalid case (type: string, value: number)
-		invalidJSON := `{"type": "string", "value": 42}`
+		// Test with a valid case (type: string, value: string)
+		validJSON = `{"type": "string", "value": "text"}`
+		result, err = validator.Validate(schema, validJSON)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if !result.Valid {
+			t.Errorf("Expected validation to pass but got errors: %v", result.Errors)
+		}
+
+		// Test with an invalid case (type: number, value: string)
+		invalidJSON := `{"type": "number", "value": "text"}`
 		result, err = validator.Validate(schema, invalidJSON)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
@@ -406,6 +414,28 @@ func TestSchemaValidationErrors(t *testing.T) {
 
 		// Check for specific error message
 		errorFound := false
+		for _, errMsg := range result.Errors {
+			if schemaContains(errMsg, "value must be a number") {
+				errorFound = true
+				break
+			}
+		}
+		if !errorFound {
+			t.Errorf("Expected error about value needing to be a number, but got: %v", result.Errors)
+		}
+
+		// Test with an invalid case (type: string, value: number)
+		invalidJSON = `{"type": "string", "value": 42}`
+		result, err = validator.Validate(schema, invalidJSON)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if result.Valid {
+			t.Error("Expected validation to fail but it passed")
+		}
+
+		// Check for specific error message
+		errorFound = false
 		for _, errMsg := range result.Errors {
 			if schemaContains(errMsg, "value must be a string") {
 				errorFound = true
