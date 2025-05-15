@@ -2,13 +2,13 @@
 
 ## Features
 - [x] Implement interface-based provider option system
-- [x] Add multimodal content support to the llm core
+- [x] Add multimodal content support to the llm core (completed in v0.2.0)
   - [x] Research a common way to provide files via base64 and mime/type encapsulation to the three major provider apis
   - [x] Implement ContentPart structure with support for text, images, files, videos, and audio
   - [x] Create helper functions for creating different message types (NewTextMessage, NewImageMessage, etc.)
   - [x] Write tests to test multimodal content support
   - [x] Implement provider-specific conversions for each provider
-  - [x] Document in MULTIMODAL_IMPLEMENTATION.md and update existing documentation
+  - [x] Integrate multimodal content documentation into main documentation structure
 - [ ] Add Model Context Protocol Client support for Agents
 - [ ] Add Model Context Protocol Server support for Workflows or Agents
 
@@ -17,10 +17,19 @@
   - [x] Update REFERENCE.md with all new documentation
   - [x] Update DOCUMENTATION_CONSOLIDATION.md with recent changes
   - [x] Ensure navigation links work correctly
+- [x] Document multimodal content implementation
+  - [x] Create technical documentation in docs/technical/multimodal-content.md
+  - [x] Update user guide in docs/user-guide/multimodal-content.md
+  - [x] Add multimodal content example to README.md
+  - [x] Update version to v0.2.0
 
 
 ## Testing & Performance
 - [x] Implement stress tests for high-load scenarios
+- [x] Implement multimodal content tests
+  - [x] Integration tests for multimodal content
+  - [x] Provider-specific multimodal tests (OpenAI, Anthropic, Gemini)
+  - [x] Edge case tests for different content types
 - [ ] Performance profiling and optimization:
   - [ ] Phase 1: Baseline Profiling Infrastructure (Prerequisites)
     - [x] P0: Add CPU and memory profiling hooks to key operations
