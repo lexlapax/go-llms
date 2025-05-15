@@ -19,6 +19,7 @@ Go-LLMs is a Go library that provides a simplified, unified interface to interac
 - **Dependency injection**: Enables passing data and services into agents
 - **Tool integration**: Allows LLMs to interact with external systems through function calls
 - **Multiple providers**: Support for OpenAI, Anthropic, Google Gemini, and OpenAI API compatible providers (like OpenRouter and Ollama)
+- **Multimodal content**: Support for text, images, files, videos, and audio in messages
 - **Provider options system**: Configure providers with type-safe interface-based options (common and provider-specific)
 - **Environment variable support**: Configure providers through environment variables and option factories
 - **Schema validation**: Comprehensive JSON schema validation with type coercion
@@ -169,6 +170,58 @@ if err != nil {
 // Access the structured result
 person := result.(map[string]interface{})
 fmt.Printf("Generated person: %s (%d)\n", person["name"], person["age"])
+```
+
+### Using Multimodal Content
+
+```go
+// Create a provider that supports multimodal content
+provider := provider.NewOpenAIProvider(
+    os.Getenv("OPENAI_API_KEY"),
+    "gpt-4o",
+)
+
+// Load an image
+imageData, err := os.ReadFile("image.jpg")
+if err != nil {
+    log.Fatalf("Failed to read image: %v", err)
+}
+
+// Create a message with text and image content
+message := domain.NewImageMessage(
+    domain.RoleUser,
+    imageData,
+    "image/jpeg",
+    "What's in this image?",
+)
+
+// Generate a response with the multimodal message
+response, err := provider.GenerateWithMessages(
+    context.Background(),
+    []domain.Message{message},
+)
+if err != nil {
+    log.Fatalf("Generation error: %v", err)
+}
+
+fmt.Printf("Response: %s\n", response)
+
+// You can also use a URL for images
+urlMessage := domain.NewImageURLMessage(
+    domain.RoleUser,
+    "https://example.com/image.jpg",
+    "Describe this image",
+)
+
+// Or attach files (like PDFs, documents)
+fileData, _ := os.ReadFile("document.pdf")
+fileMessage := domain.NewFileMessage(
+    domain.RoleUser,
+    "document.pdf",
+    fileData,
+    "application/pdf",
+    "Summarize this document",
+)
 ```
 
 ### Configuring Providers with Options
@@ -409,6 +462,7 @@ Go-LLMs provides comprehensive documentation for users and contributors:
 - [Getting Started](docs/user-guide/getting-started.md) - Introduction and basic usage examples
 - [Provider Options](docs/user-guide/provider-options.md) - Using the provider option system for configuration
 - [Multi-Provider Guide](docs/user-guide/multi-provider.md) - Working with multiple LLM providers
+- [Multimodal Content](docs/user-guide/multimodal-content.md) - Working with text, images, files, and other media types
 - [Advanced Validation](docs/user-guide/advanced-validation.md) - Advanced schema validation features
 - [Error Handling](docs/user-guide/error-handling.md) - Error handling patterns and best practices
 
@@ -424,6 +478,7 @@ Go-LLMs provides comprehensive documentation for users and contributors:
 
 - [Architecture](docs/technical/architecture.md) - Overview of the library architecture
 - [Performance Optimization](docs/technical/performance.md) - Performance optimization strategies
+- [Multimodal Content Implementation](docs/technical/multimodal-content.md) - Implementation details for multimodal support
 - [Sync.Pool Implementation](docs/technical/sync-pool.md) - Detailed guide on sync.Pool usage
 - [Caching Mechanisms](docs/technical/caching.md) - Caching strategies and implementations
 - [Concurrency Patterns](docs/technical/concurrency.md) - Thread safety and concurrent execution
@@ -489,7 +544,11 @@ For more information on testing, see the [Testing Framework documentation](docs/
 The core functionality is fairly complete and working. However, apis are subject to change to accomodate new unforeseen developments in upstream apis. 
 Current focus is on:
 
-1. Multimodal file/content support
+1. ✅ Multimodal content support (implemented)
+   - Support for text, images, files, videos, and audio in messages
+   - Base64 encoding for binary data
+   - Helper functions for creating different message types
+   - Provider-specific conversions for OpenAI, Anthropic, and Gemini
 2. Model Context Protocol support for Agents
 3. Testing and performance optimization
    - Comprehensive test suite for error conditions

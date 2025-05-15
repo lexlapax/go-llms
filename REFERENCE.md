@@ -7,6 +7,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Getting Started](/docs/user-guide/getting-started.md) - Introduction and basic usage examples
 - [Provider Options](/docs/user-guide/provider-options.md) - Using the provider option system for configuration
 - [Multi-Provider Guide](/docs/user-guide/multi-provider.md) - Working with multiple LLM providers
+- [Multimodal Content](/docs/user-guide/multimodal-content.md) - Working with text, images, files, videos, and audio
 - [Advanced Validation](/docs/user-guide/advanced-validation.md) - Advanced schema validation features
 - [Error Handling](/docs/user-guide/error-handling.md) - Error handling patterns and best practices
 
@@ -22,6 +23,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 
 - [Architecture](/docs/technical/architecture.md) - Overview of the library architecture
 - [Performance Optimization](/docs/technical/performance.md) - Performance optimization strategies
+- [Multimodal Content Implementation](/docs/technical/multimodal-content.md) - Implementation details for multimodal support
 - [Testing Framework](/docs/technical/testing.md) - Error condition testing and stress testing
 - [Benchmarking Framework](/docs/technical/benchmarks.md) - Performance benchmarks and measurement
 - [Sync.Pool Implementation](/docs/technical/sync-pool.md) - Detailed guide on sync.Pool usage

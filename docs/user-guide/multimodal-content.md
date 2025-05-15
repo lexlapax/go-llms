@@ -1,6 +1,10 @@
 # Multimodal Content Support
 
+> **[Documentation Home](/REFERENCE.md) / [User Guide](README.md) / Multimodal Content**
+
 Go-LLMs provides comprehensive support for multimodal content across all supported LLM providers. This guide explains how to use multimodal content types such as images, videos, audio, and files in your applications.
+
+For technical implementation details, see the [Multimodal Content Implementation](../technical/multimodal-content.md) documentation.
 
 ## Overview
 
@@ -17,8 +21,8 @@ Each provider has different capabilities regarding which content types they supp
 | Provider  | Text | Images | Files | Videos | Audio |
 |-----------|------|--------|-------|--------|-------|
 | OpenAI    | ✅   | ✅     | ✅    | ✅     | ✅    |
-| Anthropic | ✅   | ✅     | ❌    | ❌     | ❌    |
-| Gemini    | ✅   | ✅     | ❌    | ✅     | ❌    |
+| Anthropic | ✅   | ✅     | ✅    | ✅     | ✅    |
+| Gemini    | ✅   | ✅     | ✅    | ✅     | ✅    |
 
 When using unsupported content types, the library will return a clear error with detailed information.
 

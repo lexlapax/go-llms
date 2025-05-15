@@ -1,8 +1,8 @@
 # Multimodal Content Implementation
 
-## Overview
+> **[Documentation Home](/REFERENCE.md) / [Technical Documentation](README.md) / Multimodal Content Implementation**
 
-This document describes the implementation of multimodal content support in the go-llms library. The implementation enables the library to handle various types of content such as text, images, files, videos, and audio in messages sent to and received from different LLM providers.
+This document describes the implementation of multimodal content support in the Go-LLMs library. The implementation enables the library to handle various types of content such as text, images, files, videos, and audio in messages sent to and received from different LLM providers.
 
 ## Core Components
 
@@ -87,6 +87,31 @@ fileData, _ := os.ReadFile("document.pdf")
 fileMessage := domain.NewFileMessage(domain.RoleUser, "document.pdf", fileData, "application/pdf", "Summarize this document")
 ```
 
+## Provider Implementation Details
+
+### OpenAI
+
+The OpenAI provider implementation:
+- Converts library ContentPart objects to OpenAI's content format
+- Maps content types to the appropriate OpenAI formats
+- Handles base64 encoding for binary data
+
+### Anthropic
+
+The Anthropic provider implementation:
+- Maps our ContentPart structure to Anthropic's message format
+- Handles image and other media content types according to Anthropic's API requirements
+
+### Gemini
+
+The Gemini provider implementation:
+- Converts ContentPart objects to Gemini's content format
+- Implements appropriate handling for different media types
+
 ## Future Extensions
 
-The implementation is designed to be extensible for future provider-specific features while maintaining a consistent API across the library.
+The implementation is designed to be extensible for future provider-specific features while maintaining a consistent API across the library. Potential extensions include:
+
+- Support for additional content types as providers expand their capabilities
+- Enhancements to content transformation and processing
+- Additional helper functions for specialized media handling
