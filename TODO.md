@@ -9,6 +9,14 @@
   - [x] Write tests to test multimodal content support
   - [x] Implement provider-specific conversions for each provider
   - [x] Integrate multimodal content documentation into main documentation structure
+- [ ] Create multimodal example
+  - [ ] Design command-line interface with flags for provider, mode, attachments
+  - [ ] Implement file reading and MIME type detection
+  - [ ] Create demonstrations for each content type (text, image, audio, video)
+  - [ ] Implement mixed mode examples (text + images)
+  - [ ] Add error handling for unsupported content types per provider
+  - [ ] Write comprehensive README with usage examples
+  - [ ] Add unit tests for the example
 - [ ] Add Model Context Protocol Client support for Agents
 - [ ] Add Model Context Protocol Server support for Workflows or Agents
 

@@ -497,6 +497,7 @@ The library includes several example applications that demonstrate key features:
 - [Gemini Example](cmd/examples/gemini/README.md) - Integration with Google Gemini
 - [Provider Options Example](cmd/examples/provider_options/README.md) - Using the provider option system
 - [OpenAI API Compatible Providers](cmd/examples/openai_api_compatible_providers/README.md) - Using OpenRouter and Ollama
+- [Multimodal Example](cmd/examples/multimodal/README.md) - Working with text, images, audio, and video content
 - [Agent Example](cmd/examples/agent/README.md) - Agent with tools for complex tasks
 - [Multi-Provider Example](cmd/examples/multi/README.md) - Working with multiple providers
 - [Consensus Example](cmd/examples/consensus/README.md) - Multi-provider consensus strategies

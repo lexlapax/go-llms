@@ -224,6 +224,7 @@ if errors.As(err, &domain.ErrContentTypeValidationFailed{}) {
 
 For complete examples of working with multimodal content, check out the following example applications:
 
+- [Multimodal Example](/cmd/examples/multimodal/) - Comprehensive multimodal example with support for all content types
 - `cmd/examples/openai/multimodal.go` - Using multimodal content with OpenAI
 - `cmd/examples/anthropic/vision.go` - Using vision capabilities with Anthropic Claude
 - `cmd/examples/gemini/multimodal.go` - Using multimodal content with Google Gemini
