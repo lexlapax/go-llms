@@ -30,6 +30,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Caching Mechanisms](/docs/technical/caching.md) - Caching strategies and implementations
 - [Concurrency Patterns](/docs/technical/concurrency.md) - Thread safety and concurrent execution
 - [Adding a New Provider](/docs/technical/new-provider.md) - Step-by-step guide to implementing and integrating a new LLM provider
+- [Dependency Reduction Journey](/docs/technical/dependency_reduction.md) - Chronicle of dependency reduction from viper/cobra to stdlib
 
 ## Examples
 

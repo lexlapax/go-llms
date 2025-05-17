@@ -482,6 +482,7 @@ Go-LLMs provides comprehensive documentation for users and contributors:
 - [Sync.Pool Implementation](docs/technical/sync-pool.md) - Detailed guide on sync.Pool usage
 - [Caching Mechanisms](docs/technical/caching.md) - Caching strategies and implementations
 - [Concurrency Patterns](docs/technical/concurrency.md) - Thread safety and concurrent execution
+- [Dependency Reduction Journey](docs/technical/dependency_reduction.md) - Chronicle of dependency reduction from viper/cobra to stdlib
 
 ### CLI Documentation
 
