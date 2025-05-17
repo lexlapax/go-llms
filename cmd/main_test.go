@@ -3,9 +3,6 @@ package main
 import (
 	"os"
 	"testing"
-
-	"github.com/knadh/koanf/v2"
-	"github.com/knadh/koanf/providers/structs"
 )
 
 func TestGetAPIKey(t *testing.T) {
@@ -17,8 +14,9 @@ func TestGetAPIKey(t *testing.T) {
 	defer func() {
 		os.Setenv("OPENAI_API_KEY", oldOpenAIKey)
 		os.Setenv("ANTHROPIC_API_KEY", oldAnthropicKey)
-		// Reset koanf instance
-		k = koanf.New(".")
+		// Reset config
+		config = Config{}
+		InitOptimizedConfig("")
 	}()
 
 	// Clear environment variables for the test
@@ -29,21 +27,16 @@ func TestGetAPIKey(t *testing.T) {
 	t.Run("GetFromEnvOpenAI", func(t *testing.T) {
 		// Set environment variable
 		os.Setenv("OPENAI_API_KEY", "test-openai-key")
-
-		// Reset koanf instance
-		k = koanf.New(".")
-		if err := InitConfig(""); err != nil {
-			t.Fatalf("Failed to init config: %v", err)
-		}
-
-		// Get API key
-		key, err := GetAPIKey("openai")
+		// Reset and reload config
+		config = Config{}
+		InitOptimizedConfig("")
+		
+		key, err := GetOptimizedAPIKey("openai")
 		if err != nil {
-			t.Fatalf("Expected no error, got: %v", err)
+			t.Errorf("Expected no error, got %v", err)
 		}
-
 		if key != "test-openai-key" {
-			t.Errorf("Expected API key 'test-openai-key', got: %s", key)
+			t.Errorf("Expected 'test-openai-key', got '%s'", key)
 		}
 	})
 
@@ -51,130 +44,84 @@ func TestGetAPIKey(t *testing.T) {
 	t.Run("GetFromEnvAnthropic", func(t *testing.T) {
 		// Set environment variable
 		os.Setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
-
-		// Reset koanf instance
-		k = koanf.New(".")
-		if err := InitConfig(""); err != nil {
-			t.Fatalf("Failed to init config: %v", err)
-		}
-
-		// Get API key
-		key, err := GetAPIKey("anthropic")
+		// Reset and reload config
+		config = Config{}
+		InitOptimizedConfig("")
+		
+		key, err := GetOptimizedAPIKey("anthropic")
 		if err != nil {
-			t.Fatalf("Expected no error, got: %v", err)
+			t.Errorf("Expected no error, got %v", err)
 		}
-
 		if key != "test-anthropic-key" {
-			t.Errorf("Expected API key 'test-anthropic-key', got: %s", key)
+			t.Errorf("Expected 'test-anthropic-key', got '%s'", key)
 		}
 	})
 
 	// Test case 3: Get API key from config - OpenAI
 	t.Run("GetFromConfigOpenAI", func(t *testing.T) {
-		// Clear environment variable
+		// Clear env var
 		os.Unsetenv("OPENAI_API_KEY")
-
-		// Reset koanf and set config
-		k = koanf.New(".")
-		config := DefaultConfig()
+		// Set config directly
+		config = Config{}
 		config.Providers.OpenAI.APIKey = "config-openai-key"
 		
-		// Load the config
-		if err := k.Load(structs.Provider(config, "koanf"), nil); err != nil {
-			t.Fatalf("Failed to load config: %v", err)
-		}
-
-		// Get API key
-		key, err := GetAPIKey("openai")
+		key, err := GetOptimizedAPIKey("openai")
 		if err != nil {
-			t.Fatalf("Expected no error, got: %v", err)
+			t.Errorf("Expected no error, got %v", err)
 		}
-
 		if key != "config-openai-key" {
-			t.Errorf("Expected API key 'config-openai-key', got: %s", key)
+			t.Errorf("Expected 'config-openai-key', got '%s'", key)
 		}
 	})
 
-	// Test case 4: Error when no API key available
+	// Test case 4: Error when no API key is configured
 	t.Run("ErrorWhenNoAPIKey", func(t *testing.T) {
-		// Clear all environment variables
+		// Clear everything
 		os.Unsetenv("OPENAI_API_KEY")
-		os.Unsetenv("ANTHROPIC_API_KEY")
-
-		// Reset koanf instance with empty config
-		k = koanf.New(".")
-		if err := InitConfig(""); err != nil {
-			t.Fatalf("Failed to init config: %v", err)
-		}
-
-		// Try to get API key - should fail
-		_, err := GetAPIKey("openai")
+		config = Config{}
+		InitOptimizedConfig("")
+		
+		_, err := GetOptimizedAPIKey("openai")
 		if err == nil {
-			t.Error("Expected error when no API key available, got nil")
+			t.Error("Expected error when no API key is configured")
 		}
 	})
 }
 
-// Test the GetProvider function
 func TestGetProvider(t *testing.T) {
-	// Save old config
-	originalK := k
-	defer func() {
-		k = originalK
-	}()
-
+	// Test case 1: Default provider and model
 	t.Run("DefaultProvider", func(t *testing.T) {
-		k = koanf.New(".")
-		config := DefaultConfig()
-		if err := k.Load(structs.Provider(config, "koanf"), nil); err != nil {
-			t.Fatalf("Failed to load config: %v", err)
-		}
-
-		ctx := &Context{
-			Config: &config,
-			CLI:    &CLI{},
-		}
-
-		provider, model, err := ctx.GetProviderInfo()
+		config = Config{}
+		InitOptimizedConfig("")
+		
+		provider, model, err := GetOptimizedProvider()
 		if err != nil {
-			t.Fatalf("Expected no error, got: %v", err)
+			t.Errorf("Expected no error, got %v", err)
 		}
-
 		if provider != "openai" {
-			t.Errorf("Expected provider 'openai', got: %s", provider)
+			t.Errorf("Expected 'openai', got '%s'", provider)
 		}
-
 		if model != "gpt-4o" {
-			t.Errorf("Expected model 'gpt-4o', got: %s", model)
+			t.Errorf("Expected 'gpt-4o', got '%s'", model)
 		}
 	})
 
+	// Test case 2: Override provider and model
 	t.Run("OverrideProvider", func(t *testing.T) {
-		k = koanf.New(".")
-		config := DefaultConfig()
-		if err := k.Load(structs.Provider(config, "koanf"), nil); err != nil {
-			t.Fatalf("Failed to load config: %v", err)
+		config = Config{
+			Provider: "anthropic",
+			Model:    "custom-model",
 		}
-
-		ctx := &Context{
-			Config: &config,
-			CLI: &CLI{
-				Provider: "anthropic",
-				Model:    "claude-3",
-			},
-		}
-
-		provider, model, err := ctx.GetProviderInfo()
+		
+		provider, model, err := GetOptimizedProvider()
 		if err != nil {
-			t.Fatalf("Expected no error, got: %v", err)
+			t.Errorf("Expected no error, got %v", err)
 		}
-
 		if provider != "anthropic" {
-			t.Errorf("Expected provider 'anthropic', got: %s", provider)
+			t.Errorf("Expected 'anthropic', got '%s'", provider)
 		}
-
-		if model != "claude-3" {
-			t.Errorf("Expected model 'claude-3', got: %s", model)
+		if model != "custom-model" {
+			t.Errorf("Expected 'custom-model', got '%s'", model)
 		}
 	})
 }

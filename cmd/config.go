@@ -5,93 +5,52 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/knadh/koanf/v2"
-	"github.com/knadh/koanf/parsers/yaml"
-	"github.com/knadh/koanf/providers/env"
-	"github.com/knadh/koanf/providers/file"
-	"github.com/knadh/koanf/providers/structs"
+	
+	"gopkg.in/yaml.v3"
 )
-
-// Global koanf instance
-var k = koanf.New(".")
 
 // Config represents our application configuration
 type Config struct {
-	Provider string `koanf:"provider" json:"provider"`
-	Model    string `koanf:"model" json:"model"`
-	Verbose  bool   `koanf:"verbose" json:"verbose"`
-	Output   string `koanf:"output" json:"output"`
-
+	Provider string `yaml:"provider"`
+	Model    string `yaml:"model"`
+	Verbose  bool   `yaml:"verbose"`
+	Output   string `yaml:"output"`
+	
 	Providers struct {
 		OpenAI struct {
-			APIKey       string `koanf:"api_key" json:"api_key"`
-			DefaultModel string `koanf:"default_model" json:"default_model"`
-		} `koanf:"openai" json:"openai"`
-
+			APIKey       string `yaml:"api_key"`
+			DefaultModel string `yaml:"default_model"`
+		} `yaml:"openai"`
+		
 		Anthropic struct {
-			APIKey       string `koanf:"api_key" json:"api_key"`
-			DefaultModel string `koanf:"default_model" json:"default_model"`
-		} `koanf:"anthropic" json:"anthropic"`
-
+			APIKey       string `yaml:"api_key"`
+			DefaultModel string `yaml:"default_model"`
+		} `yaml:"anthropic"`
+		
 		Gemini struct {
-			APIKey       string `koanf:"api_key" json:"api_key"`
-			DefaultModel string `koanf:"default_model" json:"default_model"`
-		} `koanf:"gemini" json:"gemini"`
-	} `koanf:"providers" json:"providers"`
+			APIKey       string `yaml:"api_key"`
+			DefaultModel string `yaml:"default_model"`
+		} `yaml:"gemini"`
+	} `yaml:"providers"`
 }
 
-// DefaultConfig returns the default configuration
-func DefaultConfig() Config {
-	return Config{
+// Global config instance
+var config Config
+
+// InitOptimizedConfig loads configuration from file and environment
+func InitOptimizedConfig(configFile string) error {
+	// Set defaults
+	config = Config{
 		Provider: "openai",
 		Output:   "text",
-		Providers: struct {
-			OpenAI struct {
-				APIKey       string `koanf:"api_key" json:"api_key"`
-				DefaultModel string `koanf:"default_model" json:"default_model"`
-			} `koanf:"openai" json:"openai"`
-			Anthropic struct {
-				APIKey       string `koanf:"api_key" json:"api_key"`
-				DefaultModel string `koanf:"default_model" json:"default_model"`
-			} `koanf:"anthropic" json:"anthropic"`
-			Gemini struct {
-				APIKey       string `koanf:"api_key" json:"api_key"`
-				DefaultModel string `koanf:"default_model" json:"default_model"`
-			} `koanf:"gemini" json:"gemini"`
-		}{
-			OpenAI: struct {
-				APIKey       string `koanf:"api_key" json:"api_key"`
-				DefaultModel string `koanf:"default_model" json:"default_model"`
-			}{
-				DefaultModel: "gpt-4o",
-			},
-			Anthropic: struct {
-				APIKey       string `koanf:"api_key" json:"api_key"`
-				DefaultModel string `koanf:"default_model" json:"default_model"`
-			}{
-				DefaultModel: "claude-3-5-sonnet-latest",
-			},
-			Gemini: struct {
-				APIKey       string `koanf:"api_key" json:"api_key"`
-				DefaultModel string `koanf:"default_model" json:"default_model"`
-			}{
-				DefaultModel: "gemini-2.0-flash-lite",
-			},
-		},
 	}
-}
-
-// InitConfig loads configuration from various sources
-func InitConfig(configFile string) error {
-	// Load defaults
-	if err := k.Load(structs.Provider(DefaultConfig(), "koanf"), nil); err != nil {
-		return fmt.Errorf("error loading default config: %w", err)
-	}
-
-	// Load from config file if specified
+	config.Providers.OpenAI.DefaultModel = "gpt-4o"
+	config.Providers.Anthropic.DefaultModel = "claude-3-5-sonnet-latest"
+	config.Providers.Gemini.DefaultModel = "gemini-2.0-flash-lite"
+	
+	// Load from config file
 	if configFile != "" {
-		if err := k.Load(file.Provider(configFile), yaml.Parser()); err == nil {
+		if err := loadYAMLFile(configFile); err == nil {
 			fmt.Printf("Using config file: %s\n", configFile)
 		}
 	} else {
@@ -102,47 +61,108 @@ func InitConfig(configFile string) error {
 			".go-llms.yaml",
 			filepath.Join(home, ".config", "go-llms", "config.yaml"),
 		}
-
+		
 		for _, path := range configPaths {
 			if _, err := os.Stat(path); err == nil {
-				if err := k.Load(file.Provider(path), yaml.Parser()); err == nil {
+				if err := loadYAMLFile(path); err == nil {
 					fmt.Printf("Using config file: %s\n", path)
 					break
 				}
 			}
 		}
 	}
-
-	// Load environment variables
-	// Map GO_LLMS_PROVIDER to provider, GO_LLMS_PROVIDERS_OPENAI_API_KEY to providers.openai.api_key
-	if err := k.Load(env.Provider("GO_LLMS_", ".", func(s string) string {
-		return strings.Replace(
-			strings.ToLower(strings.TrimPrefix(s, "GO_LLMS_")),
-			"_", ".", -1)
-	}), nil); err != nil {
-		return fmt.Errorf("error loading environment variables: %w", err)
-	}
-
-	// Also check for standard API key environment variables
-	// This preserves backward compatibility with existing scripts
-	envMappings := map[string]string{
-		"OPENAI_API_KEY":    "providers.openai.api_key",
-		"ANTHROPIC_API_KEY": "providers.anthropic.api_key",
-		"GEMINI_API_KEY":    "providers.gemini.api_key",
-	}
-
-	for envVar, configKey := range envMappings {
-		if val := os.Getenv(envVar); val != "" && k.String(configKey) == "" {
-			k.Set(configKey, val)
-		}
-	}
-
+	
+	// Override with environment variables
+	loadEnvVars()
+	
 	return nil
 }
 
-// GetAPIKey retrieves the API key for a provider
-func GetAPIKey(provider string) (string, error) {
-	key := k.String(fmt.Sprintf("providers.%s.api_key", provider))
+// loadYAMLFile loads configuration from a YAML file
+func loadYAMLFile(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	
+	return yaml.Unmarshal(data, &config)
+}
+
+// loadEnvVars loads configuration from environment variables
+func loadEnvVars() {
+	// Standard format: GO_LLMS_PROVIDER, GO_LLMS_MODEL, etc.
+	if val := os.Getenv("GO_LLMS_PROVIDER"); val != "" {
+		config.Provider = val
+	}
+	if val := os.Getenv("GO_LLMS_MODEL"); val != "" {
+		config.Model = val
+	}
+	if val := os.Getenv("GO_LLMS_VERBOSE"); val == "true" {
+		config.Verbose = true
+	}
+	if val := os.Getenv("GO_LLMS_OUTPUT"); val != "" {
+		config.Output = val
+	}
+	
+	// Provider-specific settings
+	loadProviderEnvVars("openai", "OPENAI")
+	loadProviderEnvVars("anthropic", "ANTHROPIC")
+	loadProviderEnvVars("gemini", "GEMINI")
+	
+	// Also check for standard API key environment variables (backward compatibility)
+	if val := os.Getenv("OPENAI_API_KEY"); val != "" && config.Providers.OpenAI.APIKey == "" {
+		config.Providers.OpenAI.APIKey = val
+	}
+	if val := os.Getenv("ANTHROPIC_API_KEY"); val != "" && config.Providers.Anthropic.APIKey == "" {
+		config.Providers.Anthropic.APIKey = val
+	}
+	if val := os.Getenv("GEMINI_API_KEY"); val != "" && config.Providers.Gemini.APIKey == "" {
+		config.Providers.Gemini.APIKey = val
+	}
+}
+
+// loadProviderEnvVars loads provider-specific environment variables
+func loadProviderEnvVars(provider, envPrefix string) {
+	// API Key
+	envVar := fmt.Sprintf("GO_LLMS_PROVIDERS_%s_API_KEY", envPrefix)
+	if val := os.Getenv(envVar); val != "" {
+		switch provider {
+		case "openai":
+			config.Providers.OpenAI.APIKey = val
+		case "anthropic":
+			config.Providers.Anthropic.APIKey = val
+		case "gemini":
+			config.Providers.Gemini.APIKey = val
+		}
+	}
+	
+	// Default Model
+	envVar = fmt.Sprintf("GO_LLMS_PROVIDERS_%s_DEFAULT_MODEL", envPrefix)
+	if val := os.Getenv(envVar); val != "" {
+		switch provider {
+		case "openai":
+			config.Providers.OpenAI.DefaultModel = val
+		case "anthropic":
+			config.Providers.Anthropic.DefaultModel = val
+		case "gemini":
+			config.Providers.Gemini.DefaultModel = val
+		}
+	}
+}
+
+// GetOptimizedAPIKey retrieves the API key for a provider
+func GetOptimizedAPIKey(provider string) (string, error) {
+	var key string
+	
+	switch provider {
+	case "openai":
+		key = config.Providers.OpenAI.APIKey
+	case "anthropic":
+		key = config.Providers.Anthropic.APIKey
+	case "gemini":
+		key = config.Providers.Gemini.APIKey
+	}
+	
 	if key == "" {
 		// Try environment variable as fallback
 		envVar := fmt.Sprintf("%s_API_KEY", strings.ToUpper(provider))
@@ -154,18 +174,26 @@ func GetAPIKey(provider string) (string, error) {
 	return key, nil
 }
 
-// GetProvider returns the configured provider and model
-func GetProvider() (string, string, error) {
-	provider := k.String("provider")
-	model := k.String("model")
-
+// GetOptimizedProvider returns the configured provider and model
+func GetOptimizedProvider() (string, string, error) {
+	provider := config.Provider
+	model := config.Model
+	
 	// If no model specified, get the default for the provider
 	if model == "" {
-		model = k.String(fmt.Sprintf("providers.%s.default_model", provider))
+		switch provider {
+		case "openai":
+			model = config.Providers.OpenAI.DefaultModel
+		case "anthropic":
+			model = config.Providers.Anthropic.DefaultModel
+		case "gemini":
+			model = config.Providers.Gemini.DefaultModel
+		}
+		
 		if model == "" {
 			return "", "", fmt.Errorf("no model specified and no default model configured for provider %s", provider)
 		}
 	}
-
+	
 	return provider, model, nil
 }
