@@ -543,13 +543,36 @@ For more information on testing, see the [Testing Framework documentation](docs/
 
 ## Development Status
 
-### Current Version: v0.2.0
+### Current Version: v0.2.4
 
 The core functionality is fairly complete and working. However, APIs are subject to change to accommodate new unforeseen developments in upstream APIs.
 
 #### Changelog
 
-**v0.2.0 (Current)**
+**v0.2.4 (Current)**
+- ✅ Complete dependency reduction journey
+  - Removed koanf and kong dependencies
+  - Replaced with stdlib flag package and direct YAML parsing
+  - 36% binary size reduction (from 9.9MB to 6.3MB)
+  - Maintained backward compatibility with YAML config format
+  - Environment variable support (GO_LLMS_ prefix) preserved
+- ✅ Documentation updates and cleanup
+- ✅ Test improvements for JSON extractor
+
+**v0.2.3**
+- ✅ Intermediate dependency reduction phase
+  - Migrated from viper/cobra to koanf/kong
+  - Improved CLI argument parsing
+  - Shell completion support (later removed for size reduction)
+  - Complete test coverage for new implementation
+
+**v0.2.1**
+- ✅ Added comprehensive multimodal example application
+  - Complete CLI example with file/URL input
+  - Support for text, images, audio, and video content
+  - Detailed documentation and usage instructions
+
+**v0.2.0**
 - ✅ Added multimodal content support
   - Support for text, images, files, videos, and audio in messages
   - Base64 encoding for binary data
