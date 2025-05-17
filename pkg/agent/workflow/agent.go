@@ -1235,8 +1235,6 @@ func (a *UnoptimizedDefaultAgent) createInitialMessages(input string) []ldomain.
 	return messages
 }
 
-
-
 // Notification functions for hooks
 
 // notifyBeforeGenerate calls all hooks' BeforeGenerate method

@@ -117,7 +117,7 @@ func (p *GeminiProvider) ConvertMessagesToGeminiFormat(messages []domain.Message
 		// Handle multimodal content
 		if msg.Content != nil && len(msg.Content) > 0 {
 			parts := make([]map[string]interface{}, 0, len(msg.Content))
-			
+
 			for _, part := range msg.Content {
 				switch part.Type {
 				case domain.ContentTypeText:
@@ -132,7 +132,7 @@ func (p *GeminiProvider) ConvertMessagesToGeminiFormat(messages []domain.Message
 						parts = append(parts, map[string]interface{}{
 							"inline_data": map[string]interface{}{
 								"mime_type": part.Image.Source.MediaType,
-								"url": part.Image.Source.URL,
+								"url":       part.Image.Source.URL,
 							},
 						})
 					} else {
@@ -140,7 +140,7 @@ func (p *GeminiProvider) ConvertMessagesToGeminiFormat(messages []domain.Message
 						parts = append(parts, map[string]interface{}{
 							"inline_data": map[string]interface{}{
 								"mime_type": part.Image.Source.MediaType,
-								"data": part.Image.Source.Data,
+								"data":      part.Image.Source.Data,
 							},
 						})
 					}
@@ -151,7 +151,7 @@ func (p *GeminiProvider) ConvertMessagesToGeminiFormat(messages []domain.Message
 						parts = append(parts, map[string]interface{}{
 							"inline_data": map[string]interface{}{
 								"mime_type": part.Video.Source.MediaType,
-								"url": part.Video.Source.URL,
+								"url":       part.Video.Source.URL,
 							},
 						})
 					} else {
@@ -159,13 +159,13 @@ func (p *GeminiProvider) ConvertMessagesToGeminiFormat(messages []domain.Message
 						parts = append(parts, map[string]interface{}{
 							"inline_data": map[string]interface{}{
 								"mime_type": part.Video.Source.MediaType,
-								"data": part.Video.Source.Data,
+								"data":      part.Video.Source.Data,
 							},
 						})
 					}
 				}
 			}
-			
+
 			message["parts"] = parts
 		} else {
 			// Legacy compatibility for old message format
@@ -175,7 +175,7 @@ func (p *GeminiProvider) ConvertMessagesToGeminiFormat(messages []domain.Message
 				},
 			}
 		}
-		
+
 		contents = append(contents, message)
 	}
 
@@ -238,9 +238,9 @@ func (p *GeminiProvider) validateContentTypesForGemini(messages []domain.Message
 		if msg.Content != nil {
 			for _, part := range msg.Content {
 				// Gemini currently supports text, image, and video content types
-				if part.Type != domain.ContentTypeText && 
-				   part.Type != domain.ContentTypeImage && 
-				   part.Type != domain.ContentTypeVideo {
+				if part.Type != domain.ContentTypeText &&
+					part.Type != domain.ContentTypeImage &&
+					part.Type != domain.ContentTypeVideo {
 					return domain.NewUnsupportedContentTypeError("Gemini", part.Type)
 				}
 			}

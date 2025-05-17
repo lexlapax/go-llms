@@ -63,12 +63,12 @@ func GenerateMessagesKey(messages []domain.Message) uint64 {
 	for _, msg := range messages {
 		// Add role to hash
 		hasher.Write([]byte(msg.Role))
-		
+
 		// Handle multimodal content
 		for _, part := range msg.Content {
 			// Add content type to hash
 			hasher.Write([]byte(part.Type))
-			
+
 			// Add content based on type
 			switch part.Type {
 			case domain.ContentTypeText:

@@ -108,7 +108,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 		if msg.Content != nil && len(msg.Content) > 0 {
 			// This is a multimodal message
 			contentParts := make([]map[string]interface{}, 0, len(msg.Content))
-			
+
 			// Process each content part
 			for _, part := range msg.Content {
 				switch part.Type {
@@ -123,7 +123,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 					imagePart := map[string]interface{}{
 						"type": "image_url",
 					}
-					
+
 					imageURL := make(map[string]interface{})
 					if part.Image.Source.Type == domain.SourceTypeURL {
 						// URL-based image
@@ -136,7 +136,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 							part.Image.Source.Data,
 						)
 					}
-					
+
 					imagePart["image_url"] = imageURL
 					contentParts = append(contentParts, imagePart)
 				case domain.ContentTypeFile:
@@ -154,7 +154,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 						"type": "video",
 						"video": map[string]interface{}{
 							"media_type": part.Video.Source.MediaType,
-							"data": part.Video.Source.Data,
+							"data":       part.Video.Source.Data,
 						},
 					})
 				case domain.ContentTypeAudio:
@@ -163,12 +163,12 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 						"type": "audio",
 						"audio": map[string]interface{}{
 							"media_type": part.Audio.Source.MediaType,
-							"data": part.Audio.Source.Data,
+							"data":       part.Audio.Source.Data,
 						},
 					})
 				}
 			}
-			
+
 			// Add the content parts to the message
 			message["content"] = contentParts
 		} else if msg.Role == domain.RoleTool {
@@ -180,7 +180,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 					lastAssistantIdx = j
 				}
 			}
-			
+
 			if lastAssistantIdx == -1 || i == 0 || messages[i-1].Role != domain.RoleAssistant {
 				// If this is a tool message without a preceding assistant message with tool_calls,
 				// convert to user message as a fallback
@@ -250,7 +250,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 			}
 			message["content"] = textContent
 		}
-		
+
 		oaiMessages = append(oaiMessages, message)
 	}
 

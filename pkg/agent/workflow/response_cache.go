@@ -212,7 +212,7 @@ func (c *ResponseCache) generateCacheKey(messages []ldomain.Message, options []l
 		msgData := map[string]interface{}{
 			"role": string(msg.Role),
 		}
-		
+
 		// Handle content parts
 		if len(msg.Content) > 0 {
 			// For simple messages with just text, use a simpler representation
@@ -225,7 +225,7 @@ func (c *ResponseCache) generateCacheKey(messages []ldomain.Message, options []l
 					partData := map[string]interface{}{
 						"type": string(part.Type),
 					}
-					
+
 					switch part.Type {
 					case ldomain.ContentTypeText:
 						partData["text"] = part.Text
@@ -245,13 +245,13 @@ func (c *ResponseCache) generateCacheKey(messages []ldomain.Message, options []l
 						// Just include the type
 						partData["media_content"] = true
 					}
-					
+
 					contentParts = append(contentParts, partData)
 				}
 				msgData["content_parts"] = contentParts
 			}
 		}
-		
+
 		messageData = append(messageData, msgData)
 	}
 
@@ -283,7 +283,7 @@ func (c *ResponseCache) generateCacheKey(messages []ldomain.Message, options []l
 		for _, msg := range messages {
 			sb.WriteString(string(msg.Role))
 			sb.WriteString(":")
-			
+
 			// Extract text content for the key
 			if len(msg.Content) > 0 {
 				for _, part := range msg.Content {
@@ -294,7 +294,7 @@ func (c *ResponseCache) generateCacheKey(messages []ldomain.Message, options []l
 					}
 				}
 			}
-			
+
 			sb.WriteString("|")
 		}
 		return hashString(sb.String())

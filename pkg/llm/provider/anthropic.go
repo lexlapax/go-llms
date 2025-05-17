@@ -133,11 +133,11 @@ func (p *AnthropicProvider) ConvertMessagesToAnthropicFormat(messages []domain.M
 			// Regular message (user or assistant)
 			message := make(map[string]interface{}, 2)
 			message["role"] = string(msg.Role)
-			
+
 			// Handle multimodal content
 			if msg.Content != nil && len(msg.Content) > 0 {
 				contentParts := make([]map[string]interface{}, 0, len(msg.Content))
-				
+
 				for _, part := range msg.Content {
 					switch part.Type {
 					case domain.ContentTypeText:
@@ -151,7 +151,7 @@ func (p *AnthropicProvider) ConvertMessagesToAnthropicFormat(messages []domain.M
 						imagePart := map[string]interface{}{
 							"type": "image",
 						}
-						
+
 						sourcePart := make(map[string]interface{})
 						if part.Image.Source.Type == domain.SourceTypeURL {
 							// URL-based image
@@ -163,16 +163,16 @@ func (p *AnthropicProvider) ConvertMessagesToAnthropicFormat(messages []domain.M
 							sourcePart["media_type"] = part.Image.Source.MediaType
 							sourcePart["data"] = part.Image.Source.Data
 						}
-						
+
 						imagePart["source"] = sourcePart
 						contentParts = append(contentParts, imagePart)
 					}
 				}
-				
+
 				// Add content parts to the message
 				message["content"] = contentParts
 			}
-			
+
 			anthMessages = append(anthMessages, message)
 		}
 	}

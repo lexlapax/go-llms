@@ -651,7 +651,7 @@ func TestSchemaValidationErrors(t *testing.T) {
 		t.Run("AmbiguousNumericString", func(t *testing.T) {
 			// Create a new validator with coercion enabled to test the ambiguous case
 			validatorWithCoercion := validation.NewValidator(validation.WithCoercion(true))
-			
+
 			// This value could match both string and number schemas when coercion is enabled
 			result, err := validatorWithCoercion.Validate(schema, `{"value": "123"}`)
 			if err != nil {

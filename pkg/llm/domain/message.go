@@ -68,8 +68,8 @@ type AudioContent struct {
 
 // ContentPart represents a part of a message's content
 type ContentPart struct {
-	Type  ContentType  `json:"type"`
-	Text  string       `json:"text,omitempty"`
+	Type  ContentType   `json:"type"`
+	Text  string        `json:"text,omitempty"`
 	Image *ImageContent `json:"image,omitempty"`
 	File  *FileContent  `json:"file,omitempty"`
 	Video *VideoContent `json:"video,omitempty"`
@@ -78,7 +78,7 @@ type ContentPart struct {
 
 // Message represents a message in a conversation with multimodal support
 type Message struct {
-	Role    Role         `json:"role"`
+	Role    Role          `json:"role"`
 	Content []ContentPart `json:"content"`
 }
 
@@ -98,7 +98,7 @@ func NewTextMessage(role Role, text string) Message {
 // NewImageMessage creates a message with a base64-encoded image and optional text
 func NewImageMessage(role Role, imageData []byte, mimeType string, text string) Message {
 	base64Data := base64.StdEncoding.EncodeToString(imageData)
-	
+
 	parts := []ContentPart{
 		{
 			Type: ContentTypeImage,
@@ -111,16 +111,16 @@ func NewImageMessage(role Role, imageData []byte, mimeType string, text string) 
 			},
 		},
 	}
-	
+
 	if text != "" {
 		parts = append(parts, ContentPart{
 			Type: ContentTypeText,
 			Text: text,
 		})
 	}
-	
+
 	return Message{
-		Role: role,
+		Role:    role,
 		Content: parts,
 	}
 }
@@ -138,16 +138,16 @@ func NewImageURLMessage(role Role, imageURL string, text string) Message {
 			},
 		},
 	}
-	
+
 	if text != "" {
 		parts = append(parts, ContentPart{
 			Type: ContentTypeText,
 			Text: text,
 		})
 	}
-	
+
 	return Message{
-		Role: role,
+		Role:    role,
 		Content: parts,
 	}
 }
@@ -155,7 +155,7 @@ func NewImageURLMessage(role Role, imageURL string, text string) Message {
 // NewFileMessage creates a message with a file attachment and optional text
 func NewFileMessage(role Role, fileName string, fileData []byte, mimeType string, text string) Message {
 	base64Data := base64.StdEncoding.EncodeToString(fileData)
-	
+
 	parts := []ContentPart{
 		{
 			Type: ContentTypeFile,
@@ -166,16 +166,16 @@ func NewFileMessage(role Role, fileName string, fileData []byte, mimeType string
 			},
 		},
 	}
-	
+
 	if text != "" {
 		parts = append(parts, ContentPart{
 			Type: ContentTypeText,
 			Text: text,
 		})
 	}
-	
+
 	return Message{
-		Role: role,
+		Role:    role,
 		Content: parts,
 	}
 }
@@ -183,7 +183,7 @@ func NewFileMessage(role Role, fileName string, fileData []byte, mimeType string
 // NewVideoMessage creates a message with a video attachment and optional text
 func NewVideoMessage(role Role, videoData []byte, mimeType string, text string) Message {
 	base64Data := base64.StdEncoding.EncodeToString(videoData)
-	
+
 	parts := []ContentPart{
 		{
 			Type: ContentTypeVideo,
@@ -196,16 +196,16 @@ func NewVideoMessage(role Role, videoData []byte, mimeType string, text string) 
 			},
 		},
 	}
-	
+
 	if text != "" {
 		parts = append(parts, ContentPart{
 			Type: ContentTypeText,
 			Text: text,
 		})
 	}
-	
+
 	return Message{
-		Role: role,
+		Role:    role,
 		Content: parts,
 	}
 }
@@ -213,7 +213,7 @@ func NewVideoMessage(role Role, videoData []byte, mimeType string, text string) 
 // NewAudioMessage creates a message with an audio attachment and optional text
 func NewAudioMessage(role Role, audioData []byte, mimeType string, text string) Message {
 	base64Data := base64.StdEncoding.EncodeToString(audioData)
-	
+
 	parts := []ContentPart{
 		{
 			Type: ContentTypeAudio,
@@ -226,16 +226,16 @@ func NewAudioMessage(role Role, audioData []byte, mimeType string, text string) 
 			},
 		},
 	}
-	
+
 	if text != "" {
 		parts = append(parts, ContentPart{
 			Type: ContentTypeText,
 			Text: text,
 		})
 	}
-	
+
 	return Message{
-		Role: role,
+		Role:    role,
 		Content: parts,
 	}
 }

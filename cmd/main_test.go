@@ -94,7 +94,7 @@ func TestChatCmdStreamingFlag(t *testing.T) {
 	if streamFlag == nil {
 		t.Fatal("Expected 'stream' flag to exist on chat command")
 	}
-	
+
 	// Verify the no-stream flag exists
 	noStreamFlag := chatCmd.Flags().Lookup("no-stream")
 	if noStreamFlag == nil {
@@ -109,7 +109,7 @@ func TestChatCmdStreamingFlag(t *testing.T) {
 	if defaultStreamValue {
 		t.Errorf("Expected default stream flag value to be false, got true")
 	}
-	
+
 	defaultNoStreamValue, err := chatCmd.Flags().GetBool("no-stream")
 	if err != nil {
 		t.Fatalf("Error getting no-stream flag value: %v", err)
@@ -124,13 +124,13 @@ func TestChatCmdStreamingFlag(t *testing.T) {
 		args := []string{"--stream"}
 		cmd.SetArgs(args)
 		flags := cmd.Flags()
-		
+
 		// We need to manually parse the flags since we're not executing the command
 		err = flags.Parse(args)
 		if err != nil {
 			t.Fatalf("Error parsing flags: %v", err)
 		}
-		
+
 		// Check that the flag value was correctly set
 		streamValue, err := flags.GetBool("stream")
 		if err != nil {
@@ -140,20 +140,20 @@ func TestChatCmdStreamingFlag(t *testing.T) {
 			t.Errorf("Expected stream flag value to be true after setting, got false")
 		}
 	})
-	
+
 	// Test with no-stream flag explicitly set
 	t.Run("WithNoStreamFlag", func(t *testing.T) {
 		cmd := newChatCmd()
 		args := []string{"--no-stream"}
 		cmd.SetArgs(args)
 		flags := cmd.Flags()
-		
+
 		// We need to manually parse the flags since we're not executing the command
 		err = flags.Parse(args)
 		if err != nil {
 			t.Fatalf("Error parsing flags: %v", err)
 		}
-		
+
 		// Check that the flag value was correctly set
 		noStreamValue, err := flags.GetBool("no-stream")
 		if err != nil {

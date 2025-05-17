@@ -150,7 +150,7 @@ func getMessageContentText(content []ldomain.ContentPart) string {
 	if len(content) == 0 {
 		return ""
 	}
-	
+
 	var allText string
 	for _, part := range content {
 		if part.Type == ldomain.ContentTypeText {
@@ -159,6 +159,6 @@ func getMessageContentText(content []ldomain.ContentPart) string {
 			allText += "[" + string(part.Type) + " content] "
 		}
 	}
-	
+
 	return truncateString(strings.TrimSpace(allText), 100)
 }

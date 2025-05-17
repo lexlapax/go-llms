@@ -55,7 +55,7 @@ var (
 
 	// ErrInvalidModelParameters is returned when provided model parameters are invalid.
 	ErrInvalidModelParameters = errors.New("invalid model parameters")
-	
+
 	// ErrUnsupportedContentType is returned when a provider doesn't support a specific content type.
 	ErrUnsupportedContentType = errors.New("content type not supported by provider")
 )

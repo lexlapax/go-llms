@@ -397,14 +397,14 @@ func (m *MessageManager) estimateTokens(text string) int {
 func (m *MessageManager) estimateTokensFromContentParts(contentParts []ldomain.ContentPart) int {
 	// Generate a key for the content parts
 	contentKey := getContentKey(contentParts)
-	
+
 	// Check if we already calculated this
 	if count, ok := m.tokenCounts[contentKey]; ok {
 		return count
 	}
-	
+
 	totalTokens := 0
-	
+
 	// Add up tokens for each part
 	for _, part := range contentParts {
 		switch part.Type {
@@ -419,12 +419,12 @@ func (m *MessageManager) estimateTokensFromContentParts(contentParts []ldomain.C
 			totalTokens += 500
 		}
 	}
-	
+
 	// Add overhead for multipart message
 	if len(contentParts) > 1 {
 		totalTokens += 10 * len(contentParts)
 	}
-	
+
 	// Cache for future reference
 	m.tokenCounts[contentKey] = totalTokens
 	return totalTokens
@@ -435,17 +435,17 @@ func getContentKey(contentParts []ldomain.ContentPart) string {
 	if len(contentParts) == 0 {
 		return "empty_content"
 	}
-	
+
 	// For simple text-only content, use the text directly as the key
 	if len(contentParts) == 1 && contentParts[0].Type == ldomain.ContentTypeText {
 		return contentParts[0].Text
 	}
-	
+
 	// For multimodal content, build a key that includes type info
 	key := ""
 	for i, part := range contentParts {
 		key += string(part.Type) + ":"
-		
+
 		switch part.Type {
 		case ldomain.ContentTypeText:
 			key += part.Text
@@ -469,12 +469,12 @@ func getContentKey(contentParts []ldomain.ContentPart) string {
 		case ldomain.ContentTypeVideo, ldomain.ContentTypeAudio:
 			key += string(part.Type) + "_content"
 		}
-		
+
 		if i < len(contentParts)-1 {
 			key += "|"
 		}
 	}
-	
+
 	return key
 }
 
@@ -482,37 +482,37 @@ func getContentKey(contentParts []ldomain.ContentPart) string {
 func (m *MessageManager) cloneMessage(msg ldomain.Message) ldomain.Message {
 	// Clone the ContentParts array
 	clonedContent := make([]ldomain.ContentPart, len(msg.Content))
-	
+
 	for i, part := range msg.Content {
 		clonedPart := ldomain.ContentPart{
 			Type: part.Type,
 			Text: part.Text,
 		}
-		
+
 		// Deep copy any media content
 		if part.Image != nil {
 			imgCopy := *part.Image // Copy the struct
 			clonedPart.Image = &imgCopy
 		}
-		
+
 		if part.File != nil {
 			fileCopy := *part.File // Copy the struct
 			clonedPart.File = &fileCopy
 		}
-		
+
 		if part.Video != nil {
 			videoCopy := *part.Video // Copy the struct
 			clonedPart.Video = &videoCopy
 		}
-		
+
 		if part.Audio != nil {
 			audioCopy := *part.Audio // Copy the struct
 			clonedPart.Audio = &audioCopy
 		}
-		
+
 		clonedContent[i] = clonedPart
 	}
-	
+
 	return ldomain.Message{
 		Role:    msg.Role,
 		Content: clonedContent,
@@ -537,7 +537,7 @@ func (m *MessageManager) truncateMessage(msg ldomain.Message, tokenLimit int) ld
 
 	// Create a cloned message with truncated content
 	result := m.cloneMessage(msg)
-	
+
 	// Only truncate text content parts
 	if len(result.Content) > 0 {
 		for i, part := range result.Content {
@@ -555,7 +555,7 @@ func (m *MessageManager) truncateMessage(msg ldomain.Message, tokenLimit int) ld
 							}
 						}
 					}
-					
+
 					// Apply truncation
 					text = text[:charsToKeep] + "..."
 					result.Content[i].Text = text
@@ -565,7 +565,7 @@ func (m *MessageManager) truncateMessage(msg ldomain.Message, tokenLimit int) ld
 			// In a more sophisticated implementation, we might remove them to save tokens
 		}
 	}
-	
+
 	return result
 }
 

@@ -123,7 +123,7 @@ func TestEndToEndAgent(t *testing.T) {
 					break
 				}
 			}
-			
+
 			if msg.Role == ldomain.RoleTool || strings.Contains(textContent, "calculator") {
 				calculationMentioned = true
 				break
@@ -216,7 +216,7 @@ func TestAgentWithMultipleMessagesAndTools(t *testing.T) {
 			default:
 				return nil, fmt.Errorf("unknown operation: %s", operation)
 			}
-			
+
 			return result, nil
 		},
 		&sdomain.Schema{
@@ -278,7 +278,7 @@ func TestAgentWithMultipleMessagesAndTools(t *testing.T) {
 	stage := 0
 	mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.Response, error) {
 		stage++
-		
+
 		// First stage - call the weather tool
 		if stage == 1 {
 			// Return a response indicating we'll use the weather tool
@@ -286,7 +286,7 @@ func TestAgentWithMultipleMessagesAndTools(t *testing.T) {
 				Content: `{"tool": "weather", "params": {"location": "New York"}}`,
 			}, nil
 		}
-		
+
 		// Second stage - weather result received, call the calculator tool
 		if stage == 2 {
 			// Check if we received the weather tool response
@@ -299,23 +299,23 @@ func TestAgentWithMultipleMessagesAndTools(t *testing.T) {
 						break
 					}
 				}
-				
+
 				if strings.Contains(textContent, "temperature") && strings.Contains(textContent, "New York") {
 					weatherResultFound = true
 					break
 				}
 			}
-			
+
 			if !weatherResultFound {
 				t.Logf("Weather result not found in conversation")
 			}
-			
+
 			// Call the calculator next
 			return ldomain.Response{
 				Content: `{"tool": "calculator", "params": {"operation": "add", "a": 15, "b": 27}}`,
 			}, nil
 		}
-		
+
 		// Third stage - calculator result received, provide final answer
 		if stage >= 3 {
 			// Check if we received the calculator result
@@ -328,23 +328,23 @@ func TestAgentWithMultipleMessagesAndTools(t *testing.T) {
 						break
 					}
 				}
-				
+
 				if strings.Contains(textContent, "42") && msg.Role == ldomain.RoleUser {
 					calculatorResultFound = true
 					break
 				}
 			}
-			
+
 			if !calculatorResultFound {
 				t.Logf("Calculator result not found in conversation")
 			}
-			
+
 			// Final response with no tool calls
 			return ldomain.Response{
 				Content: "I've completed the tasks. The weather in New York is 22.5°C and Sunny with 45% humidity. The sum of 15 + 27 equals 42.",
 			}, nil
 		}
-		
+
 		// Should never get here
 		return ldomain.Response{
 			Content: "Something went wrong.",
@@ -367,17 +367,17 @@ func TestAgentWithMultipleMessagesAndTools(t *testing.T) {
 	if !strings.Contains(strings.ToLower(strResult), "new york") {
 		t.Errorf("Expected result to mention New York weather, got: %s", strResult)
 	}
-	
+
 	// Output should contain calculation result
 	if !strings.Contains(strResult, "42") {
 		t.Errorf("Expected result to contain '42', got: %s", strResult)
 	}
-	
+
 	// Verify we went through all stages
 	if stage < 3 {
 		t.Errorf("Expected to go through at least 3 stages, only went through %d", stage)
 	}
-	
+
 	t.Logf("Successfully completed multi-step agent workflow with %d stages", stage)
 }
 

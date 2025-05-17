@@ -26,14 +26,14 @@ func TestMultimodalContentIntegration(t *testing.T) {
 
 		// Create an OpenAI provider
 		openai := provider.NewOpenAIProvider(apiKey, "gpt-4o")
-		
+
 		// Create a sample text message
 		textMessage := domain.NewTextMessage(domain.RoleUser, "Hello, world!")
-		
+
 		// This should succeed as text messages are supported
 		_, err := openai.GenerateMessage(context.Background(), []domain.Message{textMessage})
 		assert.NoError(t, err, "Text messages should be supported by OpenAI")
-		
+
 		// Create a file message
 		fileMessage := domain.NewFileMessage(
 			domain.RoleUser,
@@ -42,10 +42,10 @@ func TestMultimodalContentIntegration(t *testing.T) {
 			"application/pdf",
 			"Please analyze this file",
 		)
-		
+
 		// Check if provider supports this content type
 		supported := ProviderSupportsContentType(openai, domain.ContentTypeFile)
-		
+
 		// If the provider claims to support this content type, test it
 		if supported {
 			// Try to generate with file message - this might succeed or fail depending on the implementation
@@ -55,7 +55,7 @@ func TestMultimodalContentIntegration(t *testing.T) {
 			t.Log("OpenAI does not claim to support file content")
 		}
 	})
-	
+
 	// Test Anthropic provider with video content (which it shouldn't support)
 	t.Run("Anthropic_UnsupportedVideoContent", func(t *testing.T) {
 		apiKey := os.Getenv("ANTHROPIC_API_KEY")
@@ -65,7 +65,7 @@ func TestMultimodalContentIntegration(t *testing.T) {
 
 		// Create an Anthropic provider
 		anthropic := provider.NewAnthropicProvider(apiKey, "claude-3-5-sonnet-latest")
-		
+
 		// Create a video message
 		videoMessage := domain.NewVideoMessage(
 			domain.RoleUser,
@@ -73,18 +73,18 @@ func TestMultimodalContentIntegration(t *testing.T) {
 			"video/mp4",
 			"What's happening in this video?",
 		)
-		
+
 		// Check if provider supports video content type
 		supported := ProviderSupportsContentType(anthropic, domain.ContentTypeVideo)
-		
+
 		// Video content should not be supported by Anthropic
 		assert.False(t, supported, "Anthropic should not claim to support video content")
-		
+
 		// If we try to generate anyway, we should get an unsupported content type error
 		if !supported {
 			_, err := anthropic.GenerateMessage(context.Background(), []domain.Message{videoMessage})
 			assert.Error(t, err, "Video messages should not be supported by Anthropic")
-			assert.True(t, domain.IsUnsupportedContentTypeError(err), 
+			assert.True(t, domain.IsUnsupportedContentTypeError(err),
 				"Error should be an unsupported content type error")
 		}
 	})
@@ -95,7 +95,7 @@ func TestMultimodalContentIntegration(t *testing.T) {
 func ProviderSupportsContentType(provider domain.Provider, contentType domain.ContentType) bool {
 	// Get provider name as a string
 	providerStr := fmt.Sprintf("%T", provider)
-	
+
 	// Check content type support based on provider string
 	if strings.Contains(providerStr, "OpenAIProvider") {
 		// OpenAI supports all content types
@@ -105,11 +105,11 @@ func ProviderSupportsContentType(provider domain.Provider, contentType domain.Co
 		return contentType == domain.ContentTypeImage || contentType == domain.ContentTypeText
 	} else if strings.Contains(providerStr, "GeminiProvider") {
 		// Gemini supports image, video and text
-		return contentType == domain.ContentTypeImage || 
-		       contentType == domain.ContentTypeVideo || 
-		       contentType == domain.ContentTypeText
+		return contentType == domain.ContentTypeImage ||
+			contentType == domain.ContentTypeVideo ||
+			contentType == domain.ContentTypeText
 	}
-	
+
 	// Unknown provider
 	return false
 }

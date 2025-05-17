@@ -20,7 +20,7 @@ func (p *MockProvider) Generate(ctx context.Context, prompt string, options ...l
 	if p.GenerateFunc != nil {
 		return p.GenerateFunc(ctx, prompt, options...)
 	}
-	
+
 	// Create a text message from the prompt and use GenerateMessage
 	textMsg := ldomain.NewTextMessage(ldomain.RoleUser, prompt)
 	resp, err := p.GenerateMessage(ctx, []ldomain.Message{textMsg}, options...)
