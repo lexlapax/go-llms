@@ -20,6 +20,47 @@
 - [ ] Add Model Context Protocol Client support for Agents
 - [ ] Add Model Context Protocol Server support for Workflows or Agents
 
+## Library Migration: Viper/Cobra to Koanf/Kong
+- [x] Analysis Phase
+  - [x] Analyze current usage of viper and cobra in the codebase
+  - [x] Create comprehensive analysis documents (VIPER_COBRA_ANALYSIS.md, VIPER_COBRA_API_USAGE.md)
+  - [x] Plan migration from viper to koanf
+  - [x] Plan migration from cobra to kong/kongplet
+  - [x] Create migration plan document with code mappings (MIGRATION_PLAN_VIPER_COBRA_TO_KOANF_KONG.md)
+  - [x] Create detailed implementation guide with code examples (IMPLEMENTATION_GUIDE_VIPER_COBRA_TO_KOANF_KONG.md)
+  - [x] Identify dependencies and update strategy
+  - [x] Create before/after metrics section in migration plan
+- [ ] Implementation Phase
+  - [ ] Update go.mod with new dependencies (koanf, kong, kongplete)
+  - [ ] Remove viper and cobra dependencies from go.mod
+  - [ ] Implement configuration migration (viper to koanf)
+    - [ ] Create config.go with koanf implementation
+    - [ ] Migrate config loading logic
+    - [ ] Update environment variable handling
+    - [ ] Update default value management
+  - [ ] Implement CLI migration (cobra to kong/kongplet)
+    - [ ] Create cli.go with kong structures
+    - [ ] Convert commands to kong structs
+    - [ ] Implement Run() methods for all commands
+    - [ ] Set up kongplete for shell completion
+  - [ ] Update main.go to use new structure
+  - [ ] Adapt tests for new libraries
+    - [ ] Update main_test.go for koanf
+    - [ ] Add kong parser tests
+    - [ ] Test shell completions
+  - [ ] Ensure backward compatibility with existing config files
+- [ ] Validation Phase
+  - [ ] Test all commands with new implementation
+  - [ ] Test configuration loading from all sources (file, env, flags)
+  - [ ] Test shell completions for all shells
+  - [ ] Performance testing and comparison
+  - [ ] Measure and update after-migration metrics (binary size, dependencies)
+- [ ] Documentation Phase
+  - [ ] Update user documentation for new CLI interface
+  - [ ] Create migration guide for existing users
+  - [ ] Update examples to use new structure
+  - [ ] Update CLAUDE.md with new development commands
+
 ## Documentation
 - [x] Consolidate documentation and make sure it's consistent
   - [x] Update REFERENCE.md with all new documentation

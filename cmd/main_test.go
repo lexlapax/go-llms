@@ -4,7 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/spf13/viper"
+	"github.com/knadh/koanf/v2"
+	"github.com/knadh/koanf/providers/structs"
 )
 
 func TestGetAPIKey(t *testing.T) {
@@ -16,7 +17,8 @@ func TestGetAPIKey(t *testing.T) {
 	defer func() {
 		os.Setenv("OPENAI_API_KEY", oldOpenAIKey)
 		os.Setenv("ANTHROPIC_API_KEY", oldAnthropicKey)
-		viper.Reset()
+		// Reset koanf instance
+		k = koanf.New(".")
 	}()
 
 	// Clear environment variables for the test
@@ -28,8 +30,14 @@ func TestGetAPIKey(t *testing.T) {
 		// Set environment variable
 		os.Setenv("OPENAI_API_KEY", "test-openai-key")
 
+		// Reset koanf instance
+		k = koanf.New(".")
+		if err := InitConfig(""); err != nil {
+			t.Fatalf("Failed to init config: %v", err)
+		}
+
 		// Get API key
-		key, err := getAPIKey("openai")
+		key, err := GetAPIKey("openai")
 		if err != nil {
 			t.Fatalf("Expected no error, got: %v", err)
 		}
@@ -44,8 +52,14 @@ func TestGetAPIKey(t *testing.T) {
 		// Set environment variable
 		os.Setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
 
+		// Reset koanf instance
+		k = koanf.New(".")
+		if err := InitConfig(""); err != nil {
+			t.Fatalf("Failed to init config: %v", err)
+		}
+
 		// Get API key
-		key, err := getAPIKey("anthropic")
+		key, err := GetAPIKey("anthropic")
 		if err != nil {
 			t.Fatalf("Expected no error, got: %v", err)
 		}
@@ -55,13 +69,23 @@ func TestGetAPIKey(t *testing.T) {
 		}
 	})
 
-	// Test case 3: Get API key from viper config
-	t.Run("GetFromConfig", func(t *testing.T) {
-		// Set config value
-		viper.Set("providers.openai.api_key", "config-openai-key")
+	// Test case 3: Get API key from config - OpenAI
+	t.Run("GetFromConfigOpenAI", func(t *testing.T) {
+		// Clear environment variable
+		os.Unsetenv("OPENAI_API_KEY")
+
+		// Reset koanf and set config
+		k = koanf.New(".")
+		config := DefaultConfig()
+		config.Providers.OpenAI.APIKey = "config-openai-key"
+		
+		// Load the config
+		if err := k.Load(structs.Provider(config, "koanf"), nil); err != nil {
+			t.Fatalf("Failed to load config: %v", err)
+		}
 
 		// Get API key
-		key, err := getAPIKey("openai")
+		key, err := GetAPIKey("openai")
 		if err != nil {
 			t.Fatalf("Expected no error, got: %v", err)
 		}
@@ -71,96 +95,86 @@ func TestGetAPIKey(t *testing.T) {
 		}
 	})
 
-	// Test case 4: No API key configured
-	t.Run("NoAPIKey", func(t *testing.T) {
-		// Clear environment variables and config
+	// Test case 4: Error when no API key available
+	t.Run("ErrorWhenNoAPIKey", func(t *testing.T) {
+		// Clear all environment variables
 		os.Unsetenv("OPENAI_API_KEY")
-		viper.Set("providers.openai.api_key", "")
+		os.Unsetenv("ANTHROPIC_API_KEY")
 
-		// Try to get API key
-		_, err := getAPIKey("openai")
+		// Reset koanf instance with empty config
+		k = koanf.New(".")
+		if err := InitConfig(""); err != nil {
+			t.Fatalf("Failed to init config: %v", err)
+		}
+
+		// Try to get API key - should fail
+		_, err := GetAPIKey("openai")
 		if err == nil {
-			t.Fatal("Expected error, got nil")
+			t.Error("Expected error when no API key available, got nil")
 		}
 	})
 }
 
-func TestChatCmdStreamingFlag(t *testing.T) {
-	// Create a new chat command
-	chatCmd := newChatCmd()
+// Test the GetProvider function
+func TestGetProvider(t *testing.T) {
+	// Save old config
+	originalK := k
+	defer func() {
+		k = originalK
+	}()
 
-	// Verify the stream flag exists
-	streamFlag := chatCmd.Flags().Lookup("stream")
-	if streamFlag == nil {
-		t.Fatal("Expected 'stream' flag to exist on chat command")
-	}
-
-	// Verify the no-stream flag exists
-	noStreamFlag := chatCmd.Flags().Lookup("no-stream")
-	if noStreamFlag == nil {
-		t.Fatal("Expected 'no-stream' flag to exist on chat command")
-	}
-
-	// Check default values (should be false)
-	defaultStreamValue, err := chatCmd.Flags().GetBool("stream")
-	if err != nil {
-		t.Fatalf("Error getting stream flag value: %v", err)
-	}
-	if defaultStreamValue {
-		t.Errorf("Expected default stream flag value to be false, got true")
-	}
-
-	defaultNoStreamValue, err := chatCmd.Flags().GetBool("no-stream")
-	if err != nil {
-		t.Fatalf("Error getting no-stream flag value: %v", err)
-	}
-	if defaultNoStreamValue {
-		t.Errorf("Expected default no-stream flag value to be false, got true")
-	}
-
-	// Test with stream flag explicitly set
-	t.Run("WithStreamFlag", func(t *testing.T) {
-		cmd := newChatCmd()
-		args := []string{"--stream"}
-		cmd.SetArgs(args)
-		flags := cmd.Flags()
-
-		// We need to manually parse the flags since we're not executing the command
-		err = flags.Parse(args)
-		if err != nil {
-			t.Fatalf("Error parsing flags: %v", err)
+	t.Run("DefaultProvider", func(t *testing.T) {
+		k = koanf.New(".")
+		config := DefaultConfig()
+		if err := k.Load(structs.Provider(config, "koanf"), nil); err != nil {
+			t.Fatalf("Failed to load config: %v", err)
 		}
 
-		// Check that the flag value was correctly set
-		streamValue, err := flags.GetBool("stream")
-		if err != nil {
-			t.Fatalf("Error getting stream flag value: %v", err)
+		ctx := &Context{
+			Config: &config,
+			CLI:    &CLI{},
 		}
-		if !streamValue {
-			t.Errorf("Expected stream flag value to be true after setting, got false")
+
+		provider, model, err := ctx.GetProviderInfo()
+		if err != nil {
+			t.Fatalf("Expected no error, got: %v", err)
+		}
+
+		if provider != "openai" {
+			t.Errorf("Expected provider 'openai', got: %s", provider)
+		}
+
+		if model != "gpt-4o" {
+			t.Errorf("Expected model 'gpt-4o', got: %s", model)
 		}
 	})
 
-	// Test with no-stream flag explicitly set
-	t.Run("WithNoStreamFlag", func(t *testing.T) {
-		cmd := newChatCmd()
-		args := []string{"--no-stream"}
-		cmd.SetArgs(args)
-		flags := cmd.Flags()
-
-		// We need to manually parse the flags since we're not executing the command
-		err = flags.Parse(args)
-		if err != nil {
-			t.Fatalf("Error parsing flags: %v", err)
+	t.Run("OverrideProvider", func(t *testing.T) {
+		k = koanf.New(".")
+		config := DefaultConfig()
+		if err := k.Load(structs.Provider(config, "koanf"), nil); err != nil {
+			t.Fatalf("Failed to load config: %v", err)
 		}
 
-		// Check that the flag value was correctly set
-		noStreamValue, err := flags.GetBool("no-stream")
-		if err != nil {
-			t.Fatalf("Error getting no-stream flag value: %v", err)
+		ctx := &Context{
+			Config: &config,
+			CLI: &CLI{
+				Provider: "anthropic",
+				Model:    "claude-3",
+			},
 		}
-		if !noStreamValue {
-			t.Errorf("Expected no-stream flag value to be true after setting, got false")
+
+		provider, model, err := ctx.GetProviderInfo()
+		if err != nil {
+			t.Fatalf("Expected no error, got: %v", err)
+		}
+
+		if provider != "anthropic" {
+			t.Errorf("Expected provider 'anthropic', got: %s", provider)
+		}
+
+		if model != "claude-3" {
+			t.Errorf("Expected model 'claude-3', got: %s", model)
 		}
 	})
 }

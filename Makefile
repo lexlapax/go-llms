@@ -52,7 +52,7 @@ all: clean test build build-examples
 
 # Main binary build
 build:
-	$(GOBUILD) $(BUILD_FLAGS) -o $(BINARY_DIR)/$(BINARY_NAME) $(LDFLAGS) ./$(CMD_DIR)/main.go
+	$(GOBUILD) $(BUILD_FLAGS) -o $(BINARY_DIR)/$(BINARY_NAME) $(LDFLAGS) ./$(CMD_DIR)/
 
 # Build all binaries
 build-all: build build-examples

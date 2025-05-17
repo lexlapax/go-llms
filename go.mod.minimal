@@ -1,0 +1,15 @@
+module github.com/lexlapax/go-llms
+
+go 1.21
+
+require (
+	github.com/alecthomas/kong v1.11.0  // CLI parsing only
+	github.com/google/uuid v1.6.0      // Required for core functionality
+	gopkg.in/yaml.v3 v3.0.1           // Simple YAML parsing for config
+)
+
+indirect (
+	github.com/alecthomas/assert/v2 v2.11.0
+	github.com/alecthomas/repr v0.4.0
+	github.com/hexops/gotextdiff v1.0.3
+)
