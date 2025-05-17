@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Go-LLMs is a Go library that provides a unified interface to interact with various LLM providers (OpenAI, Anthropic, Google Gemini, etc.) with robust data validation and agent tooling. Key features include structured output processing, a consistent provider interface, agent workflows, and multi-provider strategies.
 
+**Current Version**: v0.2.4 (Released January 17, 2025)
+
 ## Common Development Commands
 
 ### Build Commands
@@ -177,17 +179,23 @@ Based on the TODO.md file, these are the current development priorities:
    
 ## Completed Development Items
 
-1. **Dependency Reduction Journey (Completed)**:
+1. **Dependency Reduction Journey (Completed in v0.2.4)**:
    - Successfully migrated from viper/cobra to koanf/kong, then to stdlib
-   - Reduced binary size from 14MB to 6.3MB (55% total reduction)
+   - Reduced binary size from 14MB to 6.3MB (55% total reduction)  
    - Documentation at docs/technical/dependency_reduction.md
+   - Full backward compatibility maintained
    
-2. **Multimodal Support (Completed in v0.2.0)**:
+2. **CLI Examples Enhancement (Completed in v0.2.1-v0.2.3)**:
+   - Added comprehensive multimodal example application
+   - Improved CLI argument parsing (v0.2.3)
+   - Migrated through multiple CLI frameworks to find optimal solution
+   
+3. **Multimodal Support (Completed in v0.2.0)**:
    - Full implementation with text, images, files, videos, and audio
    - Complete example with CLI interface
    - Comprehensive documentation and tests
    
-3. **Documentation Consolidation (Completed)**:
+4. **Documentation Consolidation (Completed)**:
    - All documentation is consistent and properly linked
    - REFERENCE.md updated with all documentation
    - Navigation links verified
@@ -206,3 +214,25 @@ The CLI migration has been completed with the following journey:
 7. Shell completion feature was removed in favor of smaller binary size
 
 For the full journey, see docs/technical/dependency_reduction.md
+
+## Recent Release Status
+
+### v0.2.4 (Current - January 17, 2025)
+- Complete dependency reduction journey
+- Removed all heavy CLI dependencies (koanf, kong)
+- 55% total binary size reduction since v0.1.0
+- Maintained full backward compatibility
+
+### v0.2.3 (January 16, 2025)
+- Intermediate migration from viper/cobra to koanf/kong
+- Improved shell completion (later removed for size optimization)
+
+### v0.2.1 (January 15, 2025)
+- Added comprehensive multimodal example CLI
+- Enhanced documentation and examples
+
+### v0.2.0 (January 14, 2025)
+- Full multimodal content support
+- Support for text, images, files, videos, and audio
+
+See README.md for the complete changelog
