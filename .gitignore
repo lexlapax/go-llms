@@ -32,7 +32,7 @@ coverage.html
 .DS_Store
 .aider/
 .claude/
-CLAUDE.md
+#CLAUDE.md
 
 # Debug files
 debug
