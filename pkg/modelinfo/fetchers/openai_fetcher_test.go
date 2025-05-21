@@ -14,7 +14,7 @@ import (
 
 func TestOpenAIFetcher_FetchModels_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/models" { 
+		if r.URL.Path != "/models" {
 			t.Fatalf("Expected path to be '/', got %s", r.URL.Path)
 		}
 		if r.Header.Get("Authorization") != "Bearer testapikey" {
@@ -37,7 +37,7 @@ func TestOpenAIFetcher_FetchModels_Success(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testapikey")
 	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
 
-	fetcher := NewOpenAIFetcher(server.URL) // Use constructor with mock server URL
+	fetcher := NewOpenAIFetcher(server.URL, http.DefaultClient) // Use constructor with mock server URL
 	models, err := fetcher.FetchModels()
 
 	if err != nil {
@@ -81,7 +81,7 @@ func TestOpenAIFetcher_FetchModels_APIKeyMissing(t *testing.T) {
 	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
 
 	// Instantiate with default or empty URL, as API key check happens first
-	fetcher := NewOpenAIFetcher("") 
+	fetcher := NewOpenAIFetcher("", http.DefaultClient)
 	_, err := fetcher.FetchModels()
 
 	if err == nil {
@@ -103,7 +103,7 @@ func TestOpenAIFetcher_FetchModels_APIError(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testapikey")
 	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
 
-	fetcher := NewOpenAIFetcher(server.URL) // Use constructor
+	fetcher := NewOpenAIFetcher(server.URL, http.DefaultClient) // Use constructor
 	_, err := fetcher.FetchModels()
 
 	if err == nil {
@@ -128,7 +128,7 @@ func TestOpenAIFetcher_FetchModels_InvalidJSON(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testapikey")
 	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
 
-	fetcher := NewOpenAIFetcher(server.URL) // Use constructor
+	fetcher := NewOpenAIFetcher(server.URL, http.DefaultClient) // Use constructor
 	_, err := fetcher.FetchModels()
 
 	if err == nil {

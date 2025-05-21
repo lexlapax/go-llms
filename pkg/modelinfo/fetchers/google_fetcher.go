@@ -52,9 +52,9 @@ type GoogleAIResponse struct {
 
 // FetchModels retrieves model information from the Google AI (Gemini) API.
 func (f *GoogleFetcher) FetchModels() ([]domain.Model, error) {
-	apiKey := os.Getenv("GOOGLE_API_KEY")
+	apiKey := os.Getenv("GEMINI_API_KEY")
 	if apiKey == "" {
-		return nil, fmt.Errorf("GOOGLE_API_KEY environment variable not set")
+		return nil, fmt.Errorf("GEMINI_API_KEY environment variable not set")
 	}
 
 	requestURL := fmt.Sprintf("%s/models?key=%s", f.BaseURL, apiKey)
@@ -110,17 +110,16 @@ func (f *GoogleFetcher) FetchModels() ([]domain.Model, error) {
 			}
 			// TODO: Infer other capabilities if possible from methods or model name patterns
 		}
-		
+
 		// Infer some capabilities based on model name (very basic)
 		if strings.Contains(modelName, "gemini") {
-			capabilities.FunctionCalling = true // Gemini models generally support this
-			if strings.Contains(modelName, "pro-vision") || strings.Contains(modelName, "1.5-pro") || strings.Contains(modelName, "1.5-flash"){ // Gemini 1.5 Pro/Flash are multimodal
+			capabilities.FunctionCalling = true                                                                                                  // Gemini models generally support this
+			if strings.Contains(modelName, "pro-vision") || strings.Contains(modelName, "1.5-pro") || strings.Contains(modelName, "1.5-flash") { // Gemini 1.5 Pro/Flash are multimodal
 				capabilities.Image.Read = true
-				capabilities.Audio.Read = true 
+				capabilities.Audio.Read = true
 				// Video and File might also be true for 1.5 Pro depending on specific features enabled
 			}
 		}
-
 
 		// Basic placeholder pricing
 		placeholderPricing := domain.Pricing{
