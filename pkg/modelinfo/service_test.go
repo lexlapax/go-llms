@@ -3,11 +3,10 @@ package modelinfo
 import (
 	// "errors" // Removed unused import
 	// "fmt" // Removed unused import
-	"os" 
+	"os"
 	"strings"
 	"testing"
 	"time"
-
 	// "github.com/lexlapax/go-llms/pkg/modelinfo/domain" // Removed unused import
 	// "github.com/lexlapax/go-llms/pkg/modelinfo/fetchers" // Removed unused import
 	// "github.com/google/go-cmp/cmp" // Removed unused import
@@ -52,15 +51,15 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 	// The mock fetcher variables below are not used because the current service design
 	// instantiates concrete fetchers. These lines are commented out to avoid "declared and not used".
 	/*
-	mockOpenAI := &MockOpenAIFetcher{
-		ModelsToReturn: []domain.Model{{Provider: "openai", Name: "gpt-4"}},
-	}
-	mockGoogle := &MockGoogleFetcher{
-		ModelsToReturn: []domain.Model{{Provider: "google", Name: "gemini-pro"}},
-	}
-	mockAnthropic := &MockAnthropicFetcher{
-		ModelsToReturn: []domain.Model{{Provider: "anthropic", Name: "claude-3-opus"}},
-	}
+		mockOpenAI := &MockOpenAIFetcher{
+			ModelsToReturn: []domain.Model{{Provider: "openai", Name: "gpt-4"}},
+		}
+		mockGoogle := &MockGoogleFetcher{
+			ModelsToReturn: []domain.Model{{Provider: "google", Name: "gemini-pro"}},
+		}
+		mockAnthropic := &MockAnthropicFetcher{
+			ModelsToReturn: []domain.Model{{Provider: "anthropic", Name: "claude-3-opus"}},
+		}
 	*/
 
 	// Create service with mock fetchers (requires modifying NewModelInfoService or service struct fields for testability)
@@ -138,18 +137,18 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 		svc := NewModelInfoServiceFunc() // Use the func variable
 		inventory, err := svc.AggregateModels()
 
-		// If OPENAI_API_KEY or GOOGLE_API_KEY are not set, those fetchers will error out.
+		// If OPENAI_API_KEY or GEMINI_API_KEY are not set, those fetchers will error out.
 		// This is expected by their implementation.
 		// The service should still return the models from Anthropic and report errors for others.
 
-		if err == nil && (os.Getenv("OPENAI_API_KEY") == "" || os.Getenv("GOOGLE_API_KEY") == "") {
+		if err == nil && (os.Getenv("OPENAI_API_KEY") == "" || os.Getenv("GEMINI_API_KEY") == "") {
 			// This case is tricky: if keys are missing, err *should* be non-nil.
 			// If keys ARE present, err might be nil.
 			// For a stable test, we should ensure keys are NOT set for this specific success case
 			// if we want to only rely on Anthropic.
 			// Or, ensure they ARE set and the APIs are hit (which is not a unit test).
 			// Let's test the scenario where API keys are NOT set.
-			if os.Getenv("OPENAI_API_KEY") == "" && os.Getenv("GOOGLE_API_KEY") == "" {
+			if os.Getenv("OPENAI_API_KEY") == "" && os.Getenv("GEMINI_API_KEY") == "" {
 				t.Log("Testing with missing OpenAI and Google API keys. Expecting errors from them but success from Anthropic.")
 				if err == nil {
 					t.Error("Expected an error from AggregateModels due to missing API keys for OpenAI/Google, but got nil")
@@ -159,7 +158,6 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 				}
 			}
 		}
-
 
 		if inventory == nil {
 			t.Fatal("AggregateModels() returned nil inventory")
@@ -190,7 +188,7 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 		if anthropicModelCount < 4 { // Anthropic fetcher has 4 hardcoded models
 			t.Errorf("Expected at least 4 Anthropic models, got %d", anthropicModelCount)
 		}
-		
+
 		// If API keys are set, this test will behave differently.
 		// This highlights the need for mockable dependencies for true unit testing.
 		// For now, this test verifies metadata and the Anthropic part.
@@ -202,11 +200,11 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 		// that can be injected into the service, because the real fetchers' error
 		// conditions depend on external factors (API keys, network).
 
-		// If we assume GOOGLE_API_KEY is missing, GoogleFetcher returns an error.
-		originalGoogleKey := os.Getenv("GOOGLE_API_KEY")
-		os.Unsetenv("GOOGLE_API_KEY")
-		defer os.Setenv("GOOGLE_API_KEY", originalGoogleKey)
-		
+		// If we assume GEMINI_API_KEY is missing, GoogleFetcher returns an error.
+		originalGoogleKey := os.Getenv("GEMINI_API_KEY")
+		os.Unsetenv("GEMINI_API_KEY")
+		defer os.Setenv("GEMINI_API_KEY", originalGoogleKey)
+
 		// And OPENAI_API_KEY is also missing
 		originalOpenAIKey := os.Getenv("OPENAI_API_KEY")
 		os.Unsetenv("OPENAI_API_KEY")
@@ -222,10 +220,9 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 			t.Errorf("Expected error message to indicate fetcher failure, got: %v", err)
 		}
 		if !strings.Contains(err.Error(), "2 errors occurred") && !strings.Contains(err.Error(), "1 errors occurred") { // Depending on which key is actually missing
-		    // The count depends on how many are actually missing or fail for other reasons.
+			// The count depends on how many are actually missing or fail for other reasons.
 			t.Logf("Error message was: %v", err) // Log for inspection
 		}
-
 
 		// Anthropic models should still be present
 		if inventory == nil {
@@ -245,7 +242,7 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 			t.Errorf("Expected at least 4 models (from Anthropic), got %d", len(inventory.Models))
 		}
 	})
-	
+
 	t.Run("All fetchers return empty but no error", func(t *testing.T) {
 		// This case is hard to simulate perfectly without mocks.
 		// Anthropic fetcher always returns models.
@@ -254,7 +251,6 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 		// or changes to the service/fetcher design.
 		t.Skip("Skipping test for all fetchers returning empty as it requires more involved mocking of hardcoded Anthropic fetcher.")
 	})
-
 
 }
 

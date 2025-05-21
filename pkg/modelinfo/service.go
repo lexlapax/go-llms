@@ -2,6 +2,7 @@ package modelinfo
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/modelinfo/domain"
@@ -33,9 +34,9 @@ func NewServiceWithCustomFetchers(
 // defaultNewModelInfoService is the default implementation for creating a ModelInfoService.
 func defaultNewModelInfoService() *ModelInfoService {
 	return NewServiceWithCustomFetchers(
-		fetchers.NewOpenAIFetcher(""),    // Uses default internal URL
-		fetchers.NewGoogleFetcher(""),    // Uses default internal URL
-		&fetchers.AnthropicFetcher{}, // Remains as is
+		fetchers.NewOpenAIFetcher("", http.DefaultClient), // Uses default internal URL
+		fetchers.NewGoogleFetcher("", http.DefaultClient), // Uses default internal URL
+		&fetchers.AnthropicFetcher{},                      // Remains as is
 	)
 }
 

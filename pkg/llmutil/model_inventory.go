@@ -63,14 +63,10 @@ func GetAvailableModels(opts *GetAvailableModelsOptions) (*domain.ModelInventory
 	}
 
 	if opts != nil {
-		// Only set UseCache to false if opts explicitly sets it to false.
-		// If opts.UseCache is true (its zero value when opts is not nil but UseCache isn't set),
-		// it will remain true due to the above default initialization.
-		// A more explicit way: if opts contains a field indicating UseCache was set, use its value.
-		// For this implementation, we assume if opts is passed, and UseCache is false, it's intentional.
-		if !opts.UseCache && opts.UseCache == false { // Check if UseCache is explicitly set to false
-			options.UseCache = false
-		}
+		// Apply the UseCache setting from opts (default is true in options)
+		// Note: bool's zero value is false, so if opts is passed and UseCache is not 
+		// explicitly set to true, it will disable caching
+		options.UseCache = opts.UseCache
 
 		if opts.CachePath != "" {
 			options.CachePath = opts.CachePath
@@ -123,10 +119,19 @@ func GetAvailableModels(opts *GetAvailableModelsOptions) (*domain.ModelInventory
 
 	// If fetching was successful and caching is enabled, save the fresh data.
 	if options.UseCache && freshInventoryData != nil {
+		// Ensure the directory exists
+		cacheDir := filepath.Dir(options.CachePath)
+		if mkdirErr := os.MkdirAll(cacheDir, defaultCacheDirPerm); mkdirErr != nil {
+			fmt.Printf("Warning: Failed to create cache directory at %s: %v\n", cacheDir, mkdirErr)
+		}
+		
+		// Create the cache data
 		cachedDataToSave := domain.CachedModelInventory{
 			Inventory: *freshInventoryData,
 			FetchedAt: time.Now(),
 		}
+		
+		// Save the inventory directly to the cache
 		if saveErr := cache.SaveInventory(&cachedDataToSave, options.CachePath); saveErr != nil {
 			// Log error during saving but do not fail the whole operation.
 			fmt.Printf("Warning: Failed to save fresh model inventory to cache at %s: %v\n", options.CachePath, saveErr)
