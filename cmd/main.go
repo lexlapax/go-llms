@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	
+
 	llmDomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 )
@@ -47,35 +47,35 @@ Options:
 `, filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
 	}
-	
+
 	flag.Parse()
-	
+
 	// Handle help and version flags
 	if *help {
 		flag.Usage()
 		os.Exit(0)
 	}
-	
+
 	if *versionFlag {
 		showVersion()
 		os.Exit(0)
 	}
-	
+
 	// Check for command
 	if flag.NArg() < 1 {
 		fmt.Fprintf(os.Stderr, "Error: No command specified\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
-	
+
 	command := flag.Arg(0)
-	
+
 	// Initialize configuration
 	if err := InitOptimizedConfig(*configFile); err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	// Override config with command line flags
 	if *providerFlag != "" {
 		config.Provider = *providerFlag
@@ -89,10 +89,10 @@ Options:
 	if *output != "" {
 		config.Output = *output
 	}
-	
+
 	// Execute command
 	ctx := context.Background()
-	
+
 	switch command {
 	case "version":
 		showVersion()
@@ -118,12 +118,12 @@ func createMinimalProvider() (llmDomain.Provider, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	apiKey, err := GetOptimizedAPIKey(providerName)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	switch providerName {
 	case "openai":
 		return provider.NewOpenAIProvider(apiKey, modelName), nil
@@ -140,29 +140,32 @@ func runMinimalChat(ctx context.Context) {
 	// Parse chat-specific flags
 	chatFlags := flag.NewFlagSet("chat", flag.ExitOnError)
 	system := chatFlags.String("s", "", "System prompt to set context")
-	
-	chatFlags.Parse(flag.Args()[1:])
-	
+
+	if err := chatFlags.Parse(flag.Args()[1:]); err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing chat flags: %v\n", err)
+		os.Exit(1)
+	}
+
 	provider, err := createMinimalProvider()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating provider: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	prompt := ""
 	if *system != "" {
 		prompt = *system + "\n\n"
 	}
-	
+
 	fmt.Println("Chat mode - Type 'exit' to quit")
-	
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("> ")
 		if !scanner.Scan() {
 			break
 		}
-		
+
 		input := scanner.Text()
 		if input == "exit" {
 			return
@@ -170,16 +173,16 @@ func runMinimalChat(ctx context.Context) {
 		if input == "" {
 			continue
 		}
-		
-		response, err := provider.Generate(ctx, prompt + input)
+
+		response, err := provider.Generate(ctx, prompt+input)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			continue
 		}
-		
+
 		fmt.Println(response)
 	}
-	
+
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
 		os.Exit(1)
@@ -190,32 +193,35 @@ func runMinimalComplete(ctx context.Context) {
 	// Parse complete-specific flags
 	completeFlags := flag.NewFlagSet("complete", flag.ExitOnError)
 	system := completeFlags.String("s", "", "System prompt to set context")
-	
-	completeFlags.Parse(flag.Args()[1:])
-	
+
+	if err := completeFlags.Parse(flag.Args()[1:]); err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing complete flags: %v\n", err)
+		os.Exit(1)
+	}
+
 	if completeFlags.NArg() < 1 {
 		fmt.Fprintln(os.Stderr, "Error: No prompt provided")
 		fmt.Fprintln(os.Stderr, "Usage: go-llms complete [OPTIONS] PROMPT")
 		os.Exit(1)
 	}
-	
+
 	userPrompt := strings.Join(completeFlags.Args(), " ")
 	prompt := userPrompt
 	if *system != "" {
 		prompt = *system + "\n\n" + userPrompt
 	}
-	
+
 	provider, err := createMinimalProvider()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating provider: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	response, err := provider.Generate(ctx, prompt)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	fmt.Println(response)
 }

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lexlapax/go-llms/pkg/llmutil"
-	"github.com/lexlapax/go-llms/pkg/modelinfo/domain"
+	"github.com/lexlapax/go-llms/pkg/util/llmutil"
+	"github.com/lexlapax/go-llms/pkg/util/llmutil/modelinfo/domain"
 )
 
 // TestModelInfoExample is a simple test to verify the example code works correctly
@@ -119,7 +119,7 @@ func TestHasCapability(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.capability, func(t *testing.T) {
 			if hasCapability(cap, test.capability) != test.expected {
-				t.Errorf("hasCapability(%s) = %v; want %v", 
+				t.Errorf("hasCapability(%s) = %v; want %v",
 					test.capability, !test.expected, test.expected)
 			}
 		})

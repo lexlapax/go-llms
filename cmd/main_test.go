@@ -16,7 +16,9 @@ func TestGetAPIKey(t *testing.T) {
 		os.Setenv("ANTHROPIC_API_KEY", oldAnthropicKey)
 		// Reset config
 		config = Config{}
-		InitOptimizedConfig("")
+		if err := InitOptimizedConfig(""); err != nil {
+			t.Fatalf("Failed to initialize config: %v", err)
+		}
 	}()
 
 	// Clear environment variables for the test
@@ -29,8 +31,10 @@ func TestGetAPIKey(t *testing.T) {
 		os.Setenv("OPENAI_API_KEY", "test-openai-key")
 		// Reset and reload config
 		config = Config{}
-		InitOptimizedConfig("")
-		
+		if err := InitOptimizedConfig(""); err != nil {
+			t.Fatalf("Failed to initialize config: %v", err)
+		}
+
 		key, err := GetOptimizedAPIKey("openai")
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
@@ -46,8 +50,10 @@ func TestGetAPIKey(t *testing.T) {
 		os.Setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
 		// Reset and reload config
 		config = Config{}
-		InitOptimizedConfig("")
-		
+		if err := InitOptimizedConfig(""); err != nil {
+			t.Fatalf("Failed to initialize config: %v", err)
+		}
+
 		key, err := GetOptimizedAPIKey("anthropic")
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
@@ -64,7 +70,7 @@ func TestGetAPIKey(t *testing.T) {
 		// Set config directly
 		config = Config{}
 		config.Providers.OpenAI.APIKey = "config-openai-key"
-		
+
 		key, err := GetOptimizedAPIKey("openai")
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
@@ -79,8 +85,10 @@ func TestGetAPIKey(t *testing.T) {
 		// Clear everything
 		os.Unsetenv("OPENAI_API_KEY")
 		config = Config{}
-		InitOptimizedConfig("")
-		
+		if err := InitOptimizedConfig(""); err != nil {
+			t.Fatalf("Failed to initialize config: %v", err)
+		}
+
 		_, err := GetOptimizedAPIKey("openai")
 		if err == nil {
 			t.Error("Expected error when no API key is configured")
@@ -92,8 +100,10 @@ func TestGetProvider(t *testing.T) {
 	// Test case 1: Default provider and model
 	t.Run("DefaultProvider", func(t *testing.T) {
 		config = Config{}
-		InitOptimizedConfig("")
-		
+		if err := InitOptimizedConfig(""); err != nil {
+			t.Fatalf("Failed to initialize config: %v", err)
+		}
+
 		provider, model, err := GetOptimizedProvider()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
@@ -112,7 +122,7 @@ func TestGetProvider(t *testing.T) {
 			Provider: "anthropic",
 			Model:    "custom-model",
 		}
-		
+
 		provider, model, err := GetOptimizedProvider()
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)

@@ -19,17 +19,17 @@ type Context struct {
 // createProvider creates an LLM provider based on configuration
 func (c *Context) createProvider() (llmDomain.Provider, error) {
 	providerName := c.Config.Provider
-	
+
 	apiKey, err := GetOptimizedAPIKey(providerName)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	_, modelName, err := GetOptimizedProvider()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	switch providerName {
 	case "openai":
 		return provider.NewOpenAIProvider(apiKey, modelName), nil

@@ -121,7 +121,7 @@ func (p *AnthropicProvider) ConvertMessagesToAnthropicFormat(messages []domain.M
 	for _, msg := range messages {
 		if msg.Role == domain.RoleSystem {
 			// Extract text content for system message
-			if msg.Content != nil && len(msg.Content) > 0 {
+			if len(msg.Content) > 0 {
 				for _, part := range msg.Content {
 					if part.Type == domain.ContentTypeText {
 						systemMessage = part.Text
@@ -135,7 +135,7 @@ func (p *AnthropicProvider) ConvertMessagesToAnthropicFormat(messages []domain.M
 			message["role"] = string(msg.Role)
 
 			// Handle multimodal content
-			if msg.Content != nil && len(msg.Content) > 0 {
+			if len(msg.Content) > 0 {
 				contentParts := make([]map[string]interface{}, 0, len(msg.Content))
 
 				for _, part := range msg.Content {

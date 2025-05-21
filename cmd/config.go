@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -15,18 +15,18 @@ type Config struct {
 	Model    string `yaml:"model"`
 	Verbose  bool   `yaml:"verbose"`
 	Output   string `yaml:"output"`
-	
+
 	Providers struct {
 		OpenAI struct {
 			APIKey       string `yaml:"api_key"`
 			DefaultModel string `yaml:"default_model"`
 		} `yaml:"openai"`
-		
+
 		Anthropic struct {
 			APIKey       string `yaml:"api_key"`
 			DefaultModel string `yaml:"default_model"`
 		} `yaml:"anthropic"`
-		
+
 		Gemini struct {
 			APIKey       string `yaml:"api_key"`
 			DefaultModel string `yaml:"default_model"`
@@ -47,7 +47,7 @@ func InitOptimizedConfig(configFile string) error {
 	config.Providers.OpenAI.DefaultModel = "gpt-4o"
 	config.Providers.Anthropic.DefaultModel = "claude-3-5-sonnet-latest"
 	config.Providers.Gemini.DefaultModel = "gemini-2.0-flash-lite"
-	
+
 	// Load from config file
 	if configFile != "" {
 		if err := loadYAMLFile(configFile); err == nil {
@@ -61,7 +61,7 @@ func InitOptimizedConfig(configFile string) error {
 			".go-llms.yaml",
 			filepath.Join(home, ".config", "go-llms", "config.yaml"),
 		}
-		
+
 		for _, path := range configPaths {
 			if _, err := os.Stat(path); err == nil {
 				if err := loadYAMLFile(path); err == nil {
@@ -71,10 +71,10 @@ func InitOptimizedConfig(configFile string) error {
 			}
 		}
 	}
-	
+
 	// Override with environment variables
 	loadEnvVars()
-	
+
 	return nil
 }
 
@@ -84,7 +84,7 @@ func loadYAMLFile(path string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return yaml.Unmarshal(data, &config)
 }
 
@@ -103,12 +103,12 @@ func loadEnvVars() {
 	if val := os.Getenv("GO_LLMS_OUTPUT"); val != "" {
 		config.Output = val
 	}
-	
+
 	// Provider-specific settings
 	loadProviderEnvVars("openai", "OPENAI")
 	loadProviderEnvVars("anthropic", "ANTHROPIC")
 	loadProviderEnvVars("gemini", "GEMINI")
-	
+
 	// Also check for standard API key environment variables (backward compatibility)
 	if val := os.Getenv("OPENAI_API_KEY"); val != "" && config.Providers.OpenAI.APIKey == "" {
 		config.Providers.OpenAI.APIKey = val
@@ -135,7 +135,7 @@ func loadProviderEnvVars(provider, envPrefix string) {
 			config.Providers.Gemini.APIKey = val
 		}
 	}
-	
+
 	// Default Model
 	envVar = fmt.Sprintf("GO_LLMS_PROVIDERS_%s_DEFAULT_MODEL", envPrefix)
 	if val := os.Getenv(envVar); val != "" {
@@ -153,7 +153,7 @@ func loadProviderEnvVars(provider, envPrefix string) {
 // GetOptimizedAPIKey retrieves the API key for a provider
 func GetOptimizedAPIKey(provider string) (string, error) {
 	var key string
-	
+
 	switch provider {
 	case "openai":
 		key = config.Providers.OpenAI.APIKey
@@ -162,7 +162,7 @@ func GetOptimizedAPIKey(provider string) (string, error) {
 	case "gemini":
 		key = config.Providers.Gemini.APIKey
 	}
-	
+
 	if key == "" {
 		// Try environment variable as fallback
 		envVar := fmt.Sprintf("%s_API_KEY", strings.ToUpper(provider))
@@ -178,7 +178,7 @@ func GetOptimizedAPIKey(provider string) (string, error) {
 func GetOptimizedProvider() (string, string, error) {
 	provider := config.Provider
 	model := config.Model
-	
+
 	// If no model specified, get the default for the provider
 	if model == "" {
 		switch provider {
@@ -189,11 +189,11 @@ func GetOptimizedProvider() (string, string, error) {
 		case "gemini":
 			model = config.Providers.Gemini.DefaultModel
 		}
-		
+
 		if model == "" {
 			return "", "", fmt.Errorf("no model specified and no default model configured for provider %s", provider)
 		}
 	}
-	
+
 	return provider, model, nil
 }

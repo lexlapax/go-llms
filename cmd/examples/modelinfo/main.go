@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lexlapax/go-llms/pkg/llmutil"
-	"github.com/lexlapax/go-llms/pkg/modelinfo/domain"
+	"github.com/lexlapax/go-llms/pkg/util/llmutil"
+	"github.com/lexlapax/go-llms/pkg/util/llmutil/modelinfo/domain"
 )
 
 // ABOUTME: Example application demonstrating the ModelInfo service

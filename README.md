@@ -25,6 +25,7 @@ Go-LLMs is a Go library that provides a simplified, unified interface to interac
 - **Schema validation**: Comprehensive JSON schema validation with type coercion
 - **Monitoring hooks**: Hooks for logging, metrics, and debugging
 - **Multi-provider strategies**: Combine providers using fastest, primary, or consensus approaches
+- **Model information services**: Automatic discovery and caching of model capabilities from providers
 - **Convenience utilities**: Helpful functions for common operations and patterns
 
 ## Project Goals
@@ -397,6 +398,50 @@ fmt.Printf("Created %s provider with model %s\n", providerName, modelName)
 response, err := provider.Generate(context.Background(), "Hello, world!")
 ```
 
+### Model Information and Discovery
+
+```go
+// Discover available models from all providers
+inventory, err := llmutil.GetAvailableModels(&llmutil.GetAvailableModelsOptions{
+    UseCache:    true,                    // Enable caching for faster subsequent calls
+    MaxCacheAge: 24 * time.Hour,         // Cache for 24 hours
+    CachePath:   "/path/to/cache.json",  // Optional custom cache location
+})
+if err != nil {
+    log.Fatalf("Failed to get model inventory: %v", err)
+}
+
+fmt.Printf("Found %d models from %d providers\n", 
+    len(inventory.Models), len(inventory.Metadata.Providers))
+
+// Filter models by provider
+for _, model := range inventory.Models {
+    if model.Provider == "openai" {
+        fmt.Printf("OpenAI Model: %s - %s\n", model.Name, model.DisplayName)
+        fmt.Printf("  Context Window: %d tokens\n", model.ContextWindow)
+        fmt.Printf("  Max Output: %d tokens\n", model.MaxOutputTokens)
+        fmt.Printf("  Supports Images: %v\n", model.Capabilities.Image.Read)
+        fmt.Printf("  Supports Function Calling: %v\n", model.Capabilities.FunctionCalling)
+    }
+}
+
+// Find models with specific capabilities
+textModels := []string{}
+multimodalModels := []string{}
+
+for _, model := range inventory.Models {
+    if model.Capabilities.Text.Read && model.Capabilities.Text.Write {
+        textModels = append(textModels, model.Name)
+    }
+    if model.Capabilities.Image.Read {
+        multimodalModels = append(multimodalModels, model.Name)
+    }
+}
+
+fmt.Printf("Text models: %v\n", textModels)
+fmt.Printf("Multimodal models: %v\n", multimodalModels)
+```
+
 ### Convenience Utilities
 
 ```go
@@ -463,6 +508,7 @@ Go-LLMs provides comprehensive documentation for users and contributors:
 - [Provider Options](docs/user-guide/provider-options.md) - Using the provider option system for configuration
 - [Multi-Provider Guide](docs/user-guide/multi-provider.md) - Working with multiple LLM providers
 - [Multimodal Content](docs/user-guide/multimodal-content.md) - Working with text, images, files, and other media types
+- [Model Discovery](docs/user-guide/model-discovery.md) - Model inventory and capability discovery
 - [Advanced Validation](docs/user-guide/advanced-validation.md) - Advanced schema validation features
 - [Error Handling](docs/user-guide/error-handling.md) - Error handling patterns and best practices
 
@@ -490,21 +536,31 @@ Go-LLMs provides comprehensive documentation for users and contributors:
 
 ### Example Applications
 
-The library includes several example applications that demonstrate key features:
+The library includes comprehensive example applications that demonstrate key features. **[See Examples Overview](cmd/examples/README.md)** for detailed descriptions and usage instructions.
 
+**Quick Start Examples:**
 - [Simple Example](cmd/examples/simple/README.md) - Basic usage with mock providers
-- [Anthropic Example](cmd/examples/anthropic/README.md) - Integration with Anthropic Claude
-- [OpenAI Example](cmd/examples/openai/README.md) - Integration with OpenAI models
-- [Gemini Example](cmd/examples/gemini/README.md) - Integration with Google Gemini
-- [Provider Options Example](cmd/examples/provider_options/README.md) - Using the provider option system
-- [OpenAI API Compatible Providers](cmd/examples/openai_api_compatible_providers/README.md) - Using OpenRouter and Ollama
-- [Multimodal Example](cmd/examples/multimodal/README.md) - Working with text, images, audio, and video content
-- [Agent Example](cmd/examples/agent/README.md) - Agent with tools for complex tasks
-- [Multi-Provider Example](cmd/examples/multi/README.md) - Working with multiple providers
-- [Consensus Example](cmd/examples/consensus/README.md) - Multi-provider consensus strategies
+- [Model Info Example](cmd/examples/modelinfo/README.md) - **NEW** - Model discovery and capability information
+- [Provider Options Example](cmd/examples/provider_options/README.md) - Configuration patterns
+
+**Provider Integration:**
+- [OpenAI Example](cmd/examples/openai/README.md) - GPT-4o and GPT-4 Turbo integration
+- [Anthropic Example](cmd/examples/anthropic/README.md) - Claude 3.5 Sonnet integration
+- [Gemini Example](cmd/examples/gemini/README.md) - Google Gemini 2.0 Flash integration
+- [OpenAI Compatible Providers](cmd/examples/openai_api_compatible_providers/README.md) - OpenRouter and Ollama
+
+**Advanced Features:**
+- [Agent Example](cmd/examples/agent/README.md) - Agent workflows with tools
+- [Multi-Provider Example](cmd/examples/multi/README.md) - Multiple provider strategies
+- [Consensus Example](cmd/examples/consensus/README.md) - Consensus and voting mechanisms
+- [Multimodal Example](cmd/examples/multimodal/README.md) - Text, images, audio, and video
+
+**Data and Validation:**
 - [Schema Example](cmd/examples/schema/README.md) - Schema generation from Go structs
-- [Coercion Example](cmd/examples/coercion/README.md) - Type coercion for validation
-- [Convenience Example](cmd/examples/convenience/README.md) - Utility functions for common tasks
+- [Coercion Example](cmd/examples/coercion/README.md) - Type coercion and validation
+
+**Utilities and Monitoring:**
+- [Convenience Example](cmd/examples/convenience/README.md) - Helper functions and patterns
 - [Metrics Example](cmd/examples/metrics/README.md) - Performance monitoring and metrics
 
 For a complete reference of all documentation, see the [REFERENCE.md](REFERENCE.md) file.
@@ -543,13 +599,48 @@ For more information on testing, see the [Testing Framework documentation](docs/
 
 ## Development Status
 
-### Current Version: v0.2.4
+### Current Version: v0.2.6
 
 The core functionality is fairly complete and working. However, APIs are subject to change to accommodate new unforeseen developments in upstream APIs.
 
 #### Changelog
 
-**v0.2.4 (Current)**
+**v0.2.6 (Current)**
+- ✅ **Model Discovery and Information System**
+  - Added comprehensive model inventory feature with automatic discovery
+  - Support for fetching model information from OpenAI, Anthropic, and Google Gemini APIs
+  - Intelligent caching system to reduce API calls and improve performance
+  - Capability detection for multimodal support, function calling, streaming, etc.
+  - Provider aggregation for unified model inventory across all providers
+- ✅ **Package Reorganization for Better Architecture**
+  - Consolidated `pkg/llmutil` and `pkg/modelinfo` into `pkg/util/llmutil/`
+  - Moved model information services to `pkg/util/llmutil/modelinfo/`
+  - Updated all import paths and maintained backward compatibility
+  - Improved logical organization and reduced package proliferation
+- ✅ **New ModelInfo CLI Example**
+  - Added comprehensive `cmd/examples/modelinfo` application
+  - Command-line interface for model discovery and filtering
+  - Support for filtering by provider, capability, and model name patterns
+  - Detailed model information display with JSON output
+  - Cache management and fresh data fetching options
+- ✅ **Documentation Enhancements**
+  - Created comprehensive [Model Discovery Guide](docs/user-guide/model-discovery.md)
+  - Added detailed [Examples Overview](cmd/examples/README.md) with categorized examples
+  - Updated README.md with model discovery examples and reorganized examples section
+  - Enhanced architecture documentation to include model discovery system
+  - Updated REFERENCE.md with new documentation links
+- ✅ **Code Quality Improvements**
+  - Fixed all linting errors across the codebase
+  - Improved error handling in model fetchers and test files
+  - Enhanced test coverage for model discovery functionality
+  - Optimized imports and removed unused code
+
+**v0.2.5**
+- ✅ Intermediate development and refinements
+- ✅ Initial model inventory implementation
+- ✅ Package structure improvements
+
+**v0.2.4**
 - ✅ Complete dependency reduction journey
   - Removed koanf and kong dependencies
   - Replaced with stdlib flag package and direct YAML parsing
@@ -590,15 +681,22 @@ The core functionality is fairly complete and working. However, APIs are subject
 - Agent workflow system
 
 #### Current Focus
-1. Model Context Protocol support for Agents
-2. Testing and performance optimization
-   - Comprehensive test suite for error conditions
-   - Benchmarks for remaining components
-   - Stress testing for high-load scenarios
-3. Performance profiling and optimization
-   - Prompt processing and template expansion
-   - Memory pooling for response types
-4. API refinement based on usage feedback
+1. **Model Context Protocol Support**
+   - Add Model Context Protocol (MCP) client support for Agents
+   - Add Model Context Protocol server support for Workflows
+2. **Performance Optimization and Benchmarking**
+   - Create comprehensive benchmark harness for A/B testing optimizations
+   - Implement visualization for memory allocation patterns
+   - Advanced optimizations including adaptive channel buffer sizing, pool prewarming
+   - Performance validation with metrics and benchmarks
+3. **API Refinement and Stabilization**
+   - Final API refinement based on usage feedback from model discovery system
+   - Consistency improvements across all provider interfaces
+   - Preparation for stable v1.0 release
+4. **Testing and Reliability**
+   - Comprehensive test suite for error conditions and edge cases
+   - Stress testing for high-load scenarios with model discovery
+   - Integration testing for all model discovery capabilities
 
 For the latest status and upcoming features, see the [TODO.md](TODO.md) file.
 

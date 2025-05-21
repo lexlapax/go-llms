@@ -13,7 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockProvider implements the Provider interface for testing
+// mockProvider implements the Provider interface for testing.
+// NOTE: This mock appears unused due to skipped tests in TestCreateProvider,
+// but it should be kept in case those tests are unskipped in the future.
+//
+//nolint:unused
 type mockProvider struct {
 	name             string
 	generateResponse string
@@ -23,6 +27,7 @@ type mockProvider struct {
 	options          []domain.Option
 }
 
+//nolint:unused
 func (m *mockProvider) Generate(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
 	if m.generateError != nil {
 		return "", m.generateError
@@ -30,6 +35,7 @@ func (m *mockProvider) Generate(ctx context.Context, prompt string, options ...d
 	return m.generateResponse, nil
 }
 
+//nolint:unused
 func (m *mockProvider) GenerateMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
 	m.messages = messages
 	m.options = options
@@ -39,10 +45,12 @@ func (m *mockProvider) GenerateMessage(ctx context.Context, messages []domain.Me
 	return domain.Response{Content: m.generateResponse}, nil
 }
 
+//nolint:unused
 func (m *mockProvider) GenerateWithSchema(ctx context.Context, prompt string, schema *schemaDomain.Schema, options ...domain.Option) (interface{}, error) {
 	return nil, errors.New("not implemented")
 }
 
+//nolint:unused
 func (m *mockProvider) Stream(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
 	if m.streamError != nil {
 		return nil, m.streamError
@@ -63,6 +71,7 @@ func (m *mockProvider) Stream(ctx context.Context, prompt string, options ...dom
 	return ch, nil
 }
 
+//nolint:unused
 func (m *mockProvider) StreamMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.ResponseStream, error) {
 	m.messages = messages
 	m.options = options
@@ -153,7 +162,6 @@ func TestCreateProvider(t *testing.T) {
 		},
 	}
 
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a context with mocked config functions
@@ -226,7 +234,7 @@ func TestStreamOutput(t *testing.T) {
 			}
 
 			stream := make(chan string, len(tt.chunks))
-			
+
 			if tt.cancelAfter > 0 {
 				// For cancellation test, stream chunks slowly
 				go func() {
@@ -317,7 +325,7 @@ func TestFormatOutput(t *testing.T) {
 			expected: "test",
 		},
 		{
-			name:     "JSON array", 
+			name:     "JSON array",
 			text:     `[1, 2, 3]`,
 			format:   "json",
 			expected: `[1, 2, 3]`,
@@ -344,7 +352,7 @@ func BenchmarkStreamOutput(b *testing.B) {
 			stream <- chunk
 		}
 		close(stream)
-		
+
 		var output bytes.Buffer
 		_ = streamOutput(ctx, stream, &output)
 	}

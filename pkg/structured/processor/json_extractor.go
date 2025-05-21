@@ -56,7 +56,7 @@ func extractJSONImpl(s string) string {
 			level := 0
 			inString := false
 			escaped := false
-			
+
 			for j := i; j < len(s); j++ {
 				if !escaped {
 					switch s[j] {
@@ -96,7 +96,7 @@ func extractJSONImpl(s string) string {
 			level := 0
 			inString := false
 			escaped := false
-			
+
 			for j := i; j < len(s); j++ {
 				if !escaped {
 					switch s[j] {
@@ -133,11 +133,4 @@ func extractJSONImpl(s string) string {
 	return ""
 }
 
-// manualExtractJSON is a fallback JSON extraction method (unused in the optimized version)
-func manualExtractJSON(s string) string {
-	// This function is now a fallback and should not be called in normal operation
-	// since our main ExtractJSON function handles all cases
-	return ""
-}
-
-// Removed unused isBalanced function
+// Removed unused manualExtractJSON and isBalanced functions

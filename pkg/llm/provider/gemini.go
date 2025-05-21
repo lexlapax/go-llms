@@ -115,7 +115,7 @@ func (p *GeminiProvider) ConvertMessagesToGeminiFormat(messages []domain.Message
 		message["role"] = role
 
 		// Handle multimodal content
-		if msg.Content != nil && len(msg.Content) > 0 {
+		if len(msg.Content) > 0 {
 			parts := make([]map[string]interface{}, 0, len(msg.Content))
 
 			for _, part := range msg.Content {

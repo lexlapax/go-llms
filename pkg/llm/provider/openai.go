@@ -105,7 +105,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 		message["role"] = string(msg.Role)
 
 		// Check if this is a multimodal message (has Content slice)
-		if msg.Content != nil && len(msg.Content) > 0 {
+		if len(msg.Content) > 0 {
 			// This is a multimodal message
 			contentParts := make([]map[string]interface{}, 0, len(msg.Content))
 
@@ -187,7 +187,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 				message["role"] = string(domain.RoleUser)
 				// Legacy format for backward compatibility - uses first text content part or empty string
 				textContent := ""
-				if msg.Content != nil && len(msg.Content) > 0 {
+				if len(msg.Content) > 0 {
 					for _, part := range msg.Content {
 						if part.Type == domain.ContentTypeText {
 							textContent = part.Text
@@ -200,7 +200,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 				// This is a valid tool message following an assistant
 				// Legacy format for backward compatibility - uses first text content part or empty string
 				textContent := ""
-				if msg.Content != nil && len(msg.Content) > 0 {
+				if len(msg.Content) > 0 {
 					for _, part := range msg.Content {
 						if part.Type == domain.ContentTypeText {
 							textContent = part.Text
@@ -215,7 +215,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 			// This assistant message is followed by a tool message, add tool_calls
 			// Legacy format for backward compatibility - uses first text content part or empty string
 			textContent := ""
-			if msg.Content != nil && len(msg.Content) > 0 {
+			if len(msg.Content) > 0 {
 				for _, part := range msg.Content {
 					if part.Type == domain.ContentTypeText {
 						textContent = part.Text
@@ -240,7 +240,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 		} else {
 			// Legacy format for backward compatibility - uses first text content part or empty string
 			textContent := ""
-			if msg.Content != nil && len(msg.Content) > 0 {
+			if len(msg.Content) > 0 {
 				for _, part := range msg.Content {
 					if part.Type == domain.ContentTypeText {
 						textContent = part.Text
