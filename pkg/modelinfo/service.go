@@ -16,14 +16,32 @@ type ModelInfoService struct {
 	// Add other fetchers here if more providers are supported
 }
 
-// NewModelInfoService creates and returns a new ModelInfoService.
-func NewModelInfoService() *ModelInfoService {
+// NewServiceWithCustomFetchers creates a ModelInfoService with specific fetcher instances.
+// Useful for testing or custom provider configurations.
+func NewServiceWithCustomFetchers(
+	openAIFetcher *fetchers.OpenAIFetcher,
+	googleFetcher *fetchers.GoogleFetcher,
+	anthropicFetcher *fetchers.AnthropicFetcher,
+) *ModelInfoService {
 	return &ModelInfoService{
-		openAIFetcher:    &fetchers.OpenAIFetcher{},
-		googleFetcher:    &fetchers.GoogleFetcher{},
-		anthropicFetcher: &fetchers.AnthropicFetcher{},
+		openAIFetcher:    openAIFetcher,
+		googleFetcher:    googleFetcher,
+		anthropicFetcher: anthropicFetcher,
 	}
 }
+
+// defaultNewModelInfoService is the default implementation for creating a ModelInfoService.
+func defaultNewModelInfoService() *ModelInfoService {
+	return NewServiceWithCustomFetchers(
+		fetchers.NewOpenAIFetcher(""),    // Uses default internal URL
+		fetchers.NewGoogleFetcher(""),    // Uses default internal URL
+		&fetchers.AnthropicFetcher{}, // Remains as is
+	)
+}
+
+// NewModelInfoServiceFunc is a package-level variable that can be overridden in tests
+// to provide a custom ModelInfoService instance.
+var NewModelInfoServiceFunc = defaultNewModelInfoService
 
 // AggregateModels fetches model information from all configured providers and aggregates them.
 func (s *ModelInfoService) AggregateModels() (*domain.ModelInventory, error) {

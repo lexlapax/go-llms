@@ -197,17 +197,25 @@ func TestIsCacheValid(t *testing.T) {
 			maxCacheAge:     maxAge,
 			expected:        false,
 		},
+		// Removed "Cache at exact expiry edge (adjusted to be just within window)"
+		// Replaced with Cache_just_barely_valid and Cache_just_barely_expired
 		{
-			name:            "Cache at exact expiry edge (valid due to <=)",
-			fetchedAt:       time.Now().Add(-maxAge),
-			maxCacheAge:     maxAge,
-			expected:        true,
+			name:        "Cache_just_barely_valid (maxAge - 10ms ago)", // Increased buffer
+			fetchedAt:   time.Now().Add(-(maxAge - 10*time.Millisecond)),
+			maxCacheAge: maxAge,
+			expected:    true,
 		},
 		{
-			name:            "Cache slightly before expiry",
-			fetchedAt:       time.Now().Add(-maxAge / 2),
-			maxCacheAge:     maxAge,
-			expected:        true,
+			name:        "Cache_just_barely_expired (maxAge + 10ms ago)", // Increased buffer
+			fetchedAt:   time.Now().Add(-(maxAge + 10*time.Millisecond)),
+			maxCacheAge: maxAge,
+			expected:    false,
+		},
+		{
+			name:        "Cache slightly before expiry (half maxAge)",
+			fetchedAt:   time.Now().Add(-maxAge / 2),
+			maxCacheAge: maxAge,
+			expected:    true,
 		},
 		{
 			name:            "Nil inventory",
@@ -216,16 +224,16 @@ func TestIsCacheValid(t *testing.T) {
 			expected:        false,
 		},
 		{
-			name:            "Zero maxCacheAge, recent fetch (invalid)",
-			fetchedAt:       time.Now().Add(-1 * time.Minute),
-			maxCacheAge:     0, // Cache effectively always expired if not fetched right now
-			expected:        false, // because Now().Sub(FetchedAt) will be > 0
+			name:        "Zero maxCacheAge, recent fetch (should be false)",
+			fetchedAt:   time.Now().Add(-1 * time.Minute),
+			maxCacheAge: 0, 
+			expected:    false, 
 		},
 		{
-			name:            "Zero maxCacheAge, fetched exactly now (valid due to <=)",
-			fetchedAt:       time.Now(), 
-			maxCacheAge:     0,
-			expected:        true, 
+			name:        "Zero maxCacheAge, fetched exactly now (should be false as Now() in func will be later)",
+			fetchedAt:   time.Now(),
+			maxCacheAge: 0,
+			expected:    false, // time.Now() in IsCacheValid will be slightly after tt.fetchedAt
 		},
 	}
 

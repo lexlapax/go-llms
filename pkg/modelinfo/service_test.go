@@ -1,19 +1,23 @@
 package modelinfo
 
 import (
-	"errors"
-	"fmt"
+	// "errors" // Removed unused import
+	// "fmt" // Removed unused import
+	"os" 
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/lexlapax/go-llms/pkg/modelinfo/domain"
-	"github.com/lexlapax/go-llms/pkg/modelinfo/fetchers" // Assuming fetchers is the correct package
-	"github.com/google/go-cmp/cmp"
+	// "github.com/lexlapax/go-llms/pkg/modelinfo/domain" // Removed unused import
+	// "github.com/lexlapax/go-llms/pkg/modelinfo/fetchers" // Removed unused import
+	// "github.com/google/go-cmp/cmp" // Removed unused import
 )
 
 // --- Mock Fetcher Definitions ---
-
+// These mocks are not used in the current test structure for ModelInfoService,
+// as the service directly instantiates concrete fetcher types.
+// These would be useful if the service used interfaces for its fetchers.
+/*
 type MockOpenAIFetcher struct {
 	ModelsToReturn []domain.Model
 	ErrorToReturn  error
@@ -40,10 +44,14 @@ type MockAnthropicFetcher struct {
 func (m *MockAnthropicFetcher) FetchModels() ([]domain.Model, error) {
 	return m.ModelsToReturn, m.ErrorToReturn
 }
+*/
 
 // --- Test Cases ---
 
 func TestModelInfoService_AggregateModels_Success(t *testing.T) {
+	// The mock fetcher variables below are not used because the current service design
+	// instantiates concrete fetchers. These lines are commented out to avoid "declared and not used".
+	/*
 	mockOpenAI := &MockOpenAIFetcher{
 		ModelsToReturn: []domain.Model{{Provider: "openai", Name: "gpt-4"}},
 	}
@@ -53,6 +61,7 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 	mockAnthropic := &MockAnthropicFetcher{
 		ModelsToReturn: []domain.Model{{Provider: "anthropic", Name: "claude-3-opus"}},
 	}
+	*/
 
 	// Create service with mock fetchers (requires modifying NewModelInfoService or service struct fields for testability)
 	// For this test, we'll manually create the service struct with mocks.
@@ -63,11 +72,11 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 
 	// To make this testable without changing ModelInfoService source, we'd need fetchers
 	// to be interfaces. Assuming for now we can construct it like this for the test:
-	service := &ModelInfoService{
-		openAIFetcher:    &fetchers.OpenAIFetcher{}, // These will be replaced by mocks
-		googleFetcher:    &fetchers.GoogleFetcher{},
-		anthropicFetcher: &fetchers.AnthropicFetcher{},
-	}
+	// service := &ModelInfoService{ // This variable 'service' was declared but not used.
+	// 	openAIFetcher:    &fetchers.OpenAIFetcher{},
+	// 	googleFetcher:    &fetchers.GoogleFetcher{},
+	// 	anthropicFetcher: &fetchers.AnthropicFetcher{},
+	// }
 	// This is a common pattern: use functional overrides or interfaces.
 	// For now, let's assume we can replace the fetcher instances *within* the test context.
 	// This is not ideal. A better approach is dependency injection via interfaces.
@@ -85,7 +94,7 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 	// Since service.go uses concrete types, we need to adjust the service itself or
 	// the test strategy. For now, we'll create a custom New function for tests.
 
-	testService := NewModelInfoService() // Uses real fetchers
+	// testService := NewModelInfoService() // This variable 'testService' was declared but not used.
 	// We need to replace its internal fetchers with our mocks.
 	// This will only work if the fetchers are interfaces or exported fields.
 	// Let's assume we can't modify service.go for now.
@@ -126,7 +135,7 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 		// We will construct a service and check the output.
 		// The most reliable part to test without external calls is the Anthropic part and metadata.
 
-		svc := NewModelInfoService() // Uses real fetchers
+		svc := NewModelInfoServiceFunc() // Use the func variable
 		inventory, err := svc.AggregateModels()
 
 		// If OPENAI_API_KEY or GOOGLE_API_KEY are not set, those fetchers will error out.
@@ -203,7 +212,7 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 		os.Unsetenv("OPENAI_API_KEY")
 		defer os.Setenv("OPENAI_API_KEY", originalOpenAIKey)
 
-		svc := NewModelInfoService()
+		svc := NewModelInfoServiceFunc() // Use the func variable
 		inventory, err := svc.AggregateModels()
 
 		if err == nil {

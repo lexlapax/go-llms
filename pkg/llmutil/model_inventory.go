@@ -8,7 +8,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/modelinfo/cache"
 	"github.com/lexlapax/go-llms/pkg/modelinfo/domain"
-	"github.com/lexlapax/go-llms/pkg/modelinfo/service"
+	"github.com/lexlapax/go-llms/pkg/modelinfo" // Corrected import
 )
 
 const (
@@ -115,7 +115,7 @@ func GetAvailableModels(opts *GetAvailableModelsOptions) (*domain.ModelInventory
 	}
 
 	// 3. Data Fetching
-	modelInfoService := service.NewModelInfoService()
+	modelInfoService := modelinfo.NewModelInfoServiceFunc() // Use the func variable
 	freshInventoryData, err := modelInfoService.AggregateModels()
 	if err != nil {
 		return nil, fmt.Errorf("failed to aggregate model data: %w", err)
