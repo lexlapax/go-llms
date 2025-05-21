@@ -3,6 +3,7 @@ package fetchers
 import (
 	"encoding/json"
 	"fmt"
+	"io" // Added io import
 	"net/http"
 	"os"
 	"strings"
@@ -10,13 +11,26 @@ import (
 	"github.com/lexlapax/go-llms/pkg/modelinfo/domain"
 )
 
-const (
-	openAIAPIURL = "https://api.openai.com/v1/models"
-)
+const defaultOpenAIBaseURL = "https://api.openai.com/v1"
 
 // OpenAIFetcher fetches model information from the OpenAI API.
 type OpenAIFetcher struct {
-	// No fields needed for now, but can hold client or config later.
+	BaseURL    string
+	HTTPClient *http.Client
+}
+
+// NewOpenAIFetcher creates a new OpenAIFetcher.
+// If baseURL is empty, it defaults to "https://api.openai.com/v1".
+// If client is nil, it defaults to http.DefaultClient.
+func NewOpenAIFetcher(baseURL string, client *http.Client) *OpenAIFetcher {
+	if baseURL == "" {
+		baseURL = defaultOpenAIBaseURL
+	}
+	httpClient := client
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	return &OpenAIFetcher{BaseURL: baseURL, HTTPClient: httpClient}
 }
 
 // OpenAIAPIModel represents a single model object from the OpenAI API response.
@@ -42,29 +56,28 @@ func (f *OpenAIFetcher) FetchModels() ([]domain.Model, error) {
 		return nil, fmt.Errorf("OPENAI_API_KEY environment variable not set")
 	}
 
-	req, err := http.NewRequest("GET", openAIAPIURL, nil)
+	requestURL := f.BaseURL + "/models"
+	req, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request to %s: %w", requestURL, err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := f.HTTPClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to make request to OpenAI API: %w", err)
+		return nil, fmt.Errorf("failed to make request to OpenAI API using custom client: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		// Consider reading resp.Body for more detailed error message from OpenAI
-		var errorBody strings.Builder
-		if _, err := errorBody.ReadFrom(resp.Body); err != nil {
-			// Error reading error body, just use status
-			return nil, fmt.Errorf("OpenAI API request failed with status code: %d", resp.StatusCode)
+		errorBodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("OpenAI API request failed with status code: %d (and error reading response body: %w)", resp.StatusCode, readErr)
 		}
-		return nil, fmt.Errorf("OpenAI API request failed with status code: %d, body: %s", resp.StatusCode, errorBody.String())
+		errorBodyStr := string(errorBodyBytes)
+		return nil, fmt.Errorf("OpenAI API request failed with status code: %d, body: %s", resp.StatusCode, errorBodyStr)
 	}
 
 	var apiResponse OpenAIAPIResponse
@@ -141,20 +154,29 @@ func (f *OpenAIFetcher) FetchModels() ([]domain.Model, error) {
 // extractModelFamily tries to infer a model family from the model ID.
 // This is a very basic heuristic.
 func extractModelFamily(modelID string) string {
+	if modelID == "" {
+		return "unknown"
+	}
+	if strings.HasPrefix(modelID, "text-embedding") {
+		return "text-embedding"
+	}
+	if strings.HasPrefix(modelID, "gpt-") {
+		return "gpt" // Covers gpt-3.5, gpt-4, gpt-4o etc.
+	}
+	if strings.HasPrefix(modelID, "dall-e") { // Check for "dall-e" specifically
+		// Find the last part of "dall-e-..." which is usually the version
+		parts := strings.Split(modelID, "-")
+		if len(parts) >= 2 && parts[0] == "dall" && parts[1] == "e" {
+			return "dall-e"
+		}
+		return parts[0] // Fallback if not "dall-e-X"
+	}
+
 	parts := strings.Split(modelID, "-")
 	if len(parts) > 0 {
-		// e.g., "gpt-3.5-turbo" -> "gpt"
-		// e.g., "text-embedding-ada-002" -> "text-embedding"
-		// e.g., "dall-e-2" -> "dall-e"
-		if strings.HasPrefix(modelID, "text-embedding") {
-			return "text-embedding"
-		}
-		if strings.HasPrefix(modelID, "gpt-") {
-			return "gpt" // Could be gpt-3.5, gpt-4, gpt-4o etc.
-		}
 		return parts[0]
 	}
-	return "unknown"
+	return "unknown" // Should be unreachable if modelID is not empty
 }
 
 // Helper function to create float pointers - not needed for domain.Model

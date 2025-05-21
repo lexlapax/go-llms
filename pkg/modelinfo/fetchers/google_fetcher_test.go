@@ -19,20 +19,14 @@ import (
 // A better way would be to make the URL configurable in the fetcher.
 // For now, the test will construct the full URL for the mock server and the fetcher will need to be able to use it.
 // For simplicity in test, we can't directly override const. The test will have to work around it or the main code would need a slight refactor.
-// Let's assume for the test that the URL construction is: fmt.Sprintf("%s?key=%s", googleAIAPIURLBase, apiKey)
-// We will make googleAIAPIURLBase a var for testing purposes.
-
-var originalGoogleAIAPIURLBase = googleAIAPIURLBase // Store original
-
-func setTestGoogleAIAPIURLBase(url string, t *testing.T) {
-	googleAIAPIURLBase = url
-	t.Cleanup(func() {
-		googleAIAPIURLBase = originalGoogleAIAPIURLBase
-	})
-}
+// Let's assume for the test that the URL construction is: fmt.Sprintf("%s?key=%s", GoogleAIAPIURLBase, apiKey)
+// We will make GoogleAIAPIURLBase a var for testing purposes.
 
 func TestGoogleFetcher_FetchModels_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Path for Google is part of the BaseURL + "/models"
+		// The key is a query parameter, which is fine.
+		// No specific path check here as long as the server gets the request.
 		if r.URL.Query().Get("key") != "testapikey" {
 			t.Fatalf("Expected API key 'testapikey', got '%s'", r.URL.Query().Get("key"))
 		}
@@ -63,15 +57,11 @@ func TestGoogleFetcher_FetchModels_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// The fetcher constructs URL as fmt.Sprintf("%s?key=%s", googleAIAPIURLBase, apiKey)
-	// So, googleAIAPIURLBase should be server.URL (which ends with /)
-	setTestGoogleAIAPIURLBase(server.URL, t)
-
 	originalApiKey := os.Getenv("GOOGLE_API_KEY")
 	os.Setenv("GOOGLE_API_KEY", "testapikey")
 	defer os.Setenv("GOOGLE_API_KEY", originalApiKey)
 
-	fetcher := GoogleFetcher{}
+	fetcher := NewGoogleFetcher(server.URL) // Use constructor with mock server URL
 	models, err := fetcher.FetchModels()
 
 	if err != nil {
@@ -122,7 +112,7 @@ func TestGoogleFetcher_FetchModels_APIKeyMissing(t *testing.T) {
 	os.Unsetenv("GOOGLE_API_KEY")
 	defer os.Setenv("GOOGLE_API_KEY", originalApiKey)
 
-	fetcher := GoogleFetcher{}
+	fetcher := NewGoogleFetcher("") // API key check happens first
 	_, err := fetcher.FetchModels()
 
 	if err == nil {
@@ -140,13 +130,11 @@ func TestGoogleFetcher_FetchModels_APIError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	setTestGoogleAIAPIURLBase(server.URL, t)
-
 	originalApiKey := os.Getenv("GOOGLE_API_KEY")
 	os.Setenv("GOOGLE_API_KEY", "invalidkey")
 	defer os.Setenv("GOOGLE_API_KEY", originalApiKey)
 
-	fetcher := GoogleFetcher{}
+	fetcher := NewGoogleFetcher(server.URL) // Use constructor
 	_, err := fetcher.FetchModels()
 
 	if err == nil {
@@ -167,13 +155,11 @@ func TestGoogleFetcher_FetchModels_InvalidJSON(t *testing.T) {
 	}))
 	defer server.Close()
 
-	setTestGoogleAIAPIURLBase(server.URL, t)
-
 	originalApiKey := os.Getenv("GOOGLE_API_KEY")
 	os.Setenv("GOOGLE_API_KEY", "testapikey")
 	defer os.Setenv("GOOGLE_API_KEY", originalApiKey)
 
-	fetcher := GoogleFetcher{}
+	fetcher := NewGoogleFetcher(server.URL) // Use constructor
 	_, err := fetcher.FetchModels()
 
 	if err == nil {

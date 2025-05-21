@@ -12,18 +12,9 @@ import (
 	"github.com/lexlapax/go-llms/pkg/modelinfo/domain"
 )
 
-// Helper to modify the package-level openAIAPIURL for testing and restore it.
-func setTestOpenAIAPIURL(url string, t *testing.T) {
-	originalURL := openAIAPIURL
-	openAIAPIURL = url
-	t.Cleanup(func() {
-		openAIAPIURL = originalURL
-	})
-}
-
 func TestOpenAIFetcher_FetchModels_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" { // Assuming the test URL is just the server URL
+		if r.URL.Path != "/models" { 
 			t.Fatalf("Expected path to be '/', got %s", r.URL.Path)
 		}
 		if r.Header.Get("Authorization") != "Bearer testapikey" {
@@ -42,13 +33,11 @@ func TestOpenAIFetcher_FetchModels_Success(t *testing.T) {
 	}))
 	defer server.Close()
 
-	setTestOpenAIAPIURL(server.URL, t) // Point to mock server
-
 	originalApiKey := os.Getenv("OPENAI_API_KEY")
 	os.Setenv("OPENAI_API_KEY", "testapikey")
 	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
 
-	fetcher := OpenAIFetcher{}
+	fetcher := NewOpenAIFetcher(server.URL) // Use constructor with mock server URL
 	models, err := fetcher.FetchModels()
 
 	if err != nil {
@@ -91,7 +80,8 @@ func TestOpenAIFetcher_FetchModels_APIKeyMissing(t *testing.T) {
 	os.Unsetenv("OPENAI_API_KEY")
 	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
 
-	fetcher := OpenAIFetcher{}
+	// Instantiate with default or empty URL, as API key check happens first
+	fetcher := NewOpenAIFetcher("") 
 	_, err := fetcher.FetchModels()
 
 	if err == nil {
@@ -109,13 +99,11 @@ func TestOpenAIFetcher_FetchModels_APIError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	setTestOpenAIAPIURL(server.URL, t)
-
 	originalApiKey := os.Getenv("OPENAI_API_KEY")
 	os.Setenv("OPENAI_API_KEY", "testapikey")
 	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
 
-	fetcher := OpenAIFetcher{}
+	fetcher := NewOpenAIFetcher(server.URL) // Use constructor
 	_, err := fetcher.FetchModels()
 
 	if err == nil {
@@ -136,13 +124,11 @@ func TestOpenAIFetcher_FetchModels_InvalidJSON(t *testing.T) {
 	}))
 	defer server.Close()
 
-	setTestOpenAIAPIURL(server.URL, t)
-
 	originalApiKey := os.Getenv("OPENAI_API_KEY")
 	os.Setenv("OPENAI_API_KEY", "testapikey")
 	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
 
-	fetcher := OpenAIFetcher{}
+	fetcher := NewOpenAIFetcher(server.URL) // Use constructor
 	_, err := fetcher.FetchModels()
 
 	if err == nil {

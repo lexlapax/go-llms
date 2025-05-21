@@ -3,6 +3,7 @@ package fetchers
 import (
 	"encoding/json"
 	"fmt"
+	"io" // Added io import
 	"net/http"
 	"os"
 	"strings"
@@ -10,13 +11,26 @@ import (
 	"github.com/lexlapax/go-llms/pkg/modelinfo/domain"
 )
 
-const (
-	googleAIAPIURLBase = "https://generativelanguage.googleapis.com/v1beta/models"
-)
+const defaultGoogleAIBaseURL = "https://generativelanguage.googleapis.com/v1beta"
 
 // GoogleFetcher fetches model information from the Google AI (Gemini) API.
 type GoogleFetcher struct {
-	// No fields needed for now, but can hold client or config later.
+	BaseURL    string
+	HTTPClient *http.Client
+}
+
+// NewGoogleFetcher creates a new GoogleFetcher.
+// If baseURL is empty, it defaults to "https://generativelanguage.googleapis.com/v1beta".
+// If client is nil, it defaults to http.DefaultClient.
+func NewGoogleFetcher(baseURL string, client *http.Client) *GoogleFetcher {
+	if baseURL == "" {
+		baseURL = defaultGoogleAIBaseURL
+	}
+	httpClient := client
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	return &GoogleFetcher{BaseURL: baseURL, HTTPClient: httpClient}
 }
 
 // GoogleAIModel represents a single model object from the Google AI API response.
@@ -43,27 +57,26 @@ func (f *GoogleFetcher) FetchModels() ([]domain.Model, error) {
 		return nil, fmt.Errorf("GOOGLE_API_KEY environment variable not set")
 	}
 
-	url := fmt.Sprintf("%s?key=%s", googleAIAPIURLBase, apiKey)
-
-	req, err := http.NewRequest("GET", url, nil)
+	requestURL := fmt.Sprintf("%s/models?key=%s", f.BaseURL, apiKey)
+	req, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request to %s: %w", requestURL, err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := f.HTTPClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to make request to Google AI API: %w", err)
+		return nil, fmt.Errorf("failed to make request to Google AI API using custom client: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		var errorBody strings.Builder
-		if _, err := errorBody.ReadFrom(resp.Body); err != nil {
-			return nil, fmt.Errorf("Google AI API request failed with status code: %d (error reading body)", resp.StatusCode)
+		errorBodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("Google AI API request failed with status code: %d (and error reading response body: %w)", resp.StatusCode, readErr)
 		}
-		return nil, fmt.Errorf("Google AI API request failed with status code: %d, body: %s", resp.StatusCode, errorBody.String())
+		errorBodyStr := string(errorBodyBytes)
+		return nil, fmt.Errorf("Google AI API request failed with status code: %d, body: %s", resp.StatusCode, errorBodyStr)
 	}
 
 	var apiResponse GoogleAIResponse
@@ -138,6 +151,9 @@ func (f *GoogleFetcher) FetchModels() ([]domain.Model, error) {
 // guessModelFamily tries to infer a model family from the model name.
 // This is a very basic heuristic.
 func guessModelFamily(modelName string) string {
+	if modelName == "" {
+		return "unknown"
+	}
 	if strings.HasPrefix(modelName, "gemini-") {
 		return "gemini"
 	}
@@ -149,7 +165,7 @@ func guessModelFamily(modelName string) string {
 	}
 	// Fallback to the first part of the name if available
 	parts := strings.Split(modelName, "-")
-	if len(parts) > 0 {
+	if len(parts) > 0 && parts[0] != "" { // ensure parts[0] is not empty
 		return parts[0]
 	}
 	return "unknown"
