@@ -1,33 +1,33 @@
 # Built-in Components Implementation Plan
 
-## Phase 1: Core Registry Infrastructure (Week 1)
+## Phase 1: Core Registry Infrastructure (Week 1) ✅ COMPLETED
 
-### 1.1 Base Registry Implementation
-- [ ] Create `pkg/agent/builtins/registry.go` with generic registry interface
-- [ ] Implement thread-safe registry with caching
-- [ ] Add search and filtering capabilities
-- [ ] Create metadata structures with versioning support
+### 1.1 Base Registry Implementation ✅
+- [x] Create `pkg/agent/builtins/registry.go` with generic registry interface
+- [x] Implement thread-safe registry with caching
+- [x] Add search and filtering capabilities
+- [x] Create metadata structures with versioning support
 
-### 1.2 Tool Registry
-- [ ] Create `pkg/agent/builtins/tools/registry.go` 
-- [ ] Extend base registry with tool-specific features
-- [ ] Add resource usage tracking
-- [ ] Implement permission declarations
+### 1.2 Tool Registry ✅
+- [x] Create `pkg/agent/builtins/tools/registry.go` 
+- [x] Extend base registry with tool-specific features
+- [x] Add resource usage tracking
+- [x] Implement permission declarations
 
-### 1.3 Agent Registry  
-- [ ] Create `pkg/agent/builtins/agents/registry.go`
-- [ ] Add template system for pre-configured agents
-- [ ] Implement agent composition helpers
+### 1.3 Agent Registry ✅
+- [x] Create `pkg/agent/builtins/agents/registry.go`
+- [x] Add template system for pre-configured agents
+- [x] Implement agent composition helpers
 
-### 1.4 Workflow Registry
-- [ ] Create `pkg/agent/builtins/workflows/registry.go`
-- [ ] Add workflow builder utilities
-- [ ] Implement routing patterns
+### 1.4 Workflow Registry ✅
+- [x] Create `pkg/agent/builtins/workflows/registry.go`
+- [x] Add workflow builder utilities
+- [x] Implement routing patterns
 
 ## Phase 2: Initial Tool Set (Week 2)
 
 ### 2.1 Web Tools
-- [ ] Migrate existing WebFetch to built-ins with metadata
+- [x] Migrate existing WebFetch to built-ins with metadata
 - [ ] Add WebScrape tool for HTML extraction
 - [ ] Add WebSearch tool with configurable search engines
 - [ ] Add HTTPRequest tool for advanced HTTP operations

@@ -1,5 +1,19 @@
 # Go-LLMs Completed Tasks
 
+## Built-in Components Infrastructure (Completed - January 31, 2025)
+- [x] P1: Analyze structure for exposing built-in tools, agents, and workflows
+  - [x] Analyzed existing pkg/agent structure and patterns
+  - [x] Created comprehensive design document (BUILTIN_COMPONENTS_DESIGN.md)
+  - [x] Created implementation plan (BUILTIN_COMPONENTS_IMPLEMENTATION_PLAN.md)
+- [x] Phase 1: Core Registry Infrastructure
+  - [x] Created generic registry with thread-safe operations and search capabilities
+  - [x] Implemented tool-specific registry with resource usage and permissions
+  - [x] Implemented agent-specific registry with template system
+  - [x] Implemented workflow-specific registry with routing patterns
+  - [x] Added comprehensive tests for all registries
+  - [x] Created first built-in tool (WebFetch) as reference implementation
+  - [x] Created example demonstrating built-in component usage
+
 ## Features (Completed)
 - [x] Implement interface-based provider option system
 - [x] Add multimodal content support to the llm core (completed in v0.2.0)
