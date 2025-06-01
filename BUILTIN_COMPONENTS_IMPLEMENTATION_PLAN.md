@@ -107,7 +107,7 @@
     - [x] Binary file detection and skipping
     - [x] Recursive directory search
 
-### 2.3 System Tools (Priority: Migrate ExecuteCommand) ✅ COMPLETED
+### 2.3 System Tools ✅ COMPLETED
 - [x] Migrate and enhance ExecuteCommand from common_tools.go:
   - [x] Environment variable support
   - [x] Working directory configuration
@@ -119,10 +119,28 @@
   - [x] Comprehensive safety checks and dangerous command blocking
   - [x] Exit code and success tracking
   - [x] Duration metrics
-- [ ] Add new system tools:
-  - [ ] GetEnvironmentVariable - read env vars safely
-  - [ ] GetSystemInfo - OS, architecture, resources
-  - [ ] ProcessList - list running processes
+- [x] Add new system tools:
+  - [x] GetEnvironmentVariable - read env vars safely ✅ COMPLETED
+    - [x] Pattern matching for variable names (prefix*, *suffix, *contains*)
+    - [x] Sensitive variable masking (API keys, passwords, tokens)
+    - [x] Configurable value inclusion/exclusion with NoValues flag
+    - [x] Sorted output for better readability
+    - [x] Comprehensive tests covering all features
+  - [x] GetSystemInfo - OS, architecture, resources ✅ COMPLETED
+    - [x] Basic system information (OS, architecture, CPU count)
+    - [x] Memory statistics with runtime allocation info
+    - [x] Go runtime information (version, goroutines, GOMAXPROCS)
+    - [x] Environment summary (paths, temp dir, env var count)
+    - [x] Cross-platform support with platform name mapping
+    - [x] Comprehensive tests with full coverage
+  - [x] ProcessList - list running processes ✅ COMPLETED
+    - [x] Cross-platform process enumeration (Unix/Linux/macOS/Windows)
+    - [x] Process filtering by name (case-insensitive contains)
+    - [x] Sorting by PID, name, CPU usage, or memory usage
+    - [x] Include/exclude current process option
+    - [x] Result limiting for performance
+    - [x] Process information extraction (PID, name, command, CPU%, memory, user)
+    - [x] Comprehensive tests with helper function coverage
 
 ### 2.4 Data Tools
 - [ ] JSONProcess - parse, query (JSONPath), and transform JSON
@@ -130,25 +148,26 @@
 - [ ] XMLProcess - parse and query XML data
 - [ ] DataTransform - common transformations (filter, map, reduce)
 
-### 2.5 Text Tools
+
+## Phase 3: Agent Templates (Week 3)
+
+### 3.1 Text Agents 
 - [ ] TextSummarize - intelligent summarization using LLM
 - [ ] TextExtract - extract structured data from text
 - [ ] TextAnalyze - sentiment, entities, keywords
 - [ ] TextTranslate - language translation using LLM
 
-## Phase 3: Agent Templates (Week 3)
-
-### 3.1 Research Agents
+### 3.2 Research Agents
 - [ ] WebResearcher - web research with source tracking
 - [ ] DocumentAnalyzer - analyze documents and PDFs
 - [ ] FactChecker - verify claims against sources
 
-### 3.2 Coding Agents
+### 3.3 Coding Agents
 - [ ] CodeReviewer - review code for issues
 - [ ] TestGenerator - generate tests from code
 - [ ] DocWriter - generate documentation
 
-### 3.3 Data Agents
+### 3.4 Data Agents
 - [ ] DataAnalyst - analyze datasets and generate insights
 - [ ] ReportGenerator - create formatted reports
 - [ ] DataCleaner - clean and validate data

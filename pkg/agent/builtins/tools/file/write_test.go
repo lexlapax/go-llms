@@ -1,150 +1,42 @@
-// ABOUTME: Tests for file reading and writing tools with all enhanced features
-// ABOUTME: Verifies atomic operations, append mode, line reading, and metadata functionality
+// ABOUTME: Tests for the file writing tool with all enhanced features
+// ABOUTME: Verifies atomic operations, append mode, backup creation, and permission handling
 
 package file
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
+
+	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 )
 
-func TestReadFile_Basic(t *testing.T) {
-	// Create a temporary file
-	tempDir := t.TempDir()
-	testFile := filepath.Join(tempDir, "test.txt")
-	testContent := "Hello, World!\nThis is a test file.\nWith multiple lines."
-
-	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
-		t.Fatalf("Failed to create test file: %v", err)
+func TestWriteFileRegistration(t *testing.T) {
+	// Test that the tool is registered
+	tool, ok := tools.GetTool("file_write")
+	if !ok {
+		t.Fatal("WriteFile tool not registered")
+	}
+	if tool == nil {
+		t.Fatal("WriteFile tool is nil")
 	}
 
-	// Test basic read
-	tool := MustGetReadFile()
-	ctx := context.Background()
-
-	result, err := tool.Execute(ctx, ReadFileParams{
-		Path: testFile,
-	})
-	if err != nil {
-		t.Fatalf("Failed to read file: %v", err)
+	// Test tool name
+	if tool.Name() != "file_write" {
+		t.Errorf("Expected tool name 'file_write', got '%s'", tool.Name())
 	}
 
-	readResult := result.(*ReadFileResult)
-	if readResult.Content != testContent {
-		t.Errorf("Expected content %q, got %q", testContent, readResult.Content)
+	// Test metadata
+	entries := tools.Tools.Search("file_write")
+	if len(entries) == 0 {
+		t.Fatal("WriteFile tool not found in registry")
 	}
-	if readResult.IsBinary {
-		t.Error("Expected text file, but detected as binary")
-	}
-	if readResult.Encoding != "utf-8" {
-		t.Errorf("Expected UTF-8 encoding, got %s", readResult.Encoding)
-	}
-	if readResult.Lines != 3 {
-		t.Errorf("Expected 3 lines, got %d", readResult.Lines)
-	}
-}
-
-func TestReadFile_WithMetadata(t *testing.T) {
-	tempDir := t.TempDir()
-	testFile := filepath.Join(tempDir, "test.json")
-	testContent := `{"key": "value"}`
-
-	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
-		t.Fatalf("Failed to create test file: %v", err)
-	}
-
-	tool := MustGetReadFile()
-	ctx := context.Background()
-
-	result, err := tool.Execute(ctx, ReadFileParams{
-		Path:        testFile,
-		IncludeMeta: true,
-	})
-	if err != nil {
-		t.Fatalf("Failed to read file: %v", err)
-	}
-
-	readResult := result.(*ReadFileResult)
-	if readResult.Metadata == nil {
-		t.Fatal("Expected metadata, got nil")
-	}
-	if readResult.Metadata.Extension != ".json" {
-		t.Errorf("Expected .json extension, got %s", readResult.Metadata.Extension)
-	}
-	if readResult.Metadata.Size != int64(len(testContent)) {
-		t.Errorf("Expected size %d, got %d", len(testContent), readResult.Metadata.Size)
-	}
-}
-
-func TestReadFile_LineRange(t *testing.T) {
-	tempDir := t.TempDir()
-	testFile := filepath.Join(tempDir, "lines.txt")
-
-	// Create file with numbered lines
-	var lines []string
-	for i := 1; i <= 10; i++ {
-		lines = append(lines, fmt.Sprintf("Line %d", i))
-	}
-	testContent := strings.Join(lines, "\n")
-
-	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
-		t.Fatalf("Failed to create test file: %v", err)
-	}
-
-	tool := MustGetReadFile()
-	ctx := context.Background()
-
-	// Test reading lines 3-5
-	result, err := tool.Execute(ctx, ReadFileParams{
-		Path:      testFile,
-		LineStart: 3,
-		LineEnd:   5,
-	})
-	if err != nil {
-		t.Fatalf("Failed to read file: %v", err)
-	}
-
-	readResult := result.(*ReadFileResult)
-	expected := "Line 3\nLine 4\nLine 5"
-	if readResult.Content != expected {
-		t.Errorf("Expected content %q, got %q", expected, readResult.Content)
-	}
-	if readResult.Lines != 3 {
-		t.Errorf("Expected 3 lines read, got %d", readResult.Lines)
-	}
-}
-
-func TestReadFile_BinaryDetection(t *testing.T) {
-	tempDir := t.TempDir()
-	testFile := filepath.Join(tempDir, "binary.dat")
-
-	// Create binary file with null bytes
-	binaryContent := []byte{0x00, 0xFF, 0x42, 0x00, 0xAB}
-	if err := os.WriteFile(testFile, binaryContent, 0644); err != nil {
-		t.Fatalf("Failed to create test file: %v", err)
-	}
-
-	tool := MustGetReadFile()
-	ctx := context.Background()
-
-	result, err := tool.Execute(ctx, ReadFileParams{
-		Path: testFile,
-	})
-	if err != nil {
-		t.Fatalf("Failed to read file: %v", err)
-	}
-
-	readResult := result.(*ReadFileResult)
-	if !readResult.IsBinary {
-		t.Error("Expected binary file detection")
-	}
-	if readResult.Encoding != "binary" {
-		t.Errorf("Expected binary encoding, got %s", readResult.Encoding)
+	
+	meta := entries[0].Metadata
+	if meta.Category != "file" {
+		t.Errorf("Expected category 'file', got '%s'", meta.Category)
 	}
 }
 
@@ -373,5 +265,91 @@ func TestWriteFile_CustomPermissions(t *testing.T) {
 	mode := info.Mode().Perm()
 	if mode != 0600 {
 		t.Errorf("Expected permissions 0600, got %o", mode)
+	}
+}
+
+func TestWriteFile_OverwriteProtection(t *testing.T) {
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "protected.txt")
+
+	// Create initial file
+	initialContent := "Existing content"
+	if err := os.WriteFile(testFile, []byte(initialContent), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	tool := MustGetWriteFile()
+	ctx := context.Background()
+
+	// Write without append should overwrite
+	newContent := "Overwritten content"
+	result, err := tool.Execute(ctx, WriteFileParams{
+		Path:    testFile,
+		Content: newContent,
+	})
+	if err != nil {
+		t.Fatalf("Failed to overwrite file: %v", err)
+	}
+
+	writeResult := result.(*WriteFileResult)
+	if !writeResult.FileExisted {
+		t.Error("File should have existed before overwrite")
+	}
+
+	// Verify content was overwritten
+	content, err := os.ReadFile(testFile)
+	if err != nil {
+		t.Fatalf("Failed to read file: %v", err)
+	}
+	if string(content) != newContent {
+		t.Errorf("Expected content %q, got %q", newContent, string(content))
+	}
+}
+
+func TestWriteFile_InvalidPath(t *testing.T) {
+	tool := MustGetWriteFile()
+	ctx := context.Background()
+
+	// Test writing to invalid path
+	_, err := tool.Execute(ctx, WriteFileParams{
+		Path:    "/root/cannot-write-here.txt",
+		Content: "test",
+	})
+	if err == nil {
+		t.Error("Expected error for invalid path")
+	}
+}
+
+func TestWriteFile_EmptyContent(t *testing.T) {
+	tempDir := t.TempDir()
+	testFile := filepath.Join(tempDir, "empty.txt")
+
+	tool := MustGetWriteFile()
+	ctx := context.Background()
+
+	// Write empty content
+	result, err := tool.Execute(ctx, WriteFileParams{
+		Path:    testFile,
+		Content: "",
+	})
+	if err != nil {
+		t.Fatalf("Failed to write empty file: %v", err)
+	}
+
+	writeResult := result.(*WriteFileResult)
+	if !writeResult.Success {
+		t.Error("Write operation failed")
+	}
+	if writeResult.BytesWritten != 0 {
+		t.Errorf("Expected 0 bytes written, got %d", writeResult.BytesWritten)
+	}
+
+	// Verify file exists and is empty
+	info, err := os.Stat(testFile)
+	if err != nil {
+		t.Fatalf("Failed to stat file: %v", err)
+	}
+	if info.Size() != 0 {
+		t.Errorf("Expected empty file, got size %d", info.Size())
 	}
 }

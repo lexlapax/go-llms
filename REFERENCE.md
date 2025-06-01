@@ -5,6 +5,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 ## User Guides
 
 - [Getting Started](/docs/user-guide/getting-started.md) - Introduction and basic usage examples
+- [Built-in Components](/docs/user-guide/built-in-components.md) - **NEW** - Using built-in tools, agents, and workflows
 - [Provider Options](/docs/user-guide/provider-options.md) - Using the provider option system for configuration
 - [Multi-Provider Guide](/docs/user-guide/multi-provider.md) - Working with multiple LLM providers
 - [Multimodal Content](/docs/user-guide/multimodal-content.md) - Working with text, images, files, videos, and audio
@@ -39,6 +40,8 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 **[Examples Overview](/cmd/examples/README.md)** - Complete guide to all example applications
 
 - [Simple Example](/cmd/examples/simple/README.md) - Basic usage with mock providers
+- [Built-in Tools Discovery](/cmd/examples/builtins-discovery/README.md) - **NEW** - Discover and use built-in tools
+- [Built-in File Tools](/cmd/examples/builtins-file-tools/README.md) - **NEW** - Enhanced file operations with built-in tools
 - [Anthropic Example](/cmd/examples/anthropic/README.md) - Integration with Anthropic Claude
 - [OpenAI Example](/cmd/examples/openai/README.md) - Integration with OpenAI models
 - [Gemini Example](/cmd/examples/gemini/README.md) - Integration with Google Gemini

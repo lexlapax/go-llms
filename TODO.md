@@ -32,34 +32,49 @@
 ## Architecture & Built-in Components for next release (Immediate - P0)
 - [x] P0: Analyze consistent logging strategy across codebase (COMPLETED - see TODO-DONE.md)
   
-- [ ] P1: Analyze structure for exposing built-in tools, agents, and workflows
-  - [ ] Review current pkg/agent (including workflow subpackage) structure for extensibility
-  - [ ] Design pattern for built-in vs user-defined components
-  - [ ] Create registry/discovery mechanism for built-in components
-  - [ ] Document guidelines for contributing built-in components
+- [x] P1: Analyze structure for exposing built-in tools, agents, and workflows (COMPLETED - see TODO-DONE.md)
   
-- [ ] P2: Build useful built-in tools
-  - [ ] Research common LLM tool patterns and use cases
-  - [ ] Add specific tool tasks to todo.md after research
-  - [ ] Review existing tool interface and extend if needed
-  - [ ] Implement initial set of built-in tools (list TBD after research)
-  - [ ] Add comprehensive examples and documentation
+- [ ] P2: Build useful built-in tools (PARTIALLY COMPLETED)
+  - [x] Phase 1: Core Registry Infrastructure (COMPLETED)
+  - [x] Phase 2.0-2.3: Migration and Initial Tools (COMPLETED)
+    - [x] Web Tools: WebFetch, WebSearch, WebScrape, HTTPRequest
+    - [x] File Tools: ReadFile, WriteFile, FileList, FileDelete, FileMove, FileSearch
+    - [x] System Tools: ExecuteCommand, GetEnvironmentVariable, GetSystemInfo, ProcessList
+  - [ ] Phase 2.4: Data Tools (PENDING)
+    - [ ] JSONProcess - parse, query (JSONPath), and transform JSON
+    - [ ] CSVProcess - read, write, and transform CSV data
+    - [ ] XMLProcess - parse and query XML data
+    - [ ] DataTransform - common transformations (filter, map, reduce)
   
-- [ ] P3: Build useful built-in agents  
-  - [ ] Research common agent patterns (with and without tools)
-  - [ ] Add specific agent tasks to todo.md after research
-  - [ ] Review existing agent patterns and extend/refactor as needed
-  - [ ] Implement initial set of built-in agents (list TBD after research)
-  - [ ] Create agent composition patterns
-  - [ ] Add comprehensive examples and documentation
+- [ ] P3: Build useful built-in agents (Phase 3 - PENDING)
+  - [ ] Text Agents
+    - [ ] TextSummarize - intelligent summarization using LLM
+    - [ ] TextExtract - extract structured data from text
+    - [ ] TextAnalyze - sentiment, entities, keywords
+    - [ ] TextTranslate - language translation using LLM
+  - [ ] Research Agents:
+    - [ ] WebResearcher - web research with source tracking
+    - [ ] DocumentAnalyzer - analyze documents and PDFs
+    - [ ] FactChecker - verify claims against sources
+  - [ ] Coding Agents:
+    - [ ] CodeReviewer - review code for issues
+    - [ ] TestGenerator - generate tests from code
+    - [ ] DocWriter - generate documentation
+  - [ ] Data Agents:
+    - [ ] DataAnalyst - analyze datasets and generate insights
+    - [ ] ReportGenerator - create formatted reports
+    - [ ] DataCleaner - clean and validate data
   
-- [ ] P4: Build useful multi-agent workflows
-  - [ ] Research common workflow patterns requiring multiple agents
-  - [ ] Add specific workflow tasks to todo.md after research
-  - [ ] Review existing workflow patterns in pkg/agent/workflow and extend as needed
-  - [ ] Implement workflow coordination mechanisms
-  - [ ] Create initial set of built-in workflows (list TBD after research)
-  - [ ] Add comprehensive examples and documentation
+- [ ] P4: Build useful multi-agent workflows (Phase 4 - PENDING)
+  - [ ] Core Patterns:
+    - [ ] Pipeline - sequential processing
+    - [ ] MapReduce - parallel processing with aggregation
+    - [ ] Consensus - multi-agent agreement
+    - [ ] Retry - with exponential backoff
+  - [ ] Example Workflows:
+    - [ ] ResearchWorkflow - research → verify → summarize → report
+    - [ ] CodeReviewWorkflow - analyze → review → suggest → document
+    - [ ] DataPipeline - ingest → clean → analyze → visualize
     
 - [ ] Fix identified cross-link issues (path inconsistencies, broken links) (REVISIT)
 - [ ] Perform final consistency check across all documentation (REVISIT)

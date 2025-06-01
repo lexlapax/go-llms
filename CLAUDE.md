@@ -9,6 +9,18 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 **Current Version**: v0.2.6 (Released January 30, 2025)
 
 **Recent Updates**:
+- **Built-in Components Implementation Progress** (January 31, 2025)
+  - Phase 1: Core Registry Infrastructure - COMPLETED
+  - Phase 2.0-2.3: Tool Migration and Enhancement - COMPLETED
+    - Implemented comprehensive registry system with search and discovery
+    - Migrated and enhanced all web tools (WebFetch, WebSearch, WebScrape, HTTPRequest)
+    - Migrated and enhanced all file tools (ReadFile, WriteFile, FileList, FileDelete, FileMove, FileSearch)
+    - Implemented all system tools (ExecuteCommand, GetEnvironmentVariable, GetSystemInfo, ProcessList)
+    - Successfully deprecated and removed common_tools.go
+    - All tools have comprehensive tests and documentation
+  - Phase 2.4: Data Tools - PENDING (JSONProcess, CSVProcess, XMLProcess, DataTransform)
+  - Phase 3: Agent Templates - PENDING
+  - Phase 4: Workflow Patterns - PENDING
 - **Completed All Phases of Logging Strategy Implementation** (January 30, 2025)
   - Phase 1: Documentation - Created comprehensive logging documentation at `docs/technical/logging.md`
   - Phase 2: Standardized Examples - Converted all examples to use consistent logging patterns

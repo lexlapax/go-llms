@@ -38,6 +38,35 @@
   - [x] Implemented FileMove tool with atomic operations and cross-device support
   - [x] Implemented FileSearch tool with regex support and context lines
   - [x] All tools include comprehensive tests and documentation
+  - [x] Separated file tool tests into individual test files (read_test.go, write_test.go)
+- [x] Phase 2.3: System Tools Implementation (Completed - January 31, 2025)
+  - [x] Migrated ExecuteCommand tool with full safety and feature enhancements
+  - [x] Implemented GetEnvironmentVariable tool with full feature set:
+    - [x] Pattern matching for variable names (prefix*, *suffix, *contains*)
+    - [x] Sensitive variable masking for security (API keys, passwords, tokens)
+    - [x] Configurable value inclusion/exclusion with NoValues flag
+    - [x] Sorted output for better readability
+    - [x] Comprehensive tests with 100% coverage
+    - [x] Fixed boolean parameter handling issue with creative NoValues approach
+  - [x] Implemented GetSystemInfo tool with comprehensive system details:
+    - [x] Basic system information (OS name, platform, architecture, CPU count)
+    - [x] Optional memory statistics with runtime memory allocation info
+    - [x] Optional Go runtime information (version, compiler, goroutines, GOMAXPROCS)
+    - [x] Optional environment summary (user, paths, temp dir, env var count)
+    - [x] Cross-platform support with human-readable platform name mapping
+    - [x] Timestamp for when the info was collected
+    - [x] Hostname retrieval with error handling
+    - [x] Comprehensive tests covering all features
+  - [x] Implemented ProcessList tool for process monitoring:
+    - [x] Cross-platform process enumeration (Unix/Linux/macOS using ps, Windows using tasklist)
+    - [x] Process filtering by name with case-insensitive contains matching
+    - [x] Flexible sorting options (PID, name, CPU usage, memory usage)
+    - [x] Include/exclude current process option for cleaner listings
+    - [x] Result limiting for performance and focused queries
+    - [x] Rich process information (PID, name, command, CPU%, memory KB, user, start time)
+    - [x] Fallback mechanism for unsupported platforms
+    - [x] CSV parsing for Windows tasklist output
+    - [x] Comprehensive tests including helper function coverage
 
 ## Features (Completed)
 - [x] Implement interface-based provider option system
