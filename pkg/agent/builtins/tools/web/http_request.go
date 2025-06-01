@@ -28,18 +28,18 @@ type HTTPRequestParams struct {
 	Body        string            `json:"body,omitempty"`
 	BodyType    string            `json:"body_type,omitempty"`
 	QueryParams map[string]string `json:"query_params,omitempty"`
-	
+
 	// Auth fields flattened for better compatibility
-	AuthType     string `json:"auth_type,omitempty"`     // basic, bearer, api_key
-	AuthUsername string `json:"auth_username,omitempty"`
-	AuthPassword string `json:"auth_password,omitempty"`
-	AuthToken    string `json:"auth_token,omitempty"`
-	AuthKeyName  string `json:"auth_key_name,omitempty"`
-	AuthKeyValue string `json:"auth_key_value,omitempty"`
+	AuthType        string `json:"auth_type,omitempty"` // basic, bearer, api_key
+	AuthUsername    string `json:"auth_username,omitempty"`
+	AuthPassword    string `json:"auth_password,omitempty"`
+	AuthToken       string `json:"auth_token,omitempty"`
+	AuthKeyName     string `json:"auth_key_name,omitempty"`
+	AuthKeyValue    string `json:"auth_key_value,omitempty"`
 	AuthKeyLocation string `json:"auth_key_location,omitempty"` // header, query
-	
-	Timeout     int               `json:"timeout,omitempty"`
-	FollowRedirects bool         `json:"follow_redirects,omitempty"`
+
+	Timeout         int  `json:"timeout,omitempty"`
+	FollowRedirects bool `json:"follow_redirects,omitempty"`
 }
 
 // HTTPRequestResult defines the result of the HTTPRequest tool
@@ -332,12 +332,12 @@ func applyAuthFromParams(req *http.Request, params *HTTPRequestParams) error {
 		if params.AuthKeyName == "" || params.AuthKeyValue == "" {
 			return fmt.Errorf("api_key auth requires auth_key_name and auth_key_value")
 		}
-		
+
 		location := strings.ToLower(params.AuthKeyLocation)
 		if location == "" {
 			location = "header"
 		}
-		
+
 		switch location {
 		case "header":
 			req.Header.Set(params.AuthKeyName, params.AuthKeyValue)

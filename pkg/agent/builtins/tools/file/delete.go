@@ -19,10 +19,10 @@ import (
 
 // FileDeleteParams defines parameters for the FileDelete tool
 type FileDeleteParams struct {
-	Path            string `json:"path"`
-	Force           bool   `json:"force,omitempty"`            // Skip confirmation for non-empty directories
-	Recursive       bool   `json:"recursive,omitempty"`        // Delete directories and their contents
-	RequireConfirm  string `json:"require_confirm,omitempty"`  // Confirmation string that must match path
+	Path           string `json:"path"`
+	Force          bool   `json:"force,omitempty"`           // Skip confirmation for non-empty directories
+	Recursive      bool   `json:"recursive,omitempty"`       // Delete directories and their contents
+	RequireConfirm string `json:"require_confirm,omitempty"` // Confirmation string that must match path
 }
 
 // FileDeleteResult defines the result of the FileDelete tool
@@ -216,7 +216,7 @@ func FileDelete() domain.Tool {
 func isCriticalPath(path string) bool {
 	// Normalize path for comparison
 	path = filepath.Clean(path)
-	
+
 	// List of critical paths that should not be deleted
 	criticalPaths := []string{
 		"/",

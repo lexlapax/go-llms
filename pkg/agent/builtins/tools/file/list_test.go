@@ -34,7 +34,7 @@ func TestFileListRegistration(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatal("FileList tool not found in registry")
 	}
-	
+
 	meta := entries[0].Metadata
 	if meta.Category != "file" {
 		t.Errorf("Expected category 'file', got '%s'", meta.Category)
@@ -44,12 +44,12 @@ func TestFileListRegistration(t *testing.T) {
 func TestFileListBasic(t *testing.T) {
 	// Create test directory structure
 	tempDir := t.TempDir()
-	
+
 	// Create some test files
 	testFiles := []struct {
-		path     string
-		content  string
-		isDir    bool
+		path    string
+		content string
+		isDir   bool
 	}{
 		{"file1.txt", "content1", false},
 		{"file2.txt", "content2", false},
@@ -90,7 +90,7 @@ func TestFileListBasic(t *testing.T) {
 	}
 
 	listResult := result.(*FileListResult)
-	
+
 	// Should have 4 files in root directory (not including subdir by default)
 	if len(listResult.Files) != 4 {
 		t.Errorf("Expected 4 files, got %d", len(listResult.Files))
@@ -130,8 +130,8 @@ func TestFileListBasic(t *testing.T) {
 
 	// Test 4: Include directories
 	result, err = tool.Execute(ctx, map[string]interface{}{
-		"path":         tempDir,
-		"include_dirs": true,
+		"path":          tempDir,
+		"include_dirs":  true,
 		"include_files": false,
 	})
 	if err != nil {
@@ -152,12 +152,12 @@ func TestFileListBasic(t *testing.T) {
 
 func TestFileListFiltering(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create files with different sizes
 	smallFile := filepath.Join(tempDir, "small.txt")
 	mediumFile := filepath.Join(tempDir, "medium.txt")
 	largeFile := filepath.Join(tempDir, "large.txt")
-	
+
 	os.WriteFile(smallFile, []byte("small"), 0644)
 	os.WriteFile(mediumFile, make([]byte, 1024), 0644) // 1KB
 	os.WriteFile(largeFile, make([]byte, 10240), 0644) // 10KB
@@ -165,7 +165,7 @@ func TestFileListFiltering(t *testing.T) {
 	// Modify times for time-based filtering
 	oldTime := time.Now().Add(-48 * time.Hour)
 	os.Chtimes(smallFile, oldTime, oldTime)
-	
+
 	tool := FileList()
 	ctx := context.Background()
 
@@ -201,7 +201,7 @@ func TestFileListFiltering(t *testing.T) {
 
 func TestFileListSorting(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create files with specific attributes
 	files := []struct {
 		name    string
@@ -316,7 +316,7 @@ func TestFileListErrors(t *testing.T) {
 
 func TestFileListMaxResults(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create many files
 	for i := 0; i < 20; i++ {
 		filename := fmt.Sprintf("file%02d.txt", i)
@@ -346,7 +346,7 @@ func TestFileListMaxResults(t *testing.T) {
 
 func TestFileListExtensions(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create files with different extensions
 	files := []string{
 		"document.txt",
@@ -372,7 +372,7 @@ func TestFileListExtensions(t *testing.T) {
 	}
 
 	listResult := result.(*FileListResult)
-	
+
 	// Check extensions are properly extracted
 	extMap := make(map[string]string)
 	for _, f := range listResult.Files {

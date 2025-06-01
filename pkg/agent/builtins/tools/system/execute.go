@@ -33,15 +33,15 @@ type ExecuteCommandParams struct {
 
 // ExecuteCommandResult defines the result of the ExecuteCommand tool
 type ExecuteCommandResult struct {
-	Stdout       string            `json:"stdout"`
-	Stderr       string            `json:"stderr"`
-	ExitCode     int               `json:"exit_code"`
-	Success      bool              `json:"success"`
-	TimedOut     bool              `json:"timed_out"`
-	WorkingDir   string            `json:"working_dir"`
-	Command      string            `json:"command"`
-	Environment  map[string]string `json:"environment,omitempty"`
-	DurationMs   int64             `json:"duration_ms"`
+	Stdout      string            `json:"stdout"`
+	Stderr      string            `json:"stderr"`
+	ExitCode    int               `json:"exit_code"`
+	Success     bool              `json:"success"`
+	TimedOut    bool              `json:"timed_out"`
+	WorkingDir  string            `json:"working_dir"`
+	Command     string            `json:"command"`
+	Environment map[string]string `json:"environment,omitempty"`
+	DurationMs  int64             `json:"duration_ms"`
 }
 
 // executeCommandParamSchema defines parameters for the ExecuteCommand tool
@@ -208,37 +208,37 @@ func ExecuteCommand() domain.Tool {
 		"Executes system commands with enhanced control and security",
 		func(ctx context.Context, params ExecuteCommandParams) (*ExecuteCommandResult, error) {
 			startTime := time.Now()
-			
+
 			// Set defaults
 			if params.Timeout == 0 {
 				params.Timeout = 30
 			} else if params.Timeout > 300 {
 				params.Timeout = 300 // Cap at 5 minutes
 			}
-			
+
 			if params.Shell == "" {
 				params.Shell = "sh"
 			}
-			
+
 			// Default to safe mode
 			if params.SafeMode || params.SafeMode == false {
 				// SafeMode was explicitly set
 			} else {
 				params.SafeMode = true
 			}
-			
+
 			// Validate command in safe mode
 			if params.SafeMode {
 				if err := validateCommandSafety(params.Command); err != nil {
 					return nil, err
 				}
 			}
-			
+
 			// Create context with timeout
 			timeout := time.Duration(params.Timeout) * time.Second
 			cmdCtx, cancel := context.WithTimeout(ctx, timeout)
 			defer cancel()
-			
+
 			// Prepare command
 			var cmd *exec.Cmd
 			if params.Shell == "none" {
@@ -256,7 +256,7 @@ func ExecuteCommand() domain.Tool {
 				}
 				cmd = exec.CommandContext(cmdCtx, shell, "-c", params.Command)
 			}
-			
+
 			// Set working directory
 			if params.WorkingDir != "" {
 				absPath, err := filepath.Abs(params.WorkingDir)
@@ -270,48 +270,48 @@ func ExecuteCommand() domain.Tool {
 			} else {
 				cmd.Dir, _ = os.Getwd()
 			}
-			
+
 			// Set environment
 			cmd.Env = os.Environ() // Start with current environment
 			for key, value := range params.Environment {
 				cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, value))
 			}
-			
+
 			// Set up stdin if provided
 			if params.Input != "" {
 				cmd.Stdin = strings.NewReader(params.Input)
 			}
-			
+
 			// Capture stdout and stderr separately
 			var stdout, stderr bytes.Buffer
 			cmd.Stdout = &stdout
 			cmd.Stderr = &stderr
-			
+
 			// Execute command
 			err := cmd.Run()
 			duration := time.Since(startTime)
-			
+
 			// Prepare result
 			result := &ExecuteCommandResult{
-				Stdout:      stdout.String(),
-				Stderr:      stderr.String(),
-				Command:     params.Command,
-				WorkingDir:  cmd.Dir,
-				DurationMs:  duration.Milliseconds(),
+				Stdout:     stdout.String(),
+				Stderr:     stderr.String(),
+				Command:    params.Command,
+				WorkingDir: cmd.Dir,
+				DurationMs: duration.Milliseconds(),
 			}
-			
+
 			// Add environment if it was customized
 			if len(params.Environment) > 0 {
 				result.Environment = params.Environment
 			}
-			
+
 			// Handle timeout
 			if cmdCtx.Err() == context.DeadlineExceeded {
 				result.TimedOut = true
 				result.Success = false
 				return result, nil // Return result even on timeout
 			}
-			
+
 			// Get exit code
 			if err != nil {
 				if exitErr, ok := err.(*exec.ExitError); ok {
@@ -324,7 +324,7 @@ func ExecuteCommand() domain.Tool {
 				result.ExitCode = 0
 				result.Success = true
 			}
-			
+
 			return result, nil
 		},
 		executeCommandParamSchema,
@@ -338,14 +338,14 @@ func validateCommandSafety(command string) error {
 	if len(parts) == 0 {
 		return fmt.Errorf("empty command")
 	}
-	
+
 	baseCmd := filepath.Base(parts[0])
-	
+
 	// Check against dangerous commands
 	if dangerousCommands[baseCmd] {
 		return fmt.Errorf("command '%s' is blocked in safe mode", baseCmd)
 	}
-	
+
 	// Check if command contains dangerous patterns
 	dangerousPatterns := []string{
 		"sudo",
@@ -359,27 +359,27 @@ func validateCommandSafety(command string) error {
 		"&&", // Command chaining
 		"||", // Command chaining
 		"`",  // Command substitution
-		"$(",  // Command substitution
+		"$(", // Command substitution
 		"rm -rf",
 		"rm -fr",
 		"format ",
 		"mkfs.",
 	}
-	
+
 	lowerCommand := strings.ToLower(command)
 	for _, pattern := range dangerousPatterns {
 		if strings.Contains(lowerCommand, pattern) {
 			return fmt.Errorf("command contains dangerous pattern '%s' which is blocked in safe mode", pattern)
 		}
 	}
-	
+
 	// In strict safe mode, only allow explicitly safe commands
 	// This is more restrictive but safer for untrusted input
 	if !safeCommands[baseCmd] {
 		// Allow full paths to known safe locations
-		if strings.HasPrefix(parts[0], "/usr/bin/") || 
-		   strings.HasPrefix(parts[0], "/bin/") ||
-		   strings.HasPrefix(parts[0], "/usr/local/bin/") {
+		if strings.HasPrefix(parts[0], "/usr/bin/") ||
+			strings.HasPrefix(parts[0], "/bin/") ||
+			strings.HasPrefix(parts[0], "/usr/local/bin/") {
 			// Check the base command from the path
 			baseCmd = filepath.Base(parts[0])
 			if !safeCommands[baseCmd] {
@@ -389,7 +389,7 @@ func validateCommandSafety(command string) error {
 			return fmt.Errorf("command '%s' is not in the safe command allowlist", baseCmd)
 		}
 	}
-	
+
 	return nil
 }
 

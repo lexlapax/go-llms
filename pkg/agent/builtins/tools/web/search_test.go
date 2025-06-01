@@ -59,7 +59,7 @@ func TestWebSearchExecution(t *testing.T) {
 		if r.Method != "GET" {
 			t.Errorf("Expected GET request, got %s", r.Method)
 		}
-		
+
 		query := r.URL.Query().Get("q")
 		if query == "" {
 			t.Error("Expected query parameter")
@@ -102,7 +102,7 @@ func TestWebSearchExecution(t *testing.T) {
 		"query":       "golang test query",
 		"max_results": 3,
 	})
-	
+
 	// We expect this to succeed or fail gracefully
 	if err != nil {
 		// This is okay - DuckDuckGo might rate limit or be unavailable
@@ -185,7 +185,7 @@ func TestWebSearchParameterValidation(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result, err := tool.Execute(ctx, tc.params)
-			
+
 			if tc.shouldError {
 				if err == nil {
 					t.Errorf("Expected error containing '%s', got nil", tc.errorMsg)
@@ -197,7 +197,7 @@ func TestWebSearchParameterValidation(t *testing.T) {
 					t.Errorf("Unexpected parameter validation error: %v", err)
 				}
 			}
-			
+
 			_ = result // Suppress unused variable warning
 		})
 	}

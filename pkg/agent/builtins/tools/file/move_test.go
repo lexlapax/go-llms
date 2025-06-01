@@ -33,7 +33,7 @@ func TestFileMoveRegistration(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatal("FileMove tool not found in registry")
 	}
-	
+
 	meta := entries[0].Metadata
 	if meta.Category != "file" {
 		t.Errorf("Expected category 'file', got '%s'", meta.Category)
@@ -48,7 +48,7 @@ func TestFileMoveBasic(t *testing.T) {
 	tempDir := t.TempDir()
 	srcFile := filepath.Join(tempDir, "original.txt")
 	dstFile := filepath.Join(tempDir, "renamed.txt")
-	
+
 	// Create source file
 	if err := os.WriteFile(srcFile, []byte("test content"), 0644); err != nil {
 		t.Fatal(err)
@@ -90,10 +90,10 @@ func TestFileMoveBasic(t *testing.T) {
 	// Test 2: Move to different directory
 	subDir := filepath.Join(tempDir, "subdir")
 	os.Mkdir(subDir, 0755)
-	
+
 	srcFile2 := filepath.Join(tempDir, "file2.txt")
 	dstFile2 := filepath.Join(subDir, "file2.txt")
-	
+
 	os.WriteFile(srcFile2, []byte("content2"), 0644)
 
 	result, err = tool.Execute(ctx, map[string]interface{}{
@@ -125,7 +125,7 @@ func TestFileMoveToDirectory(t *testing.T) {
 	tempDir := t.TempDir()
 	srcFile := filepath.Join(tempDir, "source.txt")
 	targetDir := filepath.Join(tempDir, "target")
-	
+
 	// Create source file and target directory
 	os.WriteFile(srcFile, []byte("content"), 0644)
 	os.Mkdir(targetDir, 0755)
@@ -162,7 +162,7 @@ func TestFileMoveOverwrite(t *testing.T) {
 	tempDir := t.TempDir()
 	srcFile := filepath.Join(tempDir, "source.txt")
 	dstFile := filepath.Join(tempDir, "existing.txt")
-	
+
 	// Create both files
 	os.WriteFile(srcFile, []byte("new content"), 0644)
 	os.WriteFile(dstFile, []byte("old content"), 0644)
@@ -218,7 +218,7 @@ func TestFileMoveCreateDirs(t *testing.T) {
 	tempDir := t.TempDir()
 	srcFile := filepath.Join(tempDir, "source.txt")
 	dstFile := filepath.Join(tempDir, "deep", "nested", "dir", "dest.txt")
-	
+
 	// Create source file
 	os.WriteFile(srcFile, []byte("content"), 0644)
 
@@ -303,7 +303,7 @@ func TestFileMoveDirectory(t *testing.T) {
 	tempDir := t.TempDir()
 	srcDir := filepath.Join(tempDir, "srcdir")
 	dstDir := filepath.Join(tempDir, "dstdir")
-	
+
 	// Create source directory with files
 	os.Mkdir(srcDir, 0755)
 	os.WriteFile(filepath.Join(srcDir, "file1.txt"), []byte("content1"), 0644)
@@ -331,7 +331,7 @@ func TestFileMoveDirectory(t *testing.T) {
 	// Verify destination directory exists with files
 	file1Path := filepath.Join(dstDir, "file1.txt")
 	file2Path := filepath.Join(dstDir, "file2.txt")
-	
+
 	if _, err := os.Stat(file1Path); os.IsNotExist(err) {
 		t.Error("file1.txt not found in destination directory")
 	}
@@ -347,10 +347,10 @@ func TestFileMovePreserveAttributes(t *testing.T) {
 	tempDir := t.TempDir()
 	srcFile := filepath.Join(tempDir, "source.txt")
 	dstFile := filepath.Join(tempDir, "dest.txt")
-	
+
 	// Create source file with specific permissions
 	os.WriteFile(srcFile, []byte("content"), 0755)
-	
+
 	// Get original file info
 	srcInfo, _ := os.Stat(srcFile)
 	originalMode := srcInfo.Mode()

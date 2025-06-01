@@ -34,7 +34,7 @@ func TestReadFileRegistration(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatal("ReadFile tool not found in registry")
 	}
-	
+
 	meta := entries[0].Metadata
 	if meta.Category != "file" {
 		t.Errorf("Expected category 'file', got '%s'", meta.Category)
@@ -183,7 +183,7 @@ func TestReadFile_LargeFile(t *testing.T) {
 	// Create a large file (over 10MB)
 	var content strings.Builder
 	lineContent := strings.Repeat("x", 100) + "\n" // 101 bytes per line
-	for i := 0; i < 120000; i++ { // ~12MB
+	for i := 0; i < 120000; i++ {                  // ~12MB
 		content.WriteString(lineContent)
 	}
 
@@ -233,7 +233,7 @@ func TestReadFile_NonExistentFile(t *testing.T) {
 
 func TestReadFile_DirectoryInsteadOfFile(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	tool := MustGetReadFile()
 	ctx := context.Background()
 
@@ -302,7 +302,7 @@ func TestReadFile_EmptyFile(t *testing.T) {
 func TestReadFile_LineRangeValidation(t *testing.T) {
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "lines.txt")
-	
+
 	// Create file with 5 lines
 	content := "Line 1\nLine 2\nLine 3\nLine 4\nLine 5"
 	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
@@ -320,11 +320,11 @@ func TestReadFile_LineRangeValidation(t *testing.T) {
 		expected  string
 	}{
 		{"Valid range", 2, 4, false, "Line 2\nLine 3\nLine 4"},
-		{"Start > End", 4, 2, false, ""}, // No validation, just returns empty
-		{"Negative start", -1, 3, false, "Line 1\nLine 2\nLine 3"}, // Treated as 0
-		{"Zero start", 0, 3, false, "Line 1\nLine 2\nLine 3"}, // 0 means start from beginning
+		{"Start > End", 4, 2, false, ""},                            // No validation, just returns empty
+		{"Negative start", -1, 3, false, "Line 1\nLine 2\nLine 3"},  // Treated as 0
+		{"Zero start", 0, 3, false, "Line 1\nLine 2\nLine 3"},       // 0 means start from beginning
 		{"End beyond file", 3, 10, false, "Line 3\nLine 4\nLine 5"}, // Should read to end
-		{"Start beyond file", 10, 12, false, ""}, // Should return empty
+		{"Start beyond file", 10, 12, false, ""},                    // Should return empty
 	}
 
 	for _, tc := range testCases {
@@ -340,7 +340,7 @@ func TestReadFile_LineRangeValidation(t *testing.T) {
 			if !tc.shouldErr && err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			
+
 			if err == nil && !tc.shouldErr {
 				readResult := result.(*ReadFileResult)
 				if readResult.Content != tc.expected {

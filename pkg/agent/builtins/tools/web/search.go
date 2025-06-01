@@ -26,7 +26,7 @@ type WebSearchParams struct {
 	Engine      string `json:"engine,omitempty"`      // Search engine to use (default: "duckduckgo")
 	MaxResults  int    `json:"max_results,omitempty"` // Maximum number of results (default: 10)
 	SafeSearch  bool   `json:"safe_search,omitempty"` // Enable safe search (default: true)
-	TimeoutSecs int    `json:"timeout,omitempty"`      // Timeout in seconds (default: 30)
+	TimeoutSecs int    `json:"timeout,omitempty"`     // Timeout in seconds (default: 30)
 }
 
 // SearchResult defines a single search result

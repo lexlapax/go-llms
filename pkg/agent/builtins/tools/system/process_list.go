@@ -21,10 +21,10 @@ import (
 
 // ProcessListParams defines parameters for the ProcessList tool
 type ProcessListParams struct {
-	Filter       string `json:"filter,omitempty"`        // Filter by process name (contains)
-	IncludeSelf  bool   `json:"include_self,omitempty"`  // Include current process
-	SortBy       string `json:"sort_by,omitempty"`       // Sort by: pid, name, cpu, memory
-	Limit        int    `json:"limit,omitempty"`         // Limit number of results
+	Filter      string `json:"filter,omitempty"`       // Filter by process name (contains)
+	IncludeSelf bool   `json:"include_self,omitempty"` // Include current process
+	SortBy      string `json:"sort_by,omitempty"`      // Sort by: pid, name, cpu, memory
+	Limit       int    `json:"limit,omitempty"`        // Limit number of results
 }
 
 // ProcessListResult represents the result of process listing
@@ -122,11 +122,11 @@ func ProcessList() domain.Tool {
 		func(ctx context.Context, params ProcessListParams) (*ProcessListResult, error) {
 			// Get current PID for self-filtering
 			currentPID := os.Getpid()
-			
+
 			// Get process list based on platform
 			var processes []ProcessInfo
 			var err error
-			
+
 			switch runtime.GOOS {
 			case "darwin", "linux", "freebsd", "openbsd", "netbsd":
 				processes, err = getUnixProcesses()
@@ -135,47 +135,47 @@ func ProcessList() domain.Tool {
 			default:
 				processes, err = getFallbackProcesses()
 			}
-			
+
 			if err != nil {
 				return nil, err
 			}
-			
+
 			// Filter processes
 			if params.Filter != "" || !params.IncludeSelf {
 				filtered := make([]ProcessInfo, 0, len(processes))
 				filterUpper := strings.ToUpper(params.Filter)
-				
+
 				for _, p := range processes {
 					// Skip self if requested
 					if !params.IncludeSelf && p.PID == currentPID {
 						continue
 					}
-					
+
 					// Apply name filter
 					if params.Filter != "" {
 						nameUpper := strings.ToUpper(p.Name)
 						commandUpper := strings.ToUpper(p.Command)
-						if !strings.Contains(nameUpper, filterUpper) && 
-						   !strings.Contains(commandUpper, filterUpper) {
+						if !strings.Contains(nameUpper, filterUpper) &&
+							!strings.Contains(commandUpper, filterUpper) {
 							continue
 						}
 					}
-					
+
 					filtered = append(filtered, p)
 				}
 				processes = filtered
 			}
-			
+
 			// Sort if requested
 			if params.SortBy != "" {
 				sortProcesses(processes, params.SortBy)
 			}
-			
+
 			// Apply limit
 			if params.Limit > 0 && len(processes) > params.Limit {
 				processes = processes[:params.Limit]
 			}
-			
+
 			return &ProcessListResult{
 				Processes: processes,
 				Count:     len(processes),
@@ -196,41 +196,41 @@ func getUnixProcesses() ([]ProcessInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	lines := strings.Split(string(output), "\n")
 	processes := make([]ProcessInfo, 0, len(lines))
-	
+
 	// Skip header line
 	for i := 1; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
 		if line == "" {
 			continue
 		}
-		
+
 		// Parse ps output
 		fields := strings.Fields(line)
 		if len(fields) < 11 {
 			continue
 		}
-		
+
 		pid, err := strconv.Atoi(fields[1])
 		if err != nil {
 			continue
 		}
-		
+
 		cpu, _ := strconv.ParseFloat(fields[2], 64)
 		mem, _ := strconv.ParseFloat(fields[3], 64)
-		
+
 		// Memory is in percentage, convert to approximate KB
 		// This is a rough estimate based on system memory
 		memKB := int64(mem * 1024) // Simplified conversion
-		
+
 		// Command is everything from field 10 onwards
 		command := strings.Join(fields[10:], " ")
-		
+
 		// Extract process name from command
 		name := extractProcessName(command)
-		
+
 		process := ProcessInfo{
 			PID:         pid,
 			Name:        name,
@@ -240,10 +240,10 @@ func getUnixProcesses() ([]ProcessInfo, error) {
 			User:        fields[0],
 			StartTime:   fields[8], // This is the START column
 		}
-		
+
 		processes = append(processes, process)
 	}
-	
+
 	return processes, nil
 }
 
@@ -255,46 +255,46 @@ func getWindowsProcesses() ([]ProcessInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	lines := strings.Split(string(output), "\n")
 	processes := make([]ProcessInfo, 0, len(lines))
-	
+
 	// Skip header line
 	for i := 1; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
 		if line == "" {
 			continue
 		}
-		
+
 		// Parse CSV output
 		fields := parseCSVLine(line)
 		if len(fields) < 9 {
 			continue
 		}
-		
+
 		// Extract PID from second field
 		pidStr := strings.Trim(fields[1], "\"")
 		pid, err := strconv.Atoi(pidStr)
 		if err != nil {
 			continue
 		}
-		
+
 		// Extract memory usage (in K)
 		memStr := strings.Trim(fields[5], "\"")
 		memStr = strings.ReplaceAll(memStr, ",", "")
 		memStr = strings.ReplaceAll(memStr, " K", "")
 		memKB, _ := strconv.ParseInt(memStr, 10, 64)
-		
+
 		process := ProcessInfo{
 			PID:         pid,
 			Name:        strings.Trim(fields[0], "\""),
 			MemoryUsage: memKB,
 			User:        strings.Trim(fields[6], "\""),
 		}
-		
+
 		processes = append(processes, process)
 	}
-	
+
 	return processes, nil
 }
 
@@ -302,14 +302,14 @@ func getWindowsProcesses() ([]ProcessInfo, error) {
 func getFallbackProcesses() ([]ProcessInfo, error) {
 	// At minimum, return the current process
 	currentPID := os.Getpid()
-	
+
 	processes := []ProcessInfo{
 		{
 			PID:  currentPID,
 			Name: "go-llms",
 		},
 	}
-	
+
 	return processes, nil
 }
 
@@ -318,38 +318,38 @@ func extractProcessName(command string) string {
 	if command == "" {
 		return "unknown"
 	}
-	
+
 	// Remove leading/trailing spaces
 	command = strings.TrimSpace(command)
-	
+
 	// Split by space to get the executable
 	parts := strings.Fields(command)
 	if len(parts) == 0 {
 		return "unknown"
 	}
-	
+
 	// Get the base name (last component of path)
 	executable := parts[0]
-	
+
 	// Handle both Unix and Windows path separators
 	lastSlash := strings.LastIndex(executable, "/")
 	lastBackslash := strings.LastIndex(executable, "\\")
-	
+
 	// Use whichever separator appears last
 	lastSep := lastSlash
 	if lastBackslash > lastSep {
 		lastSep = lastBackslash
 	}
-	
+
 	if lastSep >= 0 {
 		executable = executable[lastSep+1:]
 	}
-	
+
 	// Remove common suffixes
 	if strings.HasSuffix(executable, ".exe") {
 		executable = executable[:len(executable)-4]
 	}
-	
+
 	return executable
 }
 
@@ -358,10 +358,10 @@ func parseCSVLine(line string) []string {
 	var fields []string
 	var current strings.Builder
 	inQuotes := false
-	
+
 	for i := 0; i < len(line); i++ {
 		ch := line[i]
-		
+
 		if ch == '"' {
 			inQuotes = !inQuotes
 		} else if ch == ',' && !inQuotes {
@@ -371,12 +371,12 @@ func parseCSVLine(line string) []string {
 			current.WriteByte(ch)
 		}
 	}
-	
+
 	// Add the last field
 	if current.Len() > 0 {
 		fields = append(fields, current.String())
 	}
-	
+
 	return fields
 }
 

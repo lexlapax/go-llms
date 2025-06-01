@@ -29,23 +29,11 @@
     - [ ] P1: Implement regression testing to prevent performance degradation (REVISIT)
     - [ ] P2: Add performance acceptance criteria to CI pipeline (REVISIT)
 
-## Architecture & Built-in Components for next release (Immediate - P0)
-- [x] P0: Analyze consistent logging strategy across codebase (COMPLETED - see TODO-DONE.md)
-  
-- [x] P1: Analyze structure for exposing built-in tools, agents, and workflows (COMPLETED - see TODO-DONE.md)
-  
-- [ ] P2: Build useful built-in tools (PARTIALLY COMPLETED)
-  - [x] Phase 1: Core Registry Infrastructure (COMPLETED)
-  - [x] Phase 2.0-2.3: Migration and Initial Tools (COMPLETED)
-    - [x] Web Tools: WebFetch, WebSearch, WebScrape, HTTPRequest
-    - [x] File Tools: ReadFile, WriteFile, FileList, FileDelete, FileMove, FileSearch
-    - [x] System Tools: ExecuteCommand, GetEnvironmentVariable, GetSystemInfo, ProcessList
-  - [ ] Phase 2.4: Data Tools (PENDING)
-    - [ ] JSONProcess - parse, query (JSONPath), and transform JSON
-    - [ ] CSVProcess - read, write, and transform CSV data
-    - [ ] XMLProcess - parse and query XML data
-    - [ ] DataTransform - common transformations (filter, map, reduce)
-  
+## Architecture & Built-in Components for next release
+- [ ] P2: Build useful built-in tools
+  - [ ] Phase 2.5: Date, Time Tools
+  - [ ] Phase 2.6: Feed Process Tools (rss, atom and other feeds)
+
 - [ ] P3: Build useful built-in agents (Phase 3 - PENDING)
   - [ ] Text Agents
     - [ ] TextSummarize - intelligent summarization using LLM

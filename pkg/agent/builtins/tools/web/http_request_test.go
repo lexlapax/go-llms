@@ -36,7 +36,7 @@ func TestHTTPRequestRegistration(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatal("HTTPRequest tool not found in registry")
 	}
-	
+
 	meta := entries[0].Metadata
 	if meta.Category != "web" {
 		t.Errorf("Expected category 'web', got '%s'", meta.Category)
@@ -52,12 +52,12 @@ func TestHTTPRequestMethods(t *testing.T) {
 			"headers": r.Header,
 			"body":    "",
 		}
-		
+
 		if r.Body != nil {
 			body, _ := io.ReadAll(r.Body)
 			response["body"] = string(body)
 		}
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	}))
@@ -67,9 +67,9 @@ func TestHTTPRequestMethods(t *testing.T) {
 	ctx := context.Background()
 
 	testCases := []struct {
-		name   string
-		method string
-		body   string
+		name    string
+		method  string
+		body    string
 		hasBody bool
 	}{
 		{"GET", "GET", "", false},
@@ -87,7 +87,7 @@ func TestHTTPRequestMethods(t *testing.T) {
 				"url":    server.URL,
 				"method": tc.method,
 			}
-			
+
 			if tc.hasBody {
 				params["body"] = tc.body
 				params["body_type"] = "json"
@@ -137,19 +137,19 @@ func TestHTTPRequestAuthentication(t *testing.T) {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			
+
 			// Parse basic auth
 			if strings.HasPrefix(auth, "Basic ") {
 				encoded := strings.TrimPrefix(auth, "Basic ")
 				decoded, _ := base64.StdEncoding.DecodeString(encoded)
 				parts := strings.SplitN(string(decoded), ":", 2)
-				
+
 				if len(parts) == 2 && parts[0] == "testuser" && parts[1] == "testpass" {
 					w.Write([]byte("Authenticated"))
 					return
 				}
 			}
-			
+
 			w.WriteHeader(http.StatusUnauthorized)
 		}))
 		defer server.Close()
@@ -160,7 +160,7 @@ func TestHTTPRequestAuthentication(t *testing.T) {
 			"auth_username": "testuser",
 			"auth_password": "testpass",
 		})
-		
+
 		if err != nil {
 			t.Fatalf("Failed to execute request: %v", err)
 		}
@@ -192,7 +192,7 @@ func TestHTTPRequestAuthentication(t *testing.T) {
 			"auth_type":  "bearer",
 			"auth_token": "test-token-123",
 		})
-		
+
 		if err != nil {
 			t.Fatalf("Failed to execute request: %v", err)
 		}
@@ -224,7 +224,7 @@ func TestHTTPRequestAuthentication(t *testing.T) {
 			"auth_key_value":    "secret-key-123",
 			"auth_key_location": "header",
 		})
-		
+
 		if err != nil {
 			t.Fatalf("Failed to execute request: %v", err)
 		}
@@ -253,7 +253,7 @@ func TestHTTPRequestAuthentication(t *testing.T) {
 			"auth_key_value":    "query-key-456",
 			"auth_key_location": "query",
 		})
-		
+
 		if err != nil {
 			t.Fatalf("Failed to execute request: %v", err)
 		}
@@ -289,13 +289,13 @@ func TestHTTPRequestHeaders(t *testing.T) {
 			"Accept":          "application/json",
 		},
 	})
-	
+
 	if err != nil {
 		t.Fatalf("Failed to execute request: %v", err)
 	}
 
 	httpResult := result.(*HTTPRequestResult)
-	
+
 	// Check response headers
 	if httpResult.Headers["X-Response-Header"] != "test-value" {
 		t.Errorf("Expected response header 'test-value', got '%s'", httpResult.Headers["X-Response-Header"])
@@ -304,7 +304,7 @@ func TestHTTPRequestHeaders(t *testing.T) {
 	// Check echoed headers
 	var echoResp map[string]string
 	json.Unmarshal([]byte(httpResult.Body), &echoResp)
-	
+
 	if echoResp["received_custom_header"] != "custom-value" {
 		t.Errorf("Custom header not received correctly")
 	}
@@ -336,16 +336,16 @@ func TestHTTPRequestQueryParams(t *testing.T) {
 			"filter": "active",
 		},
 	})
-	
+
 	if err != nil {
 		t.Fatalf("Failed to execute request: %v", err)
 	}
 
 	httpResult := result.(*HTTPRequestResult)
-	
+
 	var queryResp map[string][]string
 	json.Unmarshal([]byte(httpResult.Body), &queryResp)
-	
+
 	// Check query parameters
 	if queryResp["foo"][0] != "bar" {
 		t.Error("Query param 'foo' not set correctly")
@@ -362,7 +362,7 @@ func TestHTTPRequestBodyTypes(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		contentType := r.Header.Get("Content-Type")
 		body, _ := io.ReadAll(r.Body)
-		
+
 		response := map[string]string{
 			"content_type": contentType,
 			"body":         string(body),
@@ -414,16 +414,16 @@ func TestHTTPRequestBodyTypes(t *testing.T) {
 				"body":      tc.body,
 				"body_type": tc.bodyType,
 			})
-			
+
 			if err != nil {
 				t.Fatalf("Failed to execute request: %v", err)
 			}
 
 			httpResult := result.(*HTTPRequestResult)
-			
+
 			var resp map[string]string
 			json.Unmarshal([]byte(httpResult.Body), &resp)
-			
+
 			if resp["content_type"] != tc.expectedType {
 				t.Errorf("Expected content type %s, got %s", tc.expectedType, resp["content_type"])
 			}
@@ -456,7 +456,7 @@ func TestHTTPRequestRedirects(t *testing.T) {
 			"url":              server.URL + "/redirect",
 			"follow_redirects": true,
 		})
-		
+
 		if err != nil {
 			t.Fatalf("Failed to execute request: %v", err)
 		}
@@ -475,7 +475,7 @@ func TestHTTPRequestRedirects(t *testing.T) {
 			"url":              server.URL + "/redirect",
 			"follow_redirects": false,
 		})
-		
+
 		if err != nil {
 			t.Fatalf("Failed to execute request: %v", err)
 		}
@@ -521,9 +521,9 @@ func TestHTTPRequestErrors(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}))
 		defer server.Close()
-		
+
 		_, err := tool.Execute(ctx, map[string]interface{}{
-			"url":      server.URL,
+			"url":       server.URL,
 			"auth_type": "invalid_type",
 		})
 		if err == nil {
@@ -534,4 +534,3 @@ func TestHTTPRequestErrors(t *testing.T) {
 		}
 	})
 }
-

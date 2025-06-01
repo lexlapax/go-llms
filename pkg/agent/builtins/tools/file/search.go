@@ -22,35 +22,35 @@ import (
 
 // FileSearchParams defines parameters for the FileSearch tool
 type FileSearchParams struct {
-	Path          string `json:"path"`
-	Pattern       string `json:"pattern"`                  // Search pattern (string or regex)
-	FilePattern   string `json:"file_pattern,omitempty"`   // File name pattern (e.g., "*.txt")
-	IsRegex       bool   `json:"is_regex,omitempty"`       // Treat pattern as regex
-	CaseSensitive bool   `json:"case_sensitive,omitempty"` // Case-sensitive search
-	Recursive     bool   `json:"recursive,omitempty"`      // Search subdirectories
-	MaxResults    int    `json:"max_results,omitempty"`    // Limit total matches
-	ContextLines  int    `json:"context_lines,omitempty"`  // Lines before/after match
-	IncludeLineNumbers bool `json:"include_line_numbers,omitempty"` // Include line numbers
+	Path               string `json:"path"`
+	Pattern            string `json:"pattern"`                        // Search pattern (string or regex)
+	FilePattern        string `json:"file_pattern,omitempty"`         // File name pattern (e.g., "*.txt")
+	IsRegex            bool   `json:"is_regex,omitempty"`             // Treat pattern as regex
+	CaseSensitive      bool   `json:"case_sensitive,omitempty"`       // Case-sensitive search
+	Recursive          bool   `json:"recursive,omitempty"`            // Search subdirectories
+	MaxResults         int    `json:"max_results,omitempty"`          // Limit total matches
+	ContextLines       int    `json:"context_lines,omitempty"`        // Lines before/after match
+	IncludeLineNumbers bool   `json:"include_line_numbers,omitempty"` // Include line numbers
 }
 
 // FileMatch represents a single match in a file
 type FileMatch struct {
-	File        string   `json:"file"`
-	LineNumber  int      `json:"line_number"`
-	Line        string   `json:"line"`
-	MatchStart  int      `json:"match_start"`  // Character position of match start
-	MatchEnd    int      `json:"match_end"`    // Character position of match end
+	File          string   `json:"file"`
+	LineNumber    int      `json:"line_number"`
+	Line          string   `json:"line"`
+	MatchStart    int      `json:"match_start"` // Character position of match start
+	MatchEnd      int      `json:"match_end"`   // Character position of match end
 	ContextBefore []string `json:"context_before,omitempty"`
 	ContextAfter  []string `json:"context_after,omitempty"`
 }
 
 // FileSearchResult defines the result of the FileSearch tool
 type FileSearchResult struct {
-	Matches      []FileMatch `json:"matches"`
-	TotalMatches int         `json:"total_matches"`
-	FilesSearched int        `json:"files_searched"`
-	Pattern      string      `json:"pattern"`
-	SearchPath   string      `json:"search_path"`
+	Matches       []FileMatch `json:"matches"`
+	TotalMatches  int         `json:"total_matches"`
+	FilesSearched int         `json:"files_searched"`
+	Pattern       string      `json:"pattern"`
+	SearchPath    string      `json:"search_path"`
 }
 
 // fileSearchParamSchema defines parameters for the FileSearch tool
@@ -278,14 +278,14 @@ func searchFile(ctx context.Context, filePath string, pattern string, regex *reg
 
 	var matches []FileMatch
 	scanner := bufio.NewScanner(file)
-	
+
 	// Limit line length to prevent memory issues
 	const maxLineLength = 1024 * 1024 // 1MB
 	scanner.Buffer(make([]byte, 0, 64*1024), maxLineLength)
 
 	lineNum := 0
 	var contextBuffer []string
-	
+
 	for scanner.Scan() {
 		// Check context cancellation
 		select {
@@ -296,11 +296,11 @@ func searchFile(ctx context.Context, filePath string, pattern string, regex *reg
 
 		lineNum++
 		line := scanner.Text()
-		
+
 		// Search for pattern
 		var matchStart, matchEnd int
 		found := false
-		
+
 		if regex != nil {
 			// Regex search
 			loc := regex.FindStringIndex(line)

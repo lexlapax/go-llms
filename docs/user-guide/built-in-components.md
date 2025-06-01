@@ -23,6 +23,7 @@ import (
     _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
     _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
     _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/system"
+    _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
 )
 
 // List all available tools
@@ -148,6 +149,30 @@ fmt.Printf("File content: %s\n", readResult.Content)
    - Cross-platform support
    - Filtering and sorting
    - Resource usage info
+
+### Data Tools
+
+1. **json_process** - Process JSON data
+   - Parse and validate JSON
+   - Query with JSONPath expressions
+   - Transform operations (flatten, prettify, minify, extract keys/values)
+
+2. **csv_process** - Handle CSV data
+   - Parse with configurable delimiters and headers
+   - Filter with multiple operators
+   - Transform operations (select columns, sort, statistics)
+   - Convert to JSON
+
+3. **xml_process** - Process XML data
+   - Parse with attribute support
+   - Query with simplified XPath
+   - Convert to JSON with configurable attribute handling
+
+4. **data_transform** - Common data transformations
+   - Filter with complex conditions
+   - Map operations (extract field, case conversion, type conversion)
+   - Reduce operations (sum, count, min, max, average, concat)
+   - Additional operations (sort, group_by, unique, reverse)
 
 ## Tool Metadata
 

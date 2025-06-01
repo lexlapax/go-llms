@@ -12,14 +12,14 @@ import (
 	// Import built-in tools
 	builtinTools "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
-	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/system"
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
 )
 
 // BenchmarkBuiltinFileRead benchmarks the built-in file read tool
 func BenchmarkBuiltinFileRead(b *testing.B) {
 	ctx := context.Background()
-	
+
 	// Create a test file
 	tempDir := b.TempDir()
 	testFile := filepath.Join(tempDir, "benchmark_test.txt")
@@ -32,11 +32,11 @@ func BenchmarkBuiltinFileRead(b *testing.B) {
 	if !ok {
 		b.Fatal("file_read tool not found in registry")
 	}
-	
+
 	params := map[string]interface{}{
 		"path": testFile,
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		result, err := tool.Execute(ctx, params)
@@ -57,7 +57,7 @@ func BenchmarkBuiltinFileWrite(b *testing.B) {
 	if !ok {
 		b.Fatal("file_write tool not found in registry")
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		testFile := filepath.Join(tempDir, "write_test.txt")
@@ -65,7 +65,7 @@ func BenchmarkBuiltinFileWrite(b *testing.B) {
 			"path":    testFile,
 			"content": testContent,
 		}
-		
+
 		result, err := tool.Execute(ctx, params)
 		if err != nil {
 			b.Fatal(err)
@@ -78,18 +78,18 @@ func BenchmarkBuiltinFileWrite(b *testing.B) {
 // BenchmarkBuiltinLargeFileHandling benchmarks large file handling
 func BenchmarkBuiltinLargeFileHandling(b *testing.B) {
 	ctx := context.Background()
-	
+
 	// Create a larger test file (1MB)
 	tempDir := b.TempDir()
 	testFile := filepath.Join(tempDir, "large_test.txt")
-	
+
 	// Generate 1MB of content
 	var content []byte
 	line := []byte("This is a line of test content that will be repeated many times.\n")
 	for len(content) < 1024*1024 {
 		content = append(content, line...)
 	}
-	
+
 	if err := os.WriteFile(testFile, content, 0644); err != nil {
 		b.Fatal(err)
 	}
@@ -98,12 +98,12 @@ func BenchmarkBuiltinLargeFileHandling(b *testing.B) {
 	if !ok {
 		b.Fatal("file_read tool not found in registry")
 	}
-	
+
 	// Built-in tool can handle large files with streaming
 	params := map[string]interface{}{
 		"path": testFile,
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		result, err := tool.Execute(ctx, params)
@@ -117,17 +117,17 @@ func BenchmarkBuiltinLargeFileHandling(b *testing.B) {
 // BenchmarkBuiltinExecuteCommand benchmarks the built-in execute command tool
 func BenchmarkBuiltinExecuteCommand(b *testing.B) {
 	ctx := context.Background()
-	
+
 	tool, ok := builtinTools.GetTool("execute_command")
 	if !ok {
 		b.Fatal("execute_command tool not found in registry")
 	}
-	
+
 	params := map[string]interface{}{
 		"command": "echo 'hello world'",
 		"timeout": 1,
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		result, err := tool.Execute(ctx, params)
@@ -141,7 +141,7 @@ func BenchmarkBuiltinExecuteCommand(b *testing.B) {
 // BenchmarkToolRegistryLookup benchmarks registry lookup performance
 func BenchmarkToolRegistryLookup(b *testing.B) {
 	toolNames := []string{"file_read", "file_write", "web_fetch", "web_search", "execute_command"}
-	
+
 	b.Run("GetTool", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -151,7 +151,7 @@ func BenchmarkToolRegistryLookup(b *testing.B) {
 			}
 		}
 	})
-	
+
 	b.Run("MustGetTool", func(b *testing.B) {
 		// Ensure tools exist first
 		for _, name := range toolNames {
@@ -159,7 +159,7 @@ func BenchmarkToolRegistryLookup(b *testing.B) {
 				b.Skipf("Tool %s not found", name)
 			}
 		}
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			for _, name := range toolNames {
@@ -179,7 +179,7 @@ func BenchmarkToolDiscovery(b *testing.B) {
 			_ = tools
 		}
 	})
-	
+
 	b.Run("ListByCategory", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -191,7 +191,7 @@ func BenchmarkToolDiscovery(b *testing.B) {
 			_ = systemTools
 		}
 	})
-	
+
 	b.Run("Search", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -209,17 +209,17 @@ func BenchmarkToolDiscovery(b *testing.B) {
 func BenchmarkAtomicFileWrite(b *testing.B) {
 	ctx := context.Background()
 	tempDir := b.TempDir()
-	
+
 	tool, ok := builtinTools.GetTool("file_write")
 	if !ok {
 		b.Fatal("file_write tool not found in registry")
 	}
-	
+
 	// Create initial file
 	testFile := filepath.Join(tempDir, "atomic_test.txt")
 	initialContent := "Initial content"
 	os.WriteFile(testFile, []byte(initialContent), 0644)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		params := map[string]interface{}{
@@ -228,7 +228,7 @@ func BenchmarkAtomicFileWrite(b *testing.B) {
 			"atomic":        true,
 			"create_backup": true,
 		}
-		
+
 		result, err := tool.Execute(ctx, params)
 		if err != nil {
 			b.Fatal(err)

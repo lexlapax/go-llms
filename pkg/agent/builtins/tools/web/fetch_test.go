@@ -34,7 +34,7 @@ func TestWebFetchRegistration(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatal("WebFetch tool not found in registry")
 	}
-	
+
 	meta := entries[0].Metadata
 	if meta.Category != "web" {
 		t.Errorf("Expected category 'web', got '%s'", meta.Category)
@@ -79,35 +79,34 @@ func TestWebFetchBasic(t *testing.T) {
 	}
 
 	fetchResult := result.(*WebFetchResult)
-	
+
 	// Validate result
 	if fetchResult.Status != 200 {
 		t.Errorf("Expected status 200, got %d", fetchResult.Status)
 	}
-	
+
 	if fetchResult.StatusText != "200 OK" {
 		t.Errorf("Expected status text '200 OK', got '%s'", fetchResult.StatusText)
 	}
-	
+
 	if !strings.Contains(fetchResult.Content, "Hello World") {
 		t.Error("Expected content to contain 'Hello World'")
 	}
-	
+
 	if !strings.Contains(fetchResult.Content, "This is a test page") {
 		t.Error("Expected content to contain 'This is a test page'")
 	}
-	
+
 	// The content should include the full HTML
 	if !strings.Contains(fetchResult.Content, "<title>Test Page</title>") {
 		t.Error("Expected content to contain HTML title tag")
 	}
-	
+
 	// Check headers
 	if fetchResult.Headers["Content-Type"] != "text/html; charset=utf-8" {
 		t.Errorf("Expected Content-Type header, got '%s'", fetchResult.Headers["Content-Type"])
 	}
 }
-
 
 func TestWebFetchTimeout(t *testing.T) {
 	// Create slow server
@@ -127,11 +126,11 @@ func TestWebFetchTimeout(t *testing.T) {
 		"url":     server.URL,
 		"timeout": 1, // 1 second timeout
 	})
-	
+
 	if err == nil {
 		t.Error("Expected timeout error")
 	}
-	
+
 	if err != nil && !strings.Contains(err.Error(), "timeout") && !strings.Contains(err.Error(), "deadline exceeded") {
 		t.Errorf("Expected timeout error, got: %v", err)
 	}
@@ -236,17 +235,16 @@ func TestWebFetchContentTypes(t *testing.T) {
 			}
 
 			fetchResult := result.(*WebFetchResult)
-			
+
 			if tc.shouldParse {
 				if fetchResult.Content == "" {
 					t.Error("Expected content to be extracted")
 				}
 			}
-			
+
 			if fetchResult.Headers["Content-Type"] != tc.contentType {
 				t.Errorf("Expected Content-Type '%s', got '%s'", tc.contentType, fetchResult.Headers["Content-Type"])
 			}
 		})
 	}
 }
-

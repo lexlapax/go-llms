@@ -20,7 +20,7 @@ func resultToMap(t *testing.T, result interface{}) map[string]interface{} {
 	if resultMap, ok := result.(map[string]interface{}); ok {
 		return resultMap
 	}
-	
+
 	// Try JSON bytes
 	if resultBytes, ok := result.([]byte); ok {
 		var resultData map[string]interface{}
@@ -29,7 +29,7 @@ func resultToMap(t *testing.T, result interface{}) map[string]interface{} {
 		}
 		return resultData
 	}
-	
+
 	// Try ExecuteCommandResult struct
 	if execResult, ok := result.(*ExecuteCommandResult); ok {
 		jsonBytes, err := json.Marshal(execResult)
@@ -42,7 +42,7 @@ func resultToMap(t *testing.T, result interface{}) map[string]interface{} {
 		}
 		return resultData
 	}
-	
+
 	t.Fatalf("Cannot convert result to map, unexpected type: %T", result)
 	return nil
 }
@@ -297,12 +297,12 @@ func TestExecuteCommandWorkingDirectory(t *testing.T) {
 	resultMap := resultToMap(t, result)
 	stdout, _ := resultMap["stdout"].(string)
 	workingDir, _ := resultMap["working_dir"].(string)
-	
+
 	// Verify working_dir in result
 	if !strings.Contains(workingDir, "tmp") {
 		t.Errorf("Expected working_dir to contain 'tmp', got '%s'", workingDir)
 	}
-	
+
 	// Verify pwd output
 	if !strings.Contains(stdout, "tmp") {
 		t.Errorf("Expected pwd output to contain 'tmp', got '%s'", stdout)
@@ -371,7 +371,7 @@ func TestValidateCommandSafety(t *testing.T) {
 		{"date", false, "Show date"},
 		{"git status", false, "Git command"},
 		{"/usr/bin/echo test", false, "Full path to safe command"},
-		
+
 		// Dangerous commands
 		{"rm -rf /", true, "Dangerous rm command"},
 		{"sudo apt-get update", true, "Sudo command"},

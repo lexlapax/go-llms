@@ -33,7 +33,7 @@ func TestProcessListRegistration(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatal("ProcessList tool not found in registry")
 	}
-	
+
 	meta := entries[0].Metadata
 	if meta.Category != "system" {
 		t.Errorf("Expected category 'system', got '%s'", meta.Category)
@@ -51,22 +51,22 @@ func TestProcessListBasic(t *testing.T) {
 	}
 
 	procResult := result.(*ProcessListResult)
-	
+
 	// Should have at least one process
 	if procResult.Count == 0 {
 		t.Error("Expected at least one process")
 	}
-	
+
 	// Platform should match
 	if procResult.Platform != runtime.GOOS {
 		t.Errorf("Expected platform '%s', got '%s'", runtime.GOOS, procResult.Platform)
 	}
-	
+
 	// Timestamp should be set
 	if procResult.Timestamp == "" {
 		t.Error("Expected timestamp to be set")
 	}
-	
+
 	// Validate process info
 	for i, proc := range procResult.Processes {
 		if proc.PID <= 0 {
@@ -93,14 +93,14 @@ func TestProcessListIncludeSelf(t *testing.T) {
 
 	procResult := result.(*ProcessListResult)
 	foundSelf := false
-	
+
 	for _, proc := range procResult.Processes {
 		if proc.PID == currentPID {
 			foundSelf = true
 			break
 		}
 	}
-	
+
 	if !foundSelf {
 		t.Error("Expected to find current process when include_self is true")
 	}
@@ -113,14 +113,14 @@ func TestProcessListIncludeSelf(t *testing.T) {
 
 	procResult = result.(*ProcessListResult)
 	foundSelf = false
-	
+
 	for _, proc := range procResult.Processes {
 		if proc.PID == currentPID {
 			foundSelf = true
 			break
 		}
 	}
-	
+
 	if foundSelf {
 		t.Error("Should not find current process when include_self is false")
 	}
@@ -140,7 +140,7 @@ func TestProcessListFilter(t *testing.T) {
 	}
 
 	procResult := result.(*ProcessListResult)
-	
+
 	// All results should contain "go"
 	for _, proc := range procResult.Processes {
 		nameUpper := strings.ToUpper(proc.Name)
@@ -165,7 +165,7 @@ func TestProcessListSort(t *testing.T) {
 	}
 
 	procResult := result.(*ProcessListResult)
-	
+
 	// Verify PID order
 	for i := 1; i < len(procResult.Processes); i++ {
 		if procResult.Processes[i-1].PID > procResult.Processes[i].PID {
@@ -184,11 +184,11 @@ func TestProcessListSort(t *testing.T) {
 	}
 
 	procResult = result.(*ProcessListResult)
-	
+
 	// Verify name order (case-insensitive)
 	for i := 1; i < len(procResult.Processes); i++ {
 		if strings.ToLower(procResult.Processes[i-1].Name) > strings.ToLower(procResult.Processes[i].Name) {
-			t.Errorf("Processes not sorted by name: %s > %s", 
+			t.Errorf("Processes not sorted by name: %s > %s",
 				procResult.Processes[i-1].Name, procResult.Processes[i].Name)
 			break
 		}
@@ -209,11 +209,11 @@ func TestProcessListLimit(t *testing.T) {
 	}
 
 	procResult := result.(*ProcessListResult)
-	
+
 	if len(procResult.Processes) > limit {
 		t.Errorf("Expected at most %d processes, got %d", limit, len(procResult.Processes))
 	}
-	
+
 	// Count should match actual processes returned
 	if procResult.Count != len(procResult.Processes) {
 		t.Errorf("Count mismatch: reported %d, actual %d", procResult.Count, len(procResult.Processes))
@@ -237,7 +237,7 @@ func TestExtractProcessName(t *testing.T) {
 	for _, tc := range testCases {
 		result := extractProcessName(tc.command)
 		if result != tc.expected {
-			t.Errorf("Extract process name from '%s': expected '%s', got '%s'", 
+			t.Errorf("Extract process name from '%s': expected '%s', got '%s'",
 				tc.command, tc.expected, result)
 		}
 	}
@@ -269,14 +269,14 @@ func TestParseCSVLine(t *testing.T) {
 	for _, tc := range testCases {
 		result := parseCSVLine(tc.line)
 		if len(result) != len(tc.expected) {
-			t.Errorf("CSV parse length mismatch for '%s': expected %d, got %d", 
+			t.Errorf("CSV parse length mismatch for '%s': expected %d, got %d",
 				tc.line, len(tc.expected), len(result))
 			continue
 		}
-		
+
 		for i, field := range result {
 			if field != tc.expected[i] {
-				t.Errorf("CSV field %d mismatch: expected '%s', got '%s'", 
+				t.Errorf("CSV field %d mismatch: expected '%s', got '%s'",
 					i, tc.expected[i], field)
 			}
 		}
@@ -295,7 +295,7 @@ func TestSortFunctions(t *testing.T) {
 	pidCopy := make([]ProcessInfo, len(processes))
 	copy(pidCopy, processes)
 	sortByPID(pidCopy)
-	
+
 	if pidCopy[0].PID != 50 || pidCopy[1].PID != 75 || pidCopy[2].PID != 100 {
 		t.Error("PID sort failed")
 	}
@@ -304,7 +304,7 @@ func TestSortFunctions(t *testing.T) {
 	nameCopy := make([]ProcessInfo, len(processes))
 	copy(nameCopy, processes)
 	sortByName(nameCopy)
-	
+
 	if nameCopy[0].Name != "alpha" || nameCopy[1].Name != "beta" || nameCopy[2].Name != "zebra" {
 		t.Error("Name sort failed")
 	}
@@ -313,7 +313,7 @@ func TestSortFunctions(t *testing.T) {
 	cpuCopy := make([]ProcessInfo, len(processes))
 	copy(cpuCopy, processes)
 	sortByCPU(cpuCopy)
-	
+
 	if cpuCopy[0].CPUPercent != 10.0 || cpuCopy[1].CPUPercent != 5.0 || cpuCopy[2].CPUPercent != 2.5 {
 		t.Error("CPU sort failed")
 	}
@@ -322,7 +322,7 @@ func TestSortFunctions(t *testing.T) {
 	memCopy := make([]ProcessInfo, len(processes))
 	copy(memCopy, processes)
 	sortByMemory(memCopy)
-	
+
 	if memCopy[0].MemoryUsage != 2000 || memCopy[1].MemoryUsage != 1000 || memCopy[2].MemoryUsage != 500 {
 		t.Error("Memory sort failed")
 	}

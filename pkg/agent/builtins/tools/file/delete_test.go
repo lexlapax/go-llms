@@ -35,7 +35,7 @@ func TestFileDeleteRegistration(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatal("FileDelete tool not found in registry")
 	}
-	
+
 	meta := entries[0].Metadata
 	if meta.Category != "file" {
 		t.Errorf("Expected category 'file', got '%s'", meta.Category)

@@ -19,17 +19,17 @@ import (
 
 // GetEnvironmentVariableParams defines parameters for the GetEnvironmentVariable tool
 type GetEnvironmentVariableParams struct {
-	Name         string `json:"name,omitempty"`          // Specific variable name
-	Pattern      string `json:"pattern,omitempty"`       // Pattern to match variable names
-	NoValues     bool   `json:"no_values,omitempty"`     // Exclude values from results (default: false)
-	Sensitive    bool   `json:"sensitive,omitempty"`     // Allow sensitive variables (PATH, API keys, etc.)
+	Name      string `json:"name,omitempty"`      // Specific variable name
+	Pattern   string `json:"pattern,omitempty"`   // Pattern to match variable names
+	NoValues  bool   `json:"no_values,omitempty"` // Exclude values from results (default: false)
+	Sensitive bool   `json:"sensitive,omitempty"` // Allow sensitive variables (PATH, API keys, etc.)
 }
 
 // EnvironmentVariable represents a single environment variable
 type EnvironmentVariable struct {
-	Name  string `json:"name"`
-	Value string `json:"value,omitempty"`
-	Masked bool  `json:"masked,omitempty"` // True if value was masked for security
+	Name   string `json:"name"`
+	Value  string `json:"value,omitempty"`
+	Masked bool   `json:"masked,omitempty"` // True if value was masked for security
 }
 
 // GetEnvironmentVariableResult defines the result of the GetEnvironmentVariable tool
@@ -240,13 +240,13 @@ func matchPattern(name, pattern string) (bool, error) {
 // isSensitiveVariable checks if a variable name matches sensitive patterns
 func isSensitiveVariable(name string) bool {
 	upperName := strings.ToUpper(name)
-	
+
 	for _, pattern := range sensitivePatterns {
 		if matched, _ := matchPattern(upperName, pattern); matched {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -255,7 +255,7 @@ func maskValue(value string) string {
 	if len(value) <= 8 {
 		return "***"
 	}
-	
+
 	// Show first 3 and last 3 characters
 	return fmt.Sprintf("%s...%s", value[:3], value[len(value)-3:])
 }

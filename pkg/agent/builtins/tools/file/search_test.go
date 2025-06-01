@@ -34,7 +34,7 @@ func TestFileSearchRegistration(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatal("FileSearch tool not found in registry")
 	}
-	
+
 	meta := entries[0].Metadata
 	if meta.Category != "file" {
 		t.Errorf("Expected category 'file', got '%s'", meta.Category)
@@ -54,7 +54,7 @@ Line 3: TODO: Fix this bug
 Line 4: Another line
 Line 5: TODO: Add more tests
 Line 6: Final line`
-	
+
 	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestFileSearchRegex(t *testing.T) {
 2024-01-31 10:00:02 WARNING: Retry attempt 1
 2024-01-31 10:00:03 ERROR: Connection timeout
 2024-01-31 10:00:04 INFO: Fallback mode activated`
-	
+
 	os.WriteFile(testFile, []byte(content), 0644)
 
 	// Test regex search
@@ -176,7 +176,7 @@ Line 5
 Line 6: MATCH
 Line 7
 Line 8`
-	
+
 	os.WriteFile(testFile, []byte(content), 0644)
 
 	// Search with context lines
@@ -202,7 +202,7 @@ Line 8`
 	if len(match1.ContextAfter) != 2 {
 		t.Errorf("Expected 2 context lines after, got %d", len(match1.ContextAfter))
 	}
-	
+
 	// Verify context content
 	if len(match1.ContextBefore) >= 2 {
 		if match1.ContextBefore[0] != "Line 1" {
@@ -220,13 +220,13 @@ func TestFileSearchDirectory(t *testing.T) {
 
 	// Create directory structure with multiple files
 	tempDir := t.TempDir()
-	
+
 	files := map[string]string{
-		"file1.txt": "TODO: First task",
-		"file2.txt": "Nothing here",
-		"file3.txt": "TODO: Second task",
+		"file1.txt":        "TODO: First task",
+		"file2.txt":        "Nothing here",
+		"file3.txt":        "TODO: Second task",
 		"subdir/file4.txt": "TODO: Nested task",
-		"other.log": "TODO: Log task",
+		"other.log":        "TODO: Log task",
 	}
 
 	for path, content := range files {
@@ -287,7 +287,7 @@ func TestFileSearchMaxResults(t *testing.T) {
 
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.txt")
-	
+
 	// Create file with many matches
 	var lines []string
 	for i := 0; i < 100; i++ {
@@ -317,11 +317,11 @@ func TestFileSearchBinaryFiles(t *testing.T) {
 	ctx := context.Background()
 
 	tempDir := t.TempDir()
-	
+
 	// Create a text file
 	textFile := filepath.Join(tempDir, "text.txt")
 	os.WriteFile(textFile, []byte("FINDME in text"), 0644)
-	
+
 	// Create a binary file with null bytes
 	binaryFile := filepath.Join(tempDir, "binary.dat")
 	binaryContent := []byte{0x00, 0x01, 0x02, 'F', 'I', 'N', 'D', 'M', 'E', 0x00}

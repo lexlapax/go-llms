@@ -33,7 +33,7 @@ func TestWebScrapeRegistration(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatal("WebScrape tool not found in registry")
 	}
-	
+
 	meta := entries[0].Metadata
 	if meta.Category != "web" {
 		t.Errorf("Expected category 'web', got '%s'", meta.Category)
@@ -161,7 +161,7 @@ func TestWebScrapeExecution(t *testing.T) {
 	// Test with selectors
 	t.Run("WithSelectors", func(t *testing.T) {
 		result, err := tool.Execute(ctx, map[string]interface{}{
-			"url": server.URL,
+			"url":       server.URL,
 			"selectors": []interface{}{"h1", "h2", "p", ".intro", "#special"},
 		})
 		if err != nil {
@@ -280,7 +280,7 @@ func TestWebScrapeErrorHandling(t *testing.T) {
 		if err != nil {
 			t.Errorf("Should not error on HTTP status codes: %v", err)
 		}
-		
+
 		if result != nil {
 			if scrapeResult, ok := result.(*WebScrapeResult); ok {
 				if scrapeResult.StatusCode != http.StatusInternalServerError {
@@ -299,9 +299,9 @@ func TestWebScrapeHelperFunctions(t *testing.T) {
 		<meta property="og:image" content="https://example.com/image.jpg">
 		<meta http-equiv="refresh" content="30">
 		`
-		
+
 		metadata := extractMetadata(html)
-		
+
 		if metadata["author"] != "Test Author" {
 			t.Errorf("Expected author 'Test Author', got '%s'", metadata["author"])
 		}
@@ -324,9 +324,9 @@ func TestWebScrapeHelperFunctions(t *testing.T) {
 		<style>p { color: red; }</style>
 		<div>More <span>nested</span> text</div>
 		`
-		
+
 		text := extractTextContent(html)
-		
+
 		if !strings.Contains(text, "Normal text") {
 			t.Error("Should contain 'Normal text'")
 		}
@@ -345,7 +345,7 @@ func TestWebScrapeHelperFunctions(t *testing.T) {
 	t.Run("ParseAttributes", func(t *testing.T) {
 		attrStr := `name="description" content="Test content" id='test-id'`
 		attrs := parseAttributes(attrStr)
-		
+
 		if attrs["name"] != "description" {
 			t.Errorf("Expected name 'description', got '%s'", attrs["name"])
 		}

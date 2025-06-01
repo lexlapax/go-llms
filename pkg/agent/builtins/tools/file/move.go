@@ -19,21 +19,21 @@ import (
 
 // FileMoveParams defines parameters for the FileMove tool
 type FileMoveParams struct {
-	Source      string `json:"source"`
-	Destination string `json:"destination"`
-	Overwrite   bool   `json:"overwrite,omitempty"`    // Overwrite existing destination
-	CreateDirs  bool   `json:"create_dirs,omitempty"`  // Create parent directories if needed
-	PreserveAttrs bool `json:"preserve_attrs,omitempty"` // Preserve file attributes (permissions, times)
+	Source        string `json:"source"`
+	Destination   string `json:"destination"`
+	Overwrite     bool   `json:"overwrite,omitempty"`      // Overwrite existing destination
+	CreateDirs    bool   `json:"create_dirs,omitempty"`    // Create parent directories if needed
+	PreserveAttrs bool   `json:"preserve_attrs,omitempty"` // Preserve file attributes (permissions, times)
 }
 
 // FileMoveResult defines the result of the FileMove tool
 type FileMoveResult struct {
-	Source        string `json:"source"`
-	Destination   string `json:"destination"`
-	Moved         bool   `json:"moved"`
-	WasRename     bool   `json:"was_rename"`      // True if same directory (rename only)
-	WasCrossDevice bool  `json:"was_cross_device"` // True if moved across filesystems
-	Message       string `json:"message,omitempty"`
+	Source         string `json:"source"`
+	Destination    string `json:"destination"`
+	Moved          bool   `json:"moved"`
+	WasRename      bool   `json:"was_rename"`       // True if same directory (rename only)
+	WasCrossDevice bool   `json:"was_cross_device"` // True if moved across filesystems
+	Message        string `json:"message,omitempty"`
 }
 
 // fileMoveParamSchema defines parameters for the FileMove tool
@@ -115,12 +115,12 @@ func FileMove() domain.Tool {
 			// Clean and resolve paths
 			srcPath := filepath.Clean(params.Source)
 			dstPath := filepath.Clean(params.Destination)
-			
+
 			absSrc, err := filepath.Abs(srcPath)
 			if err != nil {
 				return nil, fmt.Errorf("invalid source path: %w", err)
 			}
-			
+
 			absDst, err := filepath.Abs(dstPath)
 			if err != nil {
 				return nil, fmt.Errorf("invalid destination path: %w", err)
@@ -143,7 +143,7 @@ func FileMove() domain.Tool {
 			// Determine if destination is a directory or file
 			dstInfo, dstErr := os.Stat(absDst)
 			isDstDir := dstErr == nil && dstInfo.IsDir()
-			
+
 			// If destination is a directory, append source filename
 			finalDst := absDst
 			if isDstDir {
@@ -187,12 +187,12 @@ func FileMove() domain.Tool {
 			if err == nil {
 				// Successful atomic move
 				return &FileMoveResult{
-					Source:        absSrc,
-					Destination:   finalDst,
-					Moved:         true,
-					WasRename:     isRename,
+					Source:         absSrc,
+					Destination:    finalDst,
+					Moved:          true,
+					WasRename:      isRename,
 					WasCrossDevice: false,
-					Message:       "Successfully moved",
+					Message:        "Successfully moved",
 				}, nil
 			}
 
@@ -208,12 +208,12 @@ func FileMove() domain.Tool {
 			}
 
 			return &FileMoveResult{
-				Source:        absSrc,
-				Destination:   finalDst,
-				Moved:         true,
-				WasRename:     false,
+				Source:         absSrc,
+				Destination:    finalDst,
+				Moved:          true,
+				WasRename:      false,
 				WasCrossDevice: true,
-				Message:       "Successfully moved (cross-device)",
+				Message:        "Successfully moved (cross-device)",
 			}, nil
 		},
 		fileMoveParamSchema,
@@ -234,11 +234,11 @@ func crossDeviceMove(ctx context.Context, src, dst string, srcInfo os.FileInfo, 
 	if err != nil {
 		return fmt.Errorf("failed to create destination: %w", err)
 	}
-	
+
 	// Copy content
 	_, copyErr := io.Copy(dstFile, srcFile)
 	closeErr := dstFile.Close()
-	
+
 	if copyErr != nil {
 		os.Remove(dst) // Clean up partial file
 		return fmt.Errorf("failed to copy content: %w", copyErr)
@@ -255,7 +255,7 @@ func crossDeviceMove(ctx context.Context, src, dst string, srcInfo os.FileInfo, 
 			// Non-fatal error
 			fmt.Printf("Warning: failed to preserve timestamps: %v\n", err)
 		}
-		
+
 		// Set permissions (already done during creation, but ensure)
 		if err := os.Chmod(dst, srcInfo.Mode()); err != nil {
 			// Non-fatal error

@@ -21,18 +21,18 @@ import (
 
 // FileListParams defines parameters for the FileList tool
 type FileListParams struct {
-	Path         string `json:"path"`
-	Pattern      string `json:"pattern,omitempty"`      // glob pattern like "*.txt"
-	Recursive    bool   `json:"recursive,omitempty"`    // search subdirectories
-	IncludeDirs  bool   `json:"include_dirs,omitempty"` // include directories in results
-	IncludeFiles bool   `json:"include_files,omitempty"` // include files in results (default: true)
-	MinSize      int64  `json:"min_size,omitempty"`      // minimum file size in bytes
-	MaxSize      int64  `json:"max_size,omitempty"`      // maximum file size in bytes
+	Path           string `json:"path"`
+	Pattern        string `json:"pattern,omitempty"`         // glob pattern like "*.txt"
+	Recursive      bool   `json:"recursive,omitempty"`       // search subdirectories
+	IncludeDirs    bool   `json:"include_dirs,omitempty"`    // include directories in results
+	IncludeFiles   bool   `json:"include_files,omitempty"`   // include files in results (default: true)
+	MinSize        int64  `json:"min_size,omitempty"`        // minimum file size in bytes
+	MaxSize        int64  `json:"max_size,omitempty"`        // maximum file size in bytes
 	ModifiedAfter  string `json:"modified_after,omitempty"`  // RFC3339 timestamp
 	ModifiedBefore string `json:"modified_before,omitempty"` // RFC3339 timestamp
-	SortBy       string `json:"sort_by,omitempty"`       // name, size, modified
-	SortReverse  bool   `json:"sort_reverse,omitempty"`  // reverse sort order
-	MaxResults   int    `json:"max_results,omitempty"`   // limit number of results
+	SortBy         string `json:"sort_by,omitempty"`         // name, size, modified
+	SortReverse    bool   `json:"sort_reverse,omitempty"`    // reverse sort order
+	MaxResults     int    `json:"max_results,omitempty"`     // limit number of results
 }
 
 // FileInfo represents information about a file or directory
@@ -237,7 +237,7 @@ func FileList() domain.Tool {
 
 				// Apply filters
 				isDir := info.IsDir()
-				
+
 				// Type filter
 				if isDir && !params.IncludeDirs {
 					filteredOut++

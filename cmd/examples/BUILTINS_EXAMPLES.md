@@ -36,6 +36,13 @@ Will demonstrate:
 - Environment variable access
 - System information gathering
 
+### builtins-data-tools/
+Will demonstrate:
+- JSON processing with JSONPath queries
+- CSV parsing, filtering, and transformation
+- XML parsing with XPath queries
+- Common data transformations (filter, map, reduce)
+
 ## Using Built-in Tools
 
 All built-in tools follow the same pattern:
@@ -44,6 +51,8 @@ All built-in tools follow the same pattern:
    ```go
    import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
    import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
+   import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/system"
+   import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
    ```
 
 2. **Discover available tools**:

@@ -14,14 +14,14 @@ func TestSystemToolsRegistration(t *testing.T) {
 	allTools := tools.Tools.List()
 	systemToolCount := 0
 	systemTools := make(map[string]bool)
-	
+
 	for _, entry := range allTools {
 		if entry.Metadata.Category == "system" {
 			systemToolCount++
 			systemTools[entry.Metadata.Name] = true
 		}
 	}
-	
+
 	// We now have 4 system tools
 	expectedTools := []string{
 		"execute_command",
@@ -29,17 +29,17 @@ func TestSystemToolsRegistration(t *testing.T) {
 		"get_system_info",
 		"process_list",
 	}
-	
+
 	if systemToolCount != len(expectedTools) {
 		t.Errorf("Expected %d system tools, got %d", len(expectedTools), systemToolCount)
 	}
-	
+
 	// Check each expected tool exists
 	for _, toolName := range expectedTools {
 		if !systemTools[toolName] {
 			t.Errorf("Expected system tool '%s' not found", toolName)
 		}
-		
+
 		// Also verify it can be retrieved
 		tool, found := tools.GetTool(toolName)
 		if !found {

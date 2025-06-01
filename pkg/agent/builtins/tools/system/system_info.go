@@ -25,14 +25,14 @@ type GetSystemInfoParams struct {
 
 // SystemInfo represents comprehensive system information
 type SystemInfo struct {
-	OS           OSInfo                 `json:"os"`
-	Architecture string                 `json:"architecture"`
-	CPUs         int                    `json:"cpus"`
-	Hostname     string                 `json:"hostname,omitempty"`
-	Memory       *MemoryInfo            `json:"memory,omitempty"`
-	Runtime      *RuntimeInfo           `json:"runtime,omitempty"`
-	Environment  *EnvironmentInfo       `json:"environment,omitempty"`
-	Timestamp    string                 `json:"timestamp"`
+	OS           OSInfo           `json:"os"`
+	Architecture string           `json:"architecture"`
+	CPUs         int              `json:"cpus"`
+	Hostname     string           `json:"hostname,omitempty"`
+	Memory       *MemoryInfo      `json:"memory,omitempty"`
+	Runtime      *RuntimeInfo     `json:"runtime,omitempty"`
+	Environment  *EnvironmentInfo `json:"environment,omitempty"`
+	Timestamp    string           `json:"timestamp"`
 }
 
 // OSInfo contains operating system details
@@ -52,23 +52,23 @@ type MemoryInfo struct {
 
 // RuntimeInfo contains Go runtime information
 type RuntimeInfo struct {
-	Version    string `json:"version"`
-	Compiler   string `json:"compiler"`
-	NumCPU     int    `json:"num_cpu"`
-	NumGoroutine int  `json:"num_goroutine"`
-	GOMAXPROCS int    `json:"gomaxprocs"`
+	Version      string `json:"version"`
+	Compiler     string `json:"compiler"`
+	NumCPU       int    `json:"num_cpu"`
+	NumGoroutine int    `json:"num_goroutine"`
+	GOMAXPROCS   int    `json:"gomaxprocs"`
 }
 
 // EnvironmentInfo contains environment summary
 type EnvironmentInfo struct {
-	User         string   `json:"user,omitempty"`
-	Home         string   `json:"home,omitempty"`
-	WorkingDir   string   `json:"working_dir,omitempty"`
-	TempDir      string   `json:"temp_dir"`
-	PathDirs     int      `json:"path_dirs"`      // Number of directories in PATH
-	TotalEnvVars int      `json:"total_env_vars"` // Total environment variables
-	GoPath       string   `json:"gopath,omitempty"`
-	GoRoot       string   `json:"goroot,omitempty"`
+	User         string `json:"user,omitempty"`
+	Home         string `json:"home,omitempty"`
+	WorkingDir   string `json:"working_dir,omitempty"`
+	TempDir      string `json:"temp_dir"`
+	PathDirs     int    `json:"path_dirs"`      // Number of directories in PATH
+	TotalEnvVars int    `json:"total_env_vars"` // Total environment variables
+	GoPath       string `json:"gopath,omitempty"`
+	GoRoot       string `json:"goroot,omitempty"`
 }
 
 // getSystemInfoParamSchema defines parameters for the GetSystemInfo tool
@@ -232,7 +232,7 @@ func getOSVersion() string {
 func getMemoryInfo() *MemoryInfo {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	
+
 	return &MemoryInfo{
 		Alloc:      m.Alloc,
 		TotalAlloc: m.TotalAlloc,
@@ -281,12 +281,12 @@ func countPathDirs(path string) int {
 	if path == "" {
 		return 0
 	}
-	
+
 	separator := ":"
 	if runtime.GOOS == "windows" {
 		separator = ";"
 	}
-	
+
 	count := 1
 	for i := 0; i < len(path); i++ {
 		if path[i] == separator[0] {

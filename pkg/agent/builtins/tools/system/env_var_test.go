@@ -32,7 +32,7 @@ func TestGetEnvironmentVariableRegistration(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatal("GetEnvironmentVariable tool not found in registry")
 	}
-	
+
 	meta := entries[0].Metadata
 	if meta.Category != "system" {
 		t.Errorf("Expected category 'system', got '%s'", meta.Category)
@@ -112,11 +112,11 @@ func TestGetEnvironmentVariablePattern(t *testing.T) {
 
 	// Set up test environment variables
 	testVars := map[string]string{
-		"TEST_VAR_1":    "value1",
-		"TEST_VAR_2":    "value2",
-		"ANOTHER_TEST":  "value3",
-		"OTHER_VAR":     "other",
-		"VAR_TEST_END":  "end",
+		"TEST_VAR_1":   "value1",
+		"TEST_VAR_2":   "value2",
+		"ANOTHER_TEST": "value3",
+		"OTHER_VAR":    "other",
+		"VAR_TEST_END": "end",
 	}
 
 	for name, value := range testVars {
@@ -173,11 +173,11 @@ func TestGetEnvironmentVariableSensitive(t *testing.T) {
 
 	// Set up sensitive environment variables
 	sensitiveVars := map[string]string{
-		"API_KEY":         "secret123456789",
-		"DB_PASSWORD":     "mypassword123",
-		"AUTH_TOKEN":      "token987654321",
-		"NORMAL_VAR":      "not_sensitive",
-		"SECRET_DATA":     "verysecret",
+		"API_KEY":     "secret123456789",
+		"DB_PASSWORD": "mypassword123",
+		"AUTH_TOKEN":  "token987654321",
+		"NORMAL_VAR":  "not_sensitive",
+		"SECRET_DATA": "verysecret",
 	}
 
 	for name, value := range sensitiveVars {
@@ -236,7 +236,7 @@ func TestGetEnvironmentVariableSensitive(t *testing.T) {
 	}
 
 	envResult = result.(*GetEnvironmentVariableResult)
-	
+
 	// Check that sensitive variables are masked
 	for _, v := range envResult.Variables {
 		if isSensitiveVariable(v.Name) && !v.Masked {
@@ -262,7 +262,7 @@ func TestGetEnvironmentVariableAllVariables(t *testing.T) {
 	}
 
 	envResult := result.(*GetEnvironmentVariableResult)
-	
+
 	// Should have at least some system variables
 	if envResult.Count == 0 {
 		t.Error("Expected at least some environment variables")

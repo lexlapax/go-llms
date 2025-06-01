@@ -142,12 +142,51 @@
     - [x] Process information extraction (PID, name, command, CPU%, memory, user)
     - [x] Comprehensive tests with helper function coverage
 
-### 2.4 Data Tools
-- [ ] JSONProcess - parse, query (JSONPath), and transform JSON
-- [ ] CSVProcess - read, write, and transform CSV data
-- [ ] XMLProcess - parse and query XML data
-- [ ] DataTransform - common transformations (filter, map, reduce)
+### 2.4 Data Tools ✅ COMPLETED
+- [x] JSONProcess - parse, query (JSONPath), and transform JSON
+  - [x] JSON parsing and validation with error handling
+  - [x] JSONPath querying with object navigation and array indexing
+  - [x] Transform operations: extract_keys, extract_values, flatten, prettify, minify
+  - [x] Type-safe execution with proper result types
+  - [x] Comprehensive test coverage
+- [x] CSVProcess - read, write, and transform CSV data
+  - [x] CSV parsing with configurable delimiter and header support
+  - [x] Filtering with multiple operators (eq, ne, contains, starts_with, ends_with, gt, lt, gte, lte)
+  - [x] Transform operations: select_columns, sort, count_rows, statistics
+  - [x] CSV to JSON conversion with proper type handling
+  - [x] Comprehensive test coverage
+- [x] XMLProcess - parse and query XML data
+  - [x] XML parsing with full attribute support
+  - [x] Simplified XPath querying for elements and attributes
+  - [x] XML to JSON conversion with configurable attribute inclusion
+  - [x] Nested element navigation and array handling
+  - [x] Comprehensive test coverage
+- [x] DataTransform - common transformations (filter, map, reduce)
+  - [x] Filter: complex condition-based filtering with field access
+  - [x] Map: extract_field, to_upper, to_lower, to_number, to_string
+  - [x] Reduce: sum, count, min, max, average, concat
+  - [x] Additional operations: sort, group_by, unique, reverse
+  - [x] Nested field access support with dot notation
+  - [x] Comprehensive test coverage
+- [x] All tools follow consistent built-in tool patterns
+- [x] Proper registration with the tools registry
+- [x] No LLM dependencies - pure data processing
 
+### 2.5 Date Time Tools
+- [ ] research common date, time, timezone, conversion actions and update todo .. read and update this todo list
+- [ ] todays date, 
+- [ ] date time conversion +- days
+- [ ] duration calculation
+- [ ] weekday calculations
+- [ ] timezone convert
+- [ ] parse date time strings
+- [ ] format date time strings
+- [ ] compare date times
+- [ ] business days
+- [ ] unix timestamp conversion
+
+### 2.6 Feed Process tools (rss, atom and other feeds)
+- [ ] research common feed actions and needed tools  and create todo
 
 ## Phase 3: Agent Templates (Week 3)
 

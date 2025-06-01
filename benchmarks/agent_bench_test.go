@@ -7,11 +7,11 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/workflow"
-	
+
 	// Import built-in tools
 	builtinTools "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
-	
+
 	ldomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"

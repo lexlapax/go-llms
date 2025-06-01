@@ -22,26 +22,26 @@ import (
 
 // WebScrapeParams defines parameters for the WebScrape tool
 type WebScrapeParams struct {
-	URL         string   `json:"url"`
-	Selectors   []string `json:"selectors,omitempty"`
-	ExtractText bool     `json:"extract_text,omitempty"`
+	URL          string   `json:"url"`
+	Selectors    []string `json:"selectors,omitempty"`
+	ExtractText  bool     `json:"extract_text,omitempty"`
 	ExtractLinks bool     `json:"extract_links,omitempty"`
-	ExtractMeta bool     `json:"extract_meta,omitempty"`
-	MaxDepth    int      `json:"max_depth,omitempty"`
-	Timeout     int      `json:"timeout,omitempty"`
+	ExtractMeta  bool     `json:"extract_meta,omitempty"`
+	MaxDepth     int      `json:"max_depth,omitempty"`
+	Timeout      int      `json:"timeout,omitempty"`
 }
 
 // WebScrapeResult defines the result of the WebScrape tool
 type WebScrapeResult struct {
-	URL         string                 `json:"url"`
-	Title       string                 `json:"title,omitempty"`
-	Text        string                 `json:"text,omitempty"`
-	Links       []LinkInfo             `json:"links,omitempty"`
-	Metadata    map[string]string      `json:"metadata,omitempty"`
-	Selectors   map[string][]string    `json:"selectors,omitempty"`
-	StatusCode  int                    `json:"status_code"`
-	ContentType string                 `json:"content_type"`
-	Timestamp   string                 `json:"timestamp"`
+	URL         string              `json:"url"`
+	Title       string              `json:"title,omitempty"`
+	Text        string              `json:"text,omitempty"`
+	Links       []LinkInfo          `json:"links,omitempty"`
+	Metadata    map[string]string   `json:"metadata,omitempty"`
+	Selectors   map[string][]string `json:"selectors,omitempty"`
+	StatusCode  int                 `json:"status_code"`
+	ContentType string              `json:"content_type"`
+	Timestamp   string              `json:"timestamp"`
 }
 
 // LinkInfo contains information about a link
@@ -90,13 +90,13 @@ var webScrapeParamSchema = &sdomain.Schema{
 
 // Regular expressions for HTML parsing
 var (
-	titleRegex       = regexp.MustCompile(`(?i)<title[^>]*>([^<]+)</title>`)
-	metaRegex        = regexp.MustCompile(`(?i)<meta\s+([^>]+)>`)
-	linkRegex        = regexp.MustCompile(`(?i)<a\s+([^>]*href=['"]([^'"]+)['"][^>]*)>([^<]*)</a>`)
-	scriptRegex      = regexp.MustCompile(`(?i)<script[^>]*>.*?</script>`)
-	styleRegex       = regexp.MustCompile(`(?i)<style[^>]*>.*?</style>`)
-	tagRegex         = regexp.MustCompile(`<[^>]+>`)
-	whitespaceRegex  = regexp.MustCompile(`\s+`)
+	titleRegex      = regexp.MustCompile(`(?i)<title[^>]*>([^<]+)</title>`)
+	metaRegex       = regexp.MustCompile(`(?i)<meta\s+([^>]+)>`)
+	linkRegex       = regexp.MustCompile(`(?i)<a\s+([^>]*href=['"]([^'"]+)['"][^>]*)>([^<]*)</a>`)
+	scriptRegex     = regexp.MustCompile(`(?i)<script[^>]*>.*?</script>`)
+	styleRegex      = regexp.MustCompile(`(?i)<style[^>]*>.*?</style>`)
+	tagRegex        = regexp.MustCompile(`<[^>]+>`)
+	whitespaceRegex = regexp.MustCompile(`\s+`)
 )
 
 // init automatically registers the tool on package import
@@ -249,7 +249,7 @@ func extractMetadata(html string) map[string]string {
 	for _, match := range matches {
 		if len(match) > 1 {
 			attrs := parseAttributes(match[1])
-			
+
 			// Handle different meta tag formats
 			if name, ok := attrs["name"]; ok {
 				if content, ok := attrs["content"]; ok {
@@ -296,7 +296,7 @@ func extractLinkElements(html string, baseURL *url.URL) []LinkInfo {
 		if len(match) > 3 {
 			href := match[2]
 			linkText := strings.TrimSpace(match[3])
-			
+
 			// Skip empty or anchor-only links
 			if href == "" || href == "#" {
 				continue
@@ -343,7 +343,7 @@ func processSelectors(html string, selectors []string) map[string][]string {
 
 	for _, selector := range selectors {
 		selector = strings.TrimSpace(strings.ToLower(selector))
-		
+
 		// Simple tag selector support
 		if isSimpleTag(selector) {
 			results[selector] = extractTagContent(html, selector)
@@ -380,11 +380,11 @@ func isSimpleTag(selector string) bool {
 // extractTagContent extracts content from specific HTML tags
 func extractTagContent(html, tag string) []string {
 	var results []string
-	
+
 	// Create regex for the specific tag
 	tagPattern := regexp.MustCompile(fmt.Sprintf(`(?i)<%s[^>]*>(.*?)</%s>`, tag, tag))
 	matches := tagPattern.FindAllStringSubmatch(html, -1)
-	
+
 	for _, match := range matches {
 		if len(match) > 1 {
 			// Clean the content
@@ -396,18 +396,18 @@ func extractTagContent(html, tag string) []string {
 			}
 		}
 	}
-	
+
 	return results
 }
 
 // extractByClass extracts elements by class name
 func extractByClass(html, className string) []string {
 	var results []string
-	
+
 	// Simplified class extraction - finds elements with the specified class
 	classPattern := regexp.MustCompile(fmt.Sprintf(`(?i)<[^>]+class=['"][^'"]*\b%s\b[^'"]*['"][^>]*>(.*?)</[^>]+>`, className))
 	matches := classPattern.FindAllStringSubmatch(html, -1)
-	
+
 	for _, match := range matches {
 		if len(match) > 1 {
 			content := tagRegex.ReplaceAllString(match[1], " ")
@@ -418,18 +418,18 @@ func extractByClass(html, className string) []string {
 			}
 		}
 	}
-	
+
 	return results
 }
 
 // extractByID extracts element by ID
 func extractByID(html, id string) []string {
 	var results []string
-	
+
 	// Simplified ID extraction - finds element with the specified ID
 	idPattern := regexp.MustCompile(fmt.Sprintf(`(?i)<[^>]+id=['"]%s['"][^>]*>(.*?)</[^>]+>`, id))
 	matches := idPattern.FindAllStringSubmatch(html, -1)
-	
+
 	if len(matches) > 0 && len(matches[0]) > 1 {
 		content := tagRegex.ReplaceAllString(matches[0][1], " ")
 		content = whitespaceRegex.ReplaceAllString(content, " ")
@@ -438,24 +438,24 @@ func extractByID(html, id string) []string {
 			results = append(results, content)
 		}
 	}
-	
+
 	return results
 }
 
 // parseAttributes parses HTML attributes from a string
 func parseAttributes(attrStr string) map[string]string {
 	attrs := make(map[string]string)
-	
+
 	// Simple attribute parsing
 	attrPattern := regexp.MustCompile(`(\w+)=['"]([^'"]+)['"]`)
 	matches := attrPattern.FindAllStringSubmatch(attrStr, -1)
-	
+
 	for _, match := range matches {
 		if len(match) > 2 {
 			attrs[strings.ToLower(match[1])] = match[2]
 		}
 	}
-	
+
 	return attrs
 }
 

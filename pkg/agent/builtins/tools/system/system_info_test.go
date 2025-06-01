@@ -31,7 +31,7 @@ func TestGetSystemInfoRegistration(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatal("GetSystemInfo tool not found in registry")
 	}
-	
+
 	meta := entries[0].Metadata
 	if meta.Category != "system" {
 		t.Errorf("Expected category 'system', got '%s'", meta.Category)
@@ -49,30 +49,30 @@ func TestGetSystemInfoBasic(t *testing.T) {
 	}
 
 	sysInfo := result.(*SystemInfo)
-	
+
 	// Validate required fields
 	if sysInfo.OS.Name != runtime.GOOS {
 		t.Errorf("Expected OS name '%s', got '%s'", runtime.GOOS, sysInfo.OS.Name)
 	}
-	
+
 	if sysInfo.Architecture != runtime.GOARCH {
 		t.Errorf("Expected architecture '%s', got '%s'", runtime.GOARCH, sysInfo.Architecture)
 	}
-	
+
 	if sysInfo.CPUs != runtime.NumCPU() {
 		t.Errorf("Expected %d CPUs, got %d", runtime.NumCPU(), sysInfo.CPUs)
 	}
-	
+
 	// Platform name should be set
 	if sysInfo.OS.Platform == "" {
 		t.Error("Expected platform name to be set")
 	}
-	
+
 	// Timestamp should be set
 	if sysInfo.Timestamp == "" {
 		t.Error("Expected timestamp to be set")
 	}
-	
+
 	// Optional fields should be nil when not requested
 	if sysInfo.Memory != nil {
 		t.Error("Expected memory to be nil when not requested")
@@ -97,12 +97,12 @@ func TestGetSystemInfoWithMemory(t *testing.T) {
 	}
 
 	sysInfo := result.(*SystemInfo)
-	
+
 	// Memory should be included
 	if sysInfo.Memory == nil {
 		t.Fatal("Expected memory info to be included")
 	}
-	
+
 	// Validate memory fields
 	if sysInfo.Memory.Alloc == 0 {
 		t.Error("Expected non-zero allocated memory")
@@ -125,12 +125,12 @@ func TestGetSystemInfoWithRuntime(t *testing.T) {
 	}
 
 	sysInfo := result.(*SystemInfo)
-	
+
 	// Runtime should be included
 	if sysInfo.Runtime == nil {
 		t.Fatal("Expected runtime info to be included")
 	}
-	
+
 	// Validate runtime fields
 	if sysInfo.Runtime.Version != runtime.Version() {
 		t.Errorf("Expected Go version '%s', got '%s'", runtime.Version(), sysInfo.Runtime.Version)
@@ -161,12 +161,12 @@ func TestGetSystemInfoWithEnvironment(t *testing.T) {
 	}
 
 	sysInfo := result.(*SystemInfo)
-	
+
 	// Environment should be included
 	if sysInfo.Environment == nil {
 		t.Fatal("Expected environment info to be included")
 	}
-	
+
 	// Validate environment fields
 	if sysInfo.Environment.TempDir == "" {
 		t.Error("Expected temp directory to be set")
@@ -174,7 +174,7 @@ func TestGetSystemInfoWithEnvironment(t *testing.T) {
 	if sysInfo.Environment.TotalEnvVars == 0 {
 		t.Error("Expected at least some environment variables")
 	}
-	
+
 	// Working directory should normally be set
 	if sysInfo.Environment.WorkingDir == "" {
 		t.Log("Warning: Working directory is empty")
@@ -196,7 +196,7 @@ func TestGetSystemInfoFull(t *testing.T) {
 	}
 
 	sysInfo := result.(*SystemInfo)
-	
+
 	// All optional fields should be present
 	if sysInfo.Memory == nil {
 		t.Error("Expected memory info to be included")
@@ -240,7 +240,7 @@ func TestCountPathDirs(t *testing.T) {
 		{"C:\\Windows;C:\\Program Files;C:\\Users", "windows", 3},
 		{"/single/path", "linux", 1},
 		{"", "linux", 0},
-		{":", "linux", 2}, // Empty paths
+		{":", "linux", 2},  // Empty paths
 		{"::", "linux", 3}, // Multiple empty paths
 	}
 
@@ -263,7 +263,7 @@ func TestCountPathDirs(t *testing.T) {
 		} else {
 			result = countPathDirs(tc.path)
 		}
-		
+
 		if tc.goos == originalGOOS && result != tc.expected {
 			t.Errorf("Path dirs for '%s': expected %d, got %d", tc.path, tc.expected, result)
 		}
