@@ -11,7 +11,8 @@ import (
 
 	// Import built-in components - this triggers auto-registration
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
-	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web" // Import for side effects (registration)
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file" // Import for side effects (registration)
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"  // Import for side effects (registration)
 	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 )
@@ -24,7 +25,7 @@ func main() {
 	// List all registered tools
 	fmt.Println("Available Tools:")
 	for _, entry := range tools.Tools.List() {
-		fmt.Printf("  - %s (%s): %s\n", 
+		fmt.Printf("  - %s (%s): %s\n",
 			entry.Metadata.Name,
 			entry.Metadata.Category,
 			entry.Metadata.Description)
@@ -95,4 +96,21 @@ func main() {
 			fmt.Printf("Code:\n%s\n", example.Code)
 		}
 	}
+
+	// Demonstrate migration from custom tools
+	fmt.Println()
+	fmt.Println("=== Migration from Custom Tools ===")
+	fmt.Println()
+	fmt.Println("Before (creating custom tools):")
+	fmt.Println(`  tool := tools.NewTool("web_fetch", "Fetch web content", fetchFunc, schema)`)
+	fmt.Println()
+	fmt.Println("After (using built-in tools):")
+	fmt.Println(`  tool, _ := tools.GetTool("web_fetch")`)
+	fmt.Println()
+	fmt.Println("Benefits of built-in tools:")
+	fmt.Println("  - Standardized interfaces")
+	fmt.Println("  - Enhanced features (timeouts, streaming, etc.)")
+	fmt.Println("  - Automatic registration")
+	fmt.Println("  - Easy discovery")
+	fmt.Println("  - Consistent error handling")
 }

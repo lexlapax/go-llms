@@ -47,6 +47,35 @@ Utility functions and helper patterns for common LLM operations.
 cd convenience && go run main.go
 ```
 
+### Built-in Components
+
+#### [**Built-ins Discovery**](builtins-discovery/)
+Introduction to the built-in tools registry system.
+
+**Features:**
+- Tool discovery and search
+- Registry categories and tags
+- Basic agent integration
+- Migration from custom tools
+
+```bash
+cd builtins-discovery && go run main.go
+```
+
+#### [**Built-ins File Tools**](builtins-file-tools/)
+Deep dive into enhanced file operation tools.
+
+**Features:**
+- Streaming large files
+- Atomic writes with backups
+- Binary file detection
+- Line range reading
+- File metadata
+
+```bash
+cd builtins-file-tools && go run main.go
+```
+
 ### Provider Integration
 
 #### [**OpenAI**](openai/README.md)

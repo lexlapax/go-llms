@@ -276,8 +276,7 @@ func SequentialRouter(stages []string) Router {
 }
 
 type sequentialRouter struct {
-	stages       []string
-	currentIndex int
+	stages []string
 }
 
 func (r *sequentialRouter) Route(ctx context.Context, from string, result interface{}) (string, interface{}, error) {

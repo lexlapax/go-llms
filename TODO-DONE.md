@@ -13,6 +13,25 @@
   - [x] Added comprehensive tests for all registries
   - [x] Created first built-in tool (WebFetch) as reference implementation
   - [x] Created example demonstrating built-in component usage
+- [x] Phase 2: Tool Migration and Enhancement
+  - [x] Analyzed existing tools in common_tools.go
+  - [x] Created migration benefits document (BUILTIN_MIGRATION_BENEFITS.md)
+  - [x] Migrated and enhanced file tools:
+    - [x] ReadFile: Added streaming, metadata, line ranges, binary detection
+    - [x] WriteFile: Added atomic operations, append mode, backup, directory creation
+  - [x] Created comprehensive tests for all file tool features
+  - [x] Created file-tools example demonstrating all enhancements
+- [x] Phase 2.1: Web Tools Implementation
+  - [x] Migrated and enhanced WebFetch tool with custom timeout and headers
+  - [x] Implemented WebSearch tool with DuckDuckGo integration
+  - [x] Implemented WebScrape tool with HTML parsing and metadata extraction
+  - [x] Implemented HTTPRequest tool with full HTTP support:
+    - [x] All HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS)
+    - [x] Multiple authentication methods (basic, bearer, API key)
+    - [x] Custom headers, query parameters, body types
+    - [x] Redirect control and timeout configuration
+  - [x] Consolidated built-in examples and removed redundant ones
+  - [x] Successfully removed common_tools.go after migrating all dependencies
 
 ## Features (Completed)
 - [x] Implement interface-based provider option system

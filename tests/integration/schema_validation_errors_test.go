@@ -77,7 +77,7 @@ func TestSchemaValidationErrors(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Errorf("Expected error message '%s' but it was not found", expected)
+				t.Errorf("Expected error message '%s' but it was not found. Actual errors: %v", expected, result.Errors)
 			}
 		}
 	})
@@ -171,7 +171,7 @@ func TestSchemaValidationErrors(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Errorf("Expected error message containing '%s' but it was not found", expected)
+				t.Errorf("Expected error message containing '%s' but it was not found. Actual errors: %v", expected, result.Errors)
 			}
 		}
 	})
@@ -204,12 +204,12 @@ func TestSchemaValidationErrors(t *testing.T) {
 
 		// Check for specific error messages
 		expectedErrors := []string{
-			"property field2 is required",
-			"property field3 is required",
+			"property 'field2' is required but missing",
+			"property 'field3' is required but missing",
 		}
 
 		if len(result.Errors) != 2 {
-			t.Errorf("Expected 2 errors, got %d", len(result.Errors))
+			t.Errorf("Expected 2 errors, got %d. Errors: %v", len(result.Errors), result.Errors)
 		}
 
 		// Check that specific error messages are present
@@ -222,7 +222,7 @@ func TestSchemaValidationErrors(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Errorf("Expected error message '%s' but it was not found", expected)
+				t.Errorf("Expected error message '%s' but it was not found. Actual errors: %v", expected, result.Errors)
 			}
 		}
 	})
@@ -264,7 +264,7 @@ func TestSchemaValidationErrors(t *testing.T) {
 		// Check for specific error messages
 		expectedErrors := []string{
 			"nested.field1 must be a string",
-			"property nested.field2 is required",
+			"property 'nested.field2' is required but missing",
 		}
 
 		if len(result.Errors) < 2 {
@@ -281,7 +281,7 @@ func TestSchemaValidationErrors(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Errorf("Expected error message '%s' but it was not found", expected)
+				t.Errorf("Expected error message '%s' but it was not found. Actual errors: %v", expected, result.Errors)
 			}
 		}
 	})
@@ -331,7 +331,7 @@ func TestSchemaValidationErrors(t *testing.T) {
 		expectedErrors := []string{
 			"items[1].name must be a string",
 			"items[1].value must be a number",
-			"property items[2].value is required",
+			"property 'items[2].value' is required but missing",
 		}
 
 		if len(result.Errors) < 3 {
@@ -348,7 +348,7 @@ func TestSchemaValidationErrors(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Errorf("Expected error message '%s' but it was not found", expected)
+				t.Errorf("Expected error message '%s' but it was not found. Actual errors: %v", expected, result.Errors)
 			}
 		}
 	})

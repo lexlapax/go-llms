@@ -3,12 +3,9 @@ package tools
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 
-	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
@@ -160,98 +157,8 @@ func (e *TestError) Error() string {
 	return e.msg
 }
 
-// TestFileTools tests the file-related tools
-func TestFileTools(t *testing.T) {
-	// Create a temporary directory for test files
-	tempDir, err := os.MkdirTemp("", "test-tools-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+// TestFileTools has been removed - file tools are now tested in pkg/agent/builtins/tools/file/
+// The built-in file tools provide enhanced functionality and are the recommended approach
 
-	t.Run("WriteFile and ReadFile", func(t *testing.T) {
-		// Get the tools
-		writeFileTool := WriteFile()
-		readFileTool := ReadFile()
-
-		// Create a test file path
-		testFilePath := filepath.Join(tempDir, "test.txt")
-		testContent := "Hello, world!"
-
-		// Test WriteFile
-		writeResult, err := writeFileTool.Execute(context.Background(), WriteFileParams{
-			Path:    testFilePath,
-			Content: testContent,
-		})
-		if err != nil {
-			t.Fatalf("WriteFile failed: %v", err)
-		}
-
-		writeFileResult, ok := writeResult.(*WriteFileResult)
-		if !ok {
-			t.Fatalf("Expected WriteFileResult, got %T", writeResult)
-		}
-
-		if !writeFileResult.Success {
-			t.Errorf("Expected WriteFile to succeed")
-		}
-
-		// Verify the file was written
-		content, err := os.ReadFile(testFilePath)
-		if err != nil {
-			t.Fatalf("Failed to read test file: %v", err)
-		}
-
-		if string(content) != testContent {
-			t.Errorf("Expected file content '%s', got '%s'", testContent, string(content))
-		}
-
-		// Test ReadFile
-		readResult, err := readFileTool.Execute(context.Background(), ReadFileParams{
-			Path: testFilePath,
-		})
-		if err != nil {
-			t.Fatalf("ReadFile failed: %v", err)
-		}
-
-		readFileResult, ok := readResult.(*ReadFileResult)
-		if !ok {
-			t.Fatalf("Expected ReadFileResult, got %T", readResult)
-		}
-
-		if readFileResult.Content != testContent {
-			t.Errorf("Expected ReadFile content '%s', got '%s'", testContent, readFileResult.Content)
-		}
-	})
-}
-
-// TestToolRegistry tests registering and retrieving tools from a registry
-func TestToolRegistry(t *testing.T) {
-	// Create a set of tools
-	tools := []domain.Tool{
-		WebFetch(),
-		ReadFile(),
-		WriteFile(),
-		ExecuteCommand(),
-	}
-
-	// Verify each tool has a unique name
-	names := make(map[string]bool)
-	for _, tool := range tools {
-		name := tool.Name()
-		if names[name] {
-			t.Fatalf("Duplicate tool name: %s", name)
-		}
-		names[name] = true
-
-		// Verify each tool has a non-empty description
-		if tool.Description() == "" {
-			t.Errorf("Empty tool description for %s", name)
-		}
-
-		// Verify each tool has a parameter schema
-		if tool.ParameterSchema() == nil {
-			t.Errorf("Nil parameter schema for %s", name)
-		}
-	}
-}
+// TestToolRegistry has been removed - common tools are deprecated in favor of built-in tools
+// The built-in tools registry is tested in pkg/agent/builtins/tools/

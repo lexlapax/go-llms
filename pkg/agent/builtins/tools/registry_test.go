@@ -123,19 +123,25 @@ func TestToolRegistry_ListByPermission(t *testing.T) {
 
 	// Register tools with different permissions (using tags as proxy)
 	tool1 := &mockTool{name: "file_reader", description: "Reads files"}
-	registry.Register("file_reader", tool1, builtins.Metadata{
+	if err := registry.Register("file_reader", tool1, builtins.Metadata{
 		Tags: []string{"file", "perm:file:read"},
-	})
+	}); err != nil {
+		t.Fatalf("failed to register file_reader: %v", err)
+	}
 
 	tool2 := &mockTool{name: "file_writer", description: "Writes files"}
-	registry.Register("file_writer", tool2, builtins.Metadata{
+	if err := registry.Register("file_writer", tool2, builtins.Metadata{
 		Tags: []string{"file", "perm:file:write"},
-	})
+	}); err != nil {
+		t.Fatalf("failed to register file_writer: %v", err)
+	}
 
 	tool3 := &mockTool{name: "network_fetch", description: "Fetches from network"}
-	registry.Register("network_fetch", tool3, builtins.Metadata{
+	if err := registry.Register("network_fetch", tool3, builtins.Metadata{
 		Tags: []string{"network", "perm:network:access"},
-	})
+	}); err != nil {
+		t.Fatalf("failed to register network_fetch: %v", err)
+	}
 
 	// Test permission filtering
 	fileReadTools := registry.ListByPermission("file:read")
@@ -161,19 +167,25 @@ func TestToolRegistry_ListByResourceUsage(t *testing.T) {
 
 	// Register tools with different resource characteristics (using tags)
 	tool1 := &mockTool{name: "low_memory_tool", description: "Uses low memory"}
-	registry.Register("low_memory_tool", tool1, builtins.Metadata{
+	if err := registry.Register("low_memory_tool", tool1, builtins.Metadata{
 		Tags: []string{"memory:low", "concurrent"},
-	})
+	}); err != nil {
+		t.Fatalf("failed to register low_memory_tool: %v", err)
+	}
 
 	tool2 := &mockTool{name: "high_memory_network", description: "High memory network tool"}
-	registry.Register("high_memory_network", tool2, builtins.Metadata{
+	if err := registry.Register("high_memory_network", tool2, builtins.Metadata{
 		Tags: []string{"memory:high", "network", "concurrent"},
-	})
+	}); err != nil {
+		t.Fatalf("failed to register high_memory_network: %v", err)
+	}
 
 	tool3 := &mockTool{name: "file_tool", description: "File system tool"}
-	registry.Register("file_tool", tool3, builtins.Metadata{
+	if err := registry.Register("file_tool", tool3, builtins.Metadata{
 		Tags: []string{"memory:medium", "filesystem"},
-	})
+	}); err != nil {
+		t.Fatalf("failed to register file_tool: %v", err)
+	}
 
 	tests := []struct {
 		name     string

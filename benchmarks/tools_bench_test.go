@@ -6,6 +6,12 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
+	
+	// Import built-in tools
+	builtinTools "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/system"
+	
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
@@ -176,6 +182,10 @@ func BenchmarkToolConversionTypes(b *testing.B) {
 func BenchmarkCommonTools(b *testing.B) {
 	ctx := context.Background()
 
+	// Get built-in tools
+	readFileTool, _ := builtinTools.GetTool("file_read")
+	executeCommandTool, _ := builtinTools.GetTool("execute_command")
+
 	// Test cases for different tools
 	testCases := []struct {
 		name   string
@@ -183,14 +193,19 @@ func BenchmarkCommonTools(b *testing.B) {
 		params interface{}
 	}{
 		{
-			name:   "ReadFile",
-			tool:   tools.ReadFile(),
-			params: tools.ReadFileParams{Path: "README.md"},
+			name: "ReadFile",
+			tool: readFileTool,
+			params: map[string]interface{}{
+				"path": "README.md",
+			},
 		},
 		{
-			name:   "ExecuteCommand",
-			tool:   tools.ExecuteCommand(),
-			params: tools.ExecuteCommandParams{Command: "echo 'hello world'", Timeout: 1.0},
+			name: "ExecuteCommand",
+			tool: executeCommandTool,
+			params: map[string]interface{}{
+				"command": "echo 'hello world'",
+				"timeout": 1,
+			},
 		},
 	}
 

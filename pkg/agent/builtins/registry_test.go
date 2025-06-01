@@ -84,7 +84,9 @@ func TestRegistry_Get(t *testing.T) {
 	registry := NewRegistry[*mockComponent]()
 
 	comp1 := &mockComponent{ID: "1", Data: "data1"}
-	registry.Register("test1", comp1, Metadata{Category: "test"})
+	if err := registry.Register("test1", comp1, Metadata{Category: "test"}); err != nil {
+		t.Fatalf("failed to register component: %v", err)
+	}
 
 	tests := []struct {
 		name      string
@@ -123,7 +125,9 @@ func TestRegistry_MustGet(t *testing.T) {
 	registry := NewRegistry[*mockComponent]()
 
 	comp := &mockComponent{ID: "1", Data: "data1"}
-	registry.Register("test1", comp, Metadata{})
+	if err := registry.Register("test1", comp, Metadata{}); err != nil {
+		t.Fatalf("failed to register component: %v", err)
+	}
 
 	// Test successful MustGet
 	result := registry.MustGet("test1")
@@ -145,10 +149,18 @@ func TestRegistry_MustGet(t *testing.T) {
 func TestRegistry_ListByCategory(t *testing.T) {
 	registry := NewRegistry[*mockComponent]()
 
-	registry.Register("web1", &mockComponent{ID: "1"}, Metadata{Category: "web"})
-	registry.Register("web2", &mockComponent{ID: "2"}, Metadata{Category: "web"})
-	registry.Register("file1", &mockComponent{ID: "3"}, Metadata{Category: "file"})
-	registry.Register("data1", &mockComponent{ID: "4"}, Metadata{Category: "data"})
+	if err := registry.Register("web1", &mockComponent{ID: "1"}, Metadata{Category: "web"}); err != nil {
+		t.Fatalf("failed to register web1: %v", err)
+	}
+	if err := registry.Register("web2", &mockComponent{ID: "2"}, Metadata{Category: "web"}); err != nil {
+		t.Fatalf("failed to register web2: %v", err)
+	}
+	if err := registry.Register("file1", &mockComponent{ID: "3"}, Metadata{Category: "file"}); err != nil {
+		t.Fatalf("failed to register file1: %v", err)
+	}
+	if err := registry.Register("data1", &mockComponent{ID: "4"}, Metadata{Category: "data"}); err != nil {
+		t.Fatalf("failed to register data1: %v", err)
+	}
 
 	webComponents := registry.ListByCategory("web")
 	if len(webComponents) != 2 {
@@ -170,15 +182,21 @@ func TestRegistry_ListByCategory(t *testing.T) {
 func TestRegistry_ListByTags(t *testing.T) {
 	registry := NewRegistry[*mockComponent]()
 
-	registry.Register("comp1", &mockComponent{ID: "1"}, Metadata{
+	if err := registry.Register("comp1", &mockComponent{ID: "1"}, Metadata{
 		Tags: []string{"http", "web", "fetch"},
-	})
-	registry.Register("comp2", &mockComponent{ID: "2"}, Metadata{
+	}); err != nil {
+		t.Fatalf("failed to register comp1: %v", err)
+	}
+	if err := registry.Register("comp2", &mockComponent{ID: "2"}, Metadata{
 		Tags: []string{"http", "web", "scrape"},
-	})
-	registry.Register("comp3", &mockComponent{ID: "3"}, Metadata{
+	}); err != nil {
+		t.Fatalf("failed to register comp2: %v", err)
+	}
+	if err := registry.Register("comp3", &mockComponent{ID: "3"}, Metadata{
 		Tags: []string{"file", "read"},
-	})
+	}); err != nil {
+		t.Fatalf("failed to register comp3: %v", err)
+	}
 
 	// Test single tag
 	httpComponents := registry.ListByTags("http")
@@ -208,21 +226,27 @@ func TestRegistry_ListByTags(t *testing.T) {
 func TestRegistry_Search(t *testing.T) {
 	registry := NewRegistry[*mockComponent]()
 
-	registry.Register("web_fetch", &mockComponent{ID: "1"}, Metadata{
+	if err := registry.Register("web_fetch", &mockComponent{ID: "1"}, Metadata{
 		Category:    "web",
 		Description: "Fetches content from URLs",
 		Tags:        []string{"http", "download"},
-	})
-	registry.Register("file_read", &mockComponent{ID: "2"}, Metadata{
+	}); err != nil {
+		t.Fatalf("failed to register web_fetch: %v", err)
+	}
+	if err := registry.Register("file_read", &mockComponent{ID: "2"}, Metadata{
 		Category:    "file",
 		Description: "Reads file contents",
 		Tags:        []string{"io", "filesystem"},
-	})
-	registry.Register("json_parse", &mockComponent{ID: "3"}, Metadata{
+	}); err != nil {
+		t.Fatalf("failed to register file_read: %v", err)
+	}
+	if err := registry.Register("json_parse", &mockComponent{ID: "3"}, Metadata{
 		Category:    "data",
 		Description: "Parses JSON data",
 		Tags:        []string{"json", "parser"},
-	})
+	}); err != nil {
+		t.Fatalf("failed to register json_parse: %v", err)
+	}
 
 	tests := []struct {
 		name     string
@@ -279,11 +303,21 @@ func TestRegistry_Search(t *testing.T) {
 func TestRegistry_Categories(t *testing.T) {
 	registry := NewRegistry[*mockComponent]()
 
-	registry.Register("comp1", &mockComponent{}, Metadata{Category: "web"})
-	registry.Register("comp2", &mockComponent{}, Metadata{Category: "file"})
-	registry.Register("comp3", &mockComponent{}, Metadata{Category: "web"})
-	registry.Register("comp4", &mockComponent{}, Metadata{Category: "data"})
-	registry.Register("comp5", &mockComponent{}, Metadata{}) // No category
+	if err := registry.Register("comp1", &mockComponent{}, Metadata{Category: "web"}); err != nil {
+		t.Fatalf("failed to register comp1: %v", err)
+	}
+	if err := registry.Register("comp2", &mockComponent{}, Metadata{Category: "file"}); err != nil {
+		t.Fatalf("failed to register comp2: %v", err)
+	}
+	if err := registry.Register("comp3", &mockComponent{}, Metadata{Category: "web"}); err != nil {
+		t.Fatalf("failed to register comp3: %v", err)
+	}
+	if err := registry.Register("comp4", &mockComponent{}, Metadata{Category: "data"}); err != nil {
+		t.Fatalf("failed to register comp4: %v", err)
+	}
+	if err := registry.Register("comp5", &mockComponent{}, Metadata{}); err != nil {
+		t.Fatalf("failed to register comp5: %v", err)
+	} // No category
 
 	categories := registry.Categories()
 
@@ -310,8 +344,12 @@ func TestRegistry_Clear(t *testing.T) {
 	registry := NewRegistry[*mockComponent]()
 
 	// Add some components
-	registry.Register("comp1", &mockComponent{}, Metadata{})
-	registry.Register("comp2", &mockComponent{}, Metadata{})
+	if err := registry.Register("comp1", &mockComponent{}, Metadata{}); err != nil {
+		t.Fatalf("failed to register comp1: %v", err)
+	}
+	if err := registry.Register("comp2", &mockComponent{}, Metadata{}); err != nil {
+		t.Fatalf("failed to register comp2: %v", err)
+	}
 
 	// Verify they exist
 	if len(registry.List()) != 2 {
@@ -344,7 +382,8 @@ func TestRegistry_ThreadSafety(t *testing.T) {
 			for j := 0; j < numOperations; j++ {
 				name := fmt.Sprintf("comp_%d_%d", id, j)
 				comp := &mockComponent{ID: fmt.Sprintf("%d-%d", id, j)}
-				registry.Register(name, comp, Metadata{
+				// Ignore errors in concurrent test as we may have duplicates
+				_ = registry.Register(name, comp, Metadata{
 					Category: fmt.Sprintf("cat%d", id%3),
 					Tags:     []string{fmt.Sprintf("tag%d", id%5)},
 				})
@@ -394,7 +433,7 @@ func TestRegistry_Examples(t *testing.T) {
 	registry := NewRegistry[*mockComponent]()
 
 	// Register a component with examples
-	registry.Register("web_fetch", &mockComponent{}, Metadata{
+	if err := registry.Register("web_fetch", &mockComponent{}, Metadata{
 		Category:    "web",
 		Description: "Fetches web content",
 		Version:     "1.0.0",
@@ -410,7 +449,9 @@ func TestRegistry_Examples(t *testing.T) {
 				Code:        `fetch("https://api.example.com", {headers: {"Authorization": "Bearer token"}})`,
 			},
 		},
-	})
+	}); err != nil {
+		t.Fatalf("failed to register web_fetch: %v", err)
+	}
 
 	// Get the component and verify examples
 	entries := registry.Search("web_fetch")
@@ -433,21 +474,27 @@ func TestRegistry_DeprecatedAndExperimental(t *testing.T) {
 	registry := NewRegistry[*mockComponent]()
 
 	// Register deprecated component
-	registry.Register("old_tool", &mockComponent{}, Metadata{
+	if err := registry.Register("old_tool", &mockComponent{}, Metadata{
 		Category:   "legacy",
 		Deprecated: true,
-	})
+	}); err != nil {
+		t.Fatalf("failed to register old_tool: %v", err)
+	}
 
 	// Register experimental component
-	registry.Register("new_tool", &mockComponent{}, Metadata{
+	if err := registry.Register("new_tool", &mockComponent{}, Metadata{
 		Category:     "experimental",
 		Experimental: true,
-	})
+	}); err != nil {
+		t.Fatalf("failed to register new_tool: %v", err)
+	}
 
 	// Register normal component
-	registry.Register("stable_tool", &mockComponent{}, Metadata{
+	if err := registry.Register("stable_tool", &mockComponent{}, Metadata{
 		Category: "stable",
-	})
+	}); err != nil {
+		t.Fatalf("failed to register stable_tool: %v", err)
+	}
 
 	// Verify flags are preserved
 	entries := registry.List()

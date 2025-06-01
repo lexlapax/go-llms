@@ -40,7 +40,7 @@ type AgentMetadata struct {
 	RequiredTools []string `json:"required_tools,omitempty"` // Names of required tools
 	OptionalTools []string `json:"optional_tools,omitempty"` // Names of optional tools
 	Capabilities  []string `json:"capabilities,omitempty"`   // What the agent can do
-	SystemPrompt  string   `json:"system_prompt,omitempty"`   // Default system prompt
+	SystemPrompt  string   `json:"system_prompt,omitempty"`  // Default system prompt
 }
 
 // AgentOption allows customization of template agents

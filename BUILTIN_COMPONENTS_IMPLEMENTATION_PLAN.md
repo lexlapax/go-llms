@@ -24,29 +24,99 @@
 - [x] Add workflow builder utilities
 - [x] Implement routing patterns
 
-## Phase 2: Initial Tool Set (Week 2)
+## Phase 2: Initial Tool Set - Migration and Enhancement (Week 2)
+
+### 2.0 Migration Analysis and Strategy ✅ COMPLETED
+- [x] Analyze existing tools in common_tools.go
+- [x] Create migration plan with enhancements
+- [x] Update examples to use built-in tools instead of common_tools.go
+  - [x] Reorganized examples with clear naming (builtins-discovery, builtins-file-tools)
+  - [x] Added migration guide showing differences
+  - [x] Created benchmarks for built-in tools performance
+  - [x] Documented tool discovery features
+- [x] Deprecate common_tools.go after migration complete
+  - [x] Updated all benchmarks to use built-in tools
+  - [x] Removed tests that depended on common_tools.go
+  - [x] Successfully removed common_tools.go from codebase
 
 ### 2.1 Web Tools
-- [x] Migrate existing WebFetch to built-ins with metadata
-- [ ] Add WebScrape tool for HTML extraction
-- [ ] Add WebSearch tool with configurable search engines
-- [ ] Add HTTPRequest tool for advanced HTTP operations
+- [x] Migrate existing WebFetch to built-ins with enhancements:
+  - [x] Custom timeout support
+  - [x] Header capture
+  - [x] Resource usage metadata
+- [x] Implement WebSearch tool (schema exists, needs implementation) ✅ COMPLETED
+  - [x] DuckDuckGo search engine support
+  - [x] Configurable result limits
+  - [x] Safe search filtering
+  - [x] Timeout configuration
+  - [x] Comprehensive tests
+- [x] Add WebScrape tool for HTML extraction ✅ COMPLETED
+  - [x] HTML parsing without external dependencies
+  - [x] Text extraction with script/style removal
+  - [x] Link discovery and classification (internal/external/anchor)
+  - [x] Metadata extraction (meta tags, title, og tags)
+  - [x] Simplified CSS-like selector support (tag, class, id)
+  - [x] Configurable extraction options
+  - [x] Comprehensive tests
+- [x] Add HTTPRequest tool for advanced HTTP operations ✅ COMPLETED
+  - [x] Full HTTP method support (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS)
+  - [x] Multiple authentication methods (basic, bearer, API key)
+  - [x] Custom headers and query parameters
+  - [x] Various body content types (JSON, form, XML, text)
+  - [x] Redirect control with follow/no-follow options
+  - [x] Timeout configuration
+  - [x] Comprehensive response information with timing
+  - [x] Flattened auth fields for tool framework compatibility
+  - [x] Comprehensive tests covering all features
 
-### 2.2 File Tools
-- [ ] FileRead - read file contents with encoding support
-- [ ] FileWrite - write with atomic operations
-- [ ] FileList - directory listing with filters
-- [ ] FileSearch - grep-like file content search
+### 2.2 File Tools (Priority: Migrate existing tools) ✅ COMPLETED
+- [x] Migrate and enhance FileRead from common_tools.go:
+  - [x] Large file handling (streaming with 4KB buffer)
+  - [x] Binary file detection
+  - [x] Encoding detection (UTF-8/binary)
+  - [x] File metadata (size, permissions, modified time)
+  - [x] Line range reading (start/end line numbers)
+  - [x] Size limits with truncation warnings
+- [x] Migrate and enhance FileWrite from common_tools.go:
+  - [x] Append mode support
+  - [x] Custom permissions (file mode)
+  - [x] Directory creation option
+  - [x] Atomic write support (write to temp, then rename)
+  - [x] Backup creation with timestamps
+- [ ] Add new file tools:
+  - [ ] FileList - directory listing with filters
+  - [ ] FileDelete - safe file deletion with confirmation
+  - [ ] FileMove - move/rename files
+  - [ ] FileSearch - grep-like file content search
 
-### 2.3 Data Tools
+### 2.3 System Tools (Priority: Migrate ExecuteCommand) ✅ COMPLETED
+- [x] Migrate and enhance ExecuteCommand from common_tools.go:
+  - [x] Environment variable support
+  - [x] Working directory configuration
+  - [x] Stdin support
+  - [x] Separate stdout/stderr capture
+  - [x] Command sanitization options (safe mode with allowlist/blocklist)
+  - [x] Timeout control (max 5 minutes)
+  - [x] Shell selection (sh, bash, zsh, or direct execution)
+  - [x] Comprehensive safety checks and dangerous command blocking
+  - [x] Exit code and success tracking
+  - [x] Duration metrics
+- [ ] Add new system tools:
+  - [ ] GetEnvironmentVariable - read env vars safely
+  - [ ] GetSystemInfo - OS, architecture, resources
+  - [ ] ProcessList - list running processes
+
+### 2.4 Data Tools
 - [ ] JSONProcess - parse, query (JSONPath), and transform JSON
 - [ ] CSVProcess - read, write, and transform CSV data
+- [ ] XMLProcess - parse and query XML data
 - [ ] DataTransform - common transformations (filter, map, reduce)
 
-### 2.4 Text Tools
+### 2.5 Text Tools
 - [ ] TextSummarize - intelligent summarization using LLM
 - [ ] TextExtract - extract structured data from text
 - [ ] TextAnalyze - sentiment, entities, keywords
+- [ ] TextTranslate - language translation using LLM
 
 ## Phase 3: Agent Templates (Week 3)
 
@@ -97,6 +167,53 @@
 - [ ] Integration tests for workflows
 - [ ] Performance benchmarks
 - [ ] Example validation tests
+
+## Migration Guide from common_tools.go
+
+### For Library Users
+When migrating from common_tools.go to built-in tools:
+
+1. **Import Changes**:
+   ```go
+   // Old
+   import "github.com/lexlapax/go-llms/pkg/agent/tools"
+   tool := tools.WebFetch()
+   
+   // New
+   import (
+       "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+       _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
+   )
+   tool := tools.MustGetTool("web_fetch")
+   ```
+
+2. **Discovery Benefits**:
+   ```go
+   // List all available tools
+   allTools := tools.Tools.List()
+   
+   // Find tools by category
+   webTools := tools.Tools.ListByCategory("web")
+   
+   // Search for tools
+   fileTools := tools.Tools.Search("file")
+   ```
+
+3. **Enhanced Metadata**:
+   - Version tracking
+   - Resource usage information
+   - Permission requirements
+   - Examples and documentation
+
+### For Tool Implementers
+When migrating a tool to the built-in structure:
+
+1. Create appropriate category directory
+2. Follow the pattern in `web/fetch.go`
+3. Add comprehensive metadata
+4. Include init() function for auto-registration
+5. Add tests and benchmarks
+6. Document enhancements made
 
 ## Implementation Priority Order
 
