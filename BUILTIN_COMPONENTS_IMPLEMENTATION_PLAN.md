@@ -83,11 +83,29 @@
   - [x] Directory creation option
   - [x] Atomic write support (write to temp, then rename)
   - [x] Backup creation with timestamps
-- [ ] Add new file tools:
-  - [ ] FileList - directory listing with filters
-  - [ ] FileDelete - safe file deletion with confirmation
-  - [ ] FileMove - move/rename files
-  - [ ] FileSearch - grep-like file content search
+- [x] Add new file tools: ✅ COMPLETED
+  - [x] FileList - directory listing with filters
+    - [x] Pattern matching and size/date filters
+    - [x] Sorting capabilities (name, size, modified)
+    - [x] Recursive directory traversal
+    - [x] File extension extraction
+  - [x] FileDelete - safe file deletion with confirmation
+    - [x] Safety checks for critical system directories
+    - [x] Confirmation requirements for destructive operations
+    - [x] Support for recursive directory deletion
+    - [x] Force flag for advanced users
+  - [x] FileMove - move/rename files
+    - [x] Atomic moves within same filesystem
+    - [x] Cross-device move support (copy then delete)
+    - [x] Directory move support
+    - [x] Overwrite and directory creation options
+  - [x] FileSearch - grep-like file content search
+    - [x] Plain text and regex pattern matching
+    - [x] Case-sensitive/insensitive search
+    - [x] Context lines before/after matches
+    - [x] File pattern filtering
+    - [x] Binary file detection and skipping
+    - [x] Recursive directory search
 
 ### 2.3 System Tools (Priority: Migrate ExecuteCommand) ✅ COMPLETED
 - [x] Migrate and enhance ExecuteCommand from common_tools.go:

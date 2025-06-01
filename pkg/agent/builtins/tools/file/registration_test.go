@@ -44,8 +44,9 @@ func TestFileToolsRegistration(t *testing.T) {
 			fileToolCount++
 		}
 	}
-	if fileToolCount != 2 {
-		t.Errorf("Expected 2 file tools, got %d", fileToolCount)
+	// We now have 6 file tools: read, write, list, delete, move, search
+	if fileToolCount != 6 {
+		t.Errorf("Expected 6 file tools, got %d", fileToolCount)
 	}
 
 	// Verify permissions
