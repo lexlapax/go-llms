@@ -612,11 +612,67 @@ For more information on testing, see the [Testing Framework documentation](docs/
 
 ## Development Status
 
-### Current Version: v0.2.6
+### Current Version: v0.3.0
 
 The core functionality is fairly complete and working. However, APIs are subject to change to accommodate new unforeseen developments in upstream APIs.
 
 #### Changelog
+
+**v0.3.0** (February 2025)
+- 🎉 **Built-in Tools System** - Complete implementation of comprehensive built-in tools
+  - **Registry Infrastructure**: Thread-safe tool registry with search and discovery capabilities
+  - **Web Tools** (4 tools):
+    - `WebFetch`: HTTP content fetching with custom headers and timeouts
+    - `WebSearch`: DuckDuckGo integration for web searches
+    - `WebScrape`: HTML parsing with CSS selector support
+    - `HTTPRequest`: Full HTTP client with auth, custom methods, and redirect control
+  - **File Tools** (6 tools):
+    - `ReadFile`: Enhanced file reading with streaming and metadata
+    - `WriteFile`: Atomic writes with backup and append support
+    - `FileList`: Directory listing with filtering and sorting
+    - `FileDelete`: Safe deletion with confirmation support
+    - `FileMove`: Cross-device moves with atomic operations
+    - `FileSearch`: Regex-based file content search
+  - **System Tools** (4 tools):
+    - `ExecuteCommand`: Safe command execution with timeout and environment control
+    - `GetEnvironmentVariable`: Pattern-based env var discovery with security masking
+    - `GetSystemInfo`: Comprehensive system information gathering
+    - `ProcessList`: Cross-platform process monitoring and filtering
+  - **Data Tools** (4 tools):
+    - `JSONProcess`: JSON parsing, JSONPath queries, and transformations
+    - `CSVProcess`: CSV parsing, filtering, and statistics
+    - `XMLProcess`: XML parsing with XPath queries
+    - `DataTransform`: Map, filter, reduce, and other data operations
+  - **DateTime Tools** (7 tools):
+    - `DateTimeNow`: Current time in various formats and timezones
+    - `DateTimeInfo`: Date properties (day of week, quarter, etc.)
+    - `DateTimeCalculate`: Date arithmetic and business day calculations
+    - `DateTimeParse`: Flexible date parsing with format detection
+    - `DateTimeFormat`: Localized formatting (6 languages)
+    - `DateTimeConvert`: Timezone conversions
+    - `DateTimeCompare`: Date comparisons with human-readable differences
+  - **Feed Tools** (6 tools):
+    - `FeedFetch`: RSS/Atom feed retrieval and parsing
+    - `FeedDiscover`: Auto-discovery of feeds from web pages
+    - `FeedFilter`: Filter feed items by date, keywords, author
+    - `FeedAggregate`: Combine multiple feeds
+    - `FeedConvert`: Convert between feed formats
+    - `FeedExtract`: Extract specific data from feeds
+- ✅ **Tool Features**:
+  - Consistent parameter validation and error handling
+  - Comprehensive test coverage for all tools
+  - Rich documentation with examples
+  - No external dependencies for core functionality
+  - Thread-safe implementations
+- ✅ **Migration from common_tools.go**:
+  - Successfully deprecated and removed the monolithic common_tools.go
+  - Tools now organized by category with better discoverability
+  - Enhanced functionality compared to original implementations
+- ✅ **Developer Experience**:
+  - Simple tool registration: `tools.RegisterTool(tools.NewWebFetch())`
+  - Tool discovery: `tools.GetToolRegistry().Search("web")`
+  - Consistent interfaces across all tool categories
+  - Example applications for each tool category
 
 **v0.2.7**
 - ✅ **Built-in Components Implementation (Phases 1-2.6)**

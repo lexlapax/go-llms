@@ -11,7 +11,13 @@ The following documents were consolidated into [docs/technical/built-in-componen
 - **BUILTIN_COMPONENTS_IMPLEMENTATION_PLAN.md** - Detailed implementation plan with completion status
 - **FEED_TOOLS_PLAN.md** - Implementation plan for feed processing tools
 
-These documents are preserved for historical reference and to track the evolution of the built-in components system.
+## Model Discovery Documentation
+
+The following document was consolidated into [docs/user-guide/model-discovery.md](/docs/user-guide/model-discovery.md):
+
+- **LIST_MODELS_ANALYSIS.md** - Architecture analysis for adding "List Models" capability to Go-LLMs
+
+These documents are preserved for historical reference and to track the evolution of the built-in components system and model discovery features.
 
 ## When to Reference These Documents
 

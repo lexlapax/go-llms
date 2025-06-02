@@ -31,13 +31,7 @@
 
 ## Architecture & Built-in Components for next release
 - [ ] P2: Build useful built-in tools
-  - [x] Phase 2.6: Feed Process Tools (rss, atom and other feeds)
-    - [x] FeedFetch - Retrieve and parse feeds from URLs
-    - [x] FeedDiscover - Auto-discover feed URLs from web pages
-    - [x] FeedFilter - Filter feed items by date, keywords, author
-    - [x] FeedAggregate - Combine multiple feeds into one
-    - [x] FeedConvert - Convert between feed formats
-    - [x] FeedExtract - Extract specific data from feeds
+  - [x] Phase 2.6: Feed Process Tools (Completed - see TODO-DONE.md)
 
 - [ ] P3: Build useful built-in agents (Phase 3 - PENDING)
   - [ ] Text Agents

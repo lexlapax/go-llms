@@ -6,9 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Go-LLMs is a Go library that provides a unified interface to interact with various LLM providers (OpenAI, Anthropic, Google Gemini, etc.) with robust data validation and agent tooling. Key features include structured output processing, a consistent provider interface, agent workflows, and multi-provider strategies.
 
-**Current Version**: v0.2.6 (Released January 30, 2025)
+**Current Version**: v0.3.0 (Released February 2025)
 
-**Recent Updates** (January 31, 2025):
+**Recent Updates** (February 2, 2025):
+- **Documentation Updates**
+  - Consolidated LIST_MODELS_ANALYSIS.md into docs/user-guide/model-discovery.md
+  - Archived LIST_MODELS_ANALYSIS.md to docs/archives/
+  - Updated archives README.md to reference all archived documents
 - **Built-in Components Implementation Progress**
   - Phase 1: Core Registry Infrastructure - COMPLETED
   - Phase 2.0-2.3: Tool Migration and Enhancement - COMPLETED
@@ -28,7 +32,9 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
   - Phase 2.5: Date, Time Tools - COMPLETED
     - Implemented all 7 datetime tools (DateTimeNow, DateTimeInfo, DateTimeCalculate, DateTimeParse, DateTimeFormat, DateTimeConvert, DateTimeCompare)
     - Full timezone support, localization, business day calculations, and comprehensive date operations
-  - Phase 2.6: Feed Process Tools - PENDING
+  - Phase 2.6: Feed Process Tools - COMPLETED
+    - Implemented FeedFetch, FeedDiscover, FeedFilter, FeedAggregate, FeedConvert, FeedExtract
+    - All feed tools have comprehensive tests and documentation
   - Phase 3: Agent Templates - PENDING
   - Phase 4: Workflow Patterns - PENDING
 - **Fixed All Linting Errors**
@@ -329,9 +335,8 @@ Based on the TODO.md file, these are the current development priorities:
    - Add Model Context Protocol Server support for Workflows or Agents
    
 2. **Architecture & Built-in Components** (Currently Active):
-   - Phase 2.5: Date, Time Tools - COMPLETED (all 7 tools implemented)
-   - Phase 2.6: Feed Process Tools (rss, atom and other feeds) - NEXT PRIORITY
-   - Phase 3: Build useful built-in agents with and without tools - PENDING
+   - Phase 2.6: Feed Process Tools - COMPLETED (all 6 tools implemented)
+   - Phase 3: Build useful built-in agents with and without tools - NEXT PRIORITY
    - Phase 4: Build useful multi-agent workflows - PENDING
    
 3. **Performance Optimizations** (Marked for REVISIT):
@@ -349,7 +354,7 @@ Based on the TODO.md file, these are the current development priorities:
    
 ## Completed Development Items
 
-1. **Built-in Components Implementation (Completed Phases 1-2.5, January 31, 2025)**:
+1. **Built-in Components Implementation (Completed Phases 1-2.6, February 2, 2025)**:
    - Phase 1: Implemented comprehensive registry system with search and discovery
    - Phase 2.0-2.3: Migrated and enhanced all web, file, and system tools
    - Phase 2.4: Implemented data processing tools (JSON, CSV, XML, DataTransform)
