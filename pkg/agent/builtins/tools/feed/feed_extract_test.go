@@ -521,4 +521,3 @@ func TestFeedExtractFullAuthorObject(t *testing.T) {
 		}
 	}
 }
-

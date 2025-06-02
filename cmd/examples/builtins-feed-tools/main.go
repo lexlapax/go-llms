@@ -27,7 +27,7 @@ func main() {
 	// Example 1: Fetch a feed
 	fmt.Println("=== Example 1: Fetch Feed ===")
 	fetchTool := tools.MustGetTool("feed_fetch")
-	
+
 	// Note: Using a real feed URL for demonstration
 	// In practice, you might want to use a test feed or mock server
 	fetchResult, err := fetchTool.Execute(ctx, map[string]interface{}{
@@ -50,7 +50,7 @@ func main() {
 			fetchResult = createMockFeedResult()
 		}
 	}
-	
+
 	if result, ok := fetchResult.(map[string]interface{}); ok {
 		fmt.Printf("Fetched feed format: %s\n", result["format"])
 		fmt.Printf("Status: %d\n", result["status"])
@@ -67,9 +67,9 @@ func main() {
 	fmt.Println("=== Example 2: Discover Feeds ===")
 	discoverTool := tools.MustGetTool("feed_discover")
 	discoverResult, err := discoverTool.Execute(ctx, map[string]interface{}{
-		"url":            "https://blog.golang.org",
-		"follow_links":   true,
-		"max_depth":      2,
+		"url":              "https://blog.golang.org",
+		"follow_links":     true,
+		"max_depth":        2,
 		"include_podcasts": true,
 	})
 	if err != nil {
@@ -77,7 +77,7 @@ func main() {
 		// Continue with mock data
 		discoverResult = createMockDiscoverResult()
 	}
-	
+
 	if result, ok := discoverResult.(map[string]interface{}); ok {
 		if feeds, ok := result["feeds"].([]interface{}); ok {
 			fmt.Printf("Discovered %d feeds:\n", len(feeds))
@@ -93,15 +93,15 @@ func main() {
 	// Example 3: Filter feed items
 	fmt.Println("=== Example 3: Filter Feed Items ===")
 	filterTool := tools.MustGetTool("feed_filter")
-	
+
 	// Use the fetched feed or mock data
 	_, err = filterTool.Execute(ctx, map[string]interface{}{
 		"feed": fetchResult,
 		"filters": map[string]interface{}{
-			"keywords":        []string{"go", "golang", "programming"},
+			"keywords":         []string{"go", "golang", "programming"},
 			"exclude_keywords": []string{"spam", "advertisement"},
-			"min_date":        time.Now().AddDate(0, 0, -7).Format(time.RFC3339), // Last week
-			"categories":      []string{"technology", "programming"},
+			"min_date":         time.Now().AddDate(0, 0, -7).Format(time.RFC3339), // Last week
+			"categories":       []string{"technology", "programming"},
 		},
 		"sort_by": "date",
 		"limit":   10,
@@ -109,36 +109,36 @@ func main() {
 	if err != nil {
 		log.Printf("Warning: Feed filtering failed: %v", err)
 	}
-	
+
 	fmt.Printf("Filtered feed items based on criteria\n\n")
 
 	// Example 4: Aggregate multiple feeds
 	fmt.Println("=== Example 4: Aggregate Feeds ===")
 	aggregateTool := tools.MustGetTool("feed_aggregate")
-	
+
 	// Create mock feeds for aggregation
 	feed1 := createMockFeedResult()
 	feed2 := createMockFeedResult()
-	
+
 	_, err = aggregateTool.Execute(ctx, map[string]interface{}{
 		"feeds": []interface{}{feed1, feed2},
 		"merge_options": map[string]interface{}{
-			"deduplicate":     true,
-			"sort_by":         "date",
-			"max_items":       20,
-			"merge_metadata":  true,
+			"deduplicate":    true,
+			"sort_by":        "date",
+			"max_items":      20,
+			"merge_metadata": true,
 		},
 	})
 	if err != nil {
 		log.Printf("Warning: Feed aggregation failed: %v", err)
 	}
-	
+
 	fmt.Printf("Aggregated multiple feeds into one\n\n")
 
 	// Example 5: Convert feed format
 	fmt.Println("=== Example 5: Convert Feed Format ===")
 	convertTool := tools.MustGetTool("feed_convert")
-	
+
 	convertResult, err := convertTool.Execute(ctx, map[string]interface{}{
 		"feed":            createMockFeedResult()["feed"],
 		"target_type":     "json",
@@ -158,7 +158,7 @@ func main() {
 	// Example 6: Extract specific data from feeds
 	fmt.Println("=== Example 6: Extract Feed Data ===")
 	extractTool := tools.MustGetTool("feed_extract")
-	
+
 	extractResult, err := extractTool.Execute(ctx, map[string]interface{}{
 		"feed":             createMockFeedResult()["feed"],
 		"fields":           []string{"title", "link", "author.name", "published"},
@@ -194,7 +194,7 @@ func main() {
 	fmt.Println("4. Aggregate filtered results")
 	fmt.Println("5. Convert to desired format")
 	fmt.Println("6. Extract specific fields for analysis")
-	
+
 	// This demonstrates how the tools can work together
 	// In a real application, you might use an agent to orchestrate this workflow
 }
@@ -241,7 +241,7 @@ func createMockFeedResult() map[string]interface{} {
 		"status": 200,
 		"format": "RSS2",
 		"headers": map[string]string{
-			"Content-Type": "application/rss+xml",
+			"Content-Type":  "application/rss+xml",
 			"Last-Modified": now.Format(time.RFC1123),
 		},
 	}
@@ -252,25 +252,25 @@ func createMockDiscoverResult() map[string]interface{} {
 	return map[string]interface{}{
 		"feeds": []interface{}{
 			map[string]interface{}{
-				"url":         "https://example.com/blog/feed.xml",
-				"type":        "RSS",
-				"title":       "Example Blog RSS Feed",
+				"url":             "https://example.com/blog/feed.xml",
+				"type":            "RSS",
+				"title":           "Example Blog RSS Feed",
 				"auto_discovered": true,
 			},
 			map[string]interface{}{
-				"url":         "https://example.com/blog/atom.xml",
-				"type":        "Atom",
-				"title":       "Example Blog Atom Feed",
+				"url":             "https://example.com/blog/atom.xml",
+				"type":            "Atom",
+				"title":           "Example Blog Atom Feed",
 				"auto_discovered": true,
 			},
 			map[string]interface{}{
-				"url":         "https://example.com/podcast/feed.xml",
-				"type":        "Podcast",
-				"title":       "Example Podcast Feed",
-				"media_type":  "audio/mpeg",
+				"url":        "https://example.com/podcast/feed.xml",
+				"type":       "Podcast",
+				"title":      "Example Podcast Feed",
+				"media_type": "audio/mpeg",
 			},
 		},
 		"total_discovered": 3,
-		"sources_checked": 5,
+		"sources_checked":  5,
 	}
 }

@@ -476,3 +476,7 @@ result, _ := convert.Execute(ctx, map[string]interface{}{
 4. **Feed Migration**: Fetch old format → Convert to new format → Validate output
 
 Stay tuned for updates as we expand the built-in component library!
+
+## Technical Documentation
+
+For technical details about the built-in components architecture, design patterns, and implementation guidelines, see the [Built-in Components Technical Documentation](/docs/technical/built-in-components.md).

@@ -434,4 +434,3 @@ func TestFeedConvertDateHandling(t *testing.T) {
 		t.Error("Expected valid Atom feed even without dates")
 	}
 }
-

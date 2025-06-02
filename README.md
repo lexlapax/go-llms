@@ -506,6 +506,7 @@ Go-LLMs provides comprehensive documentation for users and contributors:
 ### User Guides
 
 - [Getting Started](docs/user-guide/getting-started.md) - Introduction and basic usage examples
+- [Built-in Components](docs/user-guide/built-in-components.md) - Using built-in tools, agents, and workflows
 - [Provider Options](docs/user-guide/provider-options.md) - Using the provider option system for configuration
 - [Multi-Provider Guide](docs/user-guide/multi-provider.md) - Working with multiple LLM providers
 - [Multimodal Content](docs/user-guide/multimodal-content.md) - Working with text, images, files, and other media types
@@ -524,6 +525,7 @@ Go-LLMs provides comprehensive documentation for users and contributors:
 ### Technical Documentation
 
 - [Architecture](docs/technical/architecture.md) - Overview of the library architecture
+- [Built-in Components](docs/technical/built-in-components.md) - Architecture and design of built-in tools, agents, and workflows
 - [Performance Optimization](docs/technical/performance.md) - Performance optimization strategies
 - [Multimodal Content Implementation](docs/technical/multimodal-content.md) - Implementation details for multimodal support
 - [Sync.Pool Implementation](docs/technical/sync-pool.md) - Detailed guide on sync.Pool usage

@@ -24,6 +24,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 ## Technical Documentation
 
 - [Architecture](/docs/technical/architecture.md) - Overview of the library architecture
+- [Built-in Components](/docs/technical/built-in-components.md) - Architecture and design of built-in tools, agents, and workflows
 - [Performance Optimization](/docs/technical/performance.md) - Performance optimization strategies
 - [Multimodal Content Implementation](/docs/technical/multimodal-content.md) - Implementation details for multimodal support
 - [Testing Framework](/docs/technical/testing.md) - Error condition testing and stress testing
@@ -78,9 +79,11 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Coding Practices](/docs/plan/coding-practices.md) - Coding standards and guidelines
 - [Implementation Plan](/docs/plan/implementation-plan.md) - Detailed implementation plan
 - [Project Planning Overview](/docs/plan/README.md) - Overview of planning documents
-- [Built-in Components Implementation Plan](/BUILTIN_COMPONENTS_IMPLEMENTATION_PLAN.md) - Detailed plan for built-in components implementation
-- [Feed Tools Plan](/FEED_TOOLS_PLAN.md) - Design and implementation plan for feed processing tools
 
 ## Contributing
 
 - [Contributing Guidelines](/CONTRIBUTING.md) - How to contribute to the project, including coding standards and logging guidelines
+
+## Archives
+
+- [Historical Documentation](/docs/archives/README.md) - Archived documentation for historical reference

@@ -377,4 +377,3 @@ func convertToJSONFeed(feed UnifiedFeed, includeContent bool, pretty bool) (stri
 
 	return string(output), nil
 }
-

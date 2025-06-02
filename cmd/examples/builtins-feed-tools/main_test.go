@@ -10,31 +10,31 @@ import (
 
 func TestCreateMockFeedResult(t *testing.T) {
 	result := createMockFeedResult()
-	
+
 	// Check that result has expected structure
 	feed, ok := result["feed"].(map[string]interface{})
 	if !ok {
 		t.Fatal("Expected feed in result")
 	}
-	
+
 	// Check feed has title
 	title, ok := feed["title"].(string)
 	if !ok || title == "" {
 		t.Fatal("Expected feed to have title")
 	}
-	
+
 	// Check feed has items
 	items, ok := feed["items"].([]interface{})
 	if !ok || len(items) == 0 {
 		t.Fatal("Expected feed to have items")
 	}
-	
+
 	// Check first item structure
 	firstItem, ok := items[0].(map[string]interface{})
 	if !ok {
 		t.Fatal("Expected first item to be a map")
 	}
-	
+
 	// Verify required fields
 	requiredFields := []string{"id", "title", "link", "published"}
 	for _, field := range requiredFields {
@@ -46,19 +46,19 @@ func TestCreateMockFeedResult(t *testing.T) {
 
 func TestCreateMockDiscoverResult(t *testing.T) {
 	result := createMockDiscoverResult()
-	
+
 	// Check that result has feeds
 	feeds, ok := result["feeds"].([]interface{})
 	if !ok || len(feeds) == 0 {
 		t.Fatal("Expected discover result to have feeds")
 	}
-	
+
 	// Check first feed structure
 	firstFeed, ok := feeds[0].(map[string]interface{})
 	if !ok {
 		t.Fatal("Expected first feed to be a map")
 	}
-	
+
 	// Verify required fields
 	requiredFields := []string{"url", "type", "title"}
 	for _, field := range requiredFields {
@@ -66,7 +66,7 @@ func TestCreateMockDiscoverResult(t *testing.T) {
 			t.Errorf("Expected first feed to have field: %s", field)
 		}
 	}
-	
+
 	// Check counts
 	if total, ok := result["total_discovered"].(int); !ok || total != 3 {
 		t.Error("Expected total_discovered to be 3")
@@ -76,14 +76,14 @@ func TestCreateMockDiscoverResult(t *testing.T) {
 func TestMockDataTimeFormats(t *testing.T) {
 	result := createMockFeedResult()
 	feed := result["feed"].(map[string]interface{})
-	
+
 	// Check that updated time can be parsed
 	if updatedStr, ok := feed["updated"].(string); ok {
 		if _, err := time.Parse(time.RFC3339, updatedStr); err != nil {
 			t.Errorf("Failed to parse updated time: %v", err)
 		}
 	}
-	
+
 	// Check item published dates
 	items := feed["items"].([]interface{})
 	for i, item := range items {

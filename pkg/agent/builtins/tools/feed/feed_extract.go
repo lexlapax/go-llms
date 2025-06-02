@@ -235,4 +235,3 @@ func getFieldValue(item FeedItem, field string) interface{} {
 		return nil
 	}
 }
-

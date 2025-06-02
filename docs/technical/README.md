@@ -19,6 +19,7 @@ This directory contains technical documentation for the Go-LLMs library, focusin
 - [Multimodal Content Implementation](multimodal-content.md) - Detailed overview of multimodal content support (text, images, files, video, audio)
 - [Dependency Reduction Journey](dependency_reduction.md) - Complete chronicle of our dependency reduction efforts from viper/cobra to stdlib
 - [Logging](logging.md) - Comprehensive guide to logging patterns and best practices in go-llms
+- [Built-in Components](built-in-components.md) - Architecture and design of the built-in components system (tools, agents, workflows)
 
 ## Target Audience
 
