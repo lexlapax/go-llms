@@ -166,7 +166,7 @@ Grace,31,Sales,62000,5,4.3`
 		log.Printf("Failed to parse CSV: %v", err)
 	} else if output, ok := parseCSV.(*data.CSVProcessOutput); ok {
 		fmt.Printf("   ✓ Parsed %d rows\n", output.RowCount)
-		if output.Columns != nil && len(output.Columns) > 0 {
+		if len(output.Columns) > 0 {
 			fmt.Printf("   Columns: %v\n", output.Columns)
 		}
 	}
