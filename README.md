@@ -610,11 +610,13 @@ The core functionality is fairly complete and working. However, APIs are subject
 #### Changelog
 
 **v0.2.7**
-- ✅ **Built-in Components Implementation (Phase 1 & 2)**
+- ✅ **Built-in Components Implementation (Phases 1-2.5)**
   - Implemented comprehensive registry system with search and discovery
   - Migrated and enhanced all web tools (WebFetch, WebSearch, WebScrape, HTTPRequest)
   - Migrated and enhanced all file tools (ReadFile, WriteFile, FileList, FileDelete, FileMove, FileSearch)
   - Implemented all system tools (ExecuteCommand, GetEnvironmentVariable, GetSystemInfo, ProcessList)
+  - Implemented all data tools (JSONProcess, CSVProcess, XMLProcess, DataTransform)
+  - Implemented all 7 date time tools (DateTimeNow, DateTimeInfo, DateTimeCalculate, DateTimeParse, DateTimeFormat, DateTimeConvert, DateTimeCompare)
   - Successfully deprecated and removed common_tools.go
   - All tools have comprehensive tests and documentation
   - Created example applications demonstrating built-in tools usage
@@ -708,7 +710,7 @@ The core functionality is fairly complete and working. However, APIs are subject
 #### Current Focus
 1. **Built-in Components Completion**
    - ✅ Phase 2.4: Data Tools completed (JSONProcess, CSVProcess, XMLProcess, DataTransform)
-   - Phase 2.5: Date, Time Tools (upcoming)
+   - ✅ Phase 2.5: Date, Time Tools completed (all 7 tools: DateTimeNow, DateTimeInfo, DateTimeCalculate, DateTimeParse, DateTimeFormat, DateTimeConvert, DateTimeCompare)
    - Phase 2.6: Feed Process Tools (RSS, Atom and other feeds)
    - Phase 3: Built-in agent templates (WebResearcher, CodeReviewer, DataAnalyst, etc.)
    - Phase 4: Multi-agent workflow patterns (Pipeline, MapReduce, Consensus, etc.)

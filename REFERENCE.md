@@ -5,7 +5,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 ## User Guides
 
 - [Getting Started](/docs/user-guide/getting-started.md) - Introduction and basic usage examples
-- [Built-in Components](/docs/user-guide/built-in-components.md) - **NEW** - Using built-in tools, agents, and workflows
+- [Built-in Components](/docs/user-guide/built-in-components.md) - Using built-in tools, agents, and workflows
 - [Provider Options](/docs/user-guide/provider-options.md) - Using the provider option system for configuration
 - [Multi-Provider Guide](/docs/user-guide/multi-provider.md) - Working with multiple LLM providers
 - [Multimodal Content](/docs/user-guide/multimodal-content.md) - Working with text, images, files, videos, and audio
@@ -39,22 +39,31 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 
 **[Examples Overview](/cmd/examples/README.md)** - Complete guide to all example applications
 
+### Basic Examples
 - [Simple Example](/cmd/examples/simple/README.md) - Basic usage with mock providers
-- [Built-in Tools Discovery](/cmd/examples/builtins-discovery/README.md) - **NEW** - Discover and use built-in tools
-- [Built-in File Tools](/cmd/examples/builtins-file-tools/README.md) - **NEW** - Enhanced file operations with built-in tools
 - [Anthropic Example](/cmd/examples/anthropic/README.md) - Integration with Anthropic Claude
 - [OpenAI Example](/cmd/examples/openai/README.md) - Integration with OpenAI models
 - [Gemini Example](/cmd/examples/gemini/README.md) - Integration with Google Gemini
-- [Provider Options Example](/cmd/examples/provider_options/README.md) - Demonstration of provider options system
 - [OpenAI API Compatible Providers](/cmd/examples/openai_api_compatible_providers/README.md) - Using OpenRouter and Ollama
+
+### Built-in Tools Examples
+- [Built-in Tools Discovery](/cmd/examples/builtins-discovery/README.md) - Discover and use built-in tools
+- [Built-in File Tools](/cmd/examples/builtins-file-tools/README.md) - Enhanced file operations with built-in tools
+- [Built-in Web Tools](/cmd/examples/builtins-web-tools/README.md) - Web operations (fetch, search, scrape, HTTP requests)
+- [Built-in System Tools](/cmd/examples/builtins-system-tools/README.md) - System operations (execute commands, environment variables, process list)
+- [Built-in Data Tools](/cmd/examples/builtins-data-tools/README.md) - Data processing (JSON, CSV, XML, transformations)
+
+### Advanced Examples
 - [Agent Example](/cmd/examples/agent/README.md) - Agent with tools
 - [Multi-Provider Example](/cmd/examples/multi/README.md) - Working with multiple providers
 - [Consensus Example](/cmd/examples/consensus/README.md) - Multi-provider consensus strategies
+- [Provider Options Example](/cmd/examples/provider_options/README.md) - Demonstration of provider options system
 - [Schema Example](/cmd/examples/schema/README.md) - Schema generation from Go structs
 - [Coercion Example](/cmd/examples/coercion/README.md) - Type coercion for validation
 - [Convenience Example](/cmd/examples/convenience/README.md) - Utility functions for common tasks
 - [Model Info Example](/cmd/examples/modelinfo/README.md) - Model discovery and capability information
 - [Metrics Example](/cmd/examples/metrics/README.md) - Performance monitoring and metrics
+- [Multimodal Example](/cmd/examples/multimodal/README.md) - Working with images, audio, and video content
 
 ## CLI Documentation
 
