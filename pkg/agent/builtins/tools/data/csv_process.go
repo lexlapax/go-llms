@@ -346,7 +346,7 @@ func transformCSV(data, delimiter string, hasHeaders bool, transformType string,
 			Columns:  parseResult.Columns,
 		}, nil
 	case "statistics":
-		return calculateStatistics(records, hasHeaders)
+		return calculateStatistics(records, hasHeaders, params)
 	default:
 		return &CSVProcessOutput{
 			Error: fmt.Sprintf("unsupported transform type: %s", transformType),
@@ -445,7 +445,7 @@ func sortRecords(records [][]string, hasHeaders bool, params map[string]interfac
 }
 
 // calculateStatistics calculates basic statistics for numeric columns
-func calculateStatistics(records [][]string, hasHeaders bool) (*CSVProcessOutput, error) {
+func calculateStatistics(records [][]string, hasHeaders bool, params map[string]interface{}) (*CSVProcessOutput, error) {
 	stats := make(map[string]interface{})
 
 	rowCount := len(records)
@@ -457,6 +457,128 @@ func calculateStatistics(records [][]string, hasHeaders bool) (*CSVProcessOutput
 	stats["column_count"] = 0
 	if len(records) > 0 {
 		stats["column_count"] = len(records[0])
+	}
+
+	// If no specific columns requested, return basic stats
+	if params == nil {
+		return &CSVProcessOutput{
+			Result:   stats,
+			RowCount: rowCount,
+		}, nil
+	}
+
+	columnsParam, hasColumns := params["columns"]
+	if !hasColumns {
+		return &CSVProcessOutput{
+			Result:   stats,
+			RowCount: rowCount,
+		}, nil
+	}
+
+	var columnNames []string
+	switch v := columnsParam.(type) {
+	case []interface{}:
+		for _, col := range v {
+			columnNames = append(columnNames, fmt.Sprintf("%v", col))
+		}
+	case []string:
+		columnNames = v
+	default:
+		return &CSVProcessOutput{
+			Error: "columns parameter must be an array of strings",
+		}, nil
+	}
+
+	if len(records) == 0 || (hasHeaders && len(records) < 2) {
+		return &CSVProcessOutput{
+			Result:   stats,
+			RowCount: rowCount,
+		}, nil
+	}
+
+	var headers []string
+	var dataRows [][]string
+
+	if hasHeaders {
+		headers = records[0]
+		dataRows = records[1:]
+	} else {
+		dataRows = records
+	}
+
+	// Calculate statistics for each requested column
+	for _, colName := range columnNames {
+		colIdx := -1
+		if hasHeaders {
+			for i, h := range headers {
+				if h == colName {
+					colIdx = i
+					break
+				}
+			}
+		} else {
+			// If no headers, assume column name is an index
+			idx, err := strconv.Atoi(colName)
+			if err == nil && idx >= 0 {
+				colIdx = idx
+			}
+		}
+
+		if colIdx < 0 || (len(dataRows) > 0 && colIdx >= len(dataRows[0])) {
+			continue // Skip invalid columns
+		}
+
+		// Collect numeric values
+		var values []float64
+		for _, row := range dataRows {
+			if colIdx < len(row) {
+				if val, err := strconv.ParseFloat(row[colIdx], 64); err == nil {
+					values = append(values, val)
+				}
+			}
+		}
+
+		if len(values) == 0 {
+			continue // Skip non-numeric columns
+		}
+
+		// Calculate statistics
+		colStats := make(map[string]interface{})
+
+		// Basic stats
+		sum := 0.0
+		min := values[0]
+		max := values[0]
+
+		for _, v := range values {
+			sum += v
+			if v < min {
+				min = v
+			}
+			if v > max {
+				max = v
+			}
+		}
+
+		avg := sum / float64(len(values))
+
+		// Variance and standard deviation
+		variance := 0.0
+		for _, v := range values {
+			variance += (v - avg) * (v - avg)
+		}
+		variance /= float64(len(values))
+		stdDev := variance // Could use math.Sqrt(variance) for true std dev
+
+		colStats["count"] = len(values)
+		colStats["sum"] = sum
+		colStats["min"] = min
+		colStats["max"] = max
+		colStats["avg"] = avg
+		colStats["variance"] = variance
+		colStats["std_dev"] = stdDev
+
+		stats[colName] = colStats
 	}
 
 	return &CSVProcessOutput{

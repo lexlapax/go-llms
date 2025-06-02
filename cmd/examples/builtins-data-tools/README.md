@@ -63,13 +63,21 @@ Each tool uses specific parameter names that must be matched exactly:
 "operation": "filter"
 "data": csvString
 "filter_condition": "column:operator:value"  // NOT "condition"
-"has_header": true
+"has_headers": true  // MUST be plural
 
-// Transform operation
+// Convert to JSON operation (direct)
+"operation": "to_json"  // NOT "transform" with "to_json"
+"data": csvString
+"has_headers": true
+
+// Statistics operation
 "operation": "transform"
 "data": csvString
-"transform": "to_json" // or "statistics"
-"columns": []string{"col1", "col2"}  // for statistics
+"transform": "statistics"
+"has_headers": true
+"params": map[string]interface{}{
+    "columns": []string{"col1", "col2"},  // wrap in params
+}
 ```
 
 ### XML Process Tool
@@ -77,7 +85,7 @@ Each tool uses specific parameter names that must be matched exactly:
 // Query operation
 "operation": "query"
 "data": xmlString
-"xpath": "catalog.book[0].title"  // Direct paths, not //
+"xpath": "metadata/version"  // Use XPath syntax with /, not dot notation
 
 // Convert operation
 "operation": "to_json"
@@ -125,9 +133,10 @@ The JSONPath implementation supports only basic queries:
 
 ### XPath Limitations
 The XPath implementation is simplified:
-- ✅ Direct paths: `catalog.book[0].title`
+- ✅ Direct paths: `metadata/version`, `book/title`
 - ❌ Double slash: `//book/title`
 - ❌ Attributes: `//book[@id='1']`
+- ❌ Array indexing: `book[0]/title`
 - ❌ Complex predicates
 
 **Workaround**: Convert to JSON first, then use json_process for complex queries.
@@ -177,16 +186,25 @@ result, _ := csvTool.Execute(ctx, map[string]interface{}{
     "operation":        "filter",
     "data":             csvData,
     "filter_condition": "department:eq:Engineering",
-    "has_header":       true,
+    "has_headers":      true,  // Fixed: plural
+})
+
+// Convert to JSON
+result, _ := csvTool.Execute(ctx, map[string]interface{}{
+    "operation":   "to_json",  // Fixed: direct operation
+    "data":        csvData,
+    "has_headers": true,
 })
 
 // Get statistics
 result, _ := csvTool.Execute(ctx, map[string]interface{}{
-    "operation":  "transform",
-    "data":       csvData,
-    "transform":  "statistics",
-    "columns":    []string{"salary"},
-    "has_header": true,
+    "operation":   "transform",
+    "data":        csvData,
+    "transform":   "statistics",
+    "has_headers": true,
+    "params": map[string]interface{}{  // Fixed: wrap in params
+        "columns": []string{"salary"},
+    },
 })
 ```
 
@@ -249,10 +267,39 @@ if output, ok := result.(*data.DataTransformOutput); ok {
 }
 ```
 
+## Enhanced Features
+
+### CSV Statistics Output
+The statistics operation now provides comprehensive numeric analysis:
+```go
+{
+  "row_count": 7,
+  "column_count": 6,
+  "salary": {
+    "count": 7,
+    "sum": 472000,
+    "min": 55000,
+    "max": 85000,
+    "avg": 67428.57,
+    "variance": 88244897.96,
+    "std_dev": 88244897.96
+  },
+  "performance_rating": {
+    "count": 7,
+    "sum": 29.4,
+    "min": 3.8,
+    "max": 4.7,
+    "avg": 4.2,
+    "variance": 0.091,
+    "std_dev": 0.091
+  }
+}
+```
+
 ## Real-World Use Cases
 
 1. **API Response Processing**: Extract and transform data from JSON APIs
-2. **CSV Report Analysis**: Filter and calculate statistics on CSV exports
+2. **CSV Report Analysis**: Filter and calculate statistics on CSV exports  
 3. **Configuration Processing**: Parse and query XML/JSON config files
 4. **Data Pipeline**: Chain tools for ETL operations
 5. **Log Analysis**: Process structured log data

@@ -71,7 +71,7 @@ func main() {
 		log.Printf("Failed to query JSON: %v", err)
 	} else if output, ok := queryResult.(*data.JSONProcessOutput); ok {
 		if user, ok := output.Result.(map[string]interface{}); ok {
-			fmt.Printf("   First user: %s (age: %.0f, city: %s)\n", 
+			fmt.Printf("   First user: %s (age: %.0f, city: %s)\n",
 				user["name"], user["age"], user["city"])
 		}
 	}
@@ -158,9 +158,9 @@ Grace,31,Sales,62000,5,4.3`
 	// 1. Parse CSV
 	fmt.Println("1. Parse CSV with headers:")
 	parseCSV, err := csvTool.Execute(ctx, map[string]interface{}{
-		"operation":  "parse",
-		"data":       csvData,
-		"has_header": true,
+		"operation":   "parse",
+		"data":        csvData,
+		"has_headers": true, // Fixed parameter name (plural)
 	})
 	if err != nil {
 		log.Printf("Failed to parse CSV: %v", err)
@@ -176,8 +176,8 @@ Grace,31,Sales,62000,5,4.3`
 	filterResult, err := csvTool.Execute(ctx, map[string]interface{}{
 		"operation":        "filter",
 		"data":             csvData,
-		"filter_condition": "department:eq:Engineering",  // Fixed parameter name
-		"has_header":       true,
+		"filter_condition": "department:eq:Engineering", // Fixed parameter name
+		"has_headers":      true,                        // Fixed parameter name (plural)
 	})
 	if err != nil {
 		log.Printf("Failed to filter CSV: %v", err)
@@ -201,8 +201,8 @@ Grace,31,Sales,62000,5,4.3`
 	highSalaryFilter, err := csvTool.Execute(ctx, map[string]interface{}{
 		"operation":        "filter",
 		"data":             csvData,
-		"filter_condition": "salary:gt:65000",  // Fixed parameter name
-		"has_header":       true,
+		"filter_condition": "salary:gt:65000", // Fixed parameter name
+		"has_headers":      true,              // Fixed parameter name (plural)
 	})
 	if err != nil {
 		log.Printf("Failed to filter CSV: %v", err)
@@ -219,24 +219,24 @@ Grace,31,Sales,62000,5,4.3`
 		}
 	}
 
-	// 4. Transform to JSON
+	// 4. Convert CSV to JSON (fixed operation)
 	fmt.Println("\n4. Convert CSV to JSON:")
 	csvToJson, err := csvTool.Execute(ctx, map[string]interface{}{
-		"operation":  "transform",
-		"data":       csvData,
-		"transform":  "to_json",
-		"has_header": true,
+		"operation":   "to_json", // Fixed: use to_json operation directly
+		"data":        csvData,
+		"has_headers": true, // Fixed parameter name (plural)
 	})
 	if err != nil {
 		log.Printf("Failed to convert CSV to JSON: %v", err)
 	} else if output, ok := csvToJson.(*data.CSVProcessOutput); ok {
-		// Show first 2 records
-		if records, ok := output.Result.([]map[string]interface{}); ok && len(records) > 0 {
-			fmt.Println("   First 2 records as JSON:")
-			for i := 0; i < 2 && i < len(records); i++ {
-				if jsonBytes, err := json.MarshalIndent(records[i], "   ", "  "); err == nil {
-					fmt.Printf("   %s\n", string(jsonBytes))
-				}
+		// The result is already a JSON string
+		if jsonStr, ok := output.Result.(string); ok {
+			fmt.Println("   CSV converted to JSON:")
+			// Pretty print just the first 500 characters
+			if len(jsonStr) > 500 {
+				fmt.Printf("   %s\n   ... (truncated)\n", jsonStr[:500])
+			} else {
+				fmt.Printf("   %s\n", jsonStr)
 			}
 		}
 	}
@@ -244,11 +244,13 @@ Grace,31,Sales,62000,5,4.3`
 	// 5. Get statistics
 	fmt.Println("\n5. Calculate statistics for numeric columns:")
 	statsResult, err := csvTool.Execute(ctx, map[string]interface{}{
-		"operation":  "transform",
-		"data":       csvData,
-		"transform":  "statistics",
-		"columns":    []string{"salary", "years_experience", "performance_rating"},
-		"has_header": true,
+		"operation":   "transform",
+		"data":        csvData,
+		"transform":   "statistics",
+		"has_headers": true, // Fixed parameter name (plural)
+		"params": map[string]interface{}{ // Added params wrapper
+			"columns": []string{"salary", "years_experience", "performance_rating"},
+		},
 	})
 	if err != nil {
 		log.Printf("Failed to get CSV statistics: %v", err)
@@ -322,15 +324,15 @@ Grace,31,Sales,62000,5,4.3`
 		}
 	}
 
-	// 2. XPath queries - use direct paths instead of //
+	// 2. XPath queries - use proper XPath syntax
 	fmt.Println("\n2. Simplified XPath queries:")
 	xpathQueries := map[string]string{
-		"First book title":  "catalog.book[0].title",
-		"Version":           "catalog.metadata.version",
-		"Created date":      "catalog.metadata.created",
-		"First book author": "catalog.book[0].author",
-		"Second book price": "catalog.book[1].price",
-		"Third book rating": "catalog.book[2].rating",
+		"Version":           "metadata/version", // Fixed: XPath syntax
+		"Created date":      "metadata/created", // Fixed: XPath syntax
+		"First book title":  "book/title",       // Fixed: Gets first book's title
+		"First book author": "book/author",      // Fixed: Gets first book's author
+		"All book titles":   "book/title",       // This will get all titles
+		"Book count":        "book",             // This will show all books
 	}
 
 	for desc, xpath := range xpathQueries {
@@ -397,7 +399,7 @@ Grace,31,Sales,62000,5,4.3`
 		"operation": "filter",
 		"data":      string(transformDataJSON),
 		"field":     "score",
-		"condition": "gt:85",  // Fixed format: operator:value
+		"condition": "gt:85", // Fixed format: operator:value
 	})
 	if err != nil {
 		log.Printf("Failed to filter data: %v", err)
@@ -417,7 +419,7 @@ Grace,31,Sales,62000,5,4.3`
 	mapNames, err := transformTool.Execute(ctx, map[string]interface{}{
 		"operation": "map",
 		"data":      string(transformDataJSON),
-		"map_type":  "extract_field",  // Fixed parameter name
+		"map_type":  "extract_field", // Fixed parameter name
 		"field":     "name",
 	})
 	if err != nil {
@@ -443,7 +445,7 @@ Grace,31,Sales,62000,5,4.3`
 		result, _ := transformTool.Execute(ctx, map[string]interface{}{
 			"operation":   "reduce",
 			"data":        string(transformDataJSON),
-			"reduce_type": op.reducer,  // Fixed parameter name
+			"reduce_type": op.reducer, // Fixed parameter name
 			"field":       "score",
 		})
 		if output, ok := result.(*data.DataTransformOutput); ok {
@@ -493,7 +495,7 @@ Grace,31,Sales,62000,5,4.3`
 		"operation":  "sort",
 		"data":       string(transformDataJSON),
 		"field":      "score",
-		"sort_order": "desc",  // Fixed parameter name
+		"sort_order": "desc", // Fixed parameter name
 	})
 	if err != nil {
 		log.Printf("Failed to sort data: %v", err)
