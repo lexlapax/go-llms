@@ -50,6 +50,31 @@ func init() {
 			Category:    "feed",
 			Tags:        []string{"feed", "extract", "transform", "data"},
 			Description: "Extracts specific fields from feed items",
+			Version:     "1.0.0",
+			Examples: []builtins.Example{
+				{
+					Name:        "Extract titles and links",
+					Description: "Get just titles and links from feed items",
+					Code:        `FeedExtract().Execute(ctx, FeedExtractParams{Feed: feed, Fields: []string{"title", "link"}})`,
+				},
+				{
+					Name:        "Extract with metadata",
+					Description: "Include feed metadata in extraction",
+					Code:        `FeedExtract().Execute(ctx, FeedExtractParams{Feed: feed, Fields: []string{"title", "published", "author.name"}, IncludeMetadata: true})`,
+				},
+				{
+					Name:        "Flatten nested fields",
+					Description: "Extract and flatten author information",
+					Code:        `FeedExtract().Execute(ctx, FeedExtractParams{Feed: feed, Fields: []string{"title", "author.name", "author.email"}, Flatten: true, MaxItems: 20})`,
+				},
+			},
+		},
+		RequiredPermissions: []string{},
+		ResourceUsage: tools.ResourceInfo{
+			Memory:      "low",
+			Network:     false,
+			FileSystem:  false,
+			Concurrency: false,
 		},
 	})
 }

@@ -1,6 +1,16 @@
 # Built-in Feed Tools Example
 
-This example demonstrates the usage of built-in feed processing tools in the go-llms library. These tools provide comprehensive feed handling capabilities including fetching, discovering, filtering, aggregating, converting, and extracting data from RSS, Atom, and JSON Feed formats.
+This comprehensive example demonstrates all 6 feed processing tools available in the go-llms library, showcasing their full capabilities with practical examples and proper type-safe result handling.
+
+## Overview
+
+The built-in feed tools provide comprehensive feed handling capabilities:
+- **feed_fetch**: Fetch and parse RSS, Atom, and JSON Feed formats with HTTP optimizations
+- **feed_discover**: Auto-discover feed URLs from websites using HTML analysis
+- **feed_filter**: Filter feed items by keywords, dates, authors, and categories
+- **feed_aggregate**: Combine multiple feeds with deduplication and sorting
+- **feed_convert**: Convert between RSS, Atom, and JSON Feed formats
+- **feed_extract**: Extract specific data fields for analysis or export
 
 ## Available Feed Tools
 
@@ -179,6 +189,40 @@ Extract feed data for analysis in other tools:
 Fetch → Filter → Extract (CSV) → Analyze
 ```
 
+## Tool Examples in Registry
+
+Each feed tool includes comprehensive examples in their metadata registration:
+
+### feed_fetch (3 examples)
+- **Basic RSS fetch**: Simple feed fetching
+- **Fetch with limit**: Fetch only recent items
+- **Conditional fetch**: Fetch only if modified using ETag
+
+### feed_discover (3 examples)
+- **Basic discovery**: Discover feeds from a blog homepage
+- **Discovery with timeout**: Set custom timeout for slow sites
+- **No redirects**: Discover feeds without following redirects
+
+### feed_extract (3 examples)
+- **Extract titles and links**: Get just titles and links from feed items
+- **Extract with metadata**: Include feed metadata in extraction
+- **Flatten nested fields**: Extract and flatten author information
+
+### feed_filter (3 examples)
+- **Filter by keywords**: Find items containing specific keywords
+- **Filter by date range**: Get items from the last week
+- **Complex filter**: Filter by multiple criteria with all conditions matching
+
+### feed_aggregate (3 examples)
+- **Combine news feeds**: Merge multiple news feeds into one
+- **Sort by date descending**: Aggregate and sort by most recent first
+- **Remove duplicates**: Combine feeds and remove duplicate articles
+
+### feed_convert (3 examples)
+- **Convert to RSS**: Convert any feed format to RSS 2.0
+- **Convert to JSON Feed**: Convert RSS/Atom to modern JSON Feed format
+- **Minimal Atom conversion**: Convert to Atom without full content
+
 ## Integration with Agents
 
 These feed tools can be used with agents for automated feed processing:
@@ -208,9 +252,192 @@ response, err := agent.Run(ctx,
 4. **Timeout Settings**: Set appropriate timeouts for feed fetching
 5. **Content Validation**: Validate feed content before processing
 
+## Important Parameter Names
+
+Each feed tool uses specific parameter names that must be matched exactly:
+
+### feed_fetch Tool
+- `url`: Feed URL to fetch (required)
+- `max_items`: Maximum items to return
+- `timeout`: Request timeout in seconds
+- `user_agent`: Custom user agent string
+- `etag`: ETag for conditional requests
+- `if_modified`: If-Modified-Since header value
+
+### feed_discover Tool  
+- `url`: Website URL to discover feeds from (required)
+- `follow_redirects`: Follow HTTP redirects (default: true)
+- `timeout`: Request timeout in seconds
+- `max_size`: Maximum response size in bytes
+
+### feed_filter Tool
+- `feed`: Feed data to filter (required)
+- `keywords`: Keywords to match in title/content
+- `authors`: Filter by author names
+- `categories`: Filter by categories
+- `after`: Only items published after this date (RFC3339)
+- `before`: Only items published before this date (RFC3339)
+- `max_items`: Maximum number of items to return
+- `match_all`: If true, items must match ALL criteria
+
+### feed_aggregate Tool
+- `feeds`: Array of feed objects to combine (required)
+- `deduplicate`: Remove duplicate items
+- `sort_by`: Sort criteria ("date", "title")
+- `max_items`: Maximum items in result
+
+### feed_convert Tool
+- `feed`: Feed data to convert (required)
+- `target_type`: Target format ("json", "rss", "atom")
+- `pretty_print`: Format output for readability
+- `include_meta`: Include metadata in conversion
+
+### feed_extract Tool
+- `feed`: Feed data to extract from (required)
+- `fields`: Array of field names to extract
+- `max_items`: Maximum items to process
+- `flatten`: Flatten nested data structures
+
+## Type Assertions
+
+When handling feed tool outputs, use the correct struct types:
+
+```go
+// feed_fetch results
+if fetchRes, ok := result.(*feed.FeedFetchResult); ok {
+    fmt.Printf("Format: %s\n", fetchRes.Format)
+    fmt.Printf("Status: %d\n", fetchRes.Status)
+    fmt.Printf("Title: %s\n", fetchRes.Feed.Title)
+    fmt.Printf("Items: %d\n", len(fetchRes.Feed.Items))
+    if len(fetchRes.Headers) > 0 {
+        fmt.Printf("Headers: %d\n", len(fetchRes.Headers))
+    }
+}
+
+// feed_discover results
+if discoverRes, ok := result.(*feed.FeedDiscoverResult); ok {
+    fmt.Printf("Discovered: %d feeds\n", len(discoverRes.Feeds))
+    for _, feed := range discoverRes.Feeds {
+        fmt.Printf("- %s (%s) from %s\n", feed.Title, feed.Type, feed.Source)
+    }
+    if discoverRes.Error != "" {
+        fmt.Printf("Errors: %s\n", discoverRes.Error)
+    }
+}
+
+// feed_filter results
+if filterRes, ok := result.(*feed.FeedFilterResult); ok {
+    fmt.Printf("Filtered: %d items\n", len(filterRes.Items))
+    fmt.Printf("Total processed: %d\n", filterRes.TotalItems)
+    fmt.Printf("Filtered out: %d\n", filterRes.FilteredOut)
+}
+
+// feed_aggregate results
+if aggregateRes, ok := result.(*feed.FeedAggregateResult); ok {
+    fmt.Printf("Sources: %d\n", aggregateRes.SourceCount)
+    fmt.Printf("Total items: %d\n", aggregateRes.TotalItems)
+    fmt.Printf("Duplicates removed: %d\n", aggregateRes.DupesRemoved)
+    fmt.Printf("Final items: %d\n", len(aggregateRes.Feed.Items))
+}
+
+// feed_convert results
+if convertRes, ok := result.(*feed.FeedConvertResult); ok {
+    fmt.Printf("Format: %s\n", convertRes.Format)
+    fmt.Printf("Content type: %s\n", convertRes.ContentType)
+    fmt.Printf("Size: %d chars\n", len(convertRes.Content))
+}
+
+// feed_extract results
+if extractRes, ok := result.(*feed.FeedExtractResult); ok {
+    fmt.Printf("Fields: %v\n", extractRes.Fields)
+    fmt.Printf("Items: %d\n", extractRes.Count)
+    fmt.Printf("Data entries: %d\n", len(extractRes.Data))
+    if len(extractRes.Metadata) > 0 {
+        fmt.Printf("Metadata: %d fields\n", len(extractRes.Metadata))
+    }
+}
+```
+
+## Complete Working Examples
+
+### Feed Fetching with Error Handling
+```go
+result, err := fetchTool.Execute(ctx, map[string]interface{}{
+    "url":        "https://hnrss.org/frontpage",
+    "max_items":  5,
+    "timeout":    10,
+    "user_agent": "MyApp/1.0",
+})
+if err != nil {
+    log.Printf("Fetch failed: %v", err)
+} else if fetchRes, ok := result.(*feed.FeedFetchResult); ok {
+    fmt.Printf("Fetched %d items from %s\n", 
+        len(fetchRes.Feed.Items), fetchRes.Feed.Title)
+}
+```
+
+### Feed Discovery
+```go
+result, err := discoverTool.Execute(ctx, map[string]interface{}{
+    "url":              "https://blog.golang.org",
+    "follow_redirects": true,
+    "timeout":          30,
+})
+if discoverRes, ok := result.(*feed.FeedDiscoverResult); ok {
+    for _, feed := range discoverRes.Feeds {
+        fmt.Printf("Found: %s (%s)\n", feed.Title, feed.URL)
+    }
+}
+```
+
+### Feed Filtering
+```go
+result, err := filterTool.Execute(ctx, map[string]interface{}{
+    "feed":      feedData,
+    "keywords":  []string{"golang", "programming"},
+    "after":     "2024-01-01T00:00:00Z",
+    "max_items": 10,
+    "match_all": false,
+})
+if filterRes, ok := result.(*feed.FeedFilterResult); ok {
+    fmt.Printf("Filtered to %d items\n", len(filterRes.Items))
+}
+```
+
+## Performance Considerations
+
+- **HTTP Caching**: Use ETags and If-Modified-Since for conditional requests
+- **Rate Limiting**: Respect feed provider rate limits and robots.txt
+- **Memory Usage**: Large feeds are processed in memory, consider max_items limits
+- **Timeout Settings**: Set appropriate timeouts for network operations
+- **Deduplication**: Use aggregation tool to remove duplicates across feeds
+
+## Real-World Use Cases
+
+1. **News Aggregation**: Combine multiple news feeds, filter by topics
+2. **Podcast Management**: Discover and organize podcast feeds
+3. **Content Monitoring**: Track specific keywords across feeds
+4. **Feed Migration**: Convert between RSS, Atom, and JSON Feed formats
+5. **Data Analysis**: Extract feed data for analysis in other tools
+6. **Alert Systems**: Monitor feeds for specific content and trigger actions
+
+## Integration with Agents
+
+```go
+agent := workflow.NewAgent(provider).
+    SetSystemPrompt("You are a feed processing assistant.").
+    AddTool(tools.MustGetTool("feed_fetch")).
+    AddTool(tools.MustGetTool("feed_filter")).
+    AddTool(tools.MustGetTool("feed_extract"))
+
+result, _ := agent.Run(ctx, 
+    "Fetch Hacker News RSS, filter for Go-related items, and extract titles and links")
+```
+
 ## Notes
 
 - The example includes fallback mechanisms for when real feeds are unavailable
-- Mock data is provided for demonstration purposes
+- Mock data is provided for demonstration purposes with realistic feed structures
 - In production, consider implementing caching and rate limiting
 - Some feed providers may require authentication or have CORS restrictions
+- All tools include comprehensive error handling and type-safe result processing

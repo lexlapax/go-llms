@@ -49,6 +49,31 @@ func init() {
 			Category:    "feed",
 			Tags:        []string{"feed", "convert", "transform", "rss", "atom", "json"},
 			Description: "Converts feeds between RSS, Atom, and JSON Feed formats",
+			Version:     "1.0.0",
+			Examples: []builtins.Example{
+				{
+					Name:        "Convert to RSS",
+					Description: "Convert any feed format to RSS 2.0",
+					Code:        `FeedConvert().Execute(ctx, FeedConvertParams{Feed: feed, TargetType: "rss", Pretty: true})`,
+				},
+				{
+					Name:        "Convert to JSON Feed",
+					Description: "Convert RSS/Atom to modern JSON Feed format",
+					Code:        `FeedConvert().Execute(ctx, FeedConvertParams{Feed: feed, TargetType: "json", IncludeContent: true})`,
+				},
+				{
+					Name:        "Minimal Atom conversion",
+					Description: "Convert to Atom without full content",
+					Code:        `FeedConvert().Execute(ctx, FeedConvertParams{Feed: feed, TargetType: "atom", IncludeContent: false})`,
+				},
+			},
+		},
+		RequiredPermissions: []string{},
+		ResourceUsage: tools.ResourceInfo{
+			Memory:      "low",
+			Network:     false,
+			FileSystem:  false,
+			Concurrency: false,
 		},
 	})
 }

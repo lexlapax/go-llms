@@ -57,6 +57,31 @@ func init() {
 			Category:    "feed",
 			Tags:        []string{"feed", "aggregate", "combine", "merge", "sort"},
 			Description: "Combines multiple feeds into one unified feed",
+			Version:     "1.0.0",
+			Examples: []builtins.Example{
+				{
+					Name:        "Combine news feeds",
+					Description: "Merge multiple news feeds into one",
+					Code:        `FeedAggregate().Execute(ctx, FeedAggregateParams{Feeds: []UnifiedFeed{techFeed, scienceFeed, businessFeed}})`,
+				},
+				{
+					Name:        "Sort by date descending",
+					Description: "Aggregate and sort by most recent first",
+					Code:        `FeedAggregate().Execute(ctx, FeedAggregateParams{Feeds: feeds, SortBy: "date", SortDescending: true, MaxItems: 100})`,
+				},
+				{
+					Name:        "Remove duplicates",
+					Description: "Combine feeds and remove duplicate articles",
+					Code:        `FeedAggregate().Execute(ctx, FeedAggregateParams{Feeds: feeds, RemoveDupes: true, MergeMetadata: true})`,
+				},
+			},
+		},
+		RequiredPermissions: []string{},
+		ResourceUsage: tools.ResourceInfo{
+			Memory:      "medium",
+			Network:     false,
+			FileSystem:  false,
+			Concurrency: false,
 		},
 	})
 }

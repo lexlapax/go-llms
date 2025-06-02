@@ -65,6 +65,31 @@ func init() {
 			Category:    "feed",
 			Tags:        []string{"feed", "filter", "search", "query", "date", "keyword"},
 			Description: "Filters feed items by date, keywords, author, and categories",
+			Version:     "1.0.0",
+			Examples: []builtins.Example{
+				{
+					Name:        "Filter by keywords",
+					Description: "Find items containing specific keywords",
+					Code:        `FeedFilter().Execute(ctx, FeedFilterParams{Feed: feed, Keywords: []string{"technology", "innovation"}})`,
+				},
+				{
+					Name:        "Filter by date range",
+					Description: "Get items from the last week",
+					Code:        `FeedFilter().Execute(ctx, FeedFilterParams{Feed: feed, After: "2024-01-01T00:00:00Z", MaxItems: 50})`,
+				},
+				{
+					Name:        "Complex filter",
+					Description: "Filter by multiple criteria with all conditions matching",
+					Code:        `FeedFilter().Execute(ctx, FeedFilterParams{Feed: feed, Keywords: []string{"AI"}, Categories: []string{"tech"}, Authors: []string{"John"}, MatchAll: true})`,
+				},
+			},
+		},
+		RequiredPermissions: []string{},
+		ResourceUsage: tools.ResourceInfo{
+			Memory:      "low",
+			Network:     false,
+			FileSystem:  false,
+			Concurrency: false,
 		},
 	})
 }

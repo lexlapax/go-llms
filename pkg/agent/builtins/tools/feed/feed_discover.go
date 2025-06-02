@@ -52,6 +52,31 @@ func init() {
 			Category:    "feed",
 			Tags:        []string{"feed", "discover", "rss", "atom", "json", "auto-discovery"},
 			Description: "Automatically discover feed URLs from web pages",
+			Version:     "1.0.0",
+			Examples: []builtins.Example{
+				{
+					Name:        "Basic discovery",
+					Description: "Discover feeds from a blog homepage",
+					Code:        `FeedDiscover().Execute(ctx, FeedDiscoverParams{URL: "https://blog.example.com"})`,
+				},
+				{
+					Name:        "Discovery with timeout",
+					Description: "Set custom timeout for slow sites",
+					Code:        `FeedDiscover().Execute(ctx, FeedDiscoverParams{URL: "https://news.example.com", Timeout: 60})`,
+				},
+				{
+					Name:        "No redirects",
+					Description: "Discover feeds without following redirects",
+					Code:        `FeedDiscover().Execute(ctx, FeedDiscoverParams{URL: "https://site.example.com", FollowRedirects: false})`,
+				},
+			},
+		},
+		RequiredPermissions: []string{"network:access"},
+		ResourceUsage: tools.ResourceInfo{
+			Memory:      "low",
+			Network:     true,
+			FileSystem:  false,
+			Concurrency: true,
 		},
 	})
 }
