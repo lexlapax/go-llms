@@ -162,7 +162,7 @@ func TestDiscoverResultTypes(t *testing.T) {
 
 	for i, expectedType := range expectedTypes {
 		if result.Feeds[i].Type != expectedType {
-			t.Errorf("Expected feed %d to have type '%s', got '%s'", 
+			t.Errorf("Expected feed %d to have type '%s', got '%s'",
 				i, expectedType, result.Feeds[i].Type)
 		}
 	}
@@ -170,7 +170,7 @@ func TestDiscoverResultTypes(t *testing.T) {
 	expectedSources := []string{"link_tag", "auto_discovery", "common_path"}
 	for i, expectedSource := range expectedSources {
 		if result.Feeds[i].Source != expectedSource {
-			t.Errorf("Expected feed %d to have source '%s', got '%s'", 
+			t.Errorf("Expected feed %d to have source '%s', got '%s'",
 				i, expectedSource, result.Feeds[i].Source)
 		}
 	}
