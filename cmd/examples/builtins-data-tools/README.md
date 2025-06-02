@@ -1,14 +1,14 @@
 # Built-in Data Tools Example
 
-This example demonstrates the data processing tools available in the go-llms library.
+This comprehensive example demonstrates all 4 data processing tools available in the go-llms library, showcasing their full capabilities with practical examples.
 
 ## Overview
 
-The built-in data tools provide functionality for:
-- Processing JSON data with JSONPath queries
-- Handling CSV data with filtering and statistics
-- Parsing XML and converting to JSON
-- Common data transformations (filter, map, reduce, sort, group)
+The built-in data tools provide powerful, LLM-free data processing:
+- **JSON Processing**: Parse, query with JSONPath, and transform JSON data
+- **CSV Processing**: Parse, filter, calculate statistics, and convert formats
+- **XML Processing**: Parse, query with XPath, and convert to JSON
+- **Data Transformations**: Filter, map, reduce, sort, group, and more
 
 ## Running the Example
 
@@ -18,196 +18,266 @@ go run main.go
 
 ## Available Data Tools
 
-1. **json_process** - Process JSON data
-   - Parse and validate JSON
-   - Query with JSONPath expressions
-   - Transform operations: extract_keys, extract_values, flatten, prettify, minify
+### 1. json_process - JSON Data Processing
+- Parse and validate JSON
+- Query with JSONPath expressions (simple subset)
+- Transform operations: flatten, extract, prettify, minify
 
-2. **csv_process** - Handle CSV data
-   - Parse with configurable delimiters
-   - Filter with multiple operators
-   - Transform: select columns, sort, statistics
-   - Convert to JSON
+### 2. csv_process - CSV Data Handling
+- Parse CSV with headers and custom delimiters
+- Filter rows with conditions
+- Calculate statistics on numeric columns
+- Convert to JSON format
 
-3. **xml_process** - Process XML data
-   - Parse with attribute support
-   - Query with simplified XPath
-   - Convert to JSON with configurable options
+### 3. xml_process - XML Data Processing
+- Parse and validate XML
+- Query with simplified XPath
+- Convert to JSON with attribute preservation
 
-4. **data_transform** - Common transformations
-   - Filter with complex conditions
-   - Map operations (extract field, case conversion, type conversion)
-   - Reduce operations (sum, count, min, max, average, concat)
-   - Additional: sort, group_by, unique, reverse
+### 4. data_transform - General Data Transformations
+- Filter with conditions
+- Map operations (field extraction, case conversion)
+- Reduce operations (sum, average, min, max, count)
+- Additional: sort, group_by, unique, reverse
 
-## Example Usage
+## Important Parameter Names
 
-### JSON Processing
+Each tool uses specific parameter names that must be matched exactly:
+
+### JSON Process Tool
 ```go
-jsonTool := tools.MustGetTool("json_process")
+// Query operation
+"operation": "query"
+"data": jsonString
+"jsonpath": "$.users[0].name"
 
-// Query with JSONPath
+// Transform operation
+"operation": "transform"
+"data": jsonString
+"transform": "flatten"  // or "extract", "prettify", "minify"
+```
+
+### CSV Process Tool
+```go
+// Filter operation
+"operation": "filter"
+"data": csvString
+"filter_condition": "column:operator:value"  // NOT "condition"
+"has_header": true
+
+// Transform operation
+"operation": "transform"
+"data": csvString
+"transform": "to_json" // or "statistics"
+"columns": []string{"col1", "col2"}  // for statistics
+```
+
+### XML Process Tool
+```go
+// Query operation
+"operation": "query"
+"data": xmlString
+"xpath": "catalog.book[0].title"  // Direct paths, not //
+
+// Convert operation
+"operation": "to_json"
+"data": xmlString
+"include_attributes": true
+```
+
+### Data Transform Tool
+```go
+// All operations expect data as JSON string
+"data": string(jsonBytes)  // NOT raw object/array
+
+// Filter operation
+"operation": "filter"
+"field": "score"
+"condition": "gt:85"  // format: operator:value
+
+// Map operation
+"operation": "map"
+"map_type": "extract_field"  // NOT "transform"
+"field": "name"
+
+// Reduce operation
+"operation": "reduce"
+"reduce_type": "average"  // NOT "reducer"
+"field": "score"
+
+// Sort operation
+"operation": "sort"
+"field": "score"
+"sort_order": "desc"  // NOT "order"
+```
+
+## Limitations and Workarounds
+
+### JSONPath Limitations
+The JSONPath implementation supports only basic queries:
+- ✅ Simple paths: `$.users[0].name`
+- ✅ Array indexing: `$.items[2]`
+- ❌ Wildcards: `$.users[*].name`
+- ❌ Filters: `$.users[?(@.age > 25)]`
+- ❌ Recursive descent: `$..name`
+
+**Workaround**: Use data_transform tool for complex filtering after extracting arrays.
+
+### XPath Limitations
+The XPath implementation is simplified:
+- ✅ Direct paths: `catalog.book[0].title`
+- ❌ Double slash: `//book/title`
+- ❌ Attributes: `//book[@id='1']`
+- ❌ Complex predicates
+
+**Workaround**: Convert to JSON first, then use json_process for complex queries.
+
+### CSV Filter Limitations
+CSV filtering uses single conditions only:
+- ✅ Single condition: `department:eq:Engineering`
+- ❌ Multiple conditions with AND/OR logic
+
+**Workaround**: Apply filters sequentially or convert to JSON for complex filtering.
+
+## Complete Working Examples
+
+### JSON Processing Example
+```go
+jsonData := `{"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}`
+
+// Parse JSON
 result, _ := jsonTool.Execute(ctx, map[string]interface{}{
-    "operation": "query",
-    "data":      jsonString,
-    "jsonpath":  "$.users[?(@.age > 25)].name",
+    "operation": "parse",
+    "data":      jsonData,
 })
 
-// Transform JSON
+// Query specific user
+result, _ := jsonTool.Execute(ctx, map[string]interface{}{
+    "operation": "query",
+    "data":      jsonData,
+    "jsonpath":  "$.users[0]",
+})
+
+// Flatten structure
 result, _ := jsonTool.Execute(ctx, map[string]interface{}{
     "operation": "transform",
-    "data":      jsonString,
+    "data":      jsonData,
     "transform": "flatten",
 })
 ```
 
-### CSV Processing
+### CSV Processing Example
 ```go
-csvTool := tools.MustGetTool("csv_process")
+csvData := `name,age,department,salary
+Alice,30,Engineering,75000
+Bob,25,Marketing,55000`
 
-// Filter CSV data
+// Filter by department
 result, _ := csvTool.Execute(ctx, map[string]interface{}{
-    "operation": "filter",
-    "data":      csvString,
-    "filters": []map[string]interface{}{
-        {
-            "column":   "age",
-            "operator": "gt",
-            "value":    25,
-        },
-    },
-    "has_header": true,
+    "operation":        "filter",
+    "data":             csvData,
+    "filter_condition": "department:eq:Engineering",
+    "has_header":       true,
 })
 
 // Get statistics
 result, _ := csvTool.Execute(ctx, map[string]interface{}{
-    "operation": "transform",
-    "data":      csvString,
-    "transform": "statistics",
-    "columns":   []string{"salary"},
+    "operation":  "transform",
+    "data":       csvData,
+    "transform":  "statistics",
+    "columns":    []string{"salary"},
+    "has_header": true,
 })
 ```
 
-### XML Processing
+### Data Transformation Example
 ```go
-xmlTool := tools.MustGetTool("xml_process")
+// Convert data to JSON string first
+data := []map[string]interface{}{
+    {"name": "Alice", "score": 85},
+    {"name": "Bob", "score": 92},
+}
+jsonData, _ := json.Marshal(data)
 
-// Query with XPath
-result, _ := xmlTool.Execute(ctx, map[string]interface{}{
-    "operation": "query",
-    "data":      xmlString,
-    "xpath":     "//book[@id='1']/title",
-})
-
-// Convert to JSON
-result, _ := xmlTool.Execute(ctx, map[string]interface{}{
-    "operation": "to_json",
-    "data":      xmlString,
-    "include_attributes": true,
-})
-```
-
-### Data Transformations
-```go
-transformTool := tools.MustGetTool("data_transform")
-
-// Filter data
+// Filter high scores
 result, _ := transformTool.Execute(ctx, map[string]interface{}{
     "operation": "filter",
-    "data":      dataArray,
-    "condition": map[string]interface{}{
-        "field":    "score",
-        "operator": "gte",
-        "value":    80,
-    },
+    "data":      string(jsonData),
+    "field":     "score",
+    "condition": "gt:80",
 })
 
-// Map to extract field
+// Extract names
 result, _ := transformTool.Execute(ctx, map[string]interface{}{
     "operation": "map",
-    "data":      dataArray,
-    "transform": "extract_field",
+    "data":      string(jsonData),
+    "map_type":  "extract_field",
     "field":     "name",
 })
 
-// Reduce to sum
+// Calculate average
 result, _ := transformTool.Execute(ctx, map[string]interface{}{
-    "operation": "reduce",
-    "data":      dataArray,
-    "reducer":   "sum",
-    "field":     "amount",
+    "operation":   "reduce",
+    "data":        string(jsonData),
+    "reduce_type": "average",
+    "field":       "score",
 })
 ```
 
-## Key Features
+## Type Assertions
 
-### JSONPath Support
-- Object navigation: `$.store.book`
-- Array indexing: `$.store.book[0]`
-- Wildcards: `$.store.book[*].author`
-- Filters: `$.store.book[?(@.price < 10)]`
-- Recursive descent: `$..author`
-
-### CSV Operations
-- **Filtering Operators**: eq, ne, contains, starts_with, ends_with, gt, lt, gte, lte
-- **Statistics**: count, sum, average, min, max, standard deviation
-- **Transformations**: column selection, sorting, JSON conversion
-
-### XML Features
-- Element selection by tag name
-- Attribute queries with @ prefix
-- Nested element navigation
-- Preserve or ignore attributes in JSON conversion
-
-### Transform Operations
-- **Filter**: Complex conditions with AND/OR logic
-- **Map**: Field extraction, case conversion, type conversion
-- **Reduce**: Aggregation operations
-- **Group**: Group by field values
-- **Sort**: Ascending/descending by field
-- **Unique**: Remove duplicates
-
-## Integration with Agents
-
-Data tools can be used with agents for data processing workflows:
-
+When handling tool outputs, use the correct struct types:
 ```go
-agent := workflow.NewAgent(
-    "data-processor",
-    provider,
-    workflow.WithTools(
-        tools.MustGetTool("json_process"),
-        tools.MustGetTool("csv_process"),
-        tools.MustGetTool("data_transform"),
-    ),
-)
+// JSON Process
+if output, ok := result.(*data.JSONProcessOutput); ok {
+    fmt.Printf("Result: %v\n", output.Result)
+}
 
-// Agent can now process and analyze data
-response, _ := agent.Run(ctx, workflow.UserMessage(
-    "Load the CSV file, filter for high-value customers, and calculate statistics",
-))
+// CSV Process
+if output, ok := result.(*data.CSVProcessOutput); ok {
+    fmt.Printf("Rows: %d, Columns: %v\n", output.RowCount, output.Columns)
+}
+
+// XML Process
+if output, ok := result.(*data.XMLProcessOutput); ok {
+    fmt.Printf("Root: %s, Result: %v\n", output.RootElement, output.Result)
+}
+
+// Data Transform
+if output, ok := result.(*data.DataTransformOutput); ok {
+    fmt.Printf("Items: %d, Result: %v\n", output.ItemCount, output.Result)
+}
 ```
+
+## Real-World Use Cases
+
+1. **API Response Processing**: Extract and transform data from JSON APIs
+2. **CSV Report Analysis**: Filter and calculate statistics on CSV exports
+3. **Configuration Processing**: Parse and query XML/JSON config files
+4. **Data Pipeline**: Chain tools for ETL operations
+5. **Log Analysis**: Process structured log data
 
 ## Performance Considerations
 
-- These tools process data in-memory
-- For large datasets, consider streaming or chunking
-- JSONPath queries are optimized for common patterns
-- CSV parsing handles quoted fields and escape characters
+- All tools process data in-memory (no streaming)
+- Large datasets may require chunking
+- Type conversions are handled automatically where possible
+- Error handling adds minimal overhead
 
-## Common Use Cases
+## Integration with Agents
 
-1. **Data Analysis**: Filter, aggregate, and analyze structured data
-2. **ETL Operations**: Extract, transform, and load data between formats
-3. **API Response Processing**: Parse and extract data from JSON APIs
-4. **Report Generation**: Transform raw data into summary statistics
-5. **Configuration Management**: Process XML/JSON config files
+```go
+agent := workflow.NewAgent(provider).
+    SetSystemPrompt("You are a data analyst assistant.").
+    AddTool(tools.MustGetTool("json_process")).
+    AddTool(tools.MustGetTool("csv_process")).
+    AddTool(tools.MustGetTool("data_transform"))
 
-## Error Handling
+result, _ := agent.Run(ctx, "Analyze the sales CSV and find top performers")
+```
 
-All tools provide detailed error messages for:
-- Invalid data format
-- Malformed queries (JSONPath, XPath)
-- Type mismatches in operations
-- Missing required fields
-- Invalid operator usage
+## Next Steps
+
+- Explore the [agent example](../agent/) to see data tools in workflows
+- Check the [built-in components guide](../../../docs/user-guide/built-in-components.md) for all tools
+- Review tool source code for advanced usage patterns
