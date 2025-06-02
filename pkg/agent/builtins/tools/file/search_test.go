@@ -129,7 +129,9 @@ func TestFileSearchRegex(t *testing.T) {
 2024-01-31 10:00:03 ERROR: Connection timeout
 2024-01-31 10:00:04 INFO: Fallback mode activated`
 
-	os.WriteFile(testFile, []byte(content), 0644)
+	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Test regex search
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -177,7 +179,9 @@ Line 6: MATCH
 Line 7
 Line 8`
 
-	os.WriteFile(testFile, []byte(content), 0644)
+	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Search with context lines
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -231,8 +235,12 @@ func TestFileSearchDirectory(t *testing.T) {
 
 	for path, content := range files {
 		fullPath := filepath.Join(tempDir, path)
-		os.MkdirAll(filepath.Dir(fullPath), 0755)
-		os.WriteFile(fullPath, []byte(content), 0644)
+		if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Test 1: Non-recursive search
@@ -294,7 +302,9 @@ func TestFileSearchMaxResults(t *testing.T) {
 		lines = append(lines, fmt.Sprintf("Line %d: MATCH", i))
 	}
 	content := strings.Join(lines, "\n")
-	os.WriteFile(testFile, []byte(content), 0644)
+	if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Search with max results limit
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -320,12 +330,16 @@ func TestFileSearchBinaryFiles(t *testing.T) {
 
 	// Create a text file
 	textFile := filepath.Join(tempDir, "text.txt")
-	os.WriteFile(textFile, []byte("FINDME in text"), 0644)
+	if err := os.WriteFile(textFile, []byte("FINDME in text"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Create a binary file with null bytes
 	binaryFile := filepath.Join(tempDir, "binary.dat")
 	binaryContent := []byte{0x00, 0x01, 0x02, 'F', 'I', 'N', 'D', 'M', 'E', 0x00}
-	os.WriteFile(binaryFile, binaryContent, 0644)
+	if err := os.WriteFile(binaryFile, binaryContent, 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Search should skip binary file
 	result, err := tool.Execute(ctx, map[string]interface{}{

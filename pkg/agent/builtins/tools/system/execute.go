@@ -221,11 +221,8 @@ func ExecuteCommand() domain.Tool {
 			}
 
 			// Default to safe mode
-			if params.SafeMode || params.SafeMode == false {
-				// SafeMode was explicitly set
-			} else {
-				params.SafeMode = true
-			}
+			// Since SafeMode is a bool, it's always either true or false
+			// We can't detect if it was explicitly set, so we'll just use its value
 
 			// Validate command in safe mode
 			if params.SafeMode {

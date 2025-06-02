@@ -31,7 +31,10 @@
 
 ## Architecture & Built-in Components for next release
 - [ ] P2: Build useful built-in tools
-  - [ ] Phase 2.5: Date, Time Tools
+  - [ ] Phase 2.5: Date, Time Tools (STARTED)
+    - [x] Implemented DateTimeFormat tool
+    - [x] Implemented DateTimeCompare tool
+    - [ ] Remaining: DateTimeAdd, DateTimeExtract, TimezoneConvert
   - [ ] Phase 2.6: Feed Process Tools (rss, atom and other feeds)
 
 - [ ] P3: Build useful built-in agents (Phase 3 - PENDING)

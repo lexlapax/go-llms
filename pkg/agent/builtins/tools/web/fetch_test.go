@@ -51,7 +51,7 @@ func TestWebFetchBasic(t *testing.T) {
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<!DOCTYPE html>
+		_, _ = w.Write([]byte(`<!DOCTYPE html>
 <html>
 <head>
 	<title>Test Page</title>
@@ -114,7 +114,7 @@ func TestWebFetchTimeout(t *testing.T) {
 		// Sleep longer than our timeout
 		time.Sleep(2 * time.Second)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Too late"))
+		_, _ = w.Write([]byte("Too late"))
 	}))
 	defer server.Close()
 
@@ -173,7 +173,7 @@ func TestWebFetchStatusCodes(t *testing.T) {
 		t.Run(string(rune(tc.statusCode))+" status", func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tc.statusCode)
-				w.Write([]byte("Response body"))
+				_, _ = w.Write([]byte("Response body"))
 			}))
 			defer server.Close()
 
@@ -220,7 +220,7 @@ func TestWebFetchContentTypes(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", tc.contentType)
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(tc.body))
+				_, _ = w.Write([]byte(tc.body))
 			}))
 			defer server.Close()
 

@@ -187,7 +187,7 @@ func HTTPRequest() domain.Tool {
 
 			// Default to following redirects
 			followRedirects := true
-			if params.FollowRedirects == false {
+			if !params.FollowRedirects {
 				followRedirects = false
 			}
 

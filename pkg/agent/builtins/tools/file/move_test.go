@@ -89,12 +89,16 @@ func TestFileMoveBasic(t *testing.T) {
 
 	// Test 2: Move to different directory
 	subDir := filepath.Join(tempDir, "subdir")
-	os.Mkdir(subDir, 0755)
+	if err := os.Mkdir(subDir, 0755); err != nil {
+		t.Fatal(err)
+	}
 
 	srcFile2 := filepath.Join(tempDir, "file2.txt")
 	dstFile2 := filepath.Join(subDir, "file2.txt")
 
-	os.WriteFile(srcFile2, []byte("content2"), 0644)
+	if err := os.WriteFile(srcFile2, []byte("content2"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err = tool.Execute(ctx, map[string]interface{}{
 		"source":      srcFile2,
@@ -127,8 +131,12 @@ func TestFileMoveToDirectory(t *testing.T) {
 	targetDir := filepath.Join(tempDir, "target")
 
 	// Create source file and target directory
-	os.WriteFile(srcFile, []byte("content"), 0644)
-	os.Mkdir(targetDir, 0755)
+	if err := os.WriteFile(srcFile, []byte("content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(targetDir, 0755); err != nil {
+		t.Fatal(err)
+	}
 
 	// Move file to directory (should preserve filename)
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -164,8 +172,12 @@ func TestFileMoveOverwrite(t *testing.T) {
 	dstFile := filepath.Join(tempDir, "existing.txt")
 
 	// Create both files
-	os.WriteFile(srcFile, []byte("new content"), 0644)
-	os.WriteFile(dstFile, []byte("old content"), 0644)
+	if err := os.WriteFile(srcFile, []byte("new content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dstFile, []byte("old content"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Test 1: Try without overwrite (should fail)
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -220,10 +232,12 @@ func TestFileMoveCreateDirs(t *testing.T) {
 	dstFile := filepath.Join(tempDir, "deep", "nested", "dir", "dest.txt")
 
 	// Create source file
-	os.WriteFile(srcFile, []byte("content"), 0644)
+	if err := os.WriteFile(srcFile, []byte("content"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Test 1: Without create_dirs (should fail)
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	_, err := tool.Execute(ctx, map[string]interface{}{
 		"source":      srcFile,
 		"destination": dstFile,
 	})
@@ -232,7 +246,7 @@ func TestFileMoveCreateDirs(t *testing.T) {
 	}
 
 	// Test 2: With create_dirs
-	result, err = tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(ctx, map[string]interface{}{
 		"source":      srcFile,
 		"destination": dstFile,
 		"create_dirs": true,
@@ -277,7 +291,9 @@ func TestFileMoveErrors(t *testing.T) {
 
 	// Test 2: Same source and destination
 	srcFile := filepath.Join(tempDir, "same.txt")
-	os.WriteFile(srcFile, []byte("content"), 0644)
+	if err := os.WriteFile(srcFile, []byte("content"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err = tool.Execute(ctx, map[string]interface{}{
 		"source":      srcFile,
@@ -305,9 +321,15 @@ func TestFileMoveDirectory(t *testing.T) {
 	dstDir := filepath.Join(tempDir, "dstdir")
 
 	// Create source directory with files
-	os.Mkdir(srcDir, 0755)
-	os.WriteFile(filepath.Join(srcDir, "file1.txt"), []byte("content1"), 0644)
-	os.WriteFile(filepath.Join(srcDir, "file2.txt"), []byte("content2"), 0644)
+	if err := os.Mkdir(srcDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(srcDir, "file1.txt"), []byte("content1"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(srcDir, "file2.txt"), []byte("content2"), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Move entire directory
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -349,7 +371,9 @@ func TestFileMovePreserveAttributes(t *testing.T) {
 	dstFile := filepath.Join(tempDir, "dest.txt")
 
 	// Create source file with specific permissions
-	os.WriteFile(srcFile, []byte("content"), 0755)
+	if err := os.WriteFile(srcFile, []byte("content"), 0755); err != nil {
+		t.Fatal(err)
+	}
 
 	// Get original file info
 	srcInfo, _ := os.Stat(srcFile)

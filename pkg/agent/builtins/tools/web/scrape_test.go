@@ -72,7 +72,7 @@ func TestWebScrapeExecution(t *testing.T) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write([]byte(testHTML))
+		_, _ = w.Write([]byte(testHTML))
 	}))
 	defer server.Close()
 
@@ -251,7 +251,7 @@ func TestWebScrapeErrorHandling(t *testing.T) {
 	t.Run("NonHTMLContent", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"test": "json"}`))
+			_, _ = w.Write([]byte(`{"test": "json"}`))
 		}))
 		defer server.Close()
 

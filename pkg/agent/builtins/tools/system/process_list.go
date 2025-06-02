@@ -346,9 +346,7 @@ func extractProcessName(command string) string {
 	}
 
 	// Remove common suffixes
-	if strings.HasSuffix(executable, ".exe") {
-		executable = executable[:len(executable)-4]
-	}
+	executable = strings.TrimSuffix(executable, ".exe")
 
 	return executable
 }

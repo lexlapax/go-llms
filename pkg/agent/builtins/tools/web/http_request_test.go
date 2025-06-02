@@ -59,7 +59,7 @@ func TestHTTPRequestMethods(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -145,7 +145,7 @@ func TestHTTPRequestAuthentication(t *testing.T) {
 				parts := strings.SplitN(string(decoded), ":", 2)
 
 				if len(parts) == 2 && parts[0] == "testuser" && parts[1] == "testpass" {
-					w.Write([]byte("Authenticated"))
+					_, _ = w.Write([]byte("Authenticated"))
 					return
 				}
 			}
@@ -180,7 +180,7 @@ func TestHTTPRequestAuthentication(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			auth := r.Header.Get("Authorization")
 			if auth == "Bearer test-token-123" {
-				w.Write([]byte("Token Valid"))
+				_, _ = w.Write([]byte("Token Valid"))
 				return
 			}
 			w.WriteHeader(http.StatusUnauthorized)
@@ -210,7 +210,7 @@ func TestHTTPRequestAuthentication(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			apiKey := r.Header.Get("X-API-Key")
 			if apiKey == "secret-key-123" {
-				w.Write([]byte("API Key Valid"))
+				_, _ = w.Write([]byte("API Key Valid"))
 				return
 			}
 			w.WriteHeader(http.StatusUnauthorized)
@@ -239,7 +239,7 @@ func TestHTTPRequestAuthentication(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			apiKey := r.URL.Query().Get("api_key")
 			if apiKey == "query-key-456" {
-				w.Write([]byte("Query Key Valid"))
+				_, _ = w.Write([]byte("Query Key Valid"))
 				return
 			}
 			w.WriteHeader(http.StatusUnauthorized)
@@ -275,7 +275,7 @@ func TestHTTPRequestHeaders(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Response-Header", "test-value")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -303,7 +303,9 @@ func TestHTTPRequestHeaders(t *testing.T) {
 
 	// Check echoed headers
 	var echoResp map[string]string
-	json.Unmarshal([]byte(httpResult.Body), &echoResp)
+	if err := json.Unmarshal([]byte(httpResult.Body), &echoResp); err != nil {
+		t.Fatal(err)
+	}
 
 	if echoResp["received_custom_header"] != "custom-value" {
 		t.Errorf("Custom header not received correctly")
@@ -321,7 +323,7 @@ func TestHTTPRequestQueryParams(t *testing.T) {
 		// Echo query parameters
 		params := r.URL.Query()
 		response := map[string][]string(params)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -344,7 +346,9 @@ func TestHTTPRequestQueryParams(t *testing.T) {
 	httpResult := result.(*HTTPRequestResult)
 
 	var queryResp map[string][]string
-	json.Unmarshal([]byte(httpResult.Body), &queryResp)
+	if err := json.Unmarshal([]byte(httpResult.Body), &queryResp); err != nil {
+		t.Fatal(err)
+	}
 
 	// Check query parameters
 	if queryResp["foo"][0] != "bar" {
@@ -367,7 +371,7 @@ func TestHTTPRequestBodyTypes(t *testing.T) {
 			"content_type": contentType,
 			"body":         string(body),
 		}
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -422,7 +426,9 @@ func TestHTTPRequestBodyTypes(t *testing.T) {
 			httpResult := result.(*HTTPRequestResult)
 
 			var resp map[string]string
-			json.Unmarshal([]byte(httpResult.Body), &resp)
+			if err := json.Unmarshal([]byte(httpResult.Body), &resp); err != nil {
+				t.Fatal(err)
+			}
 
 			if resp["content_type"] != tc.expectedType {
 				t.Errorf("Expected content type %s, got %s", tc.expectedType, resp["content_type"])
@@ -442,7 +448,7 @@ func TestHTTPRequestRedirects(t *testing.T) {
 			return
 		}
 		if r.URL.Path == "/target" {
-			w.Write([]byte("Redirect target reached"))
+			_, _ = w.Write([]byte("Redirect target reached"))
 			return
 		}
 	}))

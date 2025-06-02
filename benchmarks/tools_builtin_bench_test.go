@@ -218,7 +218,9 @@ func BenchmarkAtomicFileWrite(b *testing.B) {
 	// Create initial file
 	testFile := filepath.Join(tempDir, "atomic_test.txt")
 	initialContent := "Initial content"
-	os.WriteFile(testFile, []byte(initialContent), 0644)
+	if err := os.WriteFile(testFile, []byte(initialContent), 0644); err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

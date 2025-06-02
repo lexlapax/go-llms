@@ -52,7 +52,11 @@ func TestFileDeleteBasic(t *testing.T) {
 		t.Fatal(err)
 	}
 	tempPath := tempFile.Name()
-	tempFile.Write([]byte("test content"))
+	_, err = tempFile.Write([]byte("test content"))
+	if err != nil {
+		tempFile.Close()
+		t.Fatal(err)
+	}
 	tempFile.Close()
 
 	// Verify file exists
@@ -136,7 +140,10 @@ func TestFileDeleteDirectory(t *testing.T) {
 
 	// Create a file in the directory
 	testFile := filepath.Join(tempDir2, "test.txt")
-	os.WriteFile(testFile, []byte("content"), 0644)
+	err = os.WriteFile(testFile, []byte("content"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	result, err = tool.Execute(ctx, map[string]interface{}{
 		"path": tempDir2,
@@ -298,7 +305,9 @@ func TestFileDeleteForce(t *testing.T) {
 	// Create some files
 	for i := 0; i < 3; i++ {
 		filename := filepath.Join(tempDir, fmt.Sprintf("file%d.txt", i))
-		os.WriteFile(filename, []byte("content"), 0644)
+		if err := os.WriteFile(filename, []byte("content"), 0644); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Test 1: Try without force or confirmation (should fail)

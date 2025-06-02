@@ -172,18 +172,69 @@
 - [x] Proper registration with the tools registry
 - [x] No LLM dependencies - pure data processing
 
-### 2.5 Date Time Tools
-- [ ] research common date, time, timezone, conversion actions and update todo .. read and update this todo list
-- [ ] todays date, 
-- [ ] date time conversion +- days
-- [ ] duration calculation
-- [ ] weekday calculations
-- [ ] timezone convert
-- [ ] parse date time strings
-- [ ] format date time strings
-- [ ] compare date times
-- [ ] business days
-- [ ] unix timestamp conversion
+### 2.5 Date Time Tools ✅ COMPLETED
+- [x] DateTimeNow - get current date/time
+  - [x] Current time in UTC and local timezone
+  - [x] Current time in specific timezone
+  - [x] Current date components (year, month, day, hour, minute, second)
+  - [x] Week number, day of week, day of year, quarter
+  - [x] Unix timestamp (seconds, milliseconds, microseconds, nanoseconds)
+  - [x] ISO 8601 format output
+  - [x] Custom format support
+- [x] DateTimeInfo - get information about dates
+  - [x] Get day of week (name and number)
+  - [x] Get week of year
+  - [x] Get day of year
+  - [x] Get quarter of year
+  - [x] Get days in month
+  - [x] Check if leap year
+  - [x] Start/end of week (configurable week start - Monday or Sunday)
+  - [x] Start/end of month
+  - [x] Start/end of quarter
+  - [x] Start/end of year
+  - [x] Timezone support for all operations
+- [x] DateTimeCalculate - date/time arithmetic
+  - [x] Add/subtract days, hours, minutes, seconds
+  - [x] Add/subtract months with proper month-end handling
+  - [x] Add/subtract years
+  - [x] Calculate duration between two dates (days, hours, minutes, seconds)
+  - [x] Business days calculation (exclude weekends)
+  - [x] Add/subtract business days
+  - [x] Find next/previous weekday
+  - [x] Age calculation (years, months, days)
+  - [x] Timezone-aware calculations
+- [x] DateTimeParse - parse and validate date/time strings
+  - [x] Parse common formats (RFC3339, ISO 8601, etc.)
+  - [x] Parse custom formats with layout strings
+  - [x] Auto-detect common formats
+  - [x] Parse with timezone information
+  - [x] Parse relative dates ("yesterday", "next Monday", "in 3 days")
+  - [x] Parse Unix timestamps
+  - [x] Validate date strings (return error for invalid dates)
+  - [x] Comprehensive error messages
+- [x] DateTimeFormat - format date/time to strings
+  - [x] Format to standard formats (RFC3339, ISO 8601, etc.)
+  - [x] Format with custom layout strings
+  - [x] Localized formatting (month names, day names)
+  - [x] Human-readable relative time ("2 hours ago", "in 3 days")
+  - [x] Multiple format outputs in single call
+  - [x] Support for Spanish, French, German, Italian, Portuguese, Russian locales
+  - [x] Timezone-aware formatting
+- [x] DateTimeConvert - timezone and format conversions
+  - [x] Convert between timezones
+  - [x] List available timezones with filtering
+  - [x] Convert to/from Unix timestamps (seconds, milliseconds, microseconds, nanoseconds)
+  - [x] DST (Daylight Saving Time) handling and information
+  - [x] Timezone offset information
+  - [x] Comprehensive timezone metadata
+- [x] DateTimeCompare - compare dates and times
+  - [x] Compare two dates (before, after, equal) with time difference
+  - [x] Check if same day, week, month, or year
+  - [x] Check if dates are within a range
+  - [x] Sort multiple dates (ascending/descending)
+  - [x] Find earliest/latest date from a list
+  - [x] Timezone-aware comparisons
+  - [x] Human-readable difference output
 
 ### 2.6 Feed Process tools (rss, atom and other feeds)
 - [ ] research common feed actions and needed tools  and create todo

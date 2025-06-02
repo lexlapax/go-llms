@@ -153,9 +153,11 @@ func WebScrape() domain.Tool {
 				params.Timeout = 30
 			}
 			// Default to extracting everything unless explicitly disabled
-			shouldExtractText := params.ExtractText || (params.ExtractText == false && params.ExtractLinks == false && params.ExtractMeta == false)
-			shouldExtractLinks := params.ExtractLinks || (params.ExtractText == false && params.ExtractLinks == false && params.ExtractMeta == false)
-			shouldExtractMeta := params.ExtractMeta || (params.ExtractText == false && params.ExtractLinks == false && params.ExtractMeta == false)
+			// If all are false, enable all (default behavior)
+			allFalse := !params.ExtractText && !params.ExtractLinks && !params.ExtractMeta
+			shouldExtractText := params.ExtractText || allFalse
+			shouldExtractLinks := params.ExtractLinks || allFalse
+			shouldExtractMeta := params.ExtractMeta || allFalse
 
 			// Validate URL
 			parsedURL, err := url.Parse(params.URL)

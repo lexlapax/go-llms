@@ -4,7 +4,6 @@
 package data
 
 import (
-	"bytes"
 	"context"
 	"encoding/csv"
 	"encoding/json"
@@ -518,26 +517,6 @@ func csvToJSON(data, delimiter string, hasHeaders bool) (*CSVProcessOutput, erro
 		RowCount: parseResult.RowCount,
 		Columns:  parseResult.Columns,
 	}, nil
-}
-
-// Helper function to write CSV
-func writeCSV(records [][]string, delimiter string) (string, error) {
-	var buf bytes.Buffer
-	writer := csv.NewWriter(&buf)
-	writer.Comma = rune(delimiter[0])
-
-	for _, record := range records {
-		if err := writer.Write(record); err != nil {
-			return "", err
-		}
-	}
-
-	writer.Flush()
-	if err := writer.Error(); err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
 }
 
 func init() {

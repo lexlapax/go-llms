@@ -21,27 +21,46 @@ This directory contains examples demonstrating the built-in tools system. The ex
 
 **When to use**: When you need to understand the full capabilities of file tools.
 
-## Future Built-in Examples (Planned)
+## builtins-datetime-tools/
+**Focus**: Comprehensive date/time operations
+- Current time in various formats and timezones
+- Date parsing with auto-detection and relative dates
+- Date arithmetic and business day calculations
+- Formatting with localization support
+- Timezone conversions with DST handling
+- Date comparisons and sorting
 
-### builtins-web-tools/
-Will demonstrate:
+**When to use**: When you need to work with dates, times, and timezones in your applications.
+
+## builtins-web-tools/
+**Focus**: Web interaction and HTTP operations
 - Web fetching with timeouts and headers
-- Web search across multiple engines
-- Web scraping (when implemented)
-- HTTP request tools (POST, PUT, etc.)
+- Web search using DuckDuckGo
+- Web scraping with CSS selectors
+- Advanced HTTP requests (all methods, auth, custom headers)
+- Response metadata and timing information
 
-### builtins-system-tools/
-Will demonstrate:
-- Command execution with safety controls
-- Environment variable access
-- System information gathering
+**When to use**: When you need to interact with web services, APIs, or scrape web content.
 
-### builtins-data-tools/
-Will demonstrate:
+## builtins-system-tools/
+**Focus**: System interaction and management
+- Command execution with safety controls and timeouts
+- Environment variable access with pattern matching
+- Comprehensive system information gathering
+- Process listing and filtering
+- Cross-platform compatibility
+
+**When to use**: When you need to interact with the operating system, run commands, or gather system information.
+
+## builtins-data-tools/
+**Focus**: Structured data processing
 - JSON processing with JSONPath queries
-- CSV parsing, filtering, and transformation
-- XML parsing with XPath queries
-- Common data transformations (filter, map, reduce)
+- CSV parsing, filtering, and statistics
+- XML parsing with XPath and JSON conversion
+- Common data transformations (filter, map, reduce, sort, group)
+- Type conversions and aggregations
+
+**When to use**: When you need to process, transform, or analyze structured data in various formats.
 
 ## Using Built-in Tools
 
@@ -53,6 +72,7 @@ All built-in tools follow the same pattern:
    import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
    import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/system"
    import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
+   import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/datetime"
    ```
 
 2. **Discover available tools**:

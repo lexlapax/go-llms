@@ -187,6 +187,18 @@
     - [x] Update README files with logging documentation links
     - [x] Add logging section to CLAUDE.md
     - [x] Create CONTRIBUTING.md with logging guidelines
+  - [x] Fixed all linting errors across the codebase (completed January 31, 2025)
+    - [x] Fixed S1002 (boolean comparisons) in execute.go
+    - [x] Fixed S1017 (strings.TrimSuffix usage) in process_list.go
+    - [x] Fixed errcheck issues across multiple test files
+    - [x] Fixed ineffassign issues
+    - [x] Removed unused code (writeCSV function)
+    - [x] Fixed missing newlines at end of files
+  - [x] Created comprehensive examples for built-in tools (completed January 31, 2025)
+    - [x] Created builtins-web-tools example
+    - [x] Created builtins-system-tools example
+    - [x] Created builtins-data-tools example
+    - [x] Updated BUILTINS_EXAMPLES.md to reflect completed examples
   - [x] Phase 2: Standardize Examples (completed)
     - [x] Convert fmt-only examples to use `log` package:
       - [x] gemini/main.go (completed)

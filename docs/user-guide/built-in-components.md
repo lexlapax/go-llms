@@ -24,6 +24,7 @@ import (
     _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
     _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/system"
     _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
+    _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/datetime"
 )
 
 // List all available tools
@@ -36,6 +37,8 @@ for _, entry := range allTools {
 webTools := tools.Tools.ListByCategory("web")
 fileTools := tools.Tools.ListByCategory("file")
 systemTools := tools.Tools.ListByCategory("system")
+dataTools := tools.Tools.ListByCategory("data")
+dateTimeTools := tools.Tools.ListByCategory("datetime")
 
 // Search for tools by name or description
 searchResults := tools.Tools.Search("file")
@@ -174,6 +177,64 @@ fmt.Printf("File content: %s\n", readResult.Content)
    - Reduce operations (sum, count, min, max, average, concat)
    - Additional operations (sort, group_by, unique, reverse)
 
+### Date Time Tools
+
+1. **datetime_now** - Get current date/time
+   - UTC and local timezone support
+   - Custom timezone selection
+   - Date components extraction
+   - Week/quarter/year day calculations
+   - Unix timestamps (all precision levels)
+   - Custom format output
+
+2. **datetime_info** - Get date information
+   - Day/week/month/year information
+   - Leap year detection
+   - Days in month calculation
+   - Period boundaries (start/end of week/month/quarter/year)
+   - Configurable week start (Sunday/Monday)
+   - Full timezone support
+
+3. **datetime_calculate** - Date arithmetic
+   - Add/subtract time units (days, hours, minutes, seconds)
+   - Month/year arithmetic with proper handling
+   - Duration calculations between dates
+   - Business day calculations
+   - Next/previous weekday finding
+   - Age calculations
+   - Timezone-aware operations
+
+4. **datetime_parse** - Parse date/time strings
+   - Auto-detect common formats
+   - Custom format support
+   - Relative date parsing ("yesterday", "next Monday", "in 3 days")
+   - Unix timestamp parsing
+   - Timezone parsing
+   - Comprehensive validation
+
+5. **datetime_format** - Format dates
+   - Standard formats (RFC3339, ISO 8601, Kitchen, etc.)
+   - Custom format strings
+   - Localized formatting (Spanish, French, German, Italian, Portuguese, Russian)
+   - Relative time ("2 hours ago", "in 3 days")
+   - Multiple formats in single call
+   - Timezone-aware formatting
+
+6. **datetime_convert** - Convert dates/times
+   - Timezone conversions with DST handling
+   - List available timezones
+   - Unix timestamp conversions (all precision levels)
+   - DST information and detection
+   - Timezone offset information
+
+7. **datetime_compare** - Compare dates
+   - Before/after/equal comparisons
+   - Same period checks (day/week/month/year)
+   - Range checks
+   - Sort multiple dates
+   - Find earliest/latest dates
+   - Human-readable time differences
+
 ## Tool Metadata
 
 Each tool provides rich metadata:
@@ -216,6 +277,7 @@ import (
     "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
     _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
     _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
+    _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/datetime"
 )
 
 // Create an agent with built-in tools

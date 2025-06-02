@@ -158,13 +158,21 @@ func TestFileListFiltering(t *testing.T) {
 	mediumFile := filepath.Join(tempDir, "medium.txt")
 	largeFile := filepath.Join(tempDir, "large.txt")
 
-	os.WriteFile(smallFile, []byte("small"), 0644)
-	os.WriteFile(mediumFile, make([]byte, 1024), 0644) // 1KB
-	os.WriteFile(largeFile, make([]byte, 10240), 0644) // 10KB
+	if err := os.WriteFile(smallFile, []byte("small"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(mediumFile, make([]byte, 1024), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(largeFile, make([]byte, 10240), 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Modify times for time-based filtering
 	oldTime := time.Now().Add(-48 * time.Hour)
-	os.Chtimes(smallFile, oldTime, oldTime)
+	if err := os.Chtimes(smallFile, oldTime, oldTime); err != nil {
+		t.Fatal(err)
+	}
 
 	tool := FileList()
 	ctx := context.Background()
@@ -215,7 +223,9 @@ func TestFileListSorting(t *testing.T) {
 
 	for _, f := range files {
 		time.Sleep(f.sleep) // Ensure different modification times
-		os.WriteFile(filepath.Join(tempDir, f.name), []byte(f.content), 0644)
+		if err := os.WriteFile(filepath.Join(tempDir, f.name), []byte(f.content), 0644); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	tool := FileList()
@@ -320,7 +330,9 @@ func TestFileListMaxResults(t *testing.T) {
 	// Create many files
 	for i := 0; i < 20; i++ {
 		filename := fmt.Sprintf("file%02d.txt", i)
-		os.WriteFile(filepath.Join(tempDir, filename), []byte("content"), 0644)
+		if err := os.WriteFile(filepath.Join(tempDir, filename), []byte("content"), 0644); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	tool := FileList()
@@ -358,7 +370,9 @@ func TestFileListExtensions(t *testing.T) {
 	}
 
 	for _, f := range files {
-		os.WriteFile(filepath.Join(tempDir, f), []byte("content"), 0644)
+		if err := os.WriteFile(filepath.Join(tempDir, f), []byte("content"), 0644); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	tool := FileList()
