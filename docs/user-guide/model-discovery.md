@@ -32,6 +32,33 @@ pkg/util/llmutil/
         └── file_cache.go       # File-based caching system
 ```
 
+### Provider API Support
+
+The model discovery system interfaces with provider APIs to retrieve available models:
+
+- **OpenAI**: Full API support via `GET /models` endpoint
+  - Returns detailed list with model IDs, owners, and permissions
+  - Provides comprehensive model metadata
+  
+- **Anthropic**: No public API endpoint for model listing
+  - Uses hardcoded model data maintained within the library
+  - Includes all Claude 3 models (Opus, Sonnet, Haiku)
+  - Requires manual updates when new models are released
+  
+- **Google Gemini**: Full API support via Google AI API
+  - Returns available Gemini models (1.5-pro, 1.5-flash, etc.)
+  - Provides model capabilities and constraints
+
+### Design Decisions
+
+The model discovery system is implemented as a dedicated package separate from the core Provider interface. This approach was chosen because:
+
+1. **Separation of Concerns**: Model discovery is distinct from model usage/generation
+2. **Provider Inconsistency**: Not all providers offer model listing APIs
+3. **Flexibility**: Allows provider-specific attributes and extensions
+4. **Clean Interface**: Keeps the core Provider interface focused on generation
+5. **Better Testing**: Clear boundaries enable better mocking and testing
+
 ## Quick Start
 
 ### Basic Model Discovery
