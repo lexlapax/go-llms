@@ -62,6 +62,17 @@ This directory contains examples demonstrating the built-in tools system. The ex
 
 **When to use**: When you need to process, transform, or analyze structured data in various formats.
 
+## builtins-feed-tools/
+**Focus**: Feed processing and syndication
+- Fetching RSS, Atom, and JSON Feed formats
+- Auto-discovering feeds from websites
+- Filtering feed items by keywords, dates, and categories
+- Aggregating multiple feeds into one
+- Converting between feed formats
+- Extracting specific data for analysis
+
+**When to use**: When you need to work with RSS/Atom feeds, aggregate news sources, or build feed-based applications.
+
 ## Using Built-in Tools
 
 All built-in tools follow the same pattern:
@@ -73,6 +84,7 @@ All built-in tools follow the same pattern:
    import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/system"
    import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
    import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/datetime"
+   import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/feed"
    ```
 
 2. **Discover available tools**:

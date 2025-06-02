@@ -31,7 +31,13 @@
 
 ## Architecture & Built-in Components for next release
 - [ ] P2: Build useful built-in tools
-  - [ ] Phase 2.6: Feed Process Tools (rss, atom and other feeds)
+  - [x] Phase 2.6: Feed Process Tools (rss, atom and other feeds)
+    - [x] FeedFetch - Retrieve and parse feeds from URLs
+    - [x] FeedDiscover - Auto-discover feed URLs from web pages
+    - [x] FeedFilter - Filter feed items by date, keywords, author
+    - [x] FeedAggregate - Combine multiple feeds into one
+    - [x] FeedConvert - Convert between feed formats
+    - [x] FeedExtract - Extract specific data from feeds
 
 - [ ] P3: Build useful built-in agents (Phase 3 - PENDING)
   - [ ] Text Agents
@@ -51,6 +57,11 @@
     - [ ] DataAnalyst - analyze datasets and generate insights
     - [ ] ReportGenerator - create formatted reports
     - [ ] DataCleaner - clean and validate data
+  - [ ] Feed Agents:
+    - [ ] NewsMonitor - monitor news feeds for keywords and topics using LLM
+    - [ ] FeedAggregator - aggregate and deduplicate content from multiple feeds
+    - [ ] FeedSummarizer - summarize feed content using LLM
+    - [ ] ContentCurator - curate and categorize feed content using LLM
   
 - [ ] P4: Build useful multi-agent workflows (Phase 4 - PENDING)
   - [ ] Core Patterns:

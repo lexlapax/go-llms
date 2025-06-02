@@ -236,8 +236,51 @@
   - [x] Timezone-aware comparisons
   - [x] Human-readable difference output
 
-### 2.6 Feed Process tools (rss, atom and other feeds)
-- [ ] research common feed actions and needed tools  and create todo
+### 2.6 Feed Process Tools (RSS, Atom and other feeds) ✅ COMPLETED
+- [x] Research common feed actions and needed tools (completed - see FEED_TOOLS_PLAN.md)
+- [x] FeedFetch - Retrieve and parse feeds from URLs ✅ COMPLETED
+  - [x] Support RSS 2.0, Atom 1.0, JSON Feed 1.1
+  - [x] Automatic format detection
+  - [x] HTTP handling with proper headers and user agent
+  - [x] Conditional requests (If-Modified-Since, ETags)
+  - [x] Size limits and timeout configuration
+  - [x] Unified output format for all feed types
+  - [x] Comprehensive error handling
+- [x] FeedDiscover - Auto-discover feed URLs from web pages ✅ COMPLETED
+  - [x] Parse HTML for feed link tags
+  - [x] Check common feed URL patterns (/feed, /rss, etc.)
+  - [x] Validate discovered feeds
+  - [x] Return feed type and metadata
+  - [x] Support for multiple feed discovery
+- [x] FeedFilter - Filter feed items by various criteria ✅ COMPLETED
+  - [x] Filter by date range (published/updated)
+  - [x] Keyword matching in title/content/description
+  - [x] Author filtering
+  - [x] Category/tag filtering
+  - [x] Boolean operators (match_all for AND/OR)
+  - [x] Case-sensitive/insensitive options
+  - [x] Limit number of results
+- [x] FeedAggregate - Combine multiple feeds into one ✅ COMPLETED
+  - [x] Merge feeds while detecting duplicates
+  - [x] Sort by date or title
+  - [x] Handle different feed formats transparently
+  - [x] Preserve source feed information
+  - [x] Configurable item limits
+  - [x] Optional metadata merging
+- [x] FeedConvert - Convert between feed formats ✅ COMPLETED
+  - [x] RSS 2.0 ↔ Atom 1.0 conversion
+  - [x] JSON Feed ↔ RSS/Atom conversion
+  - [x] Preserve maximum information during conversion
+  - [x] Pretty-print option for human-readable output
+  - [x] Handle format-specific extensions gracefully
+- [x] FeedExtract - Extract specific data from feeds ✅ COMPLETED
+  - [x] Extract specific fields from items
+  - [x] Support for nested field extraction (author.name)
+  - [x] Flatten nested fields option
+  - [x] Get categories and tags
+  - [x] Extract media content (enclosures)
+  - [x] Get feed-level metadata (with include_metadata option)
+  - [x] Custom field extraction with paths (supports dot notation)
 
 ## Phase 3: Agent Templates (Week 3)
 
@@ -261,6 +304,12 @@
 - [ ] DataAnalyst - analyze datasets and generate insights
 - [ ] ReportGenerator - create formatted reports
 - [ ] DataCleaner - clean and validate data
+
+### 3.5 Feed Agents
+- [ ] NewsMonitor - monitor news feeds for keywords and topics using LLM
+- [ ] FeedAggregator - aggregate and deduplicate content from multiple feeds
+- [ ] FeedSummarizer - summarize feed content using LLM
+- [ ] ContentCurator - curate and categorize feed content using LLM
 
 ## Phase 4: Workflow Patterns (Week 4)
 

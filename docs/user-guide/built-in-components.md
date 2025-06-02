@@ -235,6 +235,55 @@ fmt.Printf("File content: %s\n", readResult.Content)
    - Find earliest/latest dates
    - Human-readable time differences
 
+### Feed Tools
+
+1. **feed_fetch** - Retrieve and parse feeds
+   - Support for RSS 2.0, Atom 1.0, JSON Feed 1.1
+   - Automatic format detection
+   - HTTP handling with proper user agents
+   - Conditional requests (If-Modified-Since, ETags)
+   - Size and timeout limits
+   - Unified output format for all feed types
+
+2. **feed_discover** - Auto-discover feed URLs
+   - Parse HTML for feed link tags
+   - Check common feed URL patterns (/feed, /rss, etc.)
+   - Validate discovered feeds with HEAD requests
+   - Return feed type and metadata
+   - Support for relative URL resolution
+
+3. **feed_filter** - Filter feed items
+   - Filter by date range (published/updated)
+   - Keyword matching in title/content/description
+   - Author filtering
+   - Category/tag filtering
+   - Match all/any logic for multiple criteria
+   - Case-sensitive/insensitive options
+   - Limit number of results
+
+4. **feed_aggregate** - Combine multiple feeds
+   - Merge feeds while detecting duplicates
+   - Sort by date or title
+   - Remove duplicates by URL or content hash
+   - Optional metadata merging
+   - Configurable item limits
+
+5. **feed_convert** - Convert between formats
+   - RSS 2.0 ↔ Atom 1.0 conversion
+   - JSON Feed ↔ RSS/Atom conversion
+   - Pretty-print option for human-readable output
+   - Content inclusion control
+   - Preserve maximum information during conversion
+
+6. **feed_extract** - Extract data from feeds
+   - Extract specific fields from items
+   - Nested field extraction (author.name)
+   - Flatten nested fields option
+   - Get categories and tags
+   - Extract media content (enclosures)
+   - Feed-level metadata extraction
+   - Custom field extraction with dot notation
+
 ## Tool Metadata
 
 Each tool provides rich metadata:
@@ -379,5 +428,51 @@ The built-in component system will expand to include:
 - Research workflows
 - Code review workflows
 - Data processing pipelines
+
+## Using Feed Tools
+
+Feed tools are designed to work together for comprehensive feed processing:
+
+```go
+import (
+    "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/feed"
+)
+
+// Discover feeds from a website
+discover := feed.FeedDiscover()
+result, _ := discover.Execute(ctx, map[string]interface{}{
+    "url": "https://example.com",
+})
+
+// Fetch and parse a feed
+fetch := feed.FeedFetch()
+result, _ := fetch.Execute(ctx, map[string]interface{}{
+    "url": "https://example.com/rss",
+    "max_items": 10,
+})
+
+// Filter items by criteria
+filter := feed.FeedFilter()
+result, _ := filter.Execute(ctx, map[string]interface{}{
+    "feed": fetchResult.Feed,
+    "keywords": []string{"technology", "AI"},
+    "after_date": "2024-01-01",
+})
+
+// Convert to different format
+convert := feed.FeedConvert()
+result, _ := convert.Execute(ctx, map[string]interface{}{
+    "feed": filterResult.Feed,
+    "target_type": "json",
+    "pretty": true,
+})
+```
+
+### Common Feed Processing Workflows
+
+1. **News Aggregation**: Fetch multiple feeds → Aggregate → Filter by date → Extract titles and links
+2. **Content Monitoring**: Discover feeds → Filter by keywords → Convert to unified format
+3. **Podcast Management**: Fetch podcast feeds → Extract enclosures → Filter by date
+4. **Feed Migration**: Fetch old format → Convert to new format → Validate output
 
 Stay tuned for updates as we expand the built-in component library!

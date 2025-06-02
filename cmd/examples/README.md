@@ -76,6 +76,73 @@ Deep dive into enhanced file operation tools.
 cd builtins-file-tools && go run main.go
 ```
 
+#### [**Built-ins Web Tools**](builtins-web-tools/)
+Comprehensive web interaction tools.
+
+**Features:**
+- Web page fetching with smart parsing
+- DuckDuckGo search integration
+- Advanced web scraping
+- Custom HTTP requests
+
+```bash
+cd builtins-web-tools && go run main.go
+```
+
+#### [**Built-ins System Tools**](builtins-system-tools/)
+System information and command execution tools.
+
+**Features:**
+- Safe command execution
+- Environment variable access
+- System information gathering
+- Process listing
+
+```bash
+cd builtins-system-tools && go run main.go
+```
+
+#### [**Built-ins Data Tools**](builtins-data-tools/)
+Powerful data processing and transformation tools.
+
+**Features:**
+- JSON processing with JSONPath
+- CSV parsing and transformation
+- XML to JSON conversion
+- Generic data transformations
+
+```bash
+cd builtins-data-tools && go run main.go
+```
+
+#### [**Built-ins DateTime Tools**](builtins-datetime-tools/)
+Comprehensive date and time manipulation tools.
+
+**Features:**
+- Current time in any timezone
+- Date arithmetic and comparisons
+- Flexible parsing and formatting
+- Business day calculations
+
+```bash
+cd builtins-datetime-tools && go run main.go
+```
+
+#### [**Built-ins Feed Tools**](builtins-feed-tools/)
+RSS, Atom, and JSON Feed processing tools.
+
+**Features:**
+- Fetch and parse feeds (RSS 2.0, Atom 1.0, JSON Feed)
+- Auto-discover feeds from websites
+- Filter items by keywords, dates, authors
+- Aggregate multiple feeds
+- Convert between feed formats
+- Extract specific data from feeds
+
+```bash
+cd builtins-feed-tools && go run main.go
+```
+
 ### Provider Integration
 
 #### [**OpenAI**](openai/README.md)

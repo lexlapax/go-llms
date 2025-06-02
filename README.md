@@ -544,8 +544,15 @@ The library includes comprehensive example applications that demonstrate key fea
 - [Simple Example](cmd/examples/simple/README.md) - Basic usage with mock providers
 - [Model Info Example](cmd/examples/modelinfo/README.md) - **NEW** - Model discovery and capability information
 - [Provider Options Example](cmd/examples/provider_options/README.md) - Configuration patterns
-- [Built-in Tools Discovery](cmd/examples/builtins-discovery/README.md) - **NEW** - Discover and use built-in tools
-- [Built-in File Tools](cmd/examples/builtins-file-tools/README.md) - **NEW** - Enhanced file operations with built-in tools
+
+**Built-in Tools Examples:**
+- [Built-in Tools Discovery](cmd/examples/builtins-discovery/README.md) - Discover and use built-in tools
+- [Built-in File Tools](cmd/examples/builtins-file-tools/README.md) - Enhanced file operations
+- [Built-in Web Tools](cmd/examples/builtins-web-tools/README.md) - Web fetching, search, and scraping
+- [Built-in System Tools](cmd/examples/builtins-system-tools/README.md) - System information and command execution
+- [Built-in Data Tools](cmd/examples/builtins-data-tools/README.md) - JSON, CSV, XML processing
+- [Built-in DateTime Tools](cmd/examples/builtins-datetime-tools/README.md) - Date and time operations
+- [Built-in Feed Tools](cmd/examples/builtins-feed-tools/README.md) - **NEW** - RSS, Atom, JSON Feed processing
 
 **Provider Integration:**
 - [OpenAI Example](cmd/examples/openai/README.md) - GPT-4o and GPT-4 Turbo integration
@@ -571,7 +578,7 @@ For a complete reference of all documentation, see the [REFERENCE.md](REFERENCE.
 
 ### Project Planning
 
-The following documents provide insight into the project's design and planning:
+The following documents provide insight into the project's origins, design and planning:
 
 - [Design Inspirations](docs/plan/design-inspirations.md) - Key inspirations and design decisions
 - [Coding Practices](docs/plan/coding-practices.md) - Coding standards and guidelines for the project
@@ -610,13 +617,14 @@ The core functionality is fairly complete and working. However, APIs are subject
 #### Changelog
 
 **v0.2.7**
-- ✅ **Built-in Components Implementation (Phases 1-2.5)**
+- ✅ **Built-in Components Implementation (Phases 1-2.6)**
   - Implemented comprehensive registry system with search and discovery
   - Migrated and enhanced all web tools (WebFetch, WebSearch, WebScrape, HTTPRequest)
   - Migrated and enhanced all file tools (ReadFile, WriteFile, FileList, FileDelete, FileMove, FileSearch)
   - Implemented all system tools (ExecuteCommand, GetEnvironmentVariable, GetSystemInfo, ProcessList)
   - Implemented all data tools (JSONProcess, CSVProcess, XMLProcess, DataTransform)
   - Implemented all 7 date time tools (DateTimeNow, DateTimeInfo, DateTimeCalculate, DateTimeParse, DateTimeFormat, DateTimeConvert, DateTimeCompare)
+  - Implemented all 6 feed tools (FeedFetch, FeedDiscover, FeedFilter, FeedAggregate, FeedConvert, FeedExtract)
   - Successfully deprecated and removed common_tools.go
   - All tools have comprehensive tests and documentation
   - Created example applications demonstrating built-in tools usage
@@ -711,7 +719,7 @@ The core functionality is fairly complete and working. However, APIs are subject
 1. **Built-in Components Completion**
    - ✅ Phase 2.4: Data Tools completed (JSONProcess, CSVProcess, XMLProcess, DataTransform)
    - ✅ Phase 2.5: Date, Time Tools completed (all 7 tools: DateTimeNow, DateTimeInfo, DateTimeCalculate, DateTimeParse, DateTimeFormat, DateTimeConvert, DateTimeCompare)
-   - Phase 2.6: Feed Process Tools (RSS, Atom and other feeds)
+   - ✅ Phase 2.6: Feed Process Tools completed (FeedFetch, FeedDiscover, FeedFilter, FeedAggregate, FeedConvert, FeedExtract)
    - Phase 3: Built-in agent templates (WebResearcher, CodeReviewer, DataAnalyst, etc.)
    - Phase 4: Multi-agent workflow patterns (Pipeline, MapReduce, Consensus, etc.)
 2. **Model Context Protocol Support**

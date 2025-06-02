@@ -47,11 +47,14 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [OpenAI API Compatible Providers](/cmd/examples/openai_api_compatible_providers/README.md) - Using OpenRouter and Ollama
 
 ### Built-in Tools Examples
+- [Built-in Components Examples Guide](/cmd/examples/BUILTINS_EXAMPLES.md) - Complete guide to using built-in components
 - [Built-in Tools Discovery](/cmd/examples/builtins-discovery/README.md) - Discover and use built-in tools
 - [Built-in File Tools](/cmd/examples/builtins-file-tools/README.md) - Enhanced file operations with built-in tools
 - [Built-in Web Tools](/cmd/examples/builtins-web-tools/README.md) - Web operations (fetch, search, scrape, HTTP requests)
 - [Built-in System Tools](/cmd/examples/builtins-system-tools/README.md) - System operations (execute commands, environment variables, process list)
 - [Built-in Data Tools](/cmd/examples/builtins-data-tools/README.md) - Data processing (JSON, CSV, XML, transformations)
+- [Built-in DateTime Tools](/cmd/examples/builtins-datetime-tools/README.md) - Date and time operations (parse, format, calculate, compare)
+- [Built-in Feed Tools](/cmd/examples/builtins-feed-tools/README.md) - RSS, Atom, and JSON Feed processing (fetch, filter, aggregate, convert)
 
 ### Advanced Examples
 - [Agent Example](/cmd/examples/agent/README.md) - Agent with tools
@@ -75,6 +78,8 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Coding Practices](/docs/plan/coding-practices.md) - Coding standards and guidelines
 - [Implementation Plan](/docs/plan/implementation-plan.md) - Detailed implementation plan
 - [Project Planning Overview](/docs/plan/README.md) - Overview of planning documents
+- [Built-in Components Implementation Plan](/BUILTIN_COMPONENTS_IMPLEMENTATION_PLAN.md) - Detailed plan for built-in components implementation
+- [Feed Tools Plan](/FEED_TOOLS_PLAN.md) - Design and implementation plan for feed processing tools
 
 ## Contributing
 
