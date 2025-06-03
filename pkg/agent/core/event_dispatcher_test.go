@@ -496,4 +496,3 @@ func BenchmarkConcurrentDispatch(b *testing.B) {
 func sprintf(format string, a ...interface{}) string {
 	return fmt.Sprintf(format, a...)
 }
-

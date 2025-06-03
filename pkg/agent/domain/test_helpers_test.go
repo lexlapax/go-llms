@@ -9,4 +9,3 @@ import "fmt"
 func sprintf(format string, a ...interface{}) string {
 	return fmt.Sprintf(format, a...)
 }
-

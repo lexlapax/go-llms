@@ -575,4 +575,3 @@ func BenchmarkStateConcurrentAccess(b *testing.B) {
 		}
 	})
 }
-
