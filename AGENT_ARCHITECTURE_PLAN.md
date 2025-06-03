@@ -308,10 +308,10 @@ type ToolContext interface {
 ## Migration Strategy
 
 ### Backward Compatibility Approach
-1. Keep existing interfaces in deprecated package
-2. Provide adapters from old to new interfaces
-3. Clear migration documentation
-4. Gradual deprecation over 2-3 releases
+1. Do not keep existing interfaces in deprecated package
+2. do not Provide adapters from old to new interfaces
+3. remove old code
+5. Clean up documentation for changed code under docs/
 
 ### Example Migration
 
