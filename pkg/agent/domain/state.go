@@ -306,16 +306,26 @@ func (s *State) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Role represents the role of a message sender
+type Role string
+
+const (
+	RoleSystem    Role = "system"
+	RoleUser      Role = "user"
+	RoleAssistant Role = "assistant"
+	RoleTool      Role = "tool"
+)
+
 // Message represents a conversation message
 type Message struct {
-	Role      string                 `json:"role"`
+	Role      Role                   `json:"role"`
 	Content   string                 `json:"content"`
 	Metadata  map[string]interface{} `json:"metadata,omitempty"`
 	Timestamp time.Time              `json:"timestamp"`
 }
 
 // NewMessage creates a new message
-func NewMessage(role, content string) Message {
+func NewMessage(role Role, content string) Message {
 	return Message{
 		Role:      role,
 		Content:   content,

@@ -17,7 +17,14 @@ The following document was consolidated into [docs/user-guide/model-discovery.md
 
 - **LIST_MODELS_ANALYSIS.md** - Architecture analysis for adding "List Models" capability to Go-LLMs
 
-These documents are preserved for historical reference and to track the evolution of the built-in components system and model discovery features.
+## Agent Framework Analysis Documentation
+
+The following documents were used in the development of the agent architecture and are now consolidated into [docs/technical/agents.md](/docs/technical/agents.md):
+
+- **analysis-agent-framework-claude.md** - Claude's analysis of agent frameworks and architectural patterns
+- **analysis-agent-framework-gemini.md** - Gemini's comprehensive analysis of agent frameworks, including Google ADK patterns
+
+These documents are preserved for historical reference and to track the evolution of the built-in components system, model discovery features, and agent architecture development.
 
 ## When to Reference These Documents
 
@@ -26,4 +33,7 @@ These documents are preserved for historical reference and to track the evolutio
 - To see detailed examples of specific implementations
 - To understand the migration path from common_tools.go
 
-For current documentation on built-in components, please refer to [docs/technical/built-in-components.md](/docs/technical/built-in-components.md).
+For current documentation:
+- Built-in components: [docs/technical/built-in-components.md](/docs/technical/built-in-components.md)
+- Agent architecture: [docs/technical/agents.md](/docs/technical/agents.md)
+- Model discovery: [docs/user-guide/model-discovery.md](/docs/user-guide/model-discovery.md)

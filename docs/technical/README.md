@@ -9,6 +9,7 @@ This directory contains technical documentation for the Go-LLMs library, focusin
 ## Available Documentation
 
 - [Architecture](architecture.md) - Overview of the library architecture, component structure, and interaction patterns
+- [Agent Architecture](agents.md) - Complete agent architecture documentation including core infrastructure and enhanced components
 - [Performance Optimization](performance.md) - Comprehensive overview of performance optimization strategies
 - [Testing Framework](testing.md) - Detailed overview of error condition testing and stress testing
 - [Benchmarking Framework](benchmarks.md) - Detailed overview of performance benchmarks

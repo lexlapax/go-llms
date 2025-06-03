@@ -32,15 +32,6 @@
 ## Architecture & Built-in Components for next release
 
 ### Agent Architecture Restructuring (NEW - HIGH PRIORITY)
-- [ ] Phase 1.5: Enhanced Core Infrastructure (NEW - Based on Framework Analysis)
-  - [ ] Implement Handoff interface for agent delegation
-  - [ ] Implement Guardrails interface for validation
-  - [ ] Implement generic RunContext for type-safe dependency injection
-  - [ ] Implement EventStream interface with functional operations
-  - [ ] Implement StateValidator interface with built-in validators
-  - [ ] Implement StateTransforms for common transformations
-  - [ ] Implement TracingHook for OpenTelemetry integration
-  - [ ] Add comprehensive tests for new components
 
 - [ ] Phase 2: LLM Agent Migration (Week 2-3)
   - [ ] Implement new LLMAgent based on current DefaultAgent

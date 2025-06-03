@@ -24,6 +24,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 ## Technical Documentation
 
 - [Architecture](/docs/technical/architecture.md) - Overview of the library architecture
+- [Agent Architecture](/docs/technical/agents.md) - Complete agent architecture and implementation details
 - [Built-in Components](/docs/technical/built-in-components.md) - Architecture and design of built-in tools, agents, and workflows
 - [Performance Optimization](/docs/technical/performance.md) - Performance optimization strategies
 - [Multimodal Content Implementation](/docs/technical/multimodal-content.md) - Implementation details for multimodal support
@@ -82,8 +83,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 
 ## Agent Architecture Restructuring
 
-- [Agent Architecture Plan](/AGENT_ARCHITECTURE_PLAN.md) - Comprehensive plan for new agent architecture based on Google ADK
-- [Phase 1 Implementation Plan](/PHASE1_IMPLEMENTATION_PLAN.md) - Detailed implementation plan for core infrastructure
+- [Agent Architecture](/docs/technical/agents.md) - Complete agent architecture documentation including design, implementation, and future plans
 
 ## Contributing
 

@@ -525,6 +525,7 @@ Go-LLMs provides comprehensive documentation for users and contributors:
 ### Technical Documentation
 
 - [Architecture](docs/technical/architecture.md) - Overview of the library architecture
+- [Agent Architecture](docs/technical/agents.md) - Complete agent architecture and implementation details
 - [Built-in Components](docs/technical/built-in-components.md) - Architecture and design of built-in tools, agents, and workflows
 - [Performance Optimization](docs/technical/performance.md) - Performance optimization strategies
 - [Multimodal Content Implementation](docs/technical/multimodal-content.md) - Implementation details for multimodal support
@@ -686,7 +687,7 @@ The core functionality is fairly complete and working. However, APIs are subject
     - `EventDispatcher`: Asynchronous event distribution with filtering
     - `AgentRegistry`: Agent discovery and management
   - All components have thorough test coverage (domain: 52.9%, core: 38.9%)
-  - Created architecture documents: AGENT_ARCHITECTURE_PLAN.md, PHASE1_IMPLEMENTATION_PLAN.md
+  - Created comprehensive architecture documentation: docs/technical/agents.md
   - Laid foundation for next phases: LLM agents, workflow agents, and agent-tool integration
 
 **v0.2.7**
