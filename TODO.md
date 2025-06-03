@@ -30,10 +30,55 @@
     - [ ] P2: Add performance acceptance criteria to CI pipeline (REVISIT)
 
 ## Architecture & Built-in Components for next release
+
+### Agent Architecture Restructuring (NEW - HIGH PRIORITY)
+- [ ] Phase 1: Core Infrastructure (Week 1-2)
+  - [ ] Define new interfaces in `pkg/agent/domain/`
+    - [ ] base_agent.go - Core agent interface
+    - [ ] state.go - State management
+    - [ ] events.go - Event system
+    - [ ] tool.go - Enhanced tool interface
+  - [ ] Implement base agent functionality
+    - [ ] pkg/agent/core/base_agent.go
+    - [ ] State management utilities
+    - [ ] Event system implementation
+
+- [ ] Phase 2: LLM Agent Migration (Week 2-3)
+  - [ ] Implement new LLMAgent based on current DefaultAgent
+  - [ ] Migrate tool integration to new interface
+  - [ ] Add state management capabilities
+  - [ ] Implement agent hierarchy support
+  - [ ] Remove old superfluos code, examples and tests
+
+- [ ] Phase 3: Workflow Agents (Week 3-4)
+  - [ ] Implement workflow agent base
+  - [ ] Create SequentialAgent
+  - [ ] Create ParallelAgent
+  - [ ] Create ConditionalAgent
+  - [ ] Create LoopAgent
+
+- [ ] Phase 4: Agent-Tool Integration (Week 4)
+  - [ ] Implement AgentTool wrapper
+  - [ ] Create tool context system
+  - [ ] Add bidirectional agent-tool conversion utilities
+
+- [ ] Phase 5: Advanced Features (Week 5)
+  - [ ] State persistence and serialization
+  - [ ] Agent discovery and registry
+  - [ ] Advanced merge strategies for parallel agents
+  - [ ] Streaming support for long-running agents
+
+- [ ] Phase 6: Migration and Testing (Week 5-6)
+  - [ ] Create migration guide
+  - [ ] Update all examples
+  - [ ] Comprehensive testing
+  - [ ] Performance benchmarking
+
+### Previous Built-in Components Plan
 - [ ] P2: Build useful built-in tools
   - [x] Phase 2.6: Feed Process Tools (Completed - see TODO-DONE.md)
 
-- [ ] P3: Build useful built-in agents (Phase 3 - PENDING)
+- [ ] P3: Build useful built-in agents (Phase 3 - POSTPONED until after architecture restructuring)
   - [ ] Text Agents
     - [ ] TextSummarize - intelligent summarization using LLM
     - [ ] TextExtract - extract structured data from text
