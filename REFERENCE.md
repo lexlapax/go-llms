@@ -80,6 +80,11 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Implementation Plan](/docs/plan/implementation-plan.md) - Detailed implementation plan
 - [Project Planning Overview](/docs/plan/README.md) - Overview of planning documents
 
+## Agent Architecture Restructuring
+
+- [Agent Architecture Plan](/AGENT_ARCHITECTURE_PLAN.md) - Comprehensive plan for new agent architecture based on Google ADK
+- [Phase 1 Implementation Plan](/PHASE1_IMPLEMENTATION_PLAN.md) - Detailed implementation plan for core infrastructure
+
 ## Contributing
 
 - [Contributing Guidelines](/CONTRIBUTING.md) - How to contribute to the project, including coding standards and logging guidelines

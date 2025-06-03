@@ -29,6 +29,9 @@ This document outlines a comprehensive plan to restructure our agent and workflo
 3. **Composability**: Agents can contain sub-agents and be wrapped as tools
 4. **State Management**: Explicit state passing between agents
 5. **Lifecycle Management**: Standardized execution lifecycle with hooks
+6. **Minimal Core Primitives**: Following OpenAI's approach - Agent, Tool, Handoff, Guardrail, Tracer
+7. **Type-Safe Dependency Injection**: Inspired by Pydantic AI's approach
+8. **Channel-Based Concurrency**: Leveraging Go's strengths for event-driven architecture
 
 ### Interface Hierarchy
 
@@ -405,6 +408,255 @@ assistant := llm.NewLLMAgent("assistant", "Interactive assistant", provider).
             }),
     )
 ```
+
+## Recommended Enhancements
+
+Based on the framework analysis, the following enhancements should be incorporated:
+
+### 1. Handoff Interface
+
+Inspired by OpenAI's approach, implement a dedicated handoff mechanism:
+
+```go
+// pkg/agent/domain/handoff.go
+
+type Handoff interface {
+    // Core handoff functionality
+    Name() string
+    Description() string
+    TargetAgent() string
+    
+    // Handoff execution
+    Execute(ctx context.Context, state *State) (*State, error)
+    
+    // Input transformation
+    TransformInput(state *State) *State
+    FilterMessages(messages []Message) []Message
+}
+
+// HandoffBuilder for fluent configuration
+type HandoffBuilder struct {
+    name         string
+    targetAgent  string
+    description  string
+    inputFilter  func(*State) *State
+    messageFilter func([]Message) []Message
+}
+```
+
+### 2. Guardrails Interface
+
+Implement validation and safety checks:
+
+```go
+// pkg/agent/domain/guardrails.go
+
+type Guardrail interface {
+    Name() string
+    Type() GuardrailType // Input, Output, Both
+    
+    // Validation
+    Validate(ctx context.Context, state *State) error
+    
+    // Async validation with timeout
+    ValidateAsync(ctx context.Context, state *State, timeout time.Duration) <-chan error
+}
+
+type GuardrailType string
+
+const (
+    GuardrailTypeInput  GuardrailType = "input"
+    GuardrailTypeOutput GuardrailType = "output"
+    GuardrailTypeBoth   GuardrailType = "both"
+)
+
+// GuardrailChain for multiple checks
+type GuardrailChain struct {
+    guardrails []Guardrail
+    failFast   bool
+}
+```
+
+### 3. Enhanced RunContext with Generics
+
+Type-safe dependency injection inspired by Pydantic AI:
+
+```go
+// pkg/agent/domain/context.go
+
+type RunContext[D any] struct {
+    context.Context
+    
+    // Dependencies
+    Deps D
+    
+    // Execution metadata
+    RunID      string
+    Retry      int
+    StartTime  time.Time
+    
+    // State access
+    State      *State
+    
+    // Event emission
+    EmitEvent  func(Event)
+}
+
+// Example usage
+type DatabaseDeps struct {
+    DB     *sql.DB
+    Cache  *redis.Client
+    Logger *slog.Logger
+}
+
+agent := NewAgent[DatabaseDeps, CustomerResponse](
+    "customer_service",
+    WithDependencies(dbDeps),
+)
+```
+
+### 4. Built-in State Transforms
+
+Pre-defined state transformation functions:
+
+```go
+// pkg/agent/core/state_transforms.go
+
+var (
+    // FilterTransform removes keys matching pattern
+    FilterTransform = func(pattern string) StateTransform {
+        return func(ctx context.Context, state *State) (*State, error) {
+            // Implementation
+        }
+    }
+    
+    // MapTransform applies function to all values
+    MapTransform = func(fn func(interface{}) interface{}) StateTransform {
+        return func(ctx context.Context, state *State) (*State, error) {
+            // Implementation
+        }
+    }
+    
+    // ValidateTransform ensures state matches schema
+    ValidateTransform = func(schema *schema.Schema) StateTransform {
+        return func(ctx context.Context, state *State) (*State, error) {
+            // Implementation
+        }
+    }
+)
+```
+
+### 5. Event Stream Interface
+
+Enhanced event handling with filtering and transformation:
+
+```go
+// pkg/agent/domain/event_stream.go
+
+type EventStream interface {
+    // Core operations
+    Filter(predicate EventPredicate) EventStream
+    Map(transform EventTransform) EventStream
+    Reduce(reducer EventReducer, initial interface{}) interface{}
+    
+    // Stream control
+    Take(n int) EventStream
+    TakeUntil(predicate EventPredicate) EventStream
+    Timeout(duration time.Duration) EventStream
+    
+    // Consumption
+    ForEach(handler EventHandler) error
+    Collect() ([]Event, error)
+    First() (Event, error)
+}
+
+type EventPredicate func(Event) bool
+type EventTransform func(Event) Event
+type EventReducer func(interface{}, Event) interface{}
+```
+
+### 6. State Validators
+
+Structured validation for state transitions:
+
+```go
+// pkg/agent/domain/state_validator.go
+
+type StateValidator interface {
+    Validate(state *State) error
+}
+
+type StateValidatorFunc func(state *State) error
+
+// Built-in validators
+var (
+    RequiredKeysValidator = func(keys ...string) StateValidator {
+        return StateValidatorFunc(func(state *State) error {
+            for _, key := range keys {
+                if _, ok := state.Get(key); !ok {
+                    return fmt.Errorf("required key missing: %s", key)
+                }
+            }
+            return nil
+        })
+    }
+    
+    SchemaValidator = func(s *schema.Schema) StateValidator {
+        return StateValidatorFunc(func(state *State) error {
+            return s.Validate(state.Values())
+        })
+    }
+)
+```
+
+### 7. Tracing Support
+
+OpenTelemetry integration for observability:
+
+```go
+// pkg/agent/core/tracing.go
+
+type TracingHook struct {
+    tracer trace.Tracer
+}
+
+func (h *TracingHook) BeforeRun(ctx context.Context, agent BaseAgent, state *State) (context.Context, error) {
+    ctx, span := h.tracer.Start(ctx, fmt.Sprintf("agent.%s.run", agent.Name()),
+        trace.WithAttributes(
+            attribute.String("agent.id", agent.ID()),
+            attribute.String("agent.type", string(agent.Type())),
+        ),
+    )
+    return ctx, nil
+}
+
+func (h *TracingHook) AfterRun(ctx context.Context, agent BaseAgent, state *State, result *State, err error) error {
+    span := trace.SpanFromContext(ctx)
+    if err != nil {
+        span.RecordError(err)
+        span.SetStatus(codes.Error, err.Error())
+    } else {
+        span.SetStatus(codes.Ok, "")
+    }
+    span.End()
+    return nil
+}
+```
+
+## Updated Design Principles
+
+Building on the original principles and incorporating insights from the framework analysis:
+
+1. **Unified Base Agent**: All agents derive from a common `BaseAgent` interface
+2. **Separation of Concerns**: Clear distinction between LLM agents and workflow agents
+3. **Composability**: Agents can contain sub-agents and be wrapped as tools
+4. **State Management**: Explicit state passing between agents with validation
+5. **Lifecycle Management**: Standardized execution lifecycle with hooks
+6. **Minimal Core Primitives**: Following OpenAI's approach - Agent, Tool, Handoff, Guardrail, Tracer
+7. **Type-Safe Dependency Injection**: Inspired by Pydantic AI's approach with generics
+8. **Channel-Based Concurrency**: Leveraging Go's strengths for event-driven architecture
+9. **Event Streams**: Functional programming patterns for event processing
+10. **Built-in Observability**: OpenTelemetry integration from the start
 
 ## Conclusion
 

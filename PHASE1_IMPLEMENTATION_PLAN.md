@@ -14,12 +14,19 @@ pkg/agent/
 │   ├── events.go
 │   ├── config.go
 │   ├── artifact.go
-│   └── errors.go
+│   ├── errors.go
+│   ├── handoff.go       # NEW: Handoff interface
+│   ├── guardrails.go    # NEW: Guardrails interface
+│   ├── context.go       # NEW: Generic RunContext
+│   ├── event_stream.go  # NEW: Event stream operations
+│   └── state_validator.go # NEW: State validation
 ├── core/            # Base implementations
 │   ├── base_agent_impl.go
 │   ├── state_manager.go
 │   ├── event_dispatcher.go
-│   └── agent_registry.go
+│   ├── agent_registry.go
+│   ├── state_transforms.go # NEW: Built-in transforms
+│   └── tracing.go        # NEW: OpenTelemetry support
 └── utils/           # Utility functions
     ├── state_utils.go
     └── event_utils.go
@@ -979,6 +986,515 @@ func (ed *eventDispatcher) matchesFilters(event domain.Event, filters []domain.E
 }
 ```
 
+### 8. Handoff Interface (`pkg/agent/domain/handoff.go`)
+
+```go
+package domain
+
+import (
+    "context"
+)
+
+// Handoff represents a delegation mechanism between agents
+type Handoff interface {
+    // Core identification
+    Name() string
+    Description() string
+    TargetAgent() string
+    
+    // Handoff execution
+    Execute(ctx context.Context, state *State) (*State, error)
+    
+    // Input transformation
+    TransformInput(state *State) *State
+    FilterMessages(messages []Message) []Message
+}
+
+// HandoffBuilder provides fluent configuration
+type HandoffBuilder struct {
+    name          string
+    targetAgent   string
+    description   string
+    inputFilter   func(*State) *State
+    messageFilter func([]Message) []Message
+}
+
+func NewHandoffBuilder(name, targetAgent string) *HandoffBuilder {
+    return &HandoffBuilder{
+        name:        name,
+        targetAgent: targetAgent,
+    }
+}
+
+func (hb *HandoffBuilder) WithDescription(desc string) *HandoffBuilder {
+    hb.description = desc
+    return hb
+}
+
+func (hb *HandoffBuilder) WithInputFilter(filter func(*State) *State) *HandoffBuilder {
+    hb.inputFilter = filter
+    return hb
+}
+
+func (hb *HandoffBuilder) WithMessageFilter(filter func([]Message) []Message) *HandoffBuilder {
+    hb.messageFilter = filter
+    return hb
+}
+
+func (hb *HandoffBuilder) Build() Handoff {
+    return &handoffImpl{
+        name:          hb.name,
+        targetAgent:   hb.targetAgent,
+        description:   hb.description,
+        inputFilter:   hb.inputFilter,
+        messageFilter: hb.messageFilter,
+    }
+}
+```
+
+### 9. Guardrails Interface (`pkg/agent/domain/guardrails.go`)
+
+```go
+package domain
+
+import (
+    "context"
+    "time"
+)
+
+// GuardrailType represents when the guardrail is applied
+type GuardrailType string
+
+const (
+    GuardrailTypeInput  GuardrailType = "input"
+    GuardrailTypeOutput GuardrailType = "output"
+    GuardrailTypeBoth   GuardrailType = "both"
+)
+
+// Guardrail validates agent inputs/outputs
+type Guardrail interface {
+    Name() string
+    Type() GuardrailType
+    
+    // Validation
+    Validate(ctx context.Context, state *State) error
+    
+    // Async validation with timeout
+    ValidateAsync(ctx context.Context, state *State, timeout time.Duration) <-chan error
+}
+
+// GuardrailChain runs multiple guardrails
+type GuardrailChain struct {
+    guardrails []Guardrail
+    failFast   bool
+}
+
+func NewGuardrailChain(failFast bool) *GuardrailChain {
+    return &GuardrailChain{
+        guardrails: make([]Guardrail, 0),
+        failFast:   failFast,
+    }
+}
+
+func (gc *GuardrailChain) Add(guardrail Guardrail) *GuardrailChain {
+    gc.guardrails = append(gc.guardrails, guardrail)
+    return gc
+}
+
+func (gc *GuardrailChain) Validate(ctx context.Context, state *State) error {
+    for _, g := range gc.guardrails {
+        if err := g.Validate(ctx, state); err != nil {
+            if gc.failFast {
+                return err
+            }
+        }
+    }
+    return nil
+}
+```
+
+### 10. Enhanced RunContext (`pkg/agent/domain/context.go`)
+
+```go
+package domain
+
+import (
+    "context"
+    "time"
+)
+
+// RunContext provides type-safe dependency injection
+type RunContext[D any] struct {
+    context.Context
+    
+    // Dependencies
+    Deps D
+    
+    // Execution metadata
+    RunID      string
+    Retry      int
+    StartTime  time.Time
+    
+    // State access
+    State      *State
+    
+    // Event emission
+    EmitEvent  func(Event)
+}
+
+// NewRunContext creates a new RunContext
+func NewRunContext[D any](ctx context.Context, deps D, state *State) *RunContext[D] {
+    return &RunContext[D]{
+        Context:   ctx,
+        Deps:      deps,
+        RunID:     generateID(),
+        StartTime: time.Now(),
+        State:     state,
+    }
+}
+
+// WithRetry creates a new context for retry attempt
+func (rc *RunContext[D]) WithRetry(retry int) *RunContext[D] {
+    newCtx := *rc
+    newCtx.Retry = retry
+    return &newCtx
+}
+
+// Example usage types
+type DatabaseDeps struct {
+    DB     interface{} // *sql.DB
+    Cache  interface{} // *redis.Client
+    Logger interface{} // *slog.Logger
+}
+
+type ServiceDeps struct {
+    UserService    interface{}
+    ProductService interface{}
+    OrderService   interface{}
+}
+```
+
+### 11. Event Stream Interface (`pkg/agent/domain/event_stream.go`)
+
+```go
+package domain
+
+import (
+    "time"
+)
+
+// EventStream provides functional operations on event streams
+type EventStream interface {
+    // Core operations
+    Filter(predicate EventPredicate) EventStream
+    Map(transform EventTransform) EventStream
+    Reduce(reducer EventReducer, initial interface{}) interface{}
+    
+    // Stream control
+    Take(n int) EventStream
+    TakeUntil(predicate EventPredicate) EventStream
+    Timeout(duration time.Duration) EventStream
+    
+    // Consumption
+    ForEach(handler EventHandler) error
+    Collect() ([]Event, error)
+    First() (Event, error)
+}
+
+// EventPredicate filters events
+type EventPredicate func(Event) bool
+
+// EventTransform transforms events
+type EventTransform func(Event) Event
+
+// EventReducer reduces events to a single value
+type EventReducer func(interface{}, Event) interface{}
+
+// Common predicates
+var (
+    IsError EventPredicate = func(e Event) bool {
+        return e.Type == EventAgentError || e.Type == EventToolError
+    }
+    
+    IsComplete EventPredicate = func(e Event) bool {
+        return e.Type == EventAgentComplete
+    }
+    
+    ByType = func(eventType EventType) EventPredicate {
+        return func(e Event) bool {
+            return e.Type == eventType
+        }
+    }
+    
+    ByAgent = func(agentName string) EventPredicate {
+        return func(e Event) bool {
+            return e.AgentName == agentName
+        }
+    }
+)
+```
+
+### 12. State Validators (`pkg/agent/domain/state_validator.go`)
+
+```go
+package domain
+
+import (
+    "fmt"
+    
+    sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+)
+
+// StateValidator validates state
+type StateValidator interface {
+    Validate(state *State) error
+}
+
+// StateValidatorFunc is a function adapter
+type StateValidatorFunc func(state *State) error
+
+func (f StateValidatorFunc) Validate(state *State) error {
+    return f(state)
+}
+
+// Built-in validators
+var (
+    // RequiredKeysValidator ensures required keys exist
+    RequiredKeysValidator = func(keys ...string) StateValidator {
+        return StateValidatorFunc(func(state *State) error {
+            for _, key := range keys {
+                if _, ok := state.Get(key); !ok {
+                    return fmt.Errorf("required key missing: %s", key)
+                }
+            }
+            return nil
+        })
+    }
+    
+    // SchemaValidator validates against JSON schema
+    SchemaValidator = func(schema *sdomain.Schema) StateValidator {
+        return StateValidatorFunc(func(state *State) error {
+            return schema.Validate(state.Values())
+        })
+    }
+    
+    // TypeValidator ensures values are of correct type
+    TypeValidator = func(key string, expectedType string) StateValidator {
+        return StateValidatorFunc(func(state *State) error {
+            val, ok := state.Get(key)
+            if !ok {
+                return nil // Key doesn't exist, not a type error
+            }
+            
+            // Type checking logic here
+            actualType := fmt.Sprintf("%T", val)
+            if actualType != expectedType {
+                return fmt.Errorf("key %s: expected type %s, got %s", key, expectedType, actualType)
+            }
+            return nil
+        })
+    }
+    
+    // CompositeValidator combines multiple validators
+    CompositeValidator = func(validators ...StateValidator) StateValidator {
+        return StateValidatorFunc(func(state *State) error {
+            for _, v := range validators {
+                if err := v.Validate(state); err != nil {
+                    return err
+                }
+            }
+            return nil
+        })
+    }
+)
+```
+
+### 13. State Transforms (`pkg/agent/core/state_transforms.go`)
+
+```go
+package core
+
+import (
+    "context"
+    "fmt"
+    "strings"
+    
+    "github.com/lexlapax/go-llms/pkg/agent/domain"
+    sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+)
+
+// Built-in state transformation functions
+var (
+    // FilterTransform removes keys matching pattern
+    FilterTransform = func(pattern string) StateTransform {
+        return func(ctx context.Context, state *domain.State) (*domain.State, error) {
+            result := state.Clone()
+            for key := range state.Values() {
+                if matched, _ := filepath.Match(pattern, key); matched {
+                    result.Delete(key)
+                }
+            }
+            return result, nil
+        }
+    }
+    
+    // MapTransform applies function to all values
+    MapTransform = func(fn func(interface{}) interface{}) StateTransform {
+        return func(ctx context.Context, state *domain.State) (*domain.State, error) {
+            result := state.Clone()
+            for key, value := range state.Values() {
+                result.Set(key, fn(value))
+            }
+            return result, nil
+        }
+    }
+    
+    // ValidateTransform ensures state matches schema
+    ValidateTransform = func(schema *sdomain.Schema) StateTransform {
+        return func(ctx context.Context, state *domain.State) (*domain.State, error) {
+            if err := schema.Validate(state.Values()); err != nil {
+                return nil, fmt.Errorf("state validation failed: %w", err)
+            }
+            return state, nil
+        }
+    }
+    
+    // PrefixKeysTransform adds prefix to all keys
+    PrefixKeysTransform = func(prefix string) StateTransform {
+        return func(ctx context.Context, state *domain.State) (*domain.State, error) {
+            result := domain.NewState()
+            for key, value := range state.Values() {
+                result.Set(prefix+key, value)
+            }
+            return result, nil
+        }
+    }
+    
+    // SelectKeysTransform keeps only specified keys
+    SelectKeysTransform = func(keys ...string) StateTransform {
+        return func(ctx context.Context, state *domain.State) (*domain.State, error) {
+            result := domain.NewState()
+            for _, key := range keys {
+                if value, ok := state.Get(key); ok {
+                    result.Set(key, value)
+                }
+            }
+            return result, nil
+        }
+    }
+)
+```
+
+### 14. Tracing Support (`pkg/agent/core/tracing.go`)
+
+```go
+package core
+
+import (
+    "context"
+    "fmt"
+    
+    "github.com/lexlapax/go-llms/pkg/agent/domain"
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/codes"
+    "go.opentelemetry.io/otel/trace"
+)
+
+// TracingHook provides OpenTelemetry integration
+type TracingHook struct {
+    tracer trace.Tracer
+}
+
+// NewTracingHook creates a new tracing hook
+func NewTracingHook(tracerName string) *TracingHook {
+    return &TracingHook{
+        tracer: otel.Tracer(tracerName),
+    }
+}
+
+// BeforeRun starts a new span
+func (h *TracingHook) BeforeRun(ctx context.Context, agent domain.BaseAgent, state *domain.State) (context.Context, error) {
+    ctx, span := h.tracer.Start(ctx, fmt.Sprintf("agent.%s.run", agent.Name()),
+        trace.WithAttributes(
+            attribute.String("agent.id", agent.ID()),
+            attribute.String("agent.type", string(agent.Type())),
+            attribute.String("agent.name", agent.Name()),
+            attribute.String("state.id", state.ID()),
+        ),
+    )
+    
+    // Add state size as attribute
+    span.SetAttributes(
+        attribute.Int("state.values.count", len(state.Values())),
+        attribute.Int("state.messages.count", len(state.Messages())),
+    )
+    
+    return ctx, nil
+}
+
+// AfterRun completes the span
+func (h *TracingHook) AfterRun(ctx context.Context, agent domain.BaseAgent, state *domain.State, result *domain.State, err error) error {
+    span := trace.SpanFromContext(ctx)
+    if span == nil {
+        return nil
+    }
+    
+    if err != nil {
+        span.RecordError(err)
+        span.SetStatus(codes.Error, err.Error())
+    } else {
+        span.SetStatus(codes.Ok, "")
+        if result != nil {
+            span.SetAttributes(
+                attribute.String("result.id", result.ID()),
+                attribute.Int("result.values.count", len(result.Values())),
+            )
+        }
+    }
+    
+    span.End()
+    return nil
+}
+
+// ToolCallHook traces tool calls
+type ToolCallHook struct {
+    tracer trace.Tracer
+}
+
+func NewToolCallHook(tracerName string) *ToolCallHook {
+    return &ToolCallHook{
+        tracer: otel.Tracer(tracerName),
+    }
+}
+
+func (h *ToolCallHook) BeforeToolCall(ctx context.Context, toolName string, params interface{}) (context.Context, error) {
+    ctx, span := h.tracer.Start(ctx, fmt.Sprintf("tool.%s.call", toolName),
+        trace.WithAttributes(
+            attribute.String("tool.name", toolName),
+        ),
+    )
+    return ctx, nil
+}
+
+func (h *ToolCallHook) AfterToolCall(ctx context.Context, toolName string, result interface{}, err error) error {
+    span := trace.SpanFromContext(ctx)
+    if span == nil {
+        return nil
+    }
+    
+    if err != nil {
+        span.RecordError(err)
+        span.SetStatus(codes.Error, err.Error())
+    } else {
+        span.SetStatus(codes.Ok, "")
+    }
+    
+    span.End()
+    return nil
+}
+```
+
 ## Testing Strategy
 
 ### Unit Tests
@@ -998,6 +1514,31 @@ func (ed *eventDispatcher) matchesFilters(event domain.Event, filters []domain.E
    - Test configuration
    - Test lifecycle methods
 
+4. **Handoff Tests** (`handoff_test.go`)
+   - Test handoff execution
+   - Test input transformation
+   - Test message filtering
+
+5. **Guardrail Tests** (`guardrails_test.go`)
+   - Test validation logic
+   - Test async validation
+   - Test guardrail chains
+
+6. **RunContext Tests** (`context_test.go`)
+   - Test generic type safety
+   - Test dependency injection
+   - Test context propagation
+
+7. **Event Stream Tests** (`event_stream_test.go`)
+   - Test filtering and mapping
+   - Test stream operations
+   - Test timeout behavior
+
+8. **State Validator Tests** (`state_validator_test.go`)
+   - Test built-in validators
+   - Test composite validation
+   - Test error handling
+
 ### Integration Tests
 
 1. **State Flow Tests**
@@ -1009,6 +1550,11 @@ func (ed *eventDispatcher) matchesFilters(event domain.Event, filters []domain.E
    - Test event propagation through agent hierarchy
    - Test event ordering
    - Test error event handling
+
+3. **Tracing Tests**
+   - Test span creation and completion
+   - Test error recording
+   - Test attribute propagation
 
 ## Performance Considerations
 

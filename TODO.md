@@ -32,27 +32,20 @@
 ## Architecture & Built-in Components for next release
 
 ### Agent Architecture Restructuring (NEW - HIGH PRIORITY)
-- [x] Phase 1: Core Infrastructure (Week 1-2) - COMPLETED
-  - [x] Define new interfaces in `pkg/agent/domain/`
-    - [x] base_agent.go - Core agent interface
-    - [x] state.go - State management
-    - [x] events.go - Event system
-    - [x] artifact.go - Artifact types
-    - [x] errors.go - Domain errors
-    - [x] config.go - Configuration
-  - [x] Implement base agent functionality
-    - [x] pkg/agent/core/base_agent_impl.go
-    - [x] State management utilities
-    - [x] Event system implementation
-    - [x] Agent registry implementation
-  - [x] Create comprehensive tests
-    - [x] state_test.go - State tests (all passing)
-    - [x] events_test.go - Event tests (all passing)
-    - [x] state_manager_test.go - State manager tests (all passing)
-    - [x] event_dispatcher_test.go - Event dispatcher tests (all passing)
+- [ ] Phase 1.5: Enhanced Core Infrastructure (NEW - Based on Framework Analysis)
+  - [ ] Implement Handoff interface for agent delegation
+  - [ ] Implement Guardrails interface for validation
+  - [ ] Implement generic RunContext for type-safe dependency injection
+  - [ ] Implement EventStream interface with functional operations
+  - [ ] Implement StateValidator interface with built-in validators
+  - [ ] Implement StateTransforms for common transformations
+  - [ ] Implement TracingHook for OpenTelemetry integration
+  - [ ] Add comprehensive tests for new components
 
 - [ ] Phase 2: LLM Agent Migration (Week 2-3)
   - [ ] Implement new LLMAgent based on current DefaultAgent
+  - [ ] Integrate handoff mechanism for agent delegation
+  - [ ] Add guardrails support for input/output validation
   - [ ] Migrate tool integration to new interface
   - [ ] Add state management capabilities
   - [ ] Implement agent hierarchy support

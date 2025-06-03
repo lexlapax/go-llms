@@ -8,8 +8,15 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 
 **Current Version**: v0.3.0 (Released February 2025)
 
-**Recent Updates** (February 2, 2025):
-- **Documentation Updates**
+**Recent Updates** (February 3, 2025):
+- **Agent Architecture Restructuring Phase 1 - COMPLETED**
+  - Implemented core infrastructure based on Google's Agent Development Kit patterns
+  - Created domain interfaces: BaseAgent, State, Event system, Artifacts, Errors, Config
+  - Implemented core functionality: BaseAgentImpl, StateManager, EventDispatcher, AgentRegistry
+  - Created comprehensive tests with good coverage (domain: 52.9%, core: 38.9%)
+  - All tests passing, code meets linting standards
+  - Created architecture documents: AGENT_ARCHITECTURE_PLAN.md, PHASE1_IMPLEMENTATION_PLAN.md
+- **Documentation Updates** (February 2, 2025)
   - Consolidated LIST_MODELS_ANALYSIS.md into docs/user-guide/model-discovery.md
   - Archived LIST_MODELS_ANALYSIS.md to docs/archives/
   - Updated archives README.md to reference all archived documents
@@ -330,14 +337,21 @@ Debug logging is implemented using build tags, so there's no performance impact 
 
 Based on the TODO.md file, these are the current development priorities:
 
-1. **Model Context Protocol Support**:
+1. **Agent Architecture Restructuring** (Currently Active - HIGH PRIORITY):
+   - Phase 1: Core Infrastructure - COMPLETED (February 3, 2025)
+   - Phase 2: LLM Agent Migration - NEXT PRIORITY
+   - Phase 3: Workflow Agents - PENDING
+   - Phase 4: Agent-Tool Integration - PENDING
+   - Phase 5: Advanced Features - PENDING
+   - Phase 6: Migration and Testing - PENDING
+   
+2. **Model Context Protocol Support**:
    - Add Model Context Protocol Client support for Agents
    - Add Model Context Protocol Server support for Workflows or Agents
    
-2. **Architecture & Built-in Components** (Currently Active):
-   - Phase 2.6: Feed Process Tools - COMPLETED (all 6 tools implemented)
-   - Phase 3: Build useful built-in agents with and without tools - NEXT PRIORITY
-   - Phase 4: Build useful multi-agent workflows - PENDING
+3. **Built-in Agents** (POSTPONED until after architecture restructuring):
+   - Phase 3: Build useful built-in agents with and without tools
+   - Phase 4: Build useful multi-agent workflows
    
 3. **Performance Optimizations** (Marked for REVISIT):
    - Create benchmark harness for A/B testing optimizations
@@ -354,7 +368,13 @@ Based on the TODO.md file, these are the current development priorities:
    
 ## Completed Development Items
 
-1. **Built-in Components Implementation (Completed Phases 1-2.6, February 2, 2025)**:
+1. **Agent Architecture Restructuring Phase 1 (Completed February 3, 2025)**:
+   - Implemented core infrastructure based on Google's Agent Development Kit patterns
+   - Created comprehensive domain interfaces and core implementations
+   - All components have thorough test coverage and pass linting
+   - Successfully laid foundation for LLM agents and workflow agents
+   
+2. **Built-in Components Implementation (Completed Phases 1-2.6, February 2, 2025)**:
    - Phase 1: Implemented comprehensive registry system with search and discovery
    - Phase 2.0-2.3: Migrated and enhanced all web, file, and system tools
    - Phase 2.4: Implemented data processing tools (JSON, CSV, XML, DataTransform)

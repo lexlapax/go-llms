@@ -240,3 +240,26 @@
     - [x] Add error wrapping where beneficial
     - [x] Verify thread safety in all logging paths
     - [x] Update documentation and doc cleanup related to logging throughout all docs in codebase
+
+## Agent Architecture Restructuring (NEW - HIGH PRIORITY)
+- [x] Phase 1: Core Infrastructure (Week 1-2) - COMPLETED (February 3, 2025)
+  - [x] Define new interfaces in `pkg/agent/domain/`
+    - [x] base_agent.go - Core agent interface
+    - [x] state.go - State management
+    - [x] events.go - Event system
+    - [x] artifact.go - Artifact types
+    - [x] errors.go - Domain errors
+    - [x] config.go - Configuration
+  - [x] Implement base agent functionality
+    - [x] pkg/agent/core/base_agent_impl.go
+    - [x] State management utilities
+    - [x] Event system implementation
+    - [x] Agent registry implementation
+  - [x] Create comprehensive tests
+    - [x] state_test.go - State tests (all passing)
+    - [x] events_test.go - Event tests (all passing)
+    - [x] state_manager_test.go - State manager tests (all passing)
+    - [x] event_dispatcher_test.go - Event dispatcher tests (all passing)
+  - [x] All tests passing with good coverage (domain: 52.9%, core: 38.9%)
+  - [x] Created architecture design documents (AGENT_ARCHITECTURE_PLAN.md, PHASE1_IMPLEMENTATION_PLAN.md)
+  - [x] Successfully implemented Google ADK-inspired patterns while maintaining Go idioms
