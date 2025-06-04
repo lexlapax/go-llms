@@ -4,7 +4,6 @@
 package datetime
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -82,7 +81,16 @@ func DateTimeInfo() agentDomain.Tool {
 	return atools.NewTool(
 		"datetime_info",
 		"Get comprehensive information about a specific date",
-		func(ctx context.Context, input DateTimeInfoInput) (*DateTimeInfoOutput, error) {
+		func(ctx *agentDomain.ToolContext, input DateTimeInfoInput) (*DateTimeInfoOutput, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(agentDomain.EventToolCall, agentDomain.ToolCallEventData{
+					ToolName:   "datetime_info",
+					Parameters: input,
+					RequestID:  ctx.RunID,
+				})
+			}
+
 			// Parse the input date
 			parsedTime, err := time.Parse(time.RFC3339, input.Date)
 			if err != nil {
@@ -111,6 +119,16 @@ func DateTimeInfo() agentDomain.Tool {
 					return nil, fmt.Errorf("invalid timezone: %w", err)
 				}
 				parsedTime = parsedTime.In(loc)
+			} else if ctx.State != nil {
+				// Check state for default timezone
+				if defaultTZ, exists := ctx.State.Get("default_timezone"); exists {
+					if tzStr, ok := defaultTZ.(string); ok && tzStr != "" {
+						loc, err := time.LoadLocation(tzStr)
+						if err == nil {
+							parsedTime = parsedTime.In(loc)
+						}
+					}
+				}
 			}
 
 			// Calculate all the information
@@ -170,6 +188,15 @@ func DateTimeInfo() agentDomain.Tool {
 			endOfYear := endOfDay(time.Date(parsedTime.Year(), 12, 31, 0, 0, 0, 0, parsedTime.Location()))
 			output.StartOfYear = startOfYear.Format(time.RFC3339)
 			output.EndOfYear = endOfYear.Format(time.RFC3339)
+
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(agentDomain.EventToolResult, agentDomain.ToolResultEventData{
+					ToolName:  "datetime_info",
+					Result:    output,
+					RequestID: ctx.RunID,
+				})
+			}
 
 			return output, nil
 		},

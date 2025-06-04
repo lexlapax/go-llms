@@ -5,7 +5,7 @@ package web
 
 import (
 	"bytes"
-	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -172,8 +172,13 @@ func HTTPRequest() domain.Tool {
 	return atools.NewTool(
 		"http_request",
 		"Makes HTTP requests with full method and authentication support",
-		func(ctx context.Context, params HTTPRequestParams) (*HTTPRequestResult, error) {
+		func(ctx *domain.ToolContext, params HTTPRequestParams) (*HTTPRequestResult, error) {
 			startTime := time.Now()
+
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.EmitMessage(fmt.Sprintf("Starting %s request to %s", params.Method, params.URL))
+			}
 
 			// Set defaults
 			if params.Method == "" {
@@ -189,6 +194,31 @@ func HTTPRequest() domain.Tool {
 			followRedirects := true
 			if !params.FollowRedirects {
 				followRedirects = false
+			}
+
+			// Check state for default auth settings
+			if ctx.State != nil && params.AuthType == "" {
+				if authType, exists := ctx.State.Get("default_auth_type"); exists {
+					if authStr, ok := authType.(string); ok {
+						params.AuthType = authStr
+					}
+				}
+				// Check for default API keys
+				if params.AuthType == "api_key" && params.AuthKeyValue == "" {
+					if apiKey, exists := ctx.State.Get("api_key"); exists {
+						if keyStr, ok := apiKey.(string); ok {
+							params.AuthKeyValue = keyStr
+						}
+					}
+				}
+				// Check for default bearer token
+				if params.AuthType == "bearer" && params.AuthToken == "" {
+					if token, exists := ctx.State.Get("bearer_token"); exists {
+						if tokenStr, ok := token.(string); ok {
+							params.AuthToken = tokenStr
+						}
+					}
+				}
 			}
 
 			// Validate method
@@ -215,6 +245,18 @@ func HTTPRequest() domain.Tool {
 				parsedURL.RawQuery = q.Encode()
 			}
 
+			// Add API key to query if specified
+			if params.AuthType == "api_key" && params.AuthKeyLocation == "query" {
+				q := parsedURL.Query()
+				q.Add(params.AuthKeyName, params.AuthKeyValue)
+				parsedURL.RawQuery = q.Encode()
+			}
+
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(1, 4, "Preparing request")
+			}
+
 			// Prepare request body
 			var bodyReader io.Reader
 			if params.Body != "" {
@@ -222,13 +264,21 @@ func HTTPRequest() domain.Tool {
 			}
 
 			// Create request
-			req, err := http.NewRequestWithContext(ctx, params.Method, parsedURL.String(), bodyReader)
+			req, err := http.NewRequestWithContext(ctx.Context, params.Method, parsedURL.String(), bodyReader)
 			if err != nil {
 				return nil, fmt.Errorf("error creating request: %w", err)
 			}
 
 			// Set default headers
-			req.Header.Set("User-Agent", "go-llms/1.0 (HTTPRequest)")
+			userAgent := "go-llms/1.0 (HTTPRequest)"
+			if ctx.State != nil {
+				if ua, exists := ctx.State.Get("user_agent"); exists {
+					if uaStr, ok := ua.(string); ok {
+						userAgent = uaStr
+					}
+				}
+			}
+			req.Header.Set("User-Agent", userAgent)
 
 			// Set content type based on body type
 			if params.Body != "" && params.BodyType != "" {
@@ -247,20 +297,48 @@ func HTTPRequest() domain.Tool {
 			}
 
 			// Set custom headers
-			for key, value := range params.Headers {
-				req.Header.Set(key, value)
+			if params.Headers != nil {
+				for key, value := range params.Headers {
+					req.Header.Set(key, value)
+				}
 			}
 
-			// Apply authentication
-			if params.AuthType != "" {
-				if err := applyAuthFromParams(req, &params); err != nil {
-					return nil, fmt.Errorf("error applying authentication: %w", err)
+			// Check state for additional default headers
+			if ctx.State != nil {
+				if headers, exists := ctx.State.Get("http_headers"); exists {
+					if headerMap, ok := headers.(map[string]string); ok {
+						for key, value := range headerMap {
+							// Don't override explicitly set headers
+							if req.Header.Get(key) == "" {
+								req.Header.Set(key, value)
+							}
+						}
+					}
+				}
+			}
+
+			// Set authentication
+			switch strings.ToLower(params.AuthType) {
+			case "basic":
+				if params.AuthUsername != "" && params.AuthPassword != "" {
+					auth := params.AuthUsername + ":" + params.AuthPassword
+					encoded := base64.StdEncoding.EncodeToString([]byte(auth))
+					req.Header.Set("Authorization", "Basic "+encoded)
+				}
+			case "bearer":
+				if params.AuthToken != "" {
+					req.Header.Set("Authorization", "Bearer "+params.AuthToken)
+				}
+			case "api_key":
+				if params.AuthKeyLocation == "header" && params.AuthKeyName != "" && params.AuthKeyValue != "" {
+					req.Header.Set(params.AuthKeyName, params.AuthKeyValue)
 				}
 			}
 
 			// Create HTTP client
+			timeout := time.Duration(params.Timeout) * time.Second
 			client := &http.Client{
-				Timeout: time.Duration(params.Timeout) * time.Second,
+				Timeout: timeout,
 			}
 
 			// Configure redirect policy
@@ -270,12 +348,25 @@ func HTTPRequest() domain.Tool {
 				}
 			}
 
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(2, 4, "Sending request")
+			}
+
 			// Execute request
 			resp, err := client.Do(req)
 			if err != nil {
+				if ctx.Events != nil {
+					ctx.Events.EmitError(err)
+				}
 				return nil, fmt.Errorf("error executing request: %w", err)
 			}
 			defer resp.Body.Close()
+
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(3, 4, "Reading response")
+			}
 
 			// Read response body
 			body, err := io.ReadAll(resp.Body)
@@ -291,8 +382,25 @@ func HTTPRequest() domain.Tool {
 				}
 			}
 
-			// Build result
-			result := &HTTPRequestResult{
+			// Get redirect URL if present
+			redirectURL := ""
+			if location := resp.Header.Get("Location"); location != "" {
+				redirectURL = location
+			}
+
+			// Emit completion event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(4, 4, "Complete")
+				ctx.Events.EmitCustom("http_request_complete", map[string]interface{}{
+					"method":       params.Method,
+					"url":          params.URL,
+					"statusCode":   resp.StatusCode,
+					"responseTime": time.Since(startTime).Milliseconds(),
+					"bodySize":     len(body),
+				})
+			}
+
+			return &HTTPRequestResult{
 				StatusCode:    resp.StatusCode,
 				Status:        resp.Status,
 				Headers:       headers,
@@ -300,60 +408,11 @@ func HTTPRequest() domain.Tool {
 				ContentType:   resp.Header.Get("Content-Type"),
 				ContentLength: resp.ContentLength,
 				ResponseTime:  time.Since(startTime).Milliseconds(),
-			}
-
-			// Check for redirect
-			if location := resp.Header.Get("Location"); location != "" {
-				result.RedirectURL = location
-			}
-
-			return result, nil
+				RedirectURL:   redirectURL,
+			}, nil
 		},
 		httpRequestParamSchema,
 	)
-}
-
-// applyAuthFromParams applies authentication to the request using flattened params
-func applyAuthFromParams(req *http.Request, params *HTTPRequestParams) error {
-	switch strings.ToLower(params.AuthType) {
-	case "basic":
-		if params.AuthUsername == "" || params.AuthPassword == "" {
-			return fmt.Errorf("basic auth requires auth_username and auth_password")
-		}
-		req.SetBasicAuth(params.AuthUsername, params.AuthPassword)
-
-	case "bearer":
-		if params.AuthToken == "" {
-			return fmt.Errorf("bearer auth requires auth_token")
-		}
-		req.Header.Set("Authorization", "Bearer "+params.AuthToken)
-
-	case "api_key":
-		if params.AuthKeyName == "" || params.AuthKeyValue == "" {
-			return fmt.Errorf("api_key auth requires auth_key_name and auth_key_value")
-		}
-
-		location := strings.ToLower(params.AuthKeyLocation)
-		if location == "" {
-			location = "header"
-		}
-
-		switch location {
-		case "header":
-			req.Header.Set(params.AuthKeyName, params.AuthKeyValue)
-		case "query":
-			q := req.URL.Query()
-			q.Add(params.AuthKeyName, params.AuthKeyValue)
-			req.URL.RawQuery = q.Encode()
-		default:
-			return fmt.Errorf("invalid auth_key_location: %s (use 'header' or 'query')", location)
-		}
-
-	default:
-		return fmt.Errorf("unsupported auth type: %s", params.AuthType)
-	}
-
-	return nil
 }
 
 // MustGetHTTPRequest retrieves the registered HTTPRequest tool or panics

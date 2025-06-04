@@ -1,42 +1,42 @@
 // ABOUTME: Example test demonstrating the data processing tools
 // ABOUTME: Shows how to use JSONProcess, CSVProcess, XMLProcess, and DataTransform tools
 
-package data_test
+package data
 
 import (
 	"context"
 	"fmt"
 	"log"
-
-	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
 )
 
 func ExampleJSONProcess() {
 	ctx := context.Background()
-	tool := data.JSONProcess()
+	toolCtx := createTestToolContext(ctx)
+	tool := JSONProcess()
 
 	// Parse and validate JSON
-	input := data.JSONProcessInput{
+	input := JSONProcessInput{
 		Data:      `{"name": "John", "age": 30, "city": "New York"}`,
 		Operation: "parse",
 	}
 
-	output, err := tool.Execute(ctx, input)
+	output, err := tool.Execute(toolCtx, input)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	result := output.(*data.JSONProcessOutput)
+	result := output.(*JSONProcessOutput)
 	fmt.Printf("Parsed successfully. Type: %s\n", result.ResultType)
 	// Output: Parsed successfully. Type: map[string]interface {}
 }
 
 func ExampleCSVProcess() {
 	ctx := context.Background()
-	tool := data.CSVProcess()
+	toolCtx := createTestToolContext(ctx)
+	tool := CSVProcess()
 
 	// Convert CSV to JSON
-	input := data.CSVProcessInput{
+	input := CSVProcessInput{
 		Data: `name,age,city
 John,30,New York
 Jane,25,Boston`,
@@ -44,22 +44,23 @@ Jane,25,Boston`,
 		HasHeaders: true,
 	}
 
-	output, err := tool.Execute(ctx, input)
+	output, err := tool.Execute(toolCtx, input)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	result := output.(*data.CSVProcessOutput)
+	result := output.(*CSVProcessOutput)
 	fmt.Printf("Converted %d rows to JSON\n", result.RowCount)
 	// Output: Converted 2 rows to JSON
 }
 
 func ExampleDataTransform() {
 	ctx := context.Background()
-	tool := data.DataTransform()
+	toolCtx := createTestToolContext(ctx)
+	tool := DataTransform()
 
 	// Filter data based on condition
-	input := data.DataTransformInput{
+	input := DataTransformInput{
 		Data: `[
 			{"name": "John", "age": 30},
 			{"name": "Jane", "age": 25},
@@ -70,12 +71,12 @@ func ExampleDataTransform() {
 		Condition: "gte:30",
 	}
 
-	output, err := tool.Execute(ctx, input)
+	output, err := tool.Execute(toolCtx, input)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	result := output.(*data.DataTransformOutput)
+	result := output.(*DataTransformOutput)
 	fmt.Printf("Filtered to %d items\n", result.ItemCount)
 	// Output: Filtered to 2 items
 }

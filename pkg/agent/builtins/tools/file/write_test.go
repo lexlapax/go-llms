@@ -11,7 +11,84 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
+
+// mockWriteAgent implements the BaseAgent interface for testing
+type mockWriteAgent struct {
+	id          string
+	name        string
+	description string
+	agentType   domain.AgentType
+	metadata    map[string]interface{}
+}
+
+func (a *mockWriteAgent) ID() string          { return a.id }
+func (a *mockWriteAgent) Name() string        { return a.name }
+func (a *mockWriteAgent) Description() string { return a.description }
+func (a *mockWriteAgent) Type() domain.AgentType { return a.agentType }
+func (a *mockWriteAgent) Parent() domain.BaseAgent { return nil }
+func (a *mockWriteAgent) SetParent(parent domain.BaseAgent) error { return nil }
+func (a *mockWriteAgent) SubAgents() []domain.BaseAgent { return nil }
+func (a *mockWriteAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
+func (a *mockWriteAgent) RemoveSubAgent(name string) error { return nil }
+func (a *mockWriteAgent) FindAgent(name string) domain.BaseAgent { return nil }
+func (a *mockWriteAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
+func (a *mockWriteAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
+	return nil, nil
+}
+func (a *mockWriteAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
+	return nil, nil
+}
+func (a *mockWriteAgent) Initialize(ctx context.Context) error { return nil }
+func (a *mockWriteAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
+func (a *mockWriteAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
+	return nil
+}
+func (a *mockWriteAgent) Cleanup(ctx context.Context) error { return nil }
+func (a *mockWriteAgent) InputSchema() *sdomain.Schema { return nil }
+func (a *mockWriteAgent) OutputSchema() *sdomain.Schema { return nil }
+func (a *mockWriteAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (a *mockWriteAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
+func (a *mockWriteAgent) Validate() error { return nil }
+func (a *mockWriteAgent) Metadata() map[string]interface{} { return a.metadata }
+func (a *mockWriteAgent) SetMetadata(key string, value interface{}) {
+	if a.metadata == nil {
+		a.metadata = make(map[string]interface{})
+	}
+	a.metadata[key] = value
+}
+
+// createTestToolContextForWrite creates a ToolContext for testing
+func createTestToolContextForWrite() *domain.ToolContext {
+	ctx := context.Background()
+	state := domain.NewState()
+	stateReader := domain.NewStateReader(state)
+	agent := &mockWriteAgent{
+		id:          "test-agent",
+		name:        "Test Agent",
+		description: "Test agent for file write tests",
+		agentType:   domain.AgentTypeCustom,
+		metadata:    make(map[string]interface{}),
+	}
+	
+	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
+	
+	// Create a simple event emitter
+	tc = tc.WithEventEmitter(&testWriteEventEmitter{})
+	
+	return tc
+}
+
+// testWriteEventEmitter implements EventEmitter for testing
+type testWriteEventEmitter struct{}
+
+func (e *testWriteEventEmitter) Emit(eventType domain.EventType, data interface{}) {}
+func (e *testWriteEventEmitter) EmitProgress(current, total int, message string) {}
+func (e *testWriteEventEmitter) EmitMessage(message string) {}
+func (e *testWriteEventEmitter) EmitError(err error) {}
+func (e *testWriteEventEmitter) EmitCustom(eventName string, data interface{}) {}
 
 func TestWriteFileRegistration(t *testing.T) {
 	// Test that the tool is registered
@@ -46,7 +123,7 @@ func TestWriteFile_Basic(t *testing.T) {
 	testContent := "Hello from WriteFile!"
 
 	tool := MustGetWriteFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForWrite()
 
 	result, err := tool.Execute(ctx, WriteFileParams{
 		Path:    testFile,
@@ -88,7 +165,7 @@ func TestWriteFile_Append(t *testing.T) {
 	}
 
 	tool := MustGetWriteFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForWrite()
 
 	appendContent := "Appended content\n"
 	result, err := tool.Execute(ctx, WriteFileParams{
@@ -122,7 +199,7 @@ func TestWriteFile_CreateDirs(t *testing.T) {
 	testContent := "Content in nested directory"
 
 	tool := MustGetWriteFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForWrite()
 
 	result, err := tool.Execute(ctx, WriteFileParams{
 		Path:       testFile,
@@ -155,7 +232,7 @@ func TestWriteFile_Atomic(t *testing.T) {
 	}
 
 	tool := MustGetWriteFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForWrite()
 
 	newContent := "New atomic content"
 	result, err := tool.Execute(ctx, WriteFileParams{
@@ -196,7 +273,7 @@ func TestWriteFile_Backup(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	tool := MustGetWriteFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForWrite()
 
 	newContent := "New content after backup"
 	result, err := tool.Execute(ctx, WriteFileParams{
@@ -240,7 +317,7 @@ func TestWriteFile_CustomPermissions(t *testing.T) {
 	testFile := filepath.Join(tempDir, "perms.txt")
 
 	tool := MustGetWriteFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForWrite()
 
 	result, err := tool.Execute(ctx, WriteFileParams{
 		Path:    testFile,
@@ -279,7 +356,7 @@ func TestWriteFile_OverwriteProtection(t *testing.T) {
 	}
 
 	tool := MustGetWriteFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForWrite()
 
 	// Write without append should overwrite
 	newContent := "Overwritten content"
@@ -308,7 +385,7 @@ func TestWriteFile_OverwriteProtection(t *testing.T) {
 
 func TestWriteFile_InvalidPath(t *testing.T) {
 	tool := MustGetWriteFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForWrite()
 
 	// Test writing to invalid path
 	_, err := tool.Execute(ctx, WriteFileParams{
@@ -325,7 +402,7 @@ func TestWriteFile_EmptyContent(t *testing.T) {
 	testFile := filepath.Join(tempDir, "empty.txt")
 
 	tool := MustGetWriteFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForWrite()
 
 	// Write empty content
 	result, err := tool.Execute(ctx, WriteFileParams{

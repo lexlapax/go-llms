@@ -8,6 +8,7 @@ import (
 func TestDataTransform_Filter(t *testing.T) {
 	tool := DataTransform()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	testData := `[
 		{"name": "John", "age": 30, "city": "New York"},
@@ -139,7 +140,7 @@ func TestDataTransform_Filter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -158,6 +159,7 @@ func TestDataTransform_Filter(t *testing.T) {
 func TestDataTransform_Map(t *testing.T) {
 	tool := DataTransform()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	testData := `[
 		{"name": "John", "age": 30},
@@ -255,7 +257,7 @@ func TestDataTransform_Map(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -274,6 +276,7 @@ func TestDataTransform_Map(t *testing.T) {
 func TestDataTransform_Reduce(t *testing.T) {
 	tool := DataTransform()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	tests := []struct {
 		name      string
@@ -395,7 +398,7 @@ func TestDataTransform_Reduce(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -414,6 +417,7 @@ func TestDataTransform_Reduce(t *testing.T) {
 func TestDataTransform_Sort(t *testing.T) {
 	tool := DataTransform()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	tests := []struct {
 		name      string
@@ -500,7 +504,7 @@ func TestDataTransform_Sort(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -519,6 +523,7 @@ func TestDataTransform_Sort(t *testing.T) {
 func TestDataTransform_GroupBy(t *testing.T) {
 	tool := DataTransform()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	input := DataTransformInput{
 		Data: `[
@@ -530,7 +535,7 @@ func TestDataTransform_GroupBy(t *testing.T) {
 		Field:     "category",
 	}
 
-	outputRaw, err := tool.Execute(ctx, input)
+	outputRaw, err := tool.Execute(toolCtx, input)
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
@@ -568,6 +573,7 @@ func TestDataTransform_GroupBy(t *testing.T) {
 func TestDataTransform_Unique(t *testing.T) {
 	tool := DataTransform()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	tests := []struct {
 		name      string
@@ -616,7 +622,7 @@ func TestDataTransform_Unique(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -635,13 +641,14 @@ func TestDataTransform_Unique(t *testing.T) {
 func TestDataTransform_Reverse(t *testing.T) {
 	tool := DataTransform()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	input := DataTransformInput{
 		Data:      `[1, 2, 3, 4, 5]`,
 		Operation: "reverse",
 	}
 
-	outputRaw, err := tool.Execute(ctx, input)
+	outputRaw, err := tool.Execute(toolCtx, input)
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
@@ -673,6 +680,7 @@ func TestDataTransform_Reverse(t *testing.T) {
 func TestDataTransform_InvalidData(t *testing.T) {
 	tool := DataTransform()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	input := DataTransformInput{
 		Data:      `invalid json`,
@@ -681,7 +689,7 @@ func TestDataTransform_InvalidData(t *testing.T) {
 		Condition: "eq:test",
 	}
 
-	outputRaw, err := tool.Execute(ctx, input)
+	outputRaw, err := tool.Execute(toolCtx, input)
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
@@ -699,14 +707,24 @@ func TestDataTransform_InvalidData(t *testing.T) {
 func TestDataTransform_InvalidOperation(t *testing.T) {
 	tool := DataTransform()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	input := DataTransformInput{
 		Data:      `[1, 2, 3]`,
 		Operation: "invalid",
 	}
 
-	_, err := tool.Execute(ctx, input)
-	if err == nil {
+	output, err := tool.Execute(toolCtx, input)
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	result, ok := output.(*DataTransformOutput)
+	if !ok {
+		t.Fatalf("Expected *DataTransformOutput, got %T", output)
+	}
+
+	if result.Error == "" {
 		t.Error("expected error for invalid operation")
 	}
 }
@@ -714,6 +732,7 @@ func TestDataTransform_InvalidOperation(t *testing.T) {
 func TestDataTransform_NestedFieldAccess(t *testing.T) {
 	tool := DataTransform()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	input := DataTransformInput{
 		Data: `[
@@ -725,7 +744,7 @@ func TestDataTransform_NestedFieldAccess(t *testing.T) {
 		MapType:   "extract_field",
 	}
 
-	outputRaw, err := tool.Execute(ctx, input)
+	outputRaw, err := tool.Execute(toolCtx, input)
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
@@ -757,6 +776,7 @@ func TestDataTransform_NestedFieldAccess(t *testing.T) {
 func TestDataTransform_SingleItemToArray(t *testing.T) {
 	tool := DataTransform()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	input := DataTransformInput{
 		Data:      `{"name": "John", "age": 30}`,
@@ -765,7 +785,7 @@ func TestDataTransform_SingleItemToArray(t *testing.T) {
 		Condition: "eq:30",
 	}
 
-	outputRaw, err := tool.Execute(ctx, input)
+	outputRaw, err := tool.Execute(toolCtx, input)
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}

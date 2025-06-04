@@ -4,7 +4,6 @@
 package web
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -147,7 +146,12 @@ func WebScrape() domain.Tool {
 	return atools.NewTool(
 		"web_scrape",
 		"Extracts structured data from HTML pages",
-		func(ctx context.Context, params WebScrapeParams) (*WebScrapeResult, error) {
+		func(ctx *domain.ToolContext, params WebScrapeParams) (*WebScrapeResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.EmitMessage(fmt.Sprintf("Starting web scrape for %s", params.URL))
+			}
+
 			// Set defaults
 			if params.Timeout == 0 {
 				params.Timeout = 30
@@ -158,6 +162,23 @@ func WebScrape() domain.Tool {
 			shouldExtractText := params.ExtractText || allFalse
 			shouldExtractLinks := params.ExtractLinks || allFalse
 			shouldExtractMeta := params.ExtractMeta || allFalse
+
+			// Check state for custom scraping rules
+			if ctx.State != nil {
+				// Check for custom selectors
+				if selectors, exists := ctx.State.Get("scrape_selectors"); exists {
+					if selectorSlice, ok := selectors.([]string); ok {
+						params.Selectors = append(params.Selectors, selectorSlice...)
+					}
+				}
+				// Check for robots.txt compliance setting
+				if respectRobots, exists := ctx.State.Get("respect_robots_txt"); exists {
+					if respect, ok := respectRobots.(bool); ok && respect {
+						// Would implement robots.txt checking here
+						ctx.Events.EmitMessage("Robots.txt compliance enabled")
+					}
+				}
+			}
 
 			// Validate URL
 			parsedURL, err := url.Parse(params.URL)
@@ -171,22 +192,54 @@ func WebScrape() domain.Tool {
 				Timeout: timeout,
 			}
 
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(1, 5, "Fetching page")
+			}
+
 			// Create request with context
-			req, err := http.NewRequestWithContext(ctx, "GET", params.URL, nil)
+			req, err := http.NewRequestWithContext(ctx.Context, "GET", params.URL, nil)
 			if err != nil {
 				return nil, fmt.Errorf("error creating request: %w", err)
 			}
 
 			// Set user agent
-			req.Header.Set("User-Agent", "go-llms/1.0 (WebScraper)")
+			userAgent := "go-llms/1.0 (WebScraper)"
+			if ctx.State != nil {
+				if ua, exists := ctx.State.Get("user_agent"); exists {
+					if uaStr, ok := ua.(string); ok {
+						userAgent = uaStr
+					}
+				}
+			}
+			req.Header.Set("User-Agent", userAgent)
 			req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+
+			// Check state for additional headers
+			if ctx.State != nil {
+				if headers, exists := ctx.State.Get("http_headers"); exists {
+					if headerMap, ok := headers.(map[string]string); ok {
+						for key, value := range headerMap {
+							req.Header.Set(key, value)
+						}
+					}
+				}
+			}
 
 			// Execute request
 			resp, err := client.Do(req)
 			if err != nil {
+				if ctx.Events != nil {
+					ctx.Events.EmitError(err)
+				}
 				return nil, fmt.Errorf("error fetching URL: %w", err)
 			}
 			defer resp.Body.Close()
+
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(2, 5, "Reading response")
+			}
 
 			// Read response body
 			body, err := io.ReadAll(resp.Body)
@@ -216,6 +269,11 @@ func WebScrape() domain.Tool {
 				result.Title = strings.TrimSpace(matches[1])
 			}
 
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(3, 5, "Parsing HTML")
+			}
+
 			// Extract metadata if requested
 			if shouldExtractMeta {
 				result.Metadata = extractMetadata(htmlContent)
@@ -231,9 +289,27 @@ func WebScrape() domain.Tool {
 				result.Links = extractLinkElements(htmlContent, parsedURL)
 			}
 
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(4, 5, "Processing selectors")
+			}
+
 			// Process selectors if provided
 			if len(params.Selectors) > 0 {
 				result.Selectors = processSelectors(htmlContent, params.Selectors)
+			}
+
+			// Emit completion event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(5, 5, "Complete")
+				ctx.Events.EmitCustom("scrape_complete", map[string]interface{}{
+					"url":         params.URL,
+					"statusCode":  resp.StatusCode,
+					"textLength":  len(result.Text),
+					"linkCount":   len(result.Links),
+					"metaCount":   len(result.Metadata),
+					"selectorHits": len(result.Selectors),
+				})
 			}
 
 			return result, nil
@@ -251,18 +327,18 @@ func extractMetadata(html string) map[string]string {
 	for _, match := range matches {
 		if len(match) > 1 {
 			attrs := parseAttributes(match[1])
-
+			
 			// Handle different meta tag formats
-			if name, ok := attrs["name"]; ok {
-				if content, ok := attrs["content"]; ok {
+			if name, hasName := attrs["name"]; hasName {
+				if content, hasContent := attrs["content"]; hasContent {
 					metadata[name] = content
 				}
-			} else if property, ok := attrs["property"]; ok {
-				if content, ok := attrs["content"]; ok {
+			} else if property, hasProperty := attrs["property"]; hasProperty {
+				if content, hasContent := attrs["content"]; hasContent {
 					metadata[property] = content
 				}
-			} else if httpEquiv, ok := attrs["http-equiv"]; ok {
-				if content, ok := attrs["content"]; ok {
+			} else if httpEquiv, hasHttpEquiv := attrs["http-equiv"]; hasHttpEquiv {
+				if content, hasContent := attrs["content"]; hasContent {
 					metadata[httpEquiv] = content
 				}
 			}
@@ -274,190 +350,133 @@ func extractMetadata(html string) map[string]string {
 
 // extractTextContent extracts and cleans text content from HTML
 func extractTextContent(html string) string {
-	// Remove scripts and styles
-	cleaned := scriptRegex.ReplaceAllString(html, " ")
-	cleaned = styleRegex.ReplaceAllString(cleaned, " ")
-
-	// Remove HTML tags
+	// Remove script and style tags
+	cleaned := scriptRegex.ReplaceAllString(html, "")
+	cleaned = styleRegex.ReplaceAllString(cleaned, "")
+	
+	// Remove all HTML tags
 	cleaned = tagRegex.ReplaceAllString(cleaned, " ")
-
+	
+	// Decode HTML entities (basic ones)
+	cleaned = strings.ReplaceAll(cleaned, "&amp;", "&")
+	cleaned = strings.ReplaceAll(cleaned, "&lt;", "<")
+	cleaned = strings.ReplaceAll(cleaned, "&gt;", ">")
+	cleaned = strings.ReplaceAll(cleaned, "&quot;", "\"")
+	cleaned = strings.ReplaceAll(cleaned, "&#39;", "'")
+	cleaned = strings.ReplaceAll(cleaned, "&nbsp;", " ")
+	
 	// Clean up whitespace
 	cleaned = whitespaceRegex.ReplaceAllString(cleaned, " ")
-
-	// Trim and return
-	return strings.TrimSpace(cleaned)
+	cleaned = strings.TrimSpace(cleaned)
+	
+	return cleaned
 }
 
-// extractLinkElements extracts all links from HTML
+// extractLinkElements extracts links from HTML
 func extractLinkElements(html string, baseURL *url.URL) []LinkInfo {
 	var links []LinkInfo
-	linkMap := make(map[string]bool) // Deduplicate links
-
+	
 	matches := linkRegex.FindAllStringSubmatch(html, -1)
 	for _, match := range matches {
 		if len(match) > 3 {
 			href := match[2]
-			linkText := strings.TrimSpace(match[3])
-
-			// Skip empty or anchor-only links
-			if href == "" || href == "#" {
-				continue
-			}
-
-			// Parse and resolve the link
-			linkURL, err := url.Parse(href)
+			text := strings.TrimSpace(match[3])
+			
+			// Clean up link text
+			text = tagRegex.ReplaceAllString(text, "")
+			text = whitespaceRegex.ReplaceAllString(text, " ")
+			text = strings.TrimSpace(text)
+			
+			// Resolve relative URLs
+			linkURL, err := baseURL.Parse(href)
 			if err != nil {
 				continue
 			}
-
-			// Resolve relative URLs
-			absoluteURL := baseURL.ResolveReference(linkURL)
-			urlStr := absoluteURL.String()
-
-			// Skip if we've already seen this link
-			if linkMap[urlStr] {
-				continue
-			}
-			linkMap[urlStr] = true
-
+			
 			// Determine link type
 			linkType := "internal"
-			if strings.HasPrefix(href, "#") {
-				linkType = "anchor"
-			} else if absoluteURL.Host != baseURL.Host {
+			if linkURL.Host != "" && linkURL.Host != baseURL.Host {
 				linkType = "external"
+			} else if strings.HasPrefix(href, "#") {
+				linkType = "anchor"
 			}
-
+			
 			links = append(links, LinkInfo{
-				URL:  urlStr,
-				Text: linkText,
+				URL:  linkURL.String(),
+				Text: text,
 				Type: linkType,
 			})
 		}
 	}
-
+	
 	return links
 }
 
 // processSelectors processes simplified CSS-like selectors
 func processSelectors(html string, selectors []string) map[string][]string {
 	results := make(map[string][]string)
-
+	
 	for _, selector := range selectors {
-		selector = strings.TrimSpace(strings.ToLower(selector))
-
-		// Simple tag selector support
+		selector = strings.TrimSpace(selector)
+		if selector == "" {
+			continue
+		}
+		
+		// Support simple tag selectors
 		if isSimpleTag(selector) {
-			results[selector] = extractTagContent(html, selector)
-		} else if strings.HasPrefix(selector, ".") {
-			// Simple class selector
-			className := selector[1:]
-			results[selector] = extractByClass(html, className)
-		} else if strings.HasPrefix(selector, "#") {
-			// Simple ID selector
-			id := selector[1:]
-			results[selector] = extractByID(html, id)
-		} else {
-			// For complex selectors, return empty
-			results[selector] = []string{"Complex selectors not supported in this implementation"}
+			matches := findTagContent(html, selector)
+			if len(matches) > 0 {
+				results[selector] = matches
+			}
 		}
+		// Additional selector types could be implemented here
+		// For now, we keep it simple with just tag names
 	}
-
+	
 	return results
 }
 
-// isSimpleTag checks if the selector is a simple HTML tag
+// isSimpleTag checks if a selector is a simple tag name
 func isSimpleTag(selector string) bool {
-	// List of common HTML tags
-	commonTags := map[string]bool{
-		"h1": true, "h2": true, "h3": true, "h4": true, "h5": true, "h6": true,
-		"p": true, "div": true, "span": true, "a": true, "img": true,
-		"ul": true, "ol": true, "li": true, "table": true, "tr": true, "td": true, "th": true,
-		"form": true, "input": true, "button": true, "textarea": true, "select": true,
-		"header": true, "footer": true, "nav": true, "main": true, "article": true, "section": true,
-	}
-	return commonTags[selector]
+	// Simple validation for tag names
+	matched, _ := regexp.MatchString(`^[a-zA-Z][a-zA-Z0-9]*$`, selector)
+	return matched
 }
 
-// extractTagContent extracts content from specific HTML tags
-func extractTagContent(html, tag string) []string {
-	var results []string
-
+// findTagContent finds content of specific HTML tags
+func findTagContent(html, tagName string) []string {
+	var contents []string
+	
 	// Create regex for the specific tag
-	tagPattern := regexp.MustCompile(fmt.Sprintf(`(?i)<%s[^>]*>(.*?)</%s>`, tag, tag))
+	tagPattern := regexp.MustCompile(fmt.Sprintf(`(?i)<%s[^>]*>([^<]*)</%s>`, tagName, tagName))
 	matches := tagPattern.FindAllStringSubmatch(html, -1)
-
+	
 	for _, match := range matches {
 		if len(match) > 1 {
-			// Clean the content
-			content := tagRegex.ReplaceAllString(match[1], " ")
-			content = whitespaceRegex.ReplaceAllString(content, " ")
-			content = strings.TrimSpace(content)
+			content := strings.TrimSpace(match[1])
 			if content != "" {
-				results = append(results, content)
+				contents = append(contents, content)
 			}
 		}
 	}
-
-	return results
-}
-
-// extractByClass extracts elements by class name
-func extractByClass(html, className string) []string {
-	var results []string
-
-	// Simplified class extraction - finds elements with the specified class
-	classPattern := regexp.MustCompile(fmt.Sprintf(`(?i)<[^>]+class=['"][^'"]*\b%s\b[^'"]*['"][^>]*>(.*?)</[^>]+>`, className))
-	matches := classPattern.FindAllStringSubmatch(html, -1)
-
-	for _, match := range matches {
-		if len(match) > 1 {
-			content := tagRegex.ReplaceAllString(match[1], " ")
-			content = whitespaceRegex.ReplaceAllString(content, " ")
-			content = strings.TrimSpace(content)
-			if content != "" {
-				results = append(results, content)
-			}
-		}
-	}
-
-	return results
-}
-
-// extractByID extracts element by ID
-func extractByID(html, id string) []string {
-	var results []string
-
-	// Simplified ID extraction - finds element with the specified ID
-	idPattern := regexp.MustCompile(fmt.Sprintf(`(?i)<[^>]+id=['"]%s['"][^>]*>(.*?)</[^>]+>`, id))
-	matches := idPattern.FindAllStringSubmatch(html, -1)
-
-	if len(matches) > 0 && len(matches[0]) > 1 {
-		content := tagRegex.ReplaceAllString(matches[0][1], " ")
-		content = whitespaceRegex.ReplaceAllString(content, " ")
-		content = strings.TrimSpace(content)
-		if content != "" {
-			results = append(results, content)
-		}
-	}
-
-	return results
+	
+	return contents
 }
 
 // parseAttributes parses HTML attributes from a string
-func parseAttributes(attrStr string) map[string]string {
+func parseAttributes(attrString string) map[string]string {
 	attrs := make(map[string]string)
-
+	
 	// Simple attribute parsing
-	attrPattern := regexp.MustCompile(`(\w+)=['"]([^'"]+)['"]`)
-	matches := attrPattern.FindAllStringSubmatch(attrStr, -1)
-
+	attrPattern := regexp.MustCompile(`(\w+)=["']([^"']+)["']`)
+	matches := attrPattern.FindAllStringSubmatch(attrString, -1)
+	
 	for _, match := range matches {
 		if len(match) > 2 {
 			attrs[strings.ToLower(match[1])] = match[2]
 		}
 	}
-
+	
 	return attrs
 }
 

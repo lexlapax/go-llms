@@ -144,7 +144,16 @@ func FileSearch() domain.Tool {
 	return atools.NewTool(
 		"file_search",
 		"Searches for patterns in file contents",
-		func(ctx context.Context, params FileSearchParams) (*FileSearchResult, error) {
+		func(ctx *domain.ToolContext, params FileSearchParams) (*FileSearchResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+					ToolName:   "file_search",
+					Parameters: params,
+					RequestID:  ctx.RunID,
+				})
+			}
+
 			// Clean and resolve the path
 			searchPath := filepath.Clean(params.Path)
 			absPath, err := filepath.Abs(searchPath)
@@ -152,10 +161,59 @@ func FileSearch() domain.Tool {
 				return nil, fmt.Errorf("invalid path: %w", err)
 			}
 
-			// Set defaults
-			if params.MaxResults == 0 {
-				params.MaxResults = 1000 // Default limit
+			// Check file access restrictions from state
+			if ctx.State != nil {
+				if restrictedPaths, ok := ctx.State.Get("file_access_restrictions"); ok {
+					if paths, ok := restrictedPaths.([]string); ok {
+						for _, restricted := range paths {
+							if strings.HasPrefix(absPath, restricted) {
+								return nil, fmt.Errorf("access denied: path is restricted")
+							}
+						}
+					}
+				}
 			}
+
+			// Get configuration from state
+			maxResults := params.MaxResults
+			if maxResults == 0 {
+				// Check state for default
+				if ctx.State != nil {
+					if val, ok := ctx.State.Get("file_search_max_results"); ok {
+						if limit, ok := val.(int); ok && limit > 0 {
+							maxResults = limit
+						}
+					}
+				}
+				if maxResults == 0 {
+					maxResults = 1000 // Default limit
+				}
+			}
+
+			// Get case sensitivity preference from state if not specified
+			caseSensitive := params.CaseSensitive
+			if ctx.State != nil && !params.CaseSensitive {
+				if val, ok := ctx.State.Get("file_search_case_sensitive"); ok {
+					if sensitive, ok := val.(bool); ok {
+						caseSensitive = sensitive
+					}
+				}
+			}
+
+			// Get default encoding preference from state
+			var encoding string
+			if ctx.State != nil {
+				if val, ok := ctx.State.Get("file_search_encoding"); ok {
+					if enc, ok := val.(string); ok {
+						encoding = enc
+					}
+				}
+			}
+
+			// Update params with calculated maxResults
+			params.MaxResults = maxResults
+			
+			// Set include line numbers default
 			if !params.IncludeLineNumbers {
 				params.IncludeLineNumbers = true // Default to showing line numbers
 			}
@@ -165,20 +223,26 @@ func FileSearch() domain.Tool {
 			searchPattern := params.Pattern
 			if params.IsRegex {
 				flags := ""
-				if !params.CaseSensitive {
+				if !caseSensitive {
 					flags = "(?i)"
 				}
 				searchRegex, err = regexp.Compile(flags + searchPattern)
 				if err != nil {
+					if ctx.Events != nil {
+						ctx.Events.EmitError(fmt.Errorf("invalid regex pattern: %w", err))
+					}
 					return nil, fmt.Errorf("invalid regex pattern: %w", err)
 				}
-			} else if !params.CaseSensitive {
+			} else if !caseSensitive {
 				searchPattern = strings.ToLower(searchPattern)
 			}
 
 			// Check if path exists
 			info, err := os.Stat(absPath)
 			if err != nil {
+				if ctx.Events != nil {
+					ctx.Events.EmitError(fmt.Errorf("path not found: %w", err))
+				}
 				return nil, fmt.Errorf("path not found: %w", err)
 			}
 
@@ -188,14 +252,44 @@ func FileSearch() domain.Tool {
 			// Search single file or directory
 			if !info.IsDir() {
 				// Single file search
-				fileMatches, err := searchFile(ctx, absPath, searchPattern, searchRegex, params)
+				if ctx.Events != nil {
+					ctx.Events.EmitProgress(0, 1, fmt.Sprintf("Searching file: %s", absPath))
+				}
+				
+				fileMatches, err := searchFile(ctx.Context, absPath, searchPattern, searchRegex, params, encoding)
 				if err != nil {
 					return nil, err
 				}
 				matches = fileMatches
 				filesSearched = 1
+				
+				if ctx.Events != nil {
+					ctx.Events.EmitProgress(1, 1, "File search complete")
+				}
 			} else {
 				// Directory search
+				if ctx.Events != nil {
+					ctx.Events.EmitMessage(fmt.Sprintf("Searching directory: %s", absPath))
+				}
+
+				// Count total files first for progress reporting
+				totalFiles := 0
+				processedFiles := 0
+				if ctx.Events != nil {
+					filepath.Walk(absPath, func(path string, info os.FileInfo, err error) error {
+						if err != nil || info.IsDir() {
+							return nil
+						}
+						if params.FilePattern != "" {
+							if matched, _ := filepath.Match(params.FilePattern, info.Name()); !matched {
+								return nil
+							}
+						}
+						totalFiles++
+						return nil
+					})
+				}
+
 				err = filepath.Walk(absPath, func(path string, info os.FileInfo, err error) error {
 					// Check context cancellation
 					select {
@@ -229,8 +323,14 @@ func FileSearch() domain.Tool {
 						return nil
 					}
 
+					// Emit progress
+					if ctx.Events != nil && totalFiles > 0 {
+						processedFiles++
+						ctx.Events.EmitProgress(processedFiles, totalFiles, fmt.Sprintf("Searching: %s", filepath.Base(path)))
+					}
+
 					// Search the file
-					fileMatches, err := searchFile(ctx, path, searchPattern, searchRegex, params)
+					fileMatches, err := searchFile(ctx.Context, path, searchPattern, searchRegex, params, encoding)
 					if err != nil {
 						return nil // Skip files with errors
 					}
@@ -239,7 +339,10 @@ func FileSearch() domain.Tool {
 					matches = append(matches, fileMatches...)
 
 					// Check max results limit
-					if len(matches) >= params.MaxResults {
+					if len(matches) >= maxResults {
+						if ctx.Events != nil {
+							ctx.Events.EmitMessage(fmt.Sprintf("Reached maximum results limit: %d", maxResults))
+						}
 						return filepath.SkipAll
 					}
 
@@ -252,24 +355,47 @@ func FileSearch() domain.Tool {
 			}
 
 			// Trim to max results
-			if len(matches) > params.MaxResults {
-				matches = matches[:params.MaxResults]
+			if len(matches) > maxResults {
+				matches = matches[:maxResults]
 			}
 
-			return &FileSearchResult{
+			result := &FileSearchResult{
 				Matches:       matches,
 				TotalMatches:  len(matches),
 				FilesSearched: filesSearched,
 				Pattern:       params.Pattern,
 				SearchPath:    absPath,
-			}, nil
+			}
+
+			// Emit completion event with details
+			if ctx.Events != nil {
+				ctx.Events.EmitCustom("file_search_complete", map[string]interface{}{
+					"total_matches":  len(matches),
+					"files_searched": filesSearched,
+					"pattern":        params.Pattern,
+					"search_path":    absPath,
+					"is_regex":       params.IsRegex,
+					"case_sensitive": caseSensitive,
+					"recursive":      params.Recursive,
+					"file_pattern":   params.FilePattern,
+					"elapsed_time":   ctx.ElapsedTime().String(),
+				})
+				
+				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+					ToolName:  "file_search",
+					RequestID: ctx.RunID,
+					Result:    result,
+				})
+			}
+
+			return result, nil
 		},
 		fileSearchParamSchema,
 	)
 }
 
 // searchFile searches for pattern in a single file
-func searchFile(ctx context.Context, filePath string, pattern string, regex *regexp.Regexp, params FileSearchParams) ([]FileMatch, error) {
+func searchFile(ctx context.Context, filePath string, pattern string, regex *regexp.Regexp, params FileSearchParams, encoding string) ([]FileMatch, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err

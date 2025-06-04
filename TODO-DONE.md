@@ -390,3 +390,59 @@
     - [x] Remove llmutil/agent.go and migrate dependencies - COMPLETED (February 3, 2025)
       - [x] Removed deprecated agent creation functions from llmutil
       - [x] Updated convenience example to use core.LLMAgent directly
+
+## Agent-Tool Integration Phase 4.3: Tool Context System (Completed - February 2025)
+- [x] Phase 4.3: Create tool context system - COMPLETED
+  - [x] Update Tool interface in domain/interfaces.go to use ToolContext
+  - [x] Create ToolContext structure with StateReader, EventEmitter, AgentInfo
+  - [x] Implement StateReader interface for read-only state access
+  - [x] Implement EventEmitter interface for tool event emission
+  - [x] Update BaseTool to support new Tool interface
+  - [x] Update all built-in tools to use ToolContext:
+    - [x] Web tools:
+      - [x] fetch (updated to use ToolContext with events and state access)
+      - [x] search (updated to use ToolContext with events, state access for engine preferences)
+      - [x] scrape (updated to use ToolContext with events, state access for custom selectors)
+      - [x] http_request (updated to use ToolContext with events, state access for auth defaults)
+    - [x] File tools:
+      - [x] read (updated to use ToolContext with events, state access for file restrictions)
+      - [x] write (updated to use ToolContext with events, state access for restrictions and backup)
+      - [x] list (updated to use ToolContext with events, state access for filtering and sorting)
+      - [x] delete (updated to use ToolContext with events, state access for restrictions and confirmation)
+      - [x] move (updated to use ToolContext with events, state access for restrictions and preferences)
+      - [x] search (updated to use ToolContext with events, state access for search preferences - fixed MaxResults bug)
+      - [x] All file tool tests updated to use ToolContext
+    - [x] System tools:
+      - [x] execute (updated to use ToolContext with events, state access for safe mode and allowed commands)
+      - [x] env_var (updated to use ToolContext with events, state access for sensitive patterns)
+      - [x] process_list (updated to use ToolContext with events, state access for default limits)
+      - [x] system_info (updated to use ToolContext with events, state access for default includes)
+      - [x] All system tool tests updated to use ToolContext
+    - [x] Feed tools:
+      - [x] fetch (updated to use ToolContext with events, state access for timeout and user agent)
+      - [x] discover (updated to use ToolContext with events, state access for defaults)
+      - [x] filter (updated to use ToolContext with events, state access for filter preferences)
+      - [x] aggregate (updated to use ToolContext with events, state access for sort/limit defaults)
+      - [x] convert (updated to use ToolContext with events, state access for format preferences)
+      - [x] extract (updated to use ToolContext with events, state access for field defaults)
+      - [x] All feed tool tests updated to use ToolContext
+    - [x] DateTime tools:
+      - [x] datetime_now (updated to use ToolContext with events, state access for default timezone/format)
+      - [x] datetime_calculate (updated to use ToolContext with events, state access for default timezone)
+      - [x] datetime_compare (updated to use ToolContext with events, state access for default timezone)
+      - [x] datetime_convert (updated to use ToolContext with events, state access for default timezone)
+      - [x] datetime_format (updated to use ToolContext with events, state access for default timezone)
+      - [x] datetime_info (updated to use ToolContext with events, state access for default timezone)
+      - [x] datetime_parse (updated to use ToolContext with events, state access for default timezone)
+      - [x] All datetime tool tests updated to use ToolContext
+    - [x] Data tools:
+      - [x] json_process (updated to use ToolContext with events, state access for prettify settings)
+      - [x] csv_process (updated to use ToolContext with events, state access for delimiter and max rows)
+      - [x] xml_process (updated to use ToolContext with events, state access for attribute inclusion)
+      - [x] data_transform (updated to use ToolContext with events, state access for sort order)
+      - [x] All data tool tests updated to use ToolContext
+  - [x] Update LLMAgent to create and pass ToolContext
+  - [x] Update AgentTool wrapper to handle ToolContext
+  - [x] Update ToolAgent wrapper to provide ToolContext
+  - [x] Update all tool tests for new interface
+  - [x] Create comprehensive tests for ToolContext

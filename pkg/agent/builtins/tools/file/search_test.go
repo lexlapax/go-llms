@@ -4,7 +4,6 @@
 package file
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -43,7 +42,7 @@ func TestFileSearchRegistration(t *testing.T) {
 
 func TestFileSearchBasic(t *testing.T) {
 	tool := FileSearch()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Create test file
 	tempDir := t.TempDir()
@@ -119,7 +118,7 @@ Line 6: Final line`
 
 func TestFileSearchRegex(t *testing.T) {
 	tool := FileSearch()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.log")
@@ -166,7 +165,7 @@ func TestFileSearchRegex(t *testing.T) {
 
 func TestFileSearchContext(t *testing.T) {
 	tool := FileSearch()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.txt")
@@ -220,7 +219,7 @@ Line 8`
 
 func TestFileSearchDirectory(t *testing.T) {
 	tool := FileSearch()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Create directory structure with multiple files
 	tempDir := t.TempDir()
@@ -291,7 +290,7 @@ func TestFileSearchDirectory(t *testing.T) {
 
 func TestFileSearchMaxResults(t *testing.T) {
 	tool := FileSearch()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	tempDir := t.TempDir()
 	testFile := filepath.Join(tempDir, "test.txt")
@@ -324,7 +323,7 @@ func TestFileSearchMaxResults(t *testing.T) {
 
 func TestFileSearchBinaryFiles(t *testing.T) {
 	tool := FileSearch()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	tempDir := t.TempDir()
 
@@ -361,7 +360,7 @@ func TestFileSearchBinaryFiles(t *testing.T) {
 
 func TestFileSearchErrors(t *testing.T) {
 	tool := FileSearch()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test non-existent path
 	_, err := tool.Execute(ctx, map[string]interface{}{

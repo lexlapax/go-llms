@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins"
@@ -122,15 +123,61 @@ func WriteFile() domain.Tool {
 	return atools.NewTool(
 		"file_write",
 		"Writes content to files with atomic operations, append mode, and backup support",
-		func(ctx context.Context, params WriteFileParams) (*WriteFileResult, error) {
+		func(ctx *domain.ToolContext, params WriteFileParams) (*WriteFileResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.EmitMessage(fmt.Sprintf("Starting file write to %s", params.Path))
+			}
+
 			result := &WriteFileResult{
 				Success: false,
+			}
+
+			// Check file access restrictions from state
+			if ctx.State != nil {
+				// Check restricted paths
+				if restrictedPaths, exists := ctx.State.Get("file_restricted_paths"); exists {
+					if paths, ok := restrictedPaths.([]string); ok {
+						for _, restricted := range paths {
+							if strings.HasPrefix(params.Path, restricted) {
+								return nil, fmt.Errorf("access denied: path %s is restricted", params.Path)
+							}
+						}
+					}
+				}
+
+				// Check allowed paths if specified
+				if allowedPaths, exists := ctx.State.Get("file_allowed_paths"); exists {
+					if paths, ok := allowedPaths.([]string); ok && len(paths) > 0 {
+						allowed := false
+						for _, allowedPath := range paths {
+							if strings.HasPrefix(params.Path, allowedPath) {
+								allowed = true
+								break
+							}
+						}
+						if !allowed {
+							return nil, fmt.Errorf("access denied: path %s is not in allowed paths", params.Path)
+						}
+					}
+				}
 			}
 
 			// Set default mode if not specified
 			mode := params.Mode
 			if mode == 0 {
-				mode = 0644
+				// Check state for default permissions
+				if ctx.State != nil {
+					if defaultMode, exists := ctx.State.Get("file_default_permissions"); exists {
+						if m, ok := defaultMode.(os.FileMode); ok {
+							mode = m
+						}
+					}
+				}
+				// Fall back to default if not in state
+				if mode == 0 {
+					mode = 0644
+				}
 			}
 
 			// Check if file exists
@@ -138,21 +185,49 @@ func WriteFile() domain.Tool {
 				result.FileExisted = true
 			}
 
-			// Create parent directories if requested
+			// Check backup preferences from state
+			shouldBackup := params.Backup
+			if !shouldBackup && result.FileExisted && ctx.State != nil {
+				// Check if auto-backup is enabled in state
+				if autoBackup, exists := ctx.State.Get("file_auto_backup"); exists {
+					if backup, ok := autoBackup.(bool); ok && backup {
+						shouldBackup = true
+					}
+				}
+			}
+
+			// Emit progress: Creating directories
 			if params.CreateDirs {
+				if ctx.Events != nil {
+					ctx.Events.EmitProgress(1, 4, "Creating parent directories")
+				}
 				dir := filepath.Dir(params.Path)
 				if err := os.MkdirAll(dir, 0755); err != nil {
+					if ctx.Events != nil {
+						ctx.Events.EmitError(err)
+					}
 					return nil, fmt.Errorf("error creating directories: %w", err)
 				}
 			}
 
-			// Create backup if requested and file exists
-			if params.Backup && result.FileExisted {
+			// Emit progress: Creating backup
+			if shouldBackup && result.FileExisted {
+				if ctx.Events != nil {
+					ctx.Events.EmitProgress(2, 4, "Creating backup")
+				}
 				backupPath, err := createBackup(params.Path)
 				if err != nil {
+					if ctx.Events != nil {
+						ctx.Events.EmitError(err)
+					}
 					return nil, fmt.Errorf("error creating backup: %w", err)
 				}
 				result.BackupPath = backupPath
+			}
+
+			// Emit progress: Writing file
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(3, 4, "Writing file content")
 			}
 
 			// Write the file
@@ -160,14 +235,17 @@ func WriteFile() domain.Tool {
 			var err error
 
 			if params.Atomic {
-				bytesWritten, err = atomicWrite(ctx, params.Path, params.Content, mode, params.Append)
+				bytesWritten, err = atomicWrite(ctx.Context, params.Path, params.Content, mode, params.Append)
 			} else if params.Append {
-				bytesWritten, err = appendToFile(ctx, params.Path, params.Content, mode)
+				bytesWritten, err = appendToFile(ctx.Context, params.Path, params.Content, mode)
 			} else {
-				bytesWritten, err = writeFile(ctx, params.Path, params.Content, mode)
+				bytesWritten, err = writeFile(ctx.Context, params.Path, params.Content, mode)
 			}
 
 			if err != nil {
+				if ctx.Events != nil {
+					ctx.Events.EmitError(err)
+				}
 				return nil, err
 			}
 
@@ -182,6 +260,21 @@ func WriteFile() domain.Tool {
 			result.Success = true
 			result.BytesWritten = bytesWritten
 			result.AbsolutePath = absPath
+
+			// Emit completion event with write operation details
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(4, 4, "File write complete")
+				ctx.Events.EmitCustom("file_write_complete", map[string]interface{}{
+					"path":          params.Path,
+					"absolute_path": absPath,
+					"bytes_written": bytesWritten,
+					"file_existed":  result.FileExisted,
+					"backup_path":   result.BackupPath,
+					"mode":          mode,
+					"atomic":        params.Atomic,
+					"append":        params.Append,
+				})
+			}
 
 			return result, nil
 		},

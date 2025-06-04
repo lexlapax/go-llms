@@ -4,7 +4,6 @@
 package data
 
 import (
-	"context"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -100,38 +99,83 @@ func CSVProcess() domain.Tool {
 	return atools.NewTool(
 		"csv_process",
 		"Process CSV data: parse, filter, transform, or convert to JSON",
-		func(ctx context.Context, input CSVProcessInput) (*CSVProcessOutput, error) {
-			return executeCSVProcess(ctx, input)
+		func(ctx *domain.ToolContext, input CSVProcessInput) (*CSVProcessOutput, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.EmitMessage(fmt.Sprintf("Starting CSV processing with operation: %s", input.Operation))
+			}
+
+			// Set default delimiter from state or use comma
+			if input.Delimiter == "" {
+				if ctx.State != nil {
+					if defaultDelimiter, exists := ctx.State.Get("csv_default_delimiter"); exists {
+						if delim, ok := defaultDelimiter.(string); ok && len(delim) > 0 {
+							input.Delimiter = delim
+						}
+					}
+				}
+				if input.Delimiter == "" {
+					input.Delimiter = ","
+				}
+			}
+
+			// Check for max row limit from state
+			var maxRows int
+			if ctx.State != nil {
+				if limit, exists := ctx.State.Get("csv_max_rows"); exists {
+					if rows, ok := limit.(int); ok && rows > 0 {
+						maxRows = rows
+					}
+				}
+			}
+
+			var result *CSVProcessOutput
+			var err error
+
+			switch input.Operation {
+			case "parse":
+				result, err = parseCSV(input.Data, input.Delimiter, input.HasHeaders)
+			case "filter":
+				if input.FilterCondition == "" {
+					err = fmt.Errorf("filter condition required for filter operation")
+				} else {
+					result, err = filterCSV(input.Data, input.Delimiter, input.HasHeaders, input.FilterCondition)
+				}
+			case "transform":
+				if input.Transform == "" {
+					err = fmt.Errorf("transform type required for transform operation")
+				} else {
+					result, err = transformCSV(input.Data, input.Delimiter, input.HasHeaders, input.Transform, input.Params)
+				}
+			case "to_json":
+				result, err = csvToJSON(input.Data, input.Delimiter, input.HasHeaders)
+			default:
+				err = fmt.Errorf("invalid operation: %s", input.Operation)
+			}
+
+			// Apply row limit if specified
+			if err == nil && maxRows > 0 && result != nil {
+				if rows, ok := result.Result.([][]string); ok && len(rows) > maxRows {
+					result.Result = rows[:maxRows]
+					if result.RowCount > maxRows {
+						result.RowCount = maxRows
+					}
+				}
+			}
+
+			// Emit completion or error event
+			if ctx.Events != nil {
+				if err != nil {
+					ctx.Events.EmitError(err)
+				} else {
+					ctx.Events.EmitMessage(fmt.Sprintf("CSV processing completed. Processed %d rows", result.RowCount))
+				}
+			}
+
+			return result, err
 		},
 		csvProcessParamSchema,
 	)
-}
-
-// executeCSVProcess processes the CSV according to the specified operation
-func executeCSVProcess(ctx context.Context, input CSVProcessInput) (*CSVProcessOutput, error) {
-	// Set default delimiter
-	if input.Delimiter == "" {
-		input.Delimiter = ","
-	}
-
-	switch input.Operation {
-	case "parse":
-		return parseCSV(input.Data, input.Delimiter, input.HasHeaders)
-	case "filter":
-		if input.FilterCondition == "" {
-			return nil, fmt.Errorf("filter condition required for filter operation")
-		}
-		return filterCSV(input.Data, input.Delimiter, input.HasHeaders, input.FilterCondition)
-	case "transform":
-		if input.Transform == "" {
-			return nil, fmt.Errorf("transform type required for transform operation")
-		}
-		return transformCSV(input.Data, input.Delimiter, input.HasHeaders, input.Transform, input.Params)
-	case "to_json":
-		return csvToJSON(input.Data, input.Delimiter, input.HasHeaders)
-	default:
-		return nil, fmt.Errorf("invalid operation: %s", input.Operation)
-	}
 }
 
 // parseCSV validates and parses CSV data
@@ -283,8 +327,13 @@ func compareNumericStrings(a, b, op string) bool {
 	aNum, aErr := strconv.ParseFloat(a, 64)
 	bNum, bErr := strconv.ParseFloat(b, 64)
 
-	if aErr != nil || bErr != nil {
-		// Fall back to string comparison
+	// If one is numeric and the other isn't, return false for comparison operations
+	if (aErr == nil && bErr != nil) || (aErr != nil && bErr == nil) {
+		return false
+	}
+
+	if aErr != nil && bErr != nil {
+		// Both non-numeric, fall back to string comparison
 		switch op {
 		case ">":
 			return a > b
@@ -438,6 +487,11 @@ func selectColumns(records [][]string, hasHeaders bool, params map[string]interf
 func sortRecords(records [][]string, hasHeaders bool, params map[string]interface{}) (*CSVProcessOutput, error) {
 	// This is a simple implementation
 	// In a real implementation, you'd want to use a proper sorting algorithm
+	// The hasHeaders parameter would be used to skip the header row during sorting
+	// The params parameter would contain sorting configuration like column and order
+	_ = hasHeaders // Mark as intentionally unused for now
+	_ = params     // Mark as intentionally unused for now
+	
 	return &CSVProcessOutput{
 		Result:   records,
 		RowCount: len(records),

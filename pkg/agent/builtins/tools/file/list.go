@@ -161,8 +161,42 @@ func FileList() domain.Tool {
 	return atools.NewTool(
 		"file_list",
 		"Lists files and directories with filtering options",
-		func(ctx context.Context, params FileListParams) (*FileListResult, error) {
-			// Set defaults
+		func(ctx *domain.ToolContext, params FileListParams) (*FileListResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.EmitMessage(fmt.Sprintf("Starting directory listing for %s", params.Path))
+			}
+
+			// Get configuration from state
+			showHidden := false
+			if ctx.State != nil {
+				// Check for show hidden files preference
+				if val, exists := ctx.State.Get("file_list_show_hidden"); exists {
+					if show, ok := val.(bool); ok {
+						showHidden = show
+					}
+				}
+
+				// Check for default sort preference
+				if params.SortBy == "" {
+					if sortPref, exists := ctx.State.Get("file_list_default_sort"); exists {
+						if sort, ok := sortPref.(string); ok {
+							params.SortBy = sort
+						}
+					}
+				}
+
+				// Check for default max results
+				if params.MaxResults == 0 {
+					if maxResults, exists := ctx.State.Get("file_list_max_results"); exists {
+						if max, ok := maxResults.(int); ok {
+							params.MaxResults = max
+						}
+					}
+				}
+			}
+
+			// Set remaining defaults
 			if params.SortBy == "" {
 				params.SortBy = "name"
 			}
@@ -175,6 +209,35 @@ func FileList() domain.Tool {
 			absPath, err := filepath.Abs(searchPath)
 			if err != nil {
 				return nil, fmt.Errorf("invalid path: %w", err)
+			}
+
+			// Check file access restrictions from state
+			if ctx.State != nil {
+				if restrictedPaths, exists := ctx.State.Get("file_restricted_paths"); exists {
+					if paths, ok := restrictedPaths.([]string); ok {
+						for _, restricted := range paths {
+							if strings.HasPrefix(absPath, restricted) {
+								return nil, fmt.Errorf("access denied: path %s is restricted", absPath)
+							}
+						}
+					}
+				}
+
+				// Check allowed paths if specified
+				if allowedPaths, exists := ctx.State.Get("file_allowed_paths"); exists {
+					if paths, ok := allowedPaths.([]string); ok && len(paths) > 0 {
+						allowed := false
+						for _, allowedPath := range paths {
+							if strings.HasPrefix(absPath, allowedPath) {
+								allowed = true
+								break
+							}
+						}
+						if !allowed {
+							return nil, fmt.Errorf("access denied: path %s is not in allowed paths", absPath)
+						}
+					}
+				}
 			}
 
 			// Verify the directory exists
@@ -201,15 +264,21 @@ func FileList() domain.Tool {
 				}
 			}
 
+			// Emit event for starting directory enumeration
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(0, 0, fmt.Sprintf("Enumerating directory: %s", absPath))
+			}
+
 			// Collect files
 			var files []FileInfo
 			var totalCount, filteredOut int
+			var directoriesProcessed int
 
 			walkFunc := func(path string, info os.FileInfo, err error) error {
 				// Check context cancellation
 				select {
-				case <-ctx.Done():
-					return ctx.Err()
+				case <-ctx.Context.Done():
+					return ctx.Context.Err()
 				default:
 				}
 
@@ -233,10 +302,29 @@ func FileList() domain.Tool {
 					}
 				}
 
+				// Check hidden files
+				if !showHidden && strings.HasPrefix(info.Name(), ".") {
+					filteredOut++
+					if info.IsDir() && params.Recursive {
+						return filepath.SkipDir // Skip hidden directories entirely
+					}
+					return nil
+				}
+
 				totalCount++
+
+				// Emit progress periodically for large directories
+				if totalCount%100 == 0 && ctx.Events != nil {
+					ctx.Events.EmitProgress(totalCount, 0, fmt.Sprintf("Processed %d items", totalCount))
+				}
 
 				// Apply filters
 				isDir := info.IsDir()
+				
+				// Track directories processed
+				if isDir {
+					directoriesProcessed++
+				}
 
 				// Type filter
 				if isDir && !params.IncludeDirs {
@@ -320,12 +408,36 @@ func FileList() domain.Tool {
 				return nil, fmt.Errorf("error walking directory: %w", err)
 			}
 
+			// Emit filtering progress
+			if ctx.Events != nil && len(files) > 0 {
+				ctx.Events.EmitProgress(totalCount, totalCount, "Sorting and filtering results")
+			}
+
 			// Sort results
 			sortFiles(files, params.SortBy, params.SortReverse)
 
 			// Apply max results limit
+			truncated := false
 			if params.MaxResults > 0 && len(files) > params.MaxResults {
 				files = files[:params.MaxResults]
+				truncated = true
+			}
+
+			// Emit completion event with summary
+			if ctx.Events != nil {
+				summary := map[string]interface{}{
+					"path":                 absPath,
+					"pattern":              params.Pattern,
+					"files_found":          len(files),
+					"total_scanned":        totalCount,
+					"filtered_out":         filteredOut,
+					"directories_processed": directoriesProcessed,
+					"recursive":            params.Recursive,
+					"truncated":            truncated,
+					"sort_by":              params.SortBy,
+					"elapsed_time":         ctx.ElapsedTime().String(),
+				}
+				ctx.Events.EmitCustom("file_list_complete", summary)
 			}
 
 			return &FileListResult{

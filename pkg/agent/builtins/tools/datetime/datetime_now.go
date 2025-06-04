@@ -4,7 +4,6 @@
 package datetime
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -110,7 +109,34 @@ func DateTimeNow() agentDomain.Tool {
 	return atools.NewTool(
 		"datetime_now",
 		"Get current date/time in various formats and timezones",
-		func(ctx context.Context, input DateTimeNowInput) (*DateTimeNowOutput, error) {
+		func(ctx *agentDomain.ToolContext, input DateTimeNowInput) (*DateTimeNowOutput, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(agentDomain.EventToolCall, agentDomain.ToolCallEventData{
+					ToolName:   "datetime_now",
+					Parameters: input,
+					RequestID:  ctx.RunID,
+				})
+			}
+			
+			// Check state for default timezone if not provided
+			if input.Timezone == "" && ctx.State != nil {
+				if val, ok := ctx.State.Get("datetime_default_timezone"); ok {
+					if tz, ok := val.(string); ok && tz != "" {
+						input.Timezone = tz
+					}
+				}
+			}
+			
+			// Check state for default format if not provided
+			if input.Format == "" && ctx.State != nil {
+				if val, ok := ctx.State.Get("datetime_default_format"); ok {
+					if fmt, ok := val.(string); ok && fmt != "" {
+						input.Format = fmt
+					}
+				}
+			}
+			
 			now := time.Now()
 
 			output := &DateTimeNowOutput{
@@ -198,6 +224,15 @@ func DateTimeNow() agentDomain.Tool {
 				}
 			}
 
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(agentDomain.EventToolResult, agentDomain.ToolResultEventData{
+					ToolName:  "datetime_now",
+					Result:    output,
+					RequestID: ctx.RunID,
+				})
+			}
+			
 			return output, nil
 		},
 		dateTimeNowParamSchema,

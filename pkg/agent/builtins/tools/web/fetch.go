@@ -4,7 +4,6 @@
 package web
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -90,11 +89,26 @@ func WebFetch() domain.Tool {
 	return atools.NewTool(
 		"web_fetch",
 		"Fetches content from a URL with customizable timeout",
-		func(ctx context.Context, params WebFetchParams) (*WebFetchResult, error) {
+		func(ctx *domain.ToolContext, params WebFetchParams) (*WebFetchResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.EmitMessage(fmt.Sprintf("Starting web fetch for %s", params.URL))
+			}
+
 			// Set default timeout
 			timeout := 30 * time.Second
 			if params.Timeout > 0 {
 				timeout = time.Duration(params.Timeout) * time.Second
+			}
+
+			// Check state for custom user agent
+			userAgent := "go-llms/1.0"
+			if ctx.State != nil {
+				if ua, exists := ctx.State.Get("user_agent"); exists {
+					if uaStr, ok := ua.(string); ok {
+						userAgent = uaStr
+					}
+				}
 			}
 
 			// Create HTTP client with timeout
@@ -103,25 +117,54 @@ func WebFetch() domain.Tool {
 			}
 
 			// Create request with context
-			req, err := http.NewRequestWithContext(ctx, "GET", params.URL, nil)
+			req, err := http.NewRequestWithContext(ctx.Context, "GET", params.URL, nil)
 			if err != nil {
 				return nil, fmt.Errorf("error creating request: %w", err)
 			}
 
-			// Set user agent to identify as go-llms
-			req.Header.Set("User-Agent", "go-llms/1.0")
+			// Set user agent
+			req.Header.Set("User-Agent", userAgent)
+
+			// Check state for additional headers
+			if ctx.State != nil {
+				if headers, exists := ctx.State.Get("http_headers"); exists {
+					if headerMap, ok := headers.(map[string]string); ok {
+						for key, value := range headerMap {
+							req.Header.Set(key, value)
+						}
+					}
+				}
+			}
+
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(1, 4, "Request prepared")
+			}
 
 			// Execute request
 			resp, err := client.Do(req)
 			if err != nil {
+				if ctx.Events != nil {
+					ctx.Events.EmitError(err)
+				}
 				return nil, fmt.Errorf("error fetching URL: %w", err)
 			}
 			defer resp.Body.Close()
+
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(2, 4, "Response received")
+			}
 
 			// Read response body
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return nil, fmt.Errorf("error reading response: %w", err)
+			}
+
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(3, 4, "Response body read")
 			}
 
 			// Extract headers
@@ -130,6 +173,15 @@ func WebFetch() domain.Tool {
 				if len(values) > 0 {
 					headers[key] = values[0]
 				}
+			}
+
+			// Emit completion event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(4, 4, "Complete")
+				ctx.Events.EmitCustom("fetch_complete", map[string]interface{}{
+					"status":      resp.StatusCode,
+					"contentSize": len(body),
+				})
 			}
 
 			return &WebFetchResult{
@@ -148,3 +200,4 @@ func WebFetch() domain.Tool {
 func MustGetWebFetch() domain.Tool {
 	return tools.MustGetTool("web_fetch")
 }
+

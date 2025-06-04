@@ -88,6 +88,14 @@ func (s *State) Delete(key string) {
 	s.version++
 }
 
+// Has checks if a key exists in the state
+func (s *State) Has(key string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	_, exists := s.values[key]
+	return exists
+}
+
 // Values returns a copy of all values in the state
 func (s *State) Values() map[string]interface{} {
 	s.mu.RLock()

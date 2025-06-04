@@ -4,7 +4,6 @@
 package feed
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 )
+
 
 func TestFeedFetchRegistration(t *testing.T) {
 	// Test that the tool is registered
@@ -90,10 +90,10 @@ func TestFeedFetchRSS(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedFetch()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test basic RSS fetch
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"url": server.URL,
 	})
 	if err != nil {
@@ -229,9 +229,9 @@ func TestFeedFetchAtom(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedFetch()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"url": server.URL,
 	})
 	if err != nil {
@@ -341,9 +341,9 @@ func TestFeedFetchJSONFeed(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedFetch()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"url": server.URL,
 	})
 	if err != nil {
@@ -423,10 +423,10 @@ func TestFeedFetchMaxItems(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedFetch()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test with max_items limit
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"url":       server.URL,
 		"max_items": 5,
 	})
@@ -475,10 +475,10 @@ func TestFeedFetchConditionalRequest(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedFetch()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test with ETag
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"url":  server.URL,
 		"etag": `W/"123456"`,
 	})
@@ -495,7 +495,7 @@ func TestFeedFetchConditionalRequest(t *testing.T) {
 	}
 
 	// Test with If-Modified-Since
-	result, err = tool.Execute(ctx, map[string]interface{}{
+	result, err = tool.Execute(tc, map[string]interface{}{
 		"url":         server.URL,
 		"if_modified": "Mon, 30 Jan 2024 12:00:00 GMT",
 	})
@@ -511,10 +511,10 @@ func TestFeedFetchConditionalRequest(t *testing.T) {
 
 func TestFeedFetchErrors(t *testing.T) {
 	tool := FeedFetch()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test invalid URL
-	_, err := tool.Execute(ctx, map[string]interface{}{
+	_, err := tool.Execute(tc, map[string]interface{}{
 		"url": "not-a-valid-url",
 	})
 	if err == nil {
@@ -527,7 +527,7 @@ func TestFeedFetchErrors(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err = tool.Execute(ctx, map[string]interface{}{
+	_, err = tool.Execute(tc, map[string]interface{}{
 		"url": server.URL,
 	})
 	if err == nil {
@@ -543,7 +543,7 @@ func TestFeedFetchErrors(t *testing.T) {
 	}))
 	defer invalidServer.Close()
 
-	_, err = tool.Execute(ctx, map[string]interface{}{
+	_, err = tool.Execute(tc, map[string]interface{}{
 		"url": invalidServer.URL,
 	})
 	if err == nil {
@@ -563,10 +563,10 @@ func TestFeedFetchTimeout(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedFetch()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test with short timeout
-	_, err := tool.Execute(ctx, map[string]interface{}{
+	_, err := tool.Execute(tc, map[string]interface{}{
 		"url":     server.URL,
 		"timeout": 1, // 1 second timeout
 	})
@@ -590,10 +590,10 @@ func TestFeedFetchCustomUserAgent(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedFetch()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test with custom user agent
-	_, err := tool.Execute(ctx, map[string]interface{}{
+	_, err := tool.Execute(tc, map[string]interface{}{
 		"url":        server.URL,
 		"user_agent": "MyCustomAgent/1.0",
 	})
@@ -606,7 +606,7 @@ func TestFeedFetchCustomUserAgent(t *testing.T) {
 	}
 
 	// Test with default user agent
-	_, err = tool.Execute(ctx, map[string]interface{}{
+	_, err = tool.Execute(tc, map[string]interface{}{
 		"url": server.URL,
 	})
 	if err != nil {

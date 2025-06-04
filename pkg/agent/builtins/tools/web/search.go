@@ -133,8 +133,13 @@ func WebSearch() domain.Tool {
 	return atools.NewTool(
 		"web_search",
 		"Performs web searches using various search engines",
-		func(ctx context.Context, params WebSearchParams) (*WebSearchResults, error) {
+		func(ctx *domain.ToolContext, params WebSearchParams) (*WebSearchResults, error) {
 			startTime := time.Now()
+
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.EmitMessage(fmt.Sprintf("Starting web search for '%s'", params.Query))
+			}
 
 			// Set defaults
 			if params.Engine == "" {
@@ -149,6 +154,20 @@ func WebSearch() domain.Tool {
 				params.TimeoutSecs = 30
 			}
 
+			// Check state for custom search engine preferences
+			if ctx.State != nil {
+				if engine, exists := ctx.State.Get("search_engine"); exists {
+					if engineStr, ok := engine.(string); ok {
+						params.Engine = engineStr
+					}
+				}
+				// Check for API keys or custom search endpoints
+				if apiKey, exists := ctx.State.Get("search_api_key"); exists {
+					// Store for use in search functions (could be passed via context)
+					ctx.Context = context.WithValue(ctx.Context, "search_api_key", apiKey)
+				}
+			}
+
 			// Set safe search default to true
 			safeSearch := true
 			if !params.SafeSearch {
@@ -158,6 +177,11 @@ func WebSearch() domain.Tool {
 			timeout := time.Duration(params.TimeoutSecs) * time.Second
 			client := &http.Client{
 				Timeout: timeout,
+			}
+
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(1, 4, "Search engine configured")
 			}
 
 			var results []SearchResult
@@ -173,7 +197,21 @@ func WebSearch() domain.Tool {
 			}
 
 			if err != nil {
+				if ctx.Events != nil {
+					ctx.Events.EmitError(err)
+				}
 				return nil, fmt.Errorf("search failed: %w", err)
+			}
+
+			// Emit completion event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(4, 4, "Search complete")
+				ctx.Events.EmitCustom("search_complete", map[string]interface{}{
+					"query":        params.Query,
+					"engine":       params.Engine,
+					"resultCount":  len(results),
+					"timeMs":       time.Since(startTime).Milliseconds(),
+				})
 			}
 
 			return &WebSearchResults{
@@ -189,7 +227,12 @@ func WebSearch() domain.Tool {
 }
 
 // searchDuckDuckGo performs a search using DuckDuckGo Instant Answer API
-func searchDuckDuckGo(ctx context.Context, client *http.Client, query string, maxResults int, safeSearch bool) ([]SearchResult, error) {
+func searchDuckDuckGo(ctx *domain.ToolContext, client *http.Client, query string, maxResults int, safeSearch bool) ([]SearchResult, error) {
+	// Emit progress
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(2, 4, "Querying DuckDuckGo")
+	}
+
 	// Build DuckDuckGo API URL
 	params := url.Values{}
 	params.Set("q", query)
@@ -203,12 +246,21 @@ func searchDuckDuckGo(ctx context.Context, client *http.Client, query string, ma
 	apiURL := "https://api.duckduckgo.com/?" + params.Encode()
 
 	// Create request
-	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
+	req, err := http.NewRequestWithContext(ctx.Context, "GET", apiURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
-	req.Header.Set("User-Agent", "go-llms/1.0")
+	// Set user agent
+	userAgent := "go-llms/1.0"
+	if ctx.State != nil {
+		if ua, exists := ctx.State.Get("user_agent"); exists {
+			if uaStr, ok := ua.(string); ok {
+				userAgent = uaStr
+			}
+		}
+	}
+	req.Header.Set("User-Agent", userAgent)
 
 	// Execute request
 	resp, err := client.Do(req)
@@ -216,6 +268,11 @@ func searchDuckDuckGo(ctx context.Context, client *http.Client, query string, ma
 		return nil, fmt.Errorf("error executing request: %w", err)
 	}
 	defer resp.Body.Close()
+
+	// Emit progress
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(3, 4, "Processing results")
+	}
 
 	// Read response
 	body, err := io.ReadAll(resp.Body)
@@ -284,10 +341,25 @@ func searchDuckDuckGo(ctx context.Context, client *http.Client, query string, ma
 }
 
 // searchSearx performs a search using a Searx instance
-func searchSearx(ctx context.Context, client *http.Client, query string, maxResults int, safeSearch bool) ([]SearchResult, error) {
+func searchSearx(ctx *domain.ToolContext, client *http.Client, query string, maxResults int, safeSearch bool) ([]SearchResult, error) {
+	// Check state for Searx instance URL
+	if ctx.State != nil {
+		if searxURL, exists := ctx.State.Get("searx_url"); exists {
+			if urlStr, ok := searxURL.(string); ok {
+				// Emit progress
+				if ctx.Events != nil {
+					ctx.Events.EmitProgress(2, 4, "Querying Searx instance")
+				}
+				
+				// Implementation would go here for custom Searx instance
+				// For now, still return error
+				return nil, fmt.Errorf("searx search implementation pending for URL: %s", urlStr)
+			}
+		}
+	}
+	
 	// For now, return an error as Searx requires a running instance
-	// This can be implemented if a public Searx instance URL is provided
-	return nil, fmt.Errorf("searx search not implemented - requires searx instance URL")
+	return nil, fmt.Errorf("searx search not implemented - requires searx_url in state")
 }
 
 // extractTitle attempts to extract a title from DuckDuckGo result text

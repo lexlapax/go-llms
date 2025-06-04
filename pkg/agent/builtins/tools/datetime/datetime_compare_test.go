@@ -12,13 +12,15 @@ func TestDateTimeCompare(t *testing.T) {
 	tool := DateTimeCompare()
 
 	t.Run("compare operation", func(t *testing.T) {
+		tc := createTestToolContext(ctx)
+		
 		// Test date1 before date2
 		input := DateTimeCompareInput{
 			Operation: "compare",
 			Date1:     "2024-01-15T10:30:00Z",
 			Date2:     "2024-01-16T10:30:00Z",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(tc, input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -51,7 +53,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Date1:     "2024-01-16T10:30:00Z",
 			Date2:     "2024-01-15T10:30:00Z",
 		}
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -77,7 +79,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Date1:     "2024-01-15T10:30:00Z",
 			Date2:     "2024-01-15T10:30:00Z",
 		}
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -104,7 +106,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Date2:     "2024-01-15T10:30:00Z",
 			Timezone:  "America/New_York",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -123,7 +125,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Date2:      "2024-01-15T20:45:00Z",
 			PeriodType: "day",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -135,7 +137,7 @@ func TestDateTimeCompare(t *testing.T) {
 
 		// Different days
 		input.Date2 = "2024-01-16T10:30:00Z"
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -152,7 +154,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Date2:      "2024-01-19T10:30:00Z", // Friday
 			PeriodType: "week",
 		}
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -169,7 +171,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Date2:      "2024-01-31T10:30:00Z",
 			PeriodType: "month",
 		}
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -186,7 +188,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Date2:      "2024-12-31T10:30:00Z",
 			PeriodType: "year",
 		}
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -205,7 +207,7 @@ func TestDateTimeCompare(t *testing.T) {
 			RangeStart: "2024-01-01T00:00:00Z",
 			RangeEnd:   "2024-01-31T23:59:59Z",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -217,7 +219,7 @@ func TestDateTimeCompare(t *testing.T) {
 
 		// Date before range
 		input.Date1 = "2023-12-31T10:30:00Z"
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -229,7 +231,7 @@ func TestDateTimeCompare(t *testing.T) {
 
 		// Date after range
 		input.Date1 = "2024-02-01T10:30:00Z"
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -241,7 +243,7 @@ func TestDateTimeCompare(t *testing.T) {
 
 		// Date exactly at range start
 		input.Date1 = "2024-01-01T00:00:00Z"
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -266,7 +268,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Dates:     dates,
 			SortOrder: "asc",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -286,7 +288,7 @@ func TestDateTimeCompare(t *testing.T) {
 
 		// Descending order
 		input.SortOrder = "desc"
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -306,7 +308,7 @@ func TestDateTimeCompare(t *testing.T) {
 
 		// Default order (should be ascending)
 		input.SortOrder = ""
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -333,7 +335,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Dates:       dates,
 			ExtremeType: "earliest",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -345,7 +347,7 @@ func TestDateTimeCompare(t *testing.T) {
 
 		// Find latest
 		input.ExtremeType = "latest"
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -357,7 +359,7 @@ func TestDateTimeCompare(t *testing.T) {
 
 		// Default to earliest
 		input.ExtremeType = ""
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -375,7 +377,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Date1:     "2024-01-15T10:30:00Z",
 			// Date2 missing
 		}
-		_, err := tool.Execute(ctx, input)
+		_, err := tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for missing date2")
 		}
@@ -387,7 +389,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Date2:     "2024-01-16T10:30:00Z",
 			// PeriodType missing
 		}
-		_, err = tool.Execute(ctx, input)
+		_, err = tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for missing period_type")
 		}
@@ -399,7 +401,7 @@ func TestDateTimeCompare(t *testing.T) {
 			RangeStart: "2024-01-01T00:00:00Z",
 			// RangeEnd missing
 		}
-		_, err = tool.Execute(ctx, input)
+		_, err = tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for missing range_end")
 		}
@@ -409,7 +411,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Operation: "sort",
 			Dates:     []string{},
 		}
-		_, err = tool.Execute(ctx, input)
+		_, err = tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for empty dates array")
 		}
@@ -418,7 +420,7 @@ func TestDateTimeCompare(t *testing.T) {
 		input = DateTimeCompareInput{
 			Operation: "invalid",
 		}
-		_, err = tool.Execute(ctx, input)
+		_, err = tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for invalid operation")
 		}
@@ -429,7 +431,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Date1:     "invalid-date",
 			Date2:     "2024-01-15T10:30:00Z",
 		}
-		_, err = tool.Execute(ctx, input)
+		_, err = tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for invalid date format")
 		}
@@ -441,7 +443,7 @@ func TestDateTimeCompare(t *testing.T) {
 			Date2:     "2024-01-16T10:30:00Z",
 			Timezone:  "Invalid/Timezone",
 		}
-		_, err = tool.Execute(ctx, input)
+		_, err = tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for invalid timezone")
 		}
@@ -466,7 +468,7 @@ func TestDateTimeCompare(t *testing.T) {
 					Date1:     f.date1,
 					Date2:     f.date2,
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to parse dates: %v", err)
 				}

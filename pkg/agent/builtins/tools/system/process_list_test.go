@@ -4,7 +4,6 @@
 package system
 
 import (
-	"context"
 	"os"
 	"runtime"
 	"strings"
@@ -42,7 +41,7 @@ func TestProcessListRegistration(t *testing.T) {
 
 func TestProcessListBasic(t *testing.T) {
 	tool := ProcessList()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test basic process listing
 	result, err := tool.Execute(ctx, map[string]interface{}{})
@@ -80,7 +79,7 @@ func TestProcessListBasic(t *testing.T) {
 
 func TestProcessListIncludeSelf(t *testing.T) {
 	tool := ProcessList()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 	currentPID := os.Getpid()
 
 	// Test with include_self = true
@@ -128,7 +127,7 @@ func TestProcessListIncludeSelf(t *testing.T) {
 
 func TestProcessListFilter(t *testing.T) {
 	tool := ProcessList()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Filter by a process name that should exist (use "go" as it's running tests)
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -153,7 +152,7 @@ func TestProcessListFilter(t *testing.T) {
 
 func TestProcessListSort(t *testing.T) {
 	tool := ProcessList()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test PID sorting
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -197,7 +196,7 @@ func TestProcessListSort(t *testing.T) {
 
 func TestProcessListLimit(t *testing.T) {
 	tool := ProcessList()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test with limit
 	limit := 5

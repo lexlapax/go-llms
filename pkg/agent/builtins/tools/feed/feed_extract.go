@@ -4,7 +4,6 @@
 package feed
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -101,8 +100,49 @@ func FeedExtract() domain.Tool {
 	return atools.NewTool(
 		"feed_extract",
 		"Extracts specific fields from feed items for structured data analysis",
-		func(ctx context.Context, params FeedExtractParams) (*FeedExtractResult, error) {
-			return extractFromFeed(params)
+		func(ctx *domain.ToolContext, params FeedExtractParams) (*FeedExtractResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+					ToolName:   "feed_extract",
+					Parameters: params,
+					RequestID:  ctx.RunID,
+				})
+			}
+			
+			// Check state for default max items if not provided
+			if params.MaxItems == 0 && ctx.State != nil {
+				if val, ok := ctx.State.Get("feed_extract_max_items"); ok {
+					if max, ok := val.(int); ok && max > 0 {
+						params.MaxItems = max
+					}
+				}
+			}
+			
+			// Check state for default fields if none provided
+			if len(params.Fields) == 0 && ctx.State != nil {
+				if val, ok := ctx.State.Get("feed_extract_default_fields"); ok {
+					if fields, ok := val.([]string); ok && len(fields) > 0 {
+						params.Fields = fields
+					}
+				}
+			}
+			
+			result, err := extractFromFeed(params)
+			if err != nil {
+				return nil, err
+			}
+			
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+					ToolName:  "feed_extract",
+					Result:    result,
+					RequestID: ctx.RunID,
+				})
+			}
+			
+			return result, nil
 		},
 		feedExtractParamSchema,
 	)

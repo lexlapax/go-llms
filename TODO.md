@@ -42,11 +42,12 @@
 - [x] Phase 3: Workflow Agents - COMPLETED (February 3, 2025) - see TODO-DONE.md
 
 - [ ] Phase 4: Agent-Tool Integration (Week 4)
-  - [ ] Revisit existing Tool interface and see if it needs updates based on current agent/workflow
-  - [ ] Implement AgentTool wrapper
-  - [ ] Create tool context system
-  - [ ] Add bidirectional agent-tool conversion utilities
-  - [ ] make sure all current tools until builtins/tools work with agents
+  - [x] Phase 4.1: Revisit existing Tool interface and see if it needs updates based on current agent/workflow
+  - [x] Phase 4.2: Implement AgentTool wrapper
+  - [x] Phase 4.3: Create tool context system - COMPLETED (February 2025)
+  - [ ] Phase 4.4: Add bidirectional agent-tool conversion utilities
+  - [ ] Phase 4.5: Ensure all current tools in builtins/tools work with agents
+  - [ ] Phase 4.6: Create examples demonstrating enhanced tool capabilities - tell me before implementing what.
 
 - [ ] Phase 5: Advanced Features (Week 5)
   - [ ] State persistence and serialization, present plan before implementation
@@ -56,14 +57,18 @@
 
 - [ ] Phase 6: Migration and Testing (Week 5-6)
   - [ ] Remove old superfluos code, examples and tests
+  - [ ] scan all product code for *backward compatibility* remove them and fix code to use new code.
   - [ ] no need for migration guide - update documentation to new codebase
-  - [ ] Redo Examples
+  - [ ] scan all examples for Redo
     - [ ] Come up with an example plan based on codebase for product
     - [ ] remove invalid examples
     - [ ] Update Valid examples
     - [ ] Add missing examples
   - [ ] Comprehensive testing
+    - [ ] Examine all integration tests to see which ones are needed, unneeded or need to be fixed, or new ones added and create a subtask list in todo.md
   - [ ] Performance benchmarking
+    - [ ] move benchmarks directory under tests/
+    - [ ] Examine all benchmark tests to see which ones are needed, unneeded or need to be fixed, or new ones added and create a subtask list in todo.md
 
 ### Previous Built-in Components Plan
 - [ ] P2: Build useful built-in tools

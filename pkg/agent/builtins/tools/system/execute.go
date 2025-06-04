@@ -206,8 +206,17 @@ func ExecuteCommand() domain.Tool {
 	return atools.NewTool(
 		"execute_command",
 		"Executes system commands with enhanced control and security",
-		func(ctx context.Context, params ExecuteCommandParams) (*ExecuteCommandResult, error) {
+		func(ctx *domain.ToolContext, params ExecuteCommandParams) (*ExecuteCommandResult, error) {
 			startTime := time.Now()
+			
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+					ToolName:   "execute_command",
+					Parameters: params,
+					RequestID:  ctx.RunID,
+				})
+			}
 
 			// Set defaults
 			if params.Timeout == 0 {
@@ -224,16 +233,29 @@ func ExecuteCommand() domain.Tool {
 			// Since SafeMode is a bool, it's always either true or false
 			// We can't detect if it was explicitly set, so we'll just use its value
 
+			// Get safe mode default from state if not explicitly set
+			safeMode := params.SafeMode
+			if ctx.State != nil {
+				if val, ok := ctx.State.Get("command_safe_mode"); ok {
+					if sm, ok := val.(bool); ok {
+						safeMode = sm
+					}
+				}
+			}
+			
 			// Validate command in safe mode
-			if params.SafeMode {
-				if err := validateCommandSafety(params.Command); err != nil {
+			if safeMode {
+				if err := validateCommandSafety(params.Command, ctx); err != nil {
+					if ctx.Events != nil {
+						ctx.Events.EmitError(fmt.Errorf("command blocked by safety check: %w", err))
+					}
 					return nil, err
 				}
 			}
 
 			// Create context with timeout
 			timeout := time.Duration(params.Timeout) * time.Second
-			cmdCtx, cancel := context.WithTimeout(ctx, timeout)
+			cmdCtx, cancel := context.WithTimeout(ctx.Context, timeout)
 			defer cancel()
 
 			// Prepare command
@@ -284,6 +306,11 @@ func ExecuteCommand() domain.Tool {
 			cmd.Stdout = &stdout
 			cmd.Stderr = &stderr
 
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitMessage(fmt.Sprintf("Executing command: %s", params.Command))
+			}
+			
 			// Execute command
 			err := cmd.Run()
 			duration := time.Since(startTime)
@@ -321,6 +348,19 @@ func ExecuteCommand() domain.Tool {
 				result.ExitCode = 0
 				result.Success = true
 			}
+			
+			// Emit result event
+			if ctx.Events != nil {
+				if result.Success {
+					ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+						ToolName:  "execute_command",
+						Result:    result,
+						RequestID: ctx.RunID,
+					})
+				} else {
+					ctx.Events.EmitError(fmt.Errorf("command failed with exit code %d", result.ExitCode))
+				}
+			}
 
 			return result, nil
 		},
@@ -329,7 +369,7 @@ func ExecuteCommand() domain.Tool {
 }
 
 // validateCommandSafety checks if a command is safe to execute
-func validateCommandSafety(command string) error {
+func validateCommandSafety(command string, ctx *domain.ToolContext) error {
 	// Extract the base command
 	parts := strings.Fields(command)
 	if len(parts) == 0 {
@@ -370,16 +410,49 @@ func validateCommandSafety(command string) error {
 		}
 	}
 
+	// Check if command is in the safe commands list
+	commandAllowed := safeCommands[baseCmd]
+	
+	// Check state for additional allowed commands
+	if !commandAllowed && ctx != nil && ctx.State != nil {
+		if allowedCmds, ok := ctx.State.Get("allowed_commands"); ok {
+			if cmdList, ok := allowedCmds.([]string); ok {
+				for _, allowed := range cmdList {
+					if baseCmd == allowed {
+						commandAllowed = true
+						break
+					}
+				}
+			}
+		}
+	}
+	
 	// In strict safe mode, only allow explicitly safe commands
 	// This is more restrictive but safer for untrusted input
-	if !safeCommands[baseCmd] {
+	if !commandAllowed {
 		// Allow full paths to known safe locations
 		if strings.HasPrefix(parts[0], "/usr/bin/") ||
 			strings.HasPrefix(parts[0], "/bin/") ||
 			strings.HasPrefix(parts[0], "/usr/local/bin/") {
 			// Check the base command from the path
 			baseCmd = filepath.Base(parts[0])
-			if !safeCommands[baseCmd] {
+			commandAllowed = safeCommands[baseCmd]
+			
+			// Check state again for the base command
+			if !commandAllowed && ctx != nil && ctx.State != nil {
+				if allowedCmds, ok := ctx.State.Get("allowed_commands"); ok {
+					if cmdList, ok := allowedCmds.([]string); ok {
+						for _, allowed := range cmdList {
+							if baseCmd == allowed {
+								commandAllowed = true
+								break
+							}
+						}
+					}
+				}
+			}
+			
+			if !commandAllowed {
 				return fmt.Errorf("command '%s' is not in the safe command allowlist", baseCmd)
 			}
 		} else {

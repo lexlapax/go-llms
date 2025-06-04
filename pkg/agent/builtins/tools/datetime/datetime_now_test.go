@@ -13,7 +13,7 @@ func TestDateTimeNow(t *testing.T) {
 
 	t.Run("basic functionality", func(t *testing.T) {
 		input := DateTimeNowInput{}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -46,7 +46,7 @@ func TestDateTimeNow(t *testing.T) {
 		input := DateTimeNowInput{
 			Timezone: "America/New_York",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -68,7 +68,7 @@ func TestDateTimeNow(t *testing.T) {
 		input := DateTimeNowInput{
 			Timezone: "Invalid/Timezone",
 		}
-		_, err := tool.Execute(ctx, input)
+		_, err := tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for invalid timezone")
 		}
@@ -78,7 +78,7 @@ func TestDateTimeNow(t *testing.T) {
 		input := DateTimeNowInput{
 			IncludeComponents: true,
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -111,7 +111,7 @@ func TestDateTimeNow(t *testing.T) {
 		input := DateTimeNowInput{
 			IncludeWeekInfo: true,
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -143,7 +143,7 @@ func TestDateTimeNow(t *testing.T) {
 		input := DateTimeNowInput{
 			IncludeTimestamps: true,
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -177,7 +177,7 @@ func TestDateTimeNow(t *testing.T) {
 		input := DateTimeNowInput{
 			Format: "2006-01-02 15:04:05",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -206,7 +206,7 @@ func TestDateTimeNow(t *testing.T) {
 			IncludeTimestamps: true,
 			Format:            time.Kitchen,
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}

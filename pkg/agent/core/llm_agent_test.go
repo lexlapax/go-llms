@@ -62,7 +62,7 @@ func (t *mockTool) Name() string                     { return t.name }
 func (t *mockTool) Description() string              { return t.description }
 func (t *mockTool) ParameterSchema() *sdomain.Schema { return nil }
 
-func (t *mockTool) Execute(ctx context.Context, params any) (any, error) {
+func (t *mockTool) Execute(ctx *domain.ToolContext, params any) (any, error) {
 	if t.err != nil {
 		return nil, t.err
 	}

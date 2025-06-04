@@ -36,7 +36,7 @@ func TestDateTimeParse(t *testing.T) {
 					DateString: tc.dateString,
 					AutoDetect: true,
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -72,7 +72,7 @@ func TestDateTimeParse(t *testing.T) {
 			DateString: "15/01/2024 10:30",
 			Format:     "02/01/2006 15:04",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -97,7 +97,7 @@ func TestDateTimeParse(t *testing.T) {
 			DateString: "2024-01-15 10:30:00",
 			Timezone:   "America/New_York",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -148,7 +148,7 @@ func TestDateTimeParse(t *testing.T) {
 					DateString:    tc.dateString,
 					ReferenceTime: referenceTime,
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -195,7 +195,7 @@ func TestDateTimeParse(t *testing.T) {
 				input := DateTimeParseInput{
 					DateString: tc.timestamp,
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -222,7 +222,7 @@ func TestDateTimeParse(t *testing.T) {
 			DateString: "not-a-date",
 			Format:     "2006-01-02", // Try with specific format
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -241,7 +241,7 @@ func TestDateTimeParse(t *testing.T) {
 		input := DateTimeParseInput{
 			DateString: "01/02/2024",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -278,7 +278,7 @@ func TestDateTimeParse(t *testing.T) {
 					DateString:    tc.dateString,
 					ReferenceTime: referenceTime,
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -302,7 +302,7 @@ func TestDateTimeParse(t *testing.T) {
 			Format:     "2006/01/02", // Wrong format
 			AutoDetect: false,
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -329,7 +329,7 @@ func TestDateTimeParse(t *testing.T) {
 					DateString:    dateString,
 					ReferenceTime: referenceTime,
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}

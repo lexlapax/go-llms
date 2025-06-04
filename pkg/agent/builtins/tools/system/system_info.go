@@ -4,7 +4,6 @@
 package system
 
 import (
-	"context"
 	"os"
 	"runtime"
 	"time"
@@ -149,7 +148,15 @@ func GetSystemInfo() domain.Tool {
 	return atools.NewTool(
 		"get_system_info",
 		"Retrieves comprehensive system information",
-		func(ctx context.Context, params GetSystemInfoParams) (*SystemInfo, error) {
+		func(ctx *domain.ToolContext, params GetSystemInfoParams) (*SystemInfo, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+					ToolName:   "get_system_info",
+					Parameters: params,
+					RequestID:  ctx.RunID,
+				})
+			}
 			info := &SystemInfo{
 				OS: OSInfo{
 					Name:     runtime.GOOS,
@@ -170,6 +177,31 @@ func GetSystemInfo() domain.Tool {
 				info.OS.Version = version
 			}
 
+			// Check state for default includes if not explicitly set
+			if ctx.State != nil {
+				if !params.IncludeMemory {
+					if val, ok := ctx.State.Get("system_info_include_memory"); ok {
+						if b, ok := val.(bool); ok {
+							params.IncludeMemory = b
+						}
+					}
+				}
+				if !params.IncludeRuntime {
+					if val, ok := ctx.State.Get("system_info_include_runtime"); ok {
+						if b, ok := val.(bool); ok {
+							params.IncludeRuntime = b
+						}
+					}
+				}
+				if !params.IncludeEnvironment {
+					if val, ok := ctx.State.Get("system_info_include_environment"); ok {
+						if b, ok := val.(bool); ok {
+							params.IncludeEnvironment = b
+						}
+					}
+				}
+			}
+			
 			// Include memory statistics if requested
 			if params.IncludeMemory {
 				info.Memory = getMemoryInfo()
@@ -183,6 +215,15 @@ func GetSystemInfo() domain.Tool {
 			// Include environment summary if requested
 			if params.IncludeEnvironment {
 				info.Environment = getEnvironmentInfo()
+			}
+			
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+					ToolName:  "get_system_info",
+					Result:    info,
+					RequestID: ctx.RunID,
+				})
 			}
 
 			return info, nil

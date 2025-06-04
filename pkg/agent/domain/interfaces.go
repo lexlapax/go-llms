@@ -17,8 +17,8 @@ type Tool interface {
 	// Description provides information about the tool
 	Description() string
 
-	// Execute runs the tool with parameters
-	Execute(ctx context.Context, params interface{}) (interface{}, error)
+	// Execute runs the tool with parameters and enhanced context
+	Execute(ctx *ToolContext, params interface{}) (interface{}, error)
 
 	// ParameterSchema returns the schema for the tool parameters
 	ParameterSchema() *domain.Schema

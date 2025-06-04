@@ -10,6 +10,7 @@ import (
 func TestXMLProcess_Parse(t *testing.T) {
 	tool := XMLProcess()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	tests := []struct {
 		name      string
@@ -146,7 +147,7 @@ func TestXMLProcess_Parse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -165,6 +166,7 @@ func TestXMLProcess_Parse(t *testing.T) {
 func TestXMLProcess_Query(t *testing.T) {
 	tool := XMLProcess()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	testData := `<library>
 		<book id="1">
@@ -306,7 +308,7 @@ func TestXMLProcess_Query(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -325,6 +327,7 @@ func TestXMLProcess_Query(t *testing.T) {
 func TestXMLProcess_ToJSON(t *testing.T) {
 	tool := XMLProcess()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	tests := []struct {
 		name      string
@@ -410,7 +413,7 @@ func TestXMLProcess_ToJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -429,13 +432,14 @@ func TestXMLProcess_ToJSON(t *testing.T) {
 func TestXMLProcess_InvalidOperation(t *testing.T) {
 	tool := XMLProcess()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	input := XMLProcessInput{
 		Data:      `<test>data</test>`,
 		Operation: "invalid",
 	}
 
-	_, err := tool.Execute(ctx, input)
+	_, err := tool.Execute(toolCtx, input)
 	if err == nil {
 		t.Error("expected error for invalid operation")
 	}

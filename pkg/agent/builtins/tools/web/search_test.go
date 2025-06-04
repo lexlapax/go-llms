@@ -12,7 +12,48 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
+
+// Helper to create test ToolContext
+func createTestToolContextWithTimeout(timeout time.Duration) *domain.ToolContext {
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	return domain.NewToolContext(
+		ctx,
+		domain.NewStateReader(domain.NewState()),
+		&mockSearchAgent{},
+		"test-run",
+	)
+}
+
+// mockSearchAgent implements the minimum required methods for BaseAgent
+type mockSearchAgent struct{}
+
+func (m *mockSearchAgent) ID() string          { return "test-agent" }
+func (m *mockSearchAgent) Name() string        { return "Test Agent" }
+func (m *mockSearchAgent) Description() string { return "Mock agent for testing" }
+func (m *mockSearchAgent) Type() domain.AgentType { return domain.AgentTypeCustom }
+func (m *mockSearchAgent) Parent() domain.BaseAgent { return nil }
+func (m *mockSearchAgent) SetParent(parent domain.BaseAgent) error { return nil }
+func (m *mockSearchAgent) SubAgents() []domain.BaseAgent { return nil }
+func (m *mockSearchAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
+func (m *mockSearchAgent) RemoveSubAgent(name string) error { return nil }
+func (m *mockSearchAgent) FindAgent(name string) domain.BaseAgent { return nil }
+func (m *mockSearchAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
+func (m *mockSearchAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) { return nil, nil }
+func (m *mockSearchAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) { return nil, nil }
+func (m *mockSearchAgent) Initialize(ctx context.Context) error { return nil }
+func (m *mockSearchAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
+func (m *mockSearchAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error { return nil }
+func (m *mockSearchAgent) Cleanup(ctx context.Context) error { return nil }
+func (m *mockSearchAgent) InputSchema() *sdomain.Schema { return nil }
+func (m *mockSearchAgent) OutputSchema() *sdomain.Schema { return nil }
+func (m *mockSearchAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (m *mockSearchAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return m }
+func (m *mockSearchAgent) Validate() error { return nil }
+func (m *mockSearchAgent) Metadata() map[string]interface{} { return nil }
+func (m *mockSearchAgent) SetMetadata(key string, value interface{}) {}
 
 func TestWebSearchRegistration(t *testing.T) {
 	// Test that the tool is registered
@@ -95,8 +136,7 @@ func TestWebSearchExecution(t *testing.T) {
 
 	// Test with actual DuckDuckGo API (limited test)
 	tool := WebSearch()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	ctx := createTestToolContextWithTimeout(5 * time.Second)
 
 	result, err := tool.Execute(ctx, map[string]interface{}{
 		"query":       "golang test query",
@@ -139,7 +179,7 @@ func TestWebSearchExecution(t *testing.T) {
 
 func TestWebSearchParameterValidation(t *testing.T) {
 	tool := WebSearch()
-	ctx := context.Background()
+	ctx := createTestToolContextWithTimeout(5 * time.Second)
 
 	testCases := []struct {
 		name        string
@@ -270,5 +310,31 @@ func TestWebSearchDefaults(t *testing.T) {
 	}
 	if params.MaxResults != 50 {
 		t.Errorf("Expected max_results capped at 50, got %d", params.MaxResults)
+	}
+}
+
+func TestWebSearchWithCustomEngine(t *testing.T) {
+	tool := WebSearch()
+	
+	// Create tool context with custom search engine in state
+	state := domain.NewState()
+	state.Set("search_engine", "searx")
+	state.Set("searx_url", "https://searx.example.com")
+	ctx := domain.NewToolContext(
+		context.Background(),
+		domain.NewStateReader(state),
+		&mockSearchAgent{},
+		"test-run",
+	)
+
+	// Test with custom engine (will fail but check the error message)
+	_, err := tool.Execute(ctx, map[string]interface{}{
+		"query": "test search",
+	})
+	
+	if err == nil {
+		t.Error("Expected error for searx engine")
+	} else if err.Error() != "search failed: searx search implementation pending for URL: https://searx.example.com" {
+		t.Errorf("Unexpected error message: %v", err)
 	}
 }

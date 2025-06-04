@@ -4,7 +4,6 @@
 package feed
 
 import (
-	"context"
 	"crypto/md5"
 	"fmt"
 	"sort"
@@ -109,8 +108,49 @@ func FeedAggregate() domain.Tool {
 	return atools.NewTool(
 		"feed_aggregate",
 		"Combines multiple feeds into one unified feed with sorting and deduplication",
-		func(ctx context.Context, params FeedAggregateParams) (*FeedAggregateResult, error) {
-			return aggregateFeeds(params)
+		func(ctx *domain.ToolContext, params FeedAggregateParams) (*FeedAggregateResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+					ToolName:   "feed_aggregate",
+					Parameters: params,
+					RequestID:  ctx.RunID,
+				})
+			}
+			
+			// Check state for default sort options if not provided
+			if params.SortBy == "" && ctx.State != nil {
+				if val, ok := ctx.State.Get("feed_aggregate_default_sort"); ok {
+					if sort, ok := val.(string); ok && sort != "" {
+						params.SortBy = sort
+					}
+				}
+			}
+			
+			// Check state for default max items if not provided
+			if params.MaxItems == 0 && ctx.State != nil {
+				if val, ok := ctx.State.Get("feed_aggregate_max_items"); ok {
+					if max, ok := val.(int); ok && max > 0 {
+						params.MaxItems = max
+					}
+				}
+			}
+			
+			result, err := aggregateFeeds(params)
+			if err != nil {
+				return nil, err
+			}
+			
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+					ToolName:  "feed_aggregate",
+					Result:    result,
+					RequestID: ctx.RunID,
+				})
+			}
+			
+			return result, nil
 		},
 		feedAggregateParamSchema,
 	)

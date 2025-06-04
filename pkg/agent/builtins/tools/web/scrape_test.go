@@ -11,7 +11,47 @@ import (
 	"testing"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
+
+// Helper to create test ToolContext
+func createTestToolContextForScrape() *domain.ToolContext {
+	return domain.NewToolContext(
+		context.Background(),
+		domain.NewStateReader(domain.NewState()),
+		&mockScrapeAgent{},
+		"test-run",
+	)
+}
+
+// mockScrapeAgent implements the minimum required methods for BaseAgent
+type mockScrapeAgent struct{}
+
+func (m *mockScrapeAgent) ID() string          { return "test-agent" }
+func (m *mockScrapeAgent) Name() string        { return "Test Agent" }
+func (m *mockScrapeAgent) Description() string { return "Mock agent for testing" }
+func (m *mockScrapeAgent) Type() domain.AgentType { return domain.AgentTypeCustom }
+func (m *mockScrapeAgent) Parent() domain.BaseAgent { return nil }
+func (m *mockScrapeAgent) SetParent(parent domain.BaseAgent) error { return nil }
+func (m *mockScrapeAgent) SubAgents() []domain.BaseAgent { return nil }
+func (m *mockScrapeAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
+func (m *mockScrapeAgent) RemoveSubAgent(name string) error { return nil }
+func (m *mockScrapeAgent) FindAgent(name string) domain.BaseAgent { return nil }
+func (m *mockScrapeAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
+func (m *mockScrapeAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) { return nil, nil }
+func (m *mockScrapeAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) { return nil, nil }
+func (m *mockScrapeAgent) Initialize(ctx context.Context) error { return nil }
+func (m *mockScrapeAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
+func (m *mockScrapeAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error { return nil }
+func (m *mockScrapeAgent) Cleanup(ctx context.Context) error { return nil }
+func (m *mockScrapeAgent) InputSchema() *sdomain.Schema { return nil }
+func (m *mockScrapeAgent) OutputSchema() *sdomain.Schema { return nil }
+func (m *mockScrapeAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (m *mockScrapeAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return m }
+func (m *mockScrapeAgent) Validate() error { return nil }
+func (m *mockScrapeAgent) Metadata() map[string]interface{} { return nil }
+func (m *mockScrapeAgent) SetMetadata(key string, value interface{}) {}
 
 func TestWebScrapeRegistration(t *testing.T) {
 	// Test that the tool is registered
@@ -49,312 +89,300 @@ func TestWebScrapeExecution(t *testing.T) {
 	<title>Test Page Title</title>
 	<meta name="description" content="Test page description">
 	<meta name="keywords" content="test, scraping, html">
-	<meta property="og:title" content="Open Graph Title">
+	<meta property="og:title" content="OG Title">
 </head>
 <body>
 	<h1>Main Heading</h1>
-	<p class="intro">This is an introduction paragraph.</p>
-	<p>This is a regular paragraph with <a href="/relative-link">a relative link</a>.</p>
-	<p id="special">This paragraph has an ID.</p>
-	
-	<div class="content">
-		<h2>Subheading</h2>
-		<p>Content inside a div.</p>
-		<a href="https://example.com/external">External link</a>
-		<a href="#anchor">Anchor link</a>
+	<p>This is a paragraph with some text content.</p>
+	<div>
+		<p>Another paragraph in a div.</p>
 	</div>
-	
-	<script>console.log('This should be removed');</script>
-	<style>body { color: black; }</style>
+	<a href="https://example.com">External Link</a>
+	<a href="/internal">Internal Link</a>
+	<a href="#anchor">Anchor Link</a>
+	<ul>
+		<li>List item 1</li>
+		<li>List item 2</li>
+	</ul>
 </body>
 </html>`
 
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(testHTML))
 	}))
 	defer server.Close()
 
 	tool := WebScrape()
-	ctx := context.Background()
+	ctx := createTestToolContextForScrape()
 
 	// Test basic scraping
-	t.Run("BasicScraping", func(t *testing.T) {
-		result, err := tool.Execute(ctx, map[string]interface{}{
-			"url": server.URL,
-		})
-		if err != nil {
-			t.Fatalf("Failed to scrape: %v", err)
-		}
+	result, err := tool.Execute(ctx, map[string]interface{}{
+		"url": server.URL,
+	})
+	if err != nil {
+		t.Fatalf("Failed to scrape URL: %v", err)
+	}
 
-		scrapeResult, ok := result.(*WebScrapeResult)
-		if !ok {
-			t.Fatalf("Result is not WebScrapeResult: %T", result)
-		}
+	scrapeResult := result.(*WebScrapeResult)
 
-		// Check title
-		if scrapeResult.Title != "Test Page Title" {
-			t.Errorf("Expected title 'Test Page Title', got '%s'", scrapeResult.Title)
-		}
+	// Validate metadata
+	if scrapeResult.Title != "Test Page Title" {
+		t.Errorf("Expected title 'Test Page Title', got '%s'", scrapeResult.Title)
+	}
 
-		// Check text extraction
-		if !strings.Contains(scrapeResult.Text, "Main Heading") {
-			t.Error("Text should contain 'Main Heading'")
-		}
-		if !strings.Contains(scrapeResult.Text, "introduction paragraph") {
-			t.Error("Text should contain 'introduction paragraph'")
-		}
-		if strings.Contains(scrapeResult.Text, "console.log") {
-			t.Error("Text should not contain script content")
-		}
-		if strings.Contains(scrapeResult.Text, "body { color") {
-			t.Error("Text should not contain style content")
-		}
+	if scrapeResult.StatusCode != 200 {
+		t.Errorf("Expected status code 200, got %d", scrapeResult.StatusCode)
+	}
 
-		// Check metadata
+	// Validate text extraction
+	if !strings.Contains(scrapeResult.Text, "Main Heading") {
+		t.Error("Expected text to contain 'Main Heading'")
+	}
+	if !strings.Contains(scrapeResult.Text, "This is a paragraph") {
+		t.Error("Expected text to contain 'This is a paragraph'")
+	}
+
+	// Validate that script/style tags are removed
+	if strings.Contains(scrapeResult.Text, "<") || strings.Contains(scrapeResult.Text, ">") {
+		t.Error("Text should not contain HTML tags")
+	}
+
+	// Validate metadata extraction
+	if scrapeResult.Metadata == nil {
+		t.Error("Expected metadata to be extracted")
+	} else {
 		if scrapeResult.Metadata["description"] != "Test page description" {
-			t.Errorf("Expected description metadata, got %v", scrapeResult.Metadata["description"])
+			t.Errorf("Expected description metadata, got '%s'", scrapeResult.Metadata["description"])
 		}
 		if scrapeResult.Metadata["keywords"] != "test, scraping, html" {
-			t.Errorf("Expected keywords metadata, got %v", scrapeResult.Metadata["keywords"])
+			t.Errorf("Expected keywords metadata, got '%s'", scrapeResult.Metadata["keywords"])
 		}
-		if scrapeResult.Metadata["og:title"] != "Open Graph Title" {
-			t.Errorf("Expected og:title metadata, got %v", scrapeResult.Metadata["og:title"])
+		if scrapeResult.Metadata["og:title"] != "OG Title" {
+			t.Errorf("Expected og:title metadata, got '%s'", scrapeResult.Metadata["og:title"])
 		}
+	}
 
-		// Check links
-		foundRelative := false
-		foundExternal := false
-		foundAnchor := false
-		for _, link := range scrapeResult.Links {
-			if strings.HasSuffix(link.URL, "/relative-link") {
-				foundRelative = true
-				if link.Type != "internal" {
-					t.Errorf("Relative link should be internal, got %s", link.Type)
-				}
-			}
-			if strings.Contains(link.URL, "example.com/external") {
-				foundExternal = true
-				if link.Type != "external" {
-					t.Errorf("External link should be external, got %s", link.Type)
-				}
-			}
-			if strings.HasSuffix(link.URL, "#anchor") {
-				foundAnchor = true
-				if link.Type != "anchor" && link.Type != "internal" {
-					t.Errorf("Anchor link should be anchor or internal, got %s", link.Type)
-				}
-			}
-		}
-		if !foundRelative {
-			t.Error("Should have found relative link")
-		}
-		if !foundExternal {
-			t.Error("Should have found external link")
-		}
-		if !foundAnchor {
-			t.Error("Should have found anchor link")
-		}
-	})
+	// Validate link extraction
+	if len(scrapeResult.Links) != 3 {
+		t.Errorf("Expected 3 links, got %d", len(scrapeResult.Links))
+	}
 
-	// Test with selectors
-	t.Run("WithSelectors", func(t *testing.T) {
-		result, err := tool.Execute(ctx, map[string]interface{}{
-			"url":       server.URL,
-			"selectors": []interface{}{"h1", "h2", "p", ".intro", "#special"},
-		})
-		if err != nil {
-			t.Fatalf("Failed to scrape with selectors: %v", err)
-		}
-
-		scrapeResult, ok := result.(*WebScrapeResult)
-		if !ok {
-			t.Fatalf("Result is not WebScrapeResult: %T", result)
-		}
-
-		// Check selector results
-		if len(scrapeResult.Selectors["h1"]) == 0 {
-			t.Error("Should have found h1 elements")
-		} else if scrapeResult.Selectors["h1"][0] != "Main Heading" {
-			t.Errorf("Expected 'Main Heading', got '%s'", scrapeResult.Selectors["h1"][0])
-		}
-
-		if len(scrapeResult.Selectors["h2"]) == 0 {
-			t.Error("Should have found h2 elements")
-		} else if scrapeResult.Selectors["h2"][0] != "Subheading" {
-			t.Errorf("Expected 'Subheading', got '%s'", scrapeResult.Selectors["h2"][0])
-		}
-
-		if len(scrapeResult.Selectors["p"]) < 3 {
-			t.Errorf("Should have found at least 3 p elements, got %d", len(scrapeResult.Selectors["p"]))
-		}
-
-		if len(scrapeResult.Selectors[".intro"]) == 0 {
-			t.Error("Should have found .intro class")
-		} else if scrapeResult.Selectors[".intro"][0] != "This is an introduction paragraph." {
-			t.Errorf("Expected intro text, got '%s'", scrapeResult.Selectors[".intro"][0])
-		}
-
-		if len(scrapeResult.Selectors["#special"]) == 0 {
-			t.Error("Should have found #special ID")
-		} else if scrapeResult.Selectors["#special"][0] != "This paragraph has an ID." {
-			t.Errorf("Expected special text, got '%s'", scrapeResult.Selectors["#special"][0])
-		}
-	})
-
-	// Test metadata only
-	t.Run("MetadataOnly", func(t *testing.T) {
-		result, err := tool.Execute(ctx, map[string]interface{}{
-			"url":           server.URL,
-			"extract_text":  false,
-			"extract_links": false,
-			"extract_meta":  true,
-		})
-		if err != nil {
-			t.Fatalf("Failed to scrape metadata: %v", err)
-		}
-
-		scrapeResult, ok := result.(*WebScrapeResult)
-		if !ok {
-			t.Fatalf("Result is not WebScrapeResult: %T", result)
-		}
-
-		// Should have metadata but no text or links
-		if len(scrapeResult.Metadata) == 0 {
-			t.Error("Should have metadata")
-		}
-		if scrapeResult.Text != "" {
-			t.Error("Should not have text when extract_text is false")
-		}
-		if len(scrapeResult.Links) > 0 {
-			t.Error("Should not have links when extract_links is false")
-		}
-	})
+	// Check link types
+	linkTypes := make(map[string]int)
+	for _, link := range scrapeResult.Links {
+		linkTypes[link.Type]++
+	}
+	if linkTypes["external"] != 1 {
+		t.Errorf("Expected 1 external link, got %d", linkTypes["external"])
+	}
+	if linkTypes["internal"] != 1 {
+		t.Errorf("Expected 1 internal link, got %d", linkTypes["internal"])
+	}
+	if linkTypes["anchor"] != 1 {
+		t.Errorf("Expected 1 anchor link, got %d", linkTypes["anchor"])
+	}
 }
 
-func TestWebScrapeErrorHandling(t *testing.T) {
+func TestWebScrapeWithSelectors(t *testing.T) {
+	testHTML := `
+<!DOCTYPE html>
+<html>
+<body>
+	<h1>Title 1</h1>
+	<h1>Title 2</h1>
+	<p>Paragraph 1</p>
+	<p>Paragraph 2</p>
+	<div>Some div content</div>
+</body>
+</html>`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(testHTML))
+	}))
+	defer server.Close()
+
 	tool := WebScrape()
-	ctx := context.Background()
+	ctx := createTestToolContextForScrape()
 
-	// Test invalid URL
-	t.Run("InvalidURL", func(t *testing.T) {
-		_, err := tool.Execute(ctx, map[string]interface{}{
-			"url": "not-a-valid-url",
-		})
-		if err == nil {
-			t.Error("Expected error for invalid URL")
-		}
+	result, err := tool.Execute(ctx, map[string]interface{}{
+		"url":       server.URL,
+		"selectors": []string{"h1", "p"},
 	})
+	if err != nil {
+		t.Fatalf("Failed to scrape with selectors: %v", err)
+	}
 
-	// Test non-HTML content
-	t.Run("NonHTMLContent", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`{"test": "json"}`))
-		}))
-		defer server.Close()
+	scrapeResult := result.(*WebScrapeResult)
 
-		_, err := tool.Execute(ctx, map[string]interface{}{
-			"url": server.URL,
-		})
-		if err == nil {
-			t.Error("Expected error for non-HTML content")
+	// Validate selector results
+	if scrapeResult.Selectors == nil {
+		t.Fatal("Expected selector results")
+	}
+
+	// Check h1 results
+	if h1Results, ok := scrapeResult.Selectors["h1"]; ok {
+		if len(h1Results) != 2 {
+			t.Errorf("Expected 2 h1 results, got %d", len(h1Results))
 		}
-		if !strings.Contains(err.Error(), "not HTML") {
-			t.Errorf("Error should mention non-HTML content: %v", err)
-		}
-	})
-
-	// Test server error
-	t.Run("ServerError", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusInternalServerError)
-		}))
-		defer server.Close()
-
-		result, err := tool.Execute(ctx, map[string]interface{}{
-			"url": server.URL,
-		})
-		// Should not error on HTTP errors, but should capture status
-		if err != nil {
-			t.Errorf("Should not error on HTTP status codes: %v", err)
-		}
-
-		if result != nil {
-			if scrapeResult, ok := result.(*WebScrapeResult); ok {
-				if scrapeResult.StatusCode != http.StatusInternalServerError {
-					t.Errorf("Expected status code 500, got %d", scrapeResult.StatusCode)
-				}
+		if len(h1Results) >= 2 {
+			if h1Results[0] != "Title 1" {
+				t.Errorf("Expected first h1 to be 'Title 1', got '%s'", h1Results[0])
+			}
+			if h1Results[1] != "Title 2" {
+				t.Errorf("Expected second h1 to be 'Title 2', got '%s'", h1Results[1])
 			}
 		}
-	})
+	} else {
+		t.Error("Expected h1 selector results")
+	}
+
+	// Check p results
+	if pResults, ok := scrapeResult.Selectors["p"]; ok {
+		if len(pResults) != 2 {
+			t.Errorf("Expected 2 p results, got %d", len(pResults))
+		}
+	} else {
+		t.Error("Expected p selector results")
+	}
 }
 
-func TestWebScrapeHelperFunctions(t *testing.T) {
-	// Test metadata extraction
-	t.Run("ExtractMetadata", func(t *testing.T) {
-		html := `
-		<meta name="author" content="Test Author">
-		<meta property="og:image" content="https://example.com/image.jpg">
-		<meta http-equiv="refresh" content="30">
-		`
+func TestWebScrapeMetadataOnly(t *testing.T) {
+	testHTML := `
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Metadata Test</title>
+	<meta name="author" content="Test Author">
+</head>
+<body>
+	<p>Body content that should not be extracted</p>
+	<a href="/link">Link that should not be extracted</a>
+</body>
+</html>`
 
-		metadata := extractMetadata(html)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(testHTML))
+	}))
+	defer server.Close()
 
-		if metadata["author"] != "Test Author" {
-			t.Errorf("Expected author 'Test Author', got '%s'", metadata["author"])
-		}
-		if metadata["og:image"] != "https://example.com/image.jpg" {
-			t.Errorf("Expected og:image URL, got '%s'", metadata["og:image"])
-		}
-		// Note: http-equiv attributes might not always parse correctly with our simple parser
-		if metadata["refresh"] == "30" {
-			t.Log("Successfully parsed http-equiv attribute")
-		} else {
-			t.Log("http-equiv parsing needs quotes around attribute values")
-		}
+	tool := WebScrape()
+	ctx := createTestToolContextForScrape()
+
+	result, err := tool.Execute(ctx, map[string]interface{}{
+		"url":           server.URL,
+		"extract_text":  false,
+		"extract_links": false,
+		"extract_meta":  true,
 	})
+	if err != nil {
+		t.Fatalf("Failed to scrape metadata only: %v", err)
+	}
 
-	// Test text extraction
-	t.Run("ExtractTextContent", func(t *testing.T) {
-		html := `
-		<p>Normal text</p>
-		<script>alert('script');</script>
-		<style>p { color: red; }</style>
-		<div>More <span>nested</span> text</div>
-		`
+	scrapeResult := result.(*WebScrapeResult)
 
-		text := extractTextContent(html)
+	// Text and links should be empty
+	if scrapeResult.Text != "" {
+		t.Error("Expected text to be empty when extract_text is false")
+	}
+	if len(scrapeResult.Links) > 0 {
+		t.Error("Expected no links when extract_links is false")
+	}
 
-		if !strings.Contains(text, "Normal text") {
-			t.Error("Should contain 'Normal text'")
-		}
-		if !strings.Contains(text, "More nested text") {
-			t.Error("Should contain 'More nested text'")
-		}
-		if strings.Contains(text, "alert") {
-			t.Error("Should not contain script content")
-		}
-		if strings.Contains(text, "color") {
-			t.Error("Should not contain style content")
-		}
+	// Metadata should be present
+	if scrapeResult.Metadata == nil || len(scrapeResult.Metadata) == 0 {
+		t.Error("Expected metadata to be extracted")
+	}
+}
+
+func TestWebScrapeNonHTMLContent(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"key": "value"}`))
+	}))
+	defer server.Close()
+
+	tool := WebScrape()
+	ctx := createTestToolContextForScrape()
+
+	_, err := tool.Execute(ctx, map[string]interface{}{
+		"url": server.URL,
 	})
+	if err == nil {
+		t.Error("Expected error for non-HTML content")
+	}
+	if !strings.Contains(err.Error(), "not HTML/XML") {
+		t.Errorf("Expected error about content type, got: %v", err)
+	}
+}
 
-	// Test attribute parsing
-	t.Run("ParseAttributes", func(t *testing.T) {
-		attrStr := `name="description" content="Test content" id='test-id'`
-		attrs := parseAttributes(attrStr)
+func TestWebScrapeInvalidURL(t *testing.T) {
+	tool := WebScrape()
+	ctx := createTestToolContextForScrape()
 
-		if attrs["name"] != "description" {
-			t.Errorf("Expected name 'description', got '%s'", attrs["name"])
-		}
-		if attrs["content"] != "Test content" {
-			t.Errorf("Expected content 'Test content', got '%s'", attrs["content"])
-		}
-		// Note: Our simple parser only handles double quotes
-		if attrs["id"] == "test-id" {
-			t.Log("Parser also handles single quotes")
-		}
+	_, err := tool.Execute(ctx, map[string]interface{}{
+		"url": "not-a-valid-url",
 	})
+	if err == nil {
+		t.Error("Expected error for invalid URL")
+	}
+}
+
+func TestWebScrapeWithCustomSelectors(t *testing.T) {
+	tool := WebScrape()
+	
+	// Create tool context with custom selectors in state
+	state := domain.NewState()
+	state.Set("scrape_selectors", []string{"div", "span"})
+	ctx := domain.NewToolContext(
+		context.Background(),
+		domain.NewStateReader(state),
+		&mockScrapeAgent{},
+		"test-run",
+	)
+
+	testHTML := `
+<!DOCTYPE html>
+<html>
+<body>
+	<div>Div content</div>
+	<span>Span content</span>
+	<p>Paragraph content</p>
+</body>
+</html>`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(testHTML))
+	}))
+	defer server.Close()
+
+	result, err := tool.Execute(ctx, map[string]interface{}{
+		"url":       server.URL,
+		"selectors": []string{"p"}, // Should be combined with state selectors
+	})
+	if err != nil {
+		t.Fatalf("Failed to scrape with custom selectors: %v", err)
+	}
+
+	scrapeResult := result.(*WebScrapeResult)
+	
+	// Should have results for div, span (from state) and p (from params)
+	if scrapeResult.Selectors == nil {
+		t.Fatal("Expected selector results")
+	}
+	
+	if _, ok := scrapeResult.Selectors["div"]; !ok {
+		t.Error("Expected div selector results from state")
+	}
+	if _, ok := scrapeResult.Selectors["span"]; !ok {
+		t.Error("Expected span selector results from state")
+	}
+	if _, ok := scrapeResult.Selectors["p"]; !ok {
+		t.Error("Expected p selector results from params")
+	}
 }

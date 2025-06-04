@@ -4,7 +4,6 @@
 package tools
 
 import (
-	"context"
 	"testing"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins"
@@ -20,7 +19,7 @@ type mockTool struct {
 
 func (m *mockTool) Name() string        { return m.name }
 func (m *mockTool) Description() string { return m.description }
-func (m *mockTool) Execute(ctx context.Context, params interface{}) (interface{}, error) {
+func (m *mockTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 	return "mock result", nil
 }
 func (m *mockTool) ParameterSchema() *sdomain.Schema { return nil }

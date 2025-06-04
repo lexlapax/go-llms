@@ -713,11 +713,30 @@ func (a *LLMAgent) executeToolCalls(runCtx *domain.RunContext[LLMDeps], toolName
 			continue
 		}
 
+		// Create ToolContext for this execution
+		toolContext := domain.NewToolContext(
+			runCtx.Context(),
+			domain.NewStateReader(runCtx.State),
+			a, // LLMAgent implements BaseAgent
+			runCtx.RunID,
+		)
+
+		// Set up event emitter that integrates with agent's event system
+		if a.dispatcher != nil {
+			eventEmitter := domain.NewToolEventEmitter(a.dispatcher, toolName, a.ID(), a.Name())
+			toolContext = toolContext.WithEventEmitter(eventEmitter)
+		}
+
+		// Add retry count if this is a retry
+		if runCtx.Retry > 0 {
+			toolContext = toolContext.WithRetry(runCtx.Retry)
+		}
+
 		// Notify hooks before tool call
 		a.notifyBeforeToolCall(runCtx.Context(), toolName, toolParams)
 
-		// Execute the tool
-		result, err := tool.Execute(runCtx.Context(), toolParams)
+		// Execute the tool with enhanced context
+		result, err := tool.Execute(toolContext, toolParams)
 
 		// Notify hooks after tool call
 		a.notifyAfterToolCall(runCtx.Context(), toolName, result, err)

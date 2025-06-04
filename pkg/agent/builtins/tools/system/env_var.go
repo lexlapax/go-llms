@@ -4,7 +4,6 @@
 package system
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"sort"
@@ -115,7 +114,15 @@ func GetEnvironmentVariable() domain.Tool {
 	return atools.NewTool(
 		"get_environment_variable",
 		"Retrieves environment variables safely",
-		func(ctx context.Context, params GetEnvironmentVariableParams) (*GetEnvironmentVariableResult, error) {
+		func(ctx *domain.ToolContext, params GetEnvironmentVariableParams) (*GetEnvironmentVariableResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+					ToolName:   "get_environment_variable",
+					Parameters: params,
+					RequestID:  ctx.RunID,
+				})
+			}
 			var variables []EnvironmentVariable
 			query := params.Name
 			if query == "" {
@@ -141,7 +148,7 @@ func GetEnvironmentVariable() domain.Tool {
 				}
 
 				if includeValue {
-					if !params.Sensitive && isSensitiveVariable(params.Name) {
+					if !params.Sensitive && isSensitiveVariable(params.Name, ctx) {
 						envVar.Value = maskValue(value)
 						envVar.Masked = true
 					} else {
@@ -181,7 +188,7 @@ func GetEnvironmentVariable() domain.Tool {
 					}
 
 					if includeValue {
-						if !params.Sensitive && isSensitiveVariable(name) {
+						if !params.Sensitive && isSensitiveVariable(name, ctx) {
 							envVar.Value = maskValue(value)
 							envVar.Masked = true
 						} else {
@@ -198,11 +205,22 @@ func GetEnvironmentVariable() domain.Tool {
 				})
 			}
 
-			return &GetEnvironmentVariableResult{
+			result := &GetEnvironmentVariableResult{
 				Variables: variables,
 				Count:     len(variables),
 				Query:     query,
-			}, nil
+			}
+			
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+					ToolName:  "get_environment_variable",
+					Result:    result,
+					RequestID: ctx.RunID,
+				})
+			}
+			
+			return result, nil
 		},
 		getEnvironmentVariableParamSchema,
 	)
@@ -238,12 +256,26 @@ func matchPattern(name, pattern string) (bool, error) {
 }
 
 // isSensitiveVariable checks if a variable name matches sensitive patterns
-func isSensitiveVariable(name string) bool {
+func isSensitiveVariable(name string, ctx *domain.ToolContext) bool {
 	upperName := strings.ToUpper(name)
 
+	// Check default sensitive patterns
 	for _, pattern := range sensitivePatterns {
 		if matched, _ := matchPattern(upperName, pattern); matched {
 			return true
+		}
+	}
+	
+	// Check state for additional sensitive patterns
+	if ctx != nil && ctx.State != nil {
+		if patterns, ok := ctx.State.Get("sensitive_env_patterns"); ok {
+			if patternList, ok := patterns.([]string); ok {
+				for _, pattern := range patternList {
+					if matched, _ := matchPattern(upperName, pattern); matched {
+						return true
+					}
+				}
+			}
 		}
 	}
 

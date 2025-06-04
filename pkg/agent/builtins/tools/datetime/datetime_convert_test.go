@@ -18,7 +18,7 @@ func TestDateTimeConvert(t *testing.T) {
 			FromTimezone: "UTC",
 			ToTimezone:   "America/New_York",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -53,7 +53,7 @@ func TestDateTimeConvert(t *testing.T) {
 			ToTimezone: "America/New_York",
 			IncludeDST: true,
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -77,7 +77,7 @@ func TestDateTimeConvert(t *testing.T) {
 			Operation: "to_timestamp",
 			DateTime:  "2024-01-15T10:30:00Z",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -106,7 +106,7 @@ func TestDateTimeConvert(t *testing.T) {
 			Timestamp:     1705314600, // 2024-01-15 10:30:00 UTC
 			TimestampUnit: "seconds",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -123,7 +123,7 @@ func TestDateTimeConvert(t *testing.T) {
 			Timestamp:     1705314600000, // 2024-01-15 10:30:00 UTC in milliseconds
 			TimestampUnit: "milliseconds",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -141,7 +141,7 @@ func TestDateTimeConvert(t *testing.T) {
 			TimestampUnit: "seconds",
 			ToTimezone:    "America/Los_Angeles",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -157,7 +157,7 @@ func TestDateTimeConvert(t *testing.T) {
 		input := DateTimeConvertInput{
 			Operation: "list_timezones",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -188,7 +188,7 @@ func TestDateTimeConvert(t *testing.T) {
 			Operation:      "list_timezones",
 			TimezoneFilter: "America",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -212,7 +212,7 @@ func TestDateTimeConvert(t *testing.T) {
 			DateTime:   "2024-01-15T10:30:00Z",
 			ToTimezone: "Asia/Tokyo",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -230,7 +230,7 @@ func TestDateTimeConvert(t *testing.T) {
 			Operation:  "timezone",
 			ToTimezone: "America/New_York",
 		}
-		_, err := tool.Execute(ctx, input)
+		_, err := tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for missing datetime")
 		}
@@ -240,7 +240,7 @@ func TestDateTimeConvert(t *testing.T) {
 			Operation: "timezone",
 			DateTime:  "2024-01-15T10:30:00Z",
 		}
-		_, err = tool.Execute(ctx, input)
+		_, err = tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for missing to_timezone")
 		}
@@ -251,7 +251,7 @@ func TestDateTimeConvert(t *testing.T) {
 			DateTime:   "2024-01-15T10:30:00Z",
 			ToTimezone: "Invalid/Timezone",
 		}
-		_, err = tool.Execute(ctx, input)
+		_, err = tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for invalid timezone")
 		}
@@ -260,7 +260,7 @@ func TestDateTimeConvert(t *testing.T) {
 		input = DateTimeConvertInput{
 			Operation: "from_timestamp",
 		}
-		_, err = tool.Execute(ctx, input)
+		_, err = tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for missing timestamp")
 		}
@@ -269,7 +269,7 @@ func TestDateTimeConvert(t *testing.T) {
 		input = DateTimeConvertInput{
 			Operation: "invalid",
 		}
-		_, err = tool.Execute(ctx, input)
+		_, err = tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for invalid operation")
 		}
@@ -290,7 +290,7 @@ func TestDateTimeConvert(t *testing.T) {
 					DateTime:   format,
 					ToTimezone: "UTC",
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to parse date format %s: %v", format, err)
 				}
@@ -310,7 +310,7 @@ func TestDateTimeConvert(t *testing.T) {
 			Timestamp:     nanoTimestamp,
 			TimestampUnit: "nanoseconds",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}

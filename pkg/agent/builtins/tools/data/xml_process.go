@@ -4,7 +4,6 @@
 package data
 
 import (
-	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -74,8 +73,56 @@ func XMLProcess() domain.Tool {
 	return atools.NewTool(
 		"xml_process",
 		"Process XML data: parse, query with simplified XPath, or convert to JSON",
-		func(ctx context.Context, input XMLProcessInput) (*XMLProcessOutput, error) {
-			return executeXMLProcess(ctx, input)
+		func(ctx *domain.ToolContext, input XMLProcessInput) (*XMLProcessOutput, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.EmitMessage(fmt.Sprintf("Starting XML processing with operation: %s", input.Operation))
+			}
+
+			// Check for XML processing preferences in state
+			if ctx.State != nil {
+				// Check if attributes should be included by default
+				if input.Operation != "query" && !input.IncludeAttributes {
+					if includeAttrs, exists := ctx.State.Get("xml_include_attributes_default"); exists {
+						if include, ok := includeAttrs.(bool); ok {
+							input.IncludeAttributes = include
+						}
+					}
+				}
+			}
+
+			var result *XMLProcessOutput
+			var err error
+
+			switch input.Operation {
+			case "parse":
+				result, err = parseXML(input.Data, input.IncludeAttributes)
+			case "query":
+				if input.XPath == "" {
+					err = fmt.Errorf("XPath expression required for query operation")
+				} else {
+					result, err = queryXML(input.Data, input.XPath, input.IncludeAttributes)
+				}
+			case "to_json":
+				result, err = xmlToJSON(input.Data, input.IncludeAttributes)
+			default:
+				err = fmt.Errorf("invalid operation: %s", input.Operation)
+			}
+
+			// Emit completion or error event
+			if ctx.Events != nil {
+				if err != nil {
+					ctx.Events.EmitError(err)
+				} else {
+					msg := "XML processing completed successfully"
+					if result.RootElement != "" {
+						msg = fmt.Sprintf("XML processing completed. Root element: %s", result.RootElement)
+					}
+					ctx.Events.EmitMessage(msg)
+				}
+			}
+
+			return result, err
 		},
 		xmlProcessParamSchema,
 	)
@@ -87,23 +134,6 @@ type XMLNode struct {
 	Attributes []xml.Attr `xml:",any,attr"`
 	Content    string     `xml:",chardata"`
 	Children   []XMLNode  `xml:",any"`
-}
-
-// executeXMLProcess processes the XML according to the specified operation
-func executeXMLProcess(ctx context.Context, input XMLProcessInput) (*XMLProcessOutput, error) {
-	switch input.Operation {
-	case "parse":
-		return parseXML(input.Data, input.IncludeAttributes)
-	case "query":
-		if input.XPath == "" {
-			return nil, fmt.Errorf("XPath expression required for query operation")
-		}
-		return queryXML(input.Data, input.XPath, input.IncludeAttributes)
-	case "to_json":
-		return xmlToJSON(input.Data, input.IncludeAttributes)
-	default:
-		return nil, fmt.Errorf("invalid operation: %s", input.Operation)
-	}
 }
 
 // parseXML validates and parses XML data

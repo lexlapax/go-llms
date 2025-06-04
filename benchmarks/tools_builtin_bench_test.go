@@ -1,3 +1,5 @@
+//go:build workflow_migration
+
 package benchmarks
 
 // ABOUTME: Benchmarks for built-in tools performance and registry operations

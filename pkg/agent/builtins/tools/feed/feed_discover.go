@@ -108,21 +108,71 @@ func FeedDiscover() domain.Tool {
 	return atools.NewTool(
 		"feed_discover",
 		"Automatically discover feed URLs from a web page by analyzing HTML link tags and common feed paths",
-		func(ctx context.Context, params FeedDiscoverParams) (*FeedDiscoverResult, error) {
-			// Set default values
+		func(ctx *domain.ToolContext, params FeedDiscoverParams) (*FeedDiscoverResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+					ToolName:   "feed_discover",
+					Parameters: params,
+					RequestID:  ctx.RunID,
+				})
+			}
+			
+			// Check state for default values
 			if params.Timeout <= 0 {
-				params.Timeout = 30 // 30 seconds
+				timeout := 30 // default 30 seconds
+				if ctx.State != nil {
+					if val, ok := ctx.State.Get("feed_discover_timeout"); ok {
+						if t, ok := val.(int); ok && t > 0 {
+							timeout = t
+						}
+					}
+				}
+				params.Timeout = timeout
 			}
+			
 			if params.MaxSize <= 0 {
-				params.MaxSize = 10 * 1024 * 1024 // 10MB
+				maxSize := int64(10 * 1024 * 1024) // default 10MB
+				if ctx.State != nil {
+					if val, ok := ctx.State.Get("feed_discover_max_size"); ok {
+						if size, ok := val.(int64); ok && size > 0 {
+							maxSize = size
+						} else if size, ok := val.(int); ok && size > 0 {
+							maxSize = int64(size)
+						}
+					}
+				}
+				params.MaxSize = maxSize
 			}
+			
 			// Default to following redirects if not specified
 			if params.FollowRedirects == nil {
 				followRedirects := true
+				if ctx.State != nil {
+					if val, ok := ctx.State.Get("feed_discover_follow_redirects"); ok {
+						if follow, ok := val.(bool); ok {
+							followRedirects = follow
+						}
+					}
+				}
 				params.FollowRedirects = &followRedirects
 			}
 
-			return feedDiscoverExecute(ctx, params)
+			result, err := feedDiscoverExecute(ctx.Context, params)
+			if err != nil {
+				return nil, err
+			}
+			
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+					ToolName:  "feed_discover",
+					Result:    result,
+					RequestID: ctx.RunID,
+				})
+			}
+			
+			return result, nil
 		},
 		feedDiscoverParamSchema,
 	)

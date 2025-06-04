@@ -4,7 +4,6 @@
 package data
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -74,23 +73,57 @@ func JSONProcess() domain.Tool {
 	return atools.NewTool(
 		"json_process",
 		"Process JSON data: parse, query with JSONPath, or transform",
-		func(ctx context.Context, input JSONProcessInput) (*JSONProcessOutput, error) {
+		func(ctx *domain.ToolContext, input JSONProcessInput) (*JSONProcessOutput, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.EmitMessage(fmt.Sprintf("Starting JSON processing with operation: %s", input.Operation))
+			}
+
+			// Check for any JSON processing configuration in state
+			if ctx.State != nil {
+				// Check for default indent setting for prettify
+				if input.Operation == "transform" && input.Transform == "prettify" {
+					if indentSize, exists := ctx.State.Get("json_prettify_indent"); exists {
+						// Note: This could be used in the prettify operation if needed
+						if _, ok := indentSize.(int); ok {
+							// Could use this indent size in prettify operation
+						}
+					}
+				}
+			}
+
+			var result *JSONProcessOutput
+			var err error
+
 			switch input.Operation {
 			case "parse":
-				return parseJSON(input.Data)
+				result, err = parseJSON(input.Data)
 			case "query":
 				if input.JSONPath == "" {
-					return nil, fmt.Errorf("JSONPath expression required for query operation")
+					err = fmt.Errorf("JSONPath expression required for query operation")
+				} else {
+					result, err = queryJSON(input.Data, input.JSONPath)
 				}
-				return queryJSON(input.Data, input.JSONPath)
 			case "transform":
 				if input.Transform == "" {
-					return nil, fmt.Errorf("transform type required for transform operation")
+					err = fmt.Errorf("transform type required for transform operation")
+				} else {
+					result, err = transformJSON(input.Data, input.Transform)
 				}
-				return transformJSON(input.Data, input.Transform)
 			default:
-				return nil, fmt.Errorf("invalid operation: %s", input.Operation)
+				err = fmt.Errorf("invalid operation: %s", input.Operation)
 			}
+
+			// Emit completion or error event
+			if ctx.Events != nil {
+				if err != nil {
+					ctx.Events.EmitError(err)
+				} else {
+					ctx.Events.EmitMessage("JSON processing completed successfully")
+				}
+			}
+
+			return result, err
 		},
 		jsonProcessParamSchema,
 	)

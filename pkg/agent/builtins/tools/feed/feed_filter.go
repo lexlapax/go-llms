@@ -4,7 +4,6 @@
 package feed
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -118,8 +117,49 @@ func FeedFilter() domain.Tool {
 	return atools.NewTool(
 		"feed_filter",
 		"Filters feed items based on date, keywords, author, and categories",
-		func(ctx context.Context, params FeedFilterParams) (*FeedFilterResult, error) {
-			return filterFeed(params)
+		func(ctx *domain.ToolContext, params FeedFilterParams) (*FeedFilterResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+					ToolName:   "feed_filter",
+					Parameters: params,
+					RequestID:  ctx.RunID,
+				})
+			}
+			
+			// Check state for default max items if not provided
+			if params.MaxItems == 0 && ctx.State != nil {
+				if val, ok := ctx.State.Get("feed_filter_max_items"); ok {
+					if max, ok := val.(int); ok && max > 0 {
+						params.MaxItems = max
+					}
+				}
+			}
+			
+			// Check state for default match mode if not provided
+			if !params.MatchAll && ctx.State != nil {
+				if val, ok := ctx.State.Get("feed_filter_match_all"); ok {
+					if matchAll, ok := val.(bool); ok {
+						params.MatchAll = matchAll
+					}
+				}
+			}
+			
+			result, err := filterFeed(params)
+			if err != nil {
+				return nil, err
+			}
+			
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+					ToolName:  "feed_filter",
+					Result:    result,
+					RequestID: ctx.RunID,
+				})
+			}
+			
+			return result, nil
 		},
 		feedFilterParamSchema,
 	)

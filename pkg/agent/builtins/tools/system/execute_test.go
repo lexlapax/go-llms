@@ -12,7 +12,81 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
+
+// mockSystemAgent implements BaseAgent for testing
+type mockSystemAgent struct {
+	id          string
+	name        string
+	description string
+	agentType   domain.AgentType
+	metadata    map[string]interface{}
+}
+
+func (a *mockSystemAgent) ID() string          { return a.id }
+func (a *mockSystemAgent) Name() string        { return a.name }
+func (a *mockSystemAgent) Description() string { return a.description }
+func (a *mockSystemAgent) Type() domain.AgentType { return a.agentType }
+func (a *mockSystemAgent) Parent() domain.BaseAgent { return nil }
+func (a *mockSystemAgent) SetParent(parent domain.BaseAgent) error { return nil }
+func (a *mockSystemAgent) SubAgents() []domain.BaseAgent { return nil }
+func (a *mockSystemAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
+func (a *mockSystemAgent) RemoveSubAgent(name string) error { return nil }
+func (a *mockSystemAgent) FindAgent(name string) domain.BaseAgent { return nil }
+func (a *mockSystemAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
+func (a *mockSystemAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
+	return nil, nil
+}
+func (a *mockSystemAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
+	return nil, nil
+}
+func (a *mockSystemAgent) Initialize(ctx context.Context) error { return nil }
+func (a *mockSystemAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
+func (a *mockSystemAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
+	return nil
+}
+func (a *mockSystemAgent) Cleanup(ctx context.Context) error { return nil }
+func (a *mockSystemAgent) InputSchema() *sdomain.Schema { return nil }
+func (a *mockSystemAgent) OutputSchema() *sdomain.Schema { return nil }
+func (a *mockSystemAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (a *mockSystemAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
+func (a *mockSystemAgent) Validate() error { return nil }
+func (a *mockSystemAgent) Metadata() map[string]interface{} { return a.metadata }
+func (a *mockSystemAgent) SetMetadata(key string, value interface{}) {
+	if a.metadata == nil {
+		a.metadata = make(map[string]interface{})
+	}
+	a.metadata[key] = value
+}
+
+// testEventEmitterSystem implements EventEmitter for testing
+type testEventEmitterSystem struct{}
+
+func (e *testEventEmitterSystem) Emit(eventType domain.EventType, data interface{}) {}
+func (e *testEventEmitterSystem) EmitProgress(current, total int, message string) {}
+func (e *testEventEmitterSystem) EmitMessage(message string) {}
+func (e *testEventEmitterSystem) EmitError(err error) {}
+func (e *testEventEmitterSystem) EmitCustom(eventName string, data interface{}) {}
+
+// createTestToolContext creates a ToolContext for testing
+func createTestToolContext() *domain.ToolContext {
+	ctx := context.Background()
+	state := domain.NewState()
+	stateReader := domain.NewStateReader(state)
+	agent := &mockSystemAgent{
+		id:          "test-agent",
+		name:        "Test Agent",
+		description: "Test agent for system tools",
+		agentType:   domain.AgentTypeCustom,
+		metadata:    make(map[string]interface{}),
+	}
+	
+	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
+	tc = tc.WithEventEmitter(&testEventEmitterSystem{})
+	return tc
+}
 
 // Helper function to convert tool result to map
 func resultToMap(t *testing.T, result interface{}) map[string]interface{} {
@@ -71,7 +145,7 @@ func TestExecuteCommandRegistration(t *testing.T) {
 
 func TestExecuteCommandBasic(t *testing.T) {
 	tool := ExecuteCommand()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	testCases := []struct {
 		name        string
@@ -156,7 +230,7 @@ func TestExecuteCommandBasic(t *testing.T) {
 
 func TestExecuteCommandSafety(t *testing.T) {
 	tool := ExecuteCommand()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test dangerous commands that should be blocked in safe mode
 	dangerousCommands := []string{
@@ -209,7 +283,7 @@ func TestExecuteCommandSafety(t *testing.T) {
 
 func TestExecuteCommandTimeout(t *testing.T) {
 	tool := ExecuteCommand()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Use appropriate sleep command based on OS
 	sleepCmd := "sleep 3"
@@ -250,7 +324,7 @@ func TestExecuteCommandTimeout(t *testing.T) {
 
 func TestExecuteCommandEnvironment(t *testing.T) {
 	tool := ExecuteCommand()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Use appropriate echo command based on OS
 	echoCmd := "echo $TEST_VAR"
@@ -280,7 +354,7 @@ func TestExecuteCommandEnvironment(t *testing.T) {
 
 func TestExecuteCommandWorkingDirectory(t *testing.T) {
 	tool := ExecuteCommand()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test with temp directory
 	params := map[string]interface{}{
@@ -311,7 +385,7 @@ func TestExecuteCommandWorkingDirectory(t *testing.T) {
 
 func TestExecuteCommandInput(t *testing.T) {
 	tool := ExecuteCommand()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Use cat to echo stdin
 	params := map[string]interface{}{
@@ -337,7 +411,7 @@ func TestExecuteCommandInput(t *testing.T) {
 
 func TestExecuteCommandDirectExecution(t *testing.T) {
 	tool := ExecuteCommand()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test direct execution without shell
 	params := map[string]interface{}{
@@ -391,7 +465,7 @@ func TestValidateCommandSafety(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			err := validateCommandSafety(tc.command)
+			err := validateCommandSafety(tc.command, nil)
 			if tc.shouldError && err == nil {
 				t.Errorf("Expected error for command '%s' but got none", tc.command)
 			}

@@ -6,8 +6,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
+
+// Helper to create test ToolContext
+func createEdgeTestContext() *domain.ToolContext {
+	return domain.NewToolContext(
+		context.Background(),
+		domain.NewStateReader(domain.NewState()),
+		nil,
+		"edge-test-run",
+	)
+}
 
 // TestToolEdgeCases tests edge cases for the tool implementation
 func TestToolEdgeCases(t *testing.T) {
@@ -21,7 +32,7 @@ func TestToolEdgeCases(t *testing.T) {
 		tool := NewTool("noParams", "Test tool with no params", noParamFunc, nil)
 
 		// Execute with nil params should succeed
-		result, err := tool.Execute(context.Background(), nil)
+		result, err := tool.Execute(createEdgeTestContext(), nil)
 		if err != nil {
 			t.Errorf("Expected success with nil params, got error: %v", err)
 		}
@@ -39,7 +50,7 @@ func TestToolEdgeCases(t *testing.T) {
 		tool := NewTool("withParams", "Test tool with params", paramFunc, nil)
 
 		// Execute with nil params should fail
-		_, err := tool.Execute(context.Background(), nil)
+		_, err := tool.Execute(createEdgeTestContext(), nil)
 		if err == nil {
 			t.Errorf("Expected error when providing nil params to function requiring params")
 		}
@@ -61,7 +72,7 @@ func TestToolEdgeCases(t *testing.T) {
 
 		// Test with completely wrong type
 		wrongType := 123
-		_, err := tool.Execute(context.Background(), wrongType)
+		_, err := tool.Execute(createEdgeTestContext(), wrongType)
 		if err == nil {
 			t.Errorf("Expected error with wrong parameter type")
 		}
@@ -72,7 +83,7 @@ func TestToolEdgeCases(t *testing.T) {
 			// missing age
 		}
 		// This should still work with default values
-		result, err := tool.Execute(context.Background(), partialMap)
+		result, err := tool.Execute(createEdgeTestContext(), partialMap)
 		if err != nil {
 			t.Errorf("Expected success with partial map, got error: %v", err)
 		}
@@ -116,7 +127,7 @@ func TestToolEdgeCases(t *testing.T) {
 			"name": "John",
 			"age":  30,
 		}
-		result, err := tool.Execute(context.Background(), validParams)
+		result, err := tool.Execute(createEdgeTestContext(), validParams)
 		if err != nil {
 			t.Errorf("Expected success with valid parameters, got error: %v", err)
 		}
@@ -145,7 +156,7 @@ func TestToolEdgeCases(t *testing.T) {
 			"name": "John",
 			"age":  30,
 		}
-		result, err := tool.Execute(context.Background(), mapParam)
+		result, err := tool.Execute(createEdgeTestContext(), mapParam)
 		if err != nil {
 			t.Errorf("Expected success with map parameter, got error: %v", err)
 		}
@@ -176,7 +187,7 @@ func TestToolEdgeCases(t *testing.T) {
 			"string": 123, // number to string
 			"bool":   "true",
 		}
-		result, err := tool.Execute(context.Background(), strParams)
+		result, err := tool.Execute(createEdgeTestContext(), strParams)
 		if err != nil {
 			t.Errorf("Expected success with string conversions, got error: %v", err)
 		}
@@ -192,7 +203,7 @@ func TestToolEdgeCases(t *testing.T) {
 			"string": "hello",
 			"bool":   1, // number to bool
 		}
-		result, err = tool.Execute(context.Background(), numParams)
+		result, err = tool.Execute(createEdgeTestContext(), numParams)
 		if err != nil {
 			t.Errorf("Expected success with number conversions, got error: %v", err)
 		}
@@ -215,7 +226,7 @@ func TestToolEdgeCases(t *testing.T) {
 		tool := NewTool("errorTool", "Tool that may return error", errorFunc, nil)
 
 		// Test without error
-		result, err := tool.Execute(context.Background(), false)
+		result, err := tool.Execute(createEdgeTestContext(), false)
 		if err != nil {
 			t.Errorf("Expected success without error, got: %v", err)
 		}
@@ -224,7 +235,7 @@ func TestToolEdgeCases(t *testing.T) {
 		}
 
 		// Test with error
-		_, err = tool.Execute(context.Background(), true)
+		_, err = tool.Execute(createEdgeTestContext(), true)
 		if err == nil {
 			t.Errorf("Expected error to be returned, got nil")
 		}

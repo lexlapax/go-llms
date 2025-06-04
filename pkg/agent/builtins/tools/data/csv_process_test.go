@@ -10,6 +10,7 @@ import (
 func TestCSVProcess_Parse(t *testing.T) {
 	tool := CSVProcess()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	tests := []struct {
 		name      string
@@ -103,7 +104,7 @@ func TestCSVProcess_Parse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -122,6 +123,7 @@ func TestCSVProcess_Parse(t *testing.T) {
 func TestCSVProcess_Filter(t *testing.T) {
 	tool := CSVProcess()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	testData := "name,age,city\nJohn,30,New York\nJane,25,Boston\nBob,30,Chicago"
 
@@ -231,7 +233,7 @@ func TestCSVProcess_Filter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -250,6 +252,7 @@ func TestCSVProcess_Filter(t *testing.T) {
 func TestCSVProcess_Transform(t *testing.T) {
 	tool := CSVProcess()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	testData := "name,age,city,score\nJohn,30,New York,85\nJane,25,Boston,92\nBob,30,Chicago,78"
 
@@ -341,7 +344,7 @@ func TestCSVProcess_Transform(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -360,6 +363,7 @@ func TestCSVProcess_Transform(t *testing.T) {
 func TestCSVProcess_ToJSON(t *testing.T) {
 	tool := CSVProcess()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	tests := []struct {
 		name      string
@@ -445,7 +449,7 @@ func TestCSVProcess_ToJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := tool.Execute(ctx, tt.input)
+			output, err := tool.Execute(toolCtx, tt.input)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Execute() error = %v, wantError %v", err, tt.wantError)
 				return
@@ -464,13 +468,14 @@ func TestCSVProcess_ToJSON(t *testing.T) {
 func TestCSVProcess_InvalidOperation(t *testing.T) {
 	tool := CSVProcess()
 	ctx := context.Background()
+	toolCtx := createTestToolContext(ctx)
 
 	input := CSVProcessInput{
 		Data:      "test,data",
 		Operation: "invalid",
 	}
 
-	_, err := tool.Execute(ctx, input)
+	_, err := tool.Execute(toolCtx, input)
 	if err == nil {
 		t.Error("expected error for invalid operation")
 	}
@@ -492,9 +497,9 @@ func TestCompareNumeric(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(strings.Join([]string{tt.a, tt.op, tt.b}, " "), func(t *testing.T) {
-			got := compareNumeric(tt.a, tt.b, tt.op)
+			got := compareNumericStrings(tt.a, tt.b, tt.op)
 			if got != tt.want {
-				t.Errorf("compareNumeric(%s, %s, %s) = %v, want %v", tt.a, tt.b, tt.op, got, tt.want)
+				t.Errorf("compareNumericStrings(%s, %s, %s) = %v, want %v", tt.a, tt.b, tt.op, got, tt.want)
 			}
 		})
 	}

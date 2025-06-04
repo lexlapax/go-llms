@@ -17,7 +17,7 @@ func TestDateTimeFormat(t *testing.T) {
 			FormatType:     "standard",
 			StandardFormat: "RFC3339",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -36,7 +36,7 @@ func TestDateTimeFormat(t *testing.T) {
 					FormatType:     "standard",
 					StandardFormat: format,
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -55,7 +55,7 @@ func TestDateTimeFormat(t *testing.T) {
 			FormatType:   "custom",
 			CustomFormat: "Monday, January 2, 2006 at 3:04 PM",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -112,7 +112,7 @@ func TestDateTimeFormat(t *testing.T) {
 					DateTime:   tc.dateTime.Format(time.RFC3339),
 					FormatType: "relative",
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -144,7 +144,7 @@ func TestDateTimeFormat(t *testing.T) {
 			FormatType:     "relative",
 			IncludeWeekday: true,
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -162,7 +162,7 @@ func TestDateTimeFormat(t *testing.T) {
 			FormatType: "multiple",
 			Formats:    []string{"RFC3339", "2006-01-02", "Kitchen"},
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -191,7 +191,7 @@ func TestDateTimeFormat(t *testing.T) {
 			CustomFormat: "15:04 MST",
 			Timezone:     "America/New_York",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -221,7 +221,7 @@ func TestDateTimeFormat(t *testing.T) {
 					FormatType: "standard",
 					Locale:     tc.locale,
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -250,7 +250,7 @@ func TestDateTimeFormat(t *testing.T) {
 			CustomFormat: "2006-01-02",
 			// FormatType not specified
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -266,7 +266,7 @@ func TestDateTimeFormat(t *testing.T) {
 			Formats:  []string{"RFC3339", "Kitchen"},
 			// FormatType not specified
 		}
-		result, err = tool.Execute(ctx, input)
+		result, err = tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -283,7 +283,7 @@ func TestDateTimeFormat(t *testing.T) {
 			FormatType: "multiple",
 			// No formats specified
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -307,7 +307,7 @@ func TestDateTimeFormat(t *testing.T) {
 			DateTime:   "2024-01-15T10:30:00Z",
 			FormatType: "invalid",
 		}
-		_, err := tool.Execute(ctx, input)
+		_, err := tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for invalid format type")
 		}
@@ -319,7 +319,7 @@ func TestDateTimeFormat(t *testing.T) {
 			FormatType: "custom",
 			// CustomFormat not provided
 		}
-		_, err := tool.Execute(ctx, input)
+		_, err := tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for missing custom format")
 		}
@@ -330,7 +330,7 @@ func TestDateTimeFormat(t *testing.T) {
 			DateTime:   "invalid-date",
 			FormatType: "standard",
 		}
-		_, err := tool.Execute(ctx, input)
+		_, err := tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for invalid datetime")
 		}

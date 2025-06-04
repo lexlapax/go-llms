@@ -4,7 +4,6 @@
 package system
 
 import (
-	"context"
 	"os"
 	"strings"
 	"testing"
@@ -41,7 +40,7 @@ func TestGetEnvironmentVariableRegistration(t *testing.T) {
 
 func TestGetEnvironmentVariableBasic(t *testing.T) {
 	tool := GetEnvironmentVariable()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Set up test environment variables
 	testVars := map[string]string{
@@ -108,7 +107,7 @@ func TestGetEnvironmentVariableBasic(t *testing.T) {
 
 func TestGetEnvironmentVariablePattern(t *testing.T) {
 	tool := GetEnvironmentVariable()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Set up test environment variables
 	testVars := map[string]string{
@@ -169,7 +168,7 @@ func TestGetEnvironmentVariablePattern(t *testing.T) {
 
 func TestGetEnvironmentVariableSensitive(t *testing.T) {
 	tool := GetEnvironmentVariable()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Set up sensitive environment variables
 	sensitiveVars := map[string]string{
@@ -239,7 +238,7 @@ func TestGetEnvironmentVariableSensitive(t *testing.T) {
 
 	// Check that sensitive variables are masked
 	for _, v := range envResult.Variables {
-		if isSensitiveVariable(v.Name) && !v.Masked {
+		if isSensitiveVariable(v.Name, nil) && !v.Masked {
 			t.Errorf("Variable %s should be masked", v.Name)
 		}
 		if v.Name == "NORMAL_VAR" && v.Masked {
@@ -250,7 +249,7 @@ func TestGetEnvironmentVariableSensitive(t *testing.T) {
 
 func TestGetEnvironmentVariableAllVariables(t *testing.T) {
 	tool := GetEnvironmentVariable()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Get all environment variables (without values for security)
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -329,7 +328,7 @@ func TestSensitiveVariableDetection(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		result := isSensitiveVariable(tc.name)
+		result := isSensitiveVariable(tc.name, nil)
 		if result != tc.sensitive {
 			t.Errorf("Variable %s: expected sensitive=%v, got %v", tc.name, tc.sensitive, result)
 		}

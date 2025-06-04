@@ -12,7 +12,84 @@ import (
 	"testing"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
+
+// mockReadAgent implements the BaseAgent interface for testing
+type mockReadAgent struct {
+	id          string
+	name        string
+	description string
+	agentType   domain.AgentType
+	metadata    map[string]interface{}
+}
+
+func (a *mockReadAgent) ID() string          { return a.id }
+func (a *mockReadAgent) Name() string        { return a.name }
+func (a *mockReadAgent) Description() string { return a.description }
+func (a *mockReadAgent) Type() domain.AgentType { return a.agentType }
+func (a *mockReadAgent) Parent() domain.BaseAgent { return nil }
+func (a *mockReadAgent) SetParent(parent domain.BaseAgent) error { return nil }
+func (a *mockReadAgent) SubAgents() []domain.BaseAgent { return nil }
+func (a *mockReadAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
+func (a *mockReadAgent) RemoveSubAgent(name string) error { return nil }
+func (a *mockReadAgent) FindAgent(name string) domain.BaseAgent { return nil }
+func (a *mockReadAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
+func (a *mockReadAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
+	return nil, nil
+}
+func (a *mockReadAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
+	return nil, nil
+}
+func (a *mockReadAgent) Initialize(ctx context.Context) error { return nil }
+func (a *mockReadAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
+func (a *mockReadAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
+	return nil
+}
+func (a *mockReadAgent) Cleanup(ctx context.Context) error { return nil }
+func (a *mockReadAgent) InputSchema() *sdomain.Schema { return nil }
+func (a *mockReadAgent) OutputSchema() *sdomain.Schema { return nil }
+func (a *mockReadAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (a *mockReadAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
+func (a *mockReadAgent) Validate() error { return nil }
+func (a *mockReadAgent) Metadata() map[string]interface{} { return a.metadata }
+func (a *mockReadAgent) SetMetadata(key string, value interface{}) {
+	if a.metadata == nil {
+		a.metadata = make(map[string]interface{})
+	}
+	a.metadata[key] = value
+}
+
+// createTestToolContextForRead creates a ToolContext for testing
+func createTestToolContextForRead() *domain.ToolContext {
+	ctx := context.Background()
+	state := domain.NewState()
+	stateReader := domain.NewStateReader(state)
+	agent := &mockReadAgent{
+		id:          "test-agent",
+		name:        "Test Agent",
+		description: "Test agent for file read tests",
+		agentType:   domain.AgentTypeCustom,
+		metadata:    make(map[string]interface{}),
+	}
+	
+	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
+	
+	// Create a simple event emitter
+	tc = tc.WithEventEmitter(&testEventEmitter{})
+	
+	return tc
+}
+
+// testEventEmitter implements EventEmitter for testing
+type testEventEmitter struct{}
+
+func (e *testEventEmitter) Emit(eventType domain.EventType, data interface{}) {}
+func (e *testEventEmitter) EmitProgress(current, total int, message string) {}
+func (e *testEventEmitter) EmitMessage(message string) {}
+func (e *testEventEmitter) EmitError(err error) {}
+func (e *testEventEmitter) EmitCustom(eventName string, data interface{}) {}
 
 func TestReadFileRegistration(t *testing.T) {
 	// Test that the tool is registered
@@ -53,7 +130,7 @@ func TestReadFile_Basic(t *testing.T) {
 
 	// Test basic read
 	tool := MustGetReadFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForRead()
 
 	result, err := tool.Execute(ctx, ReadFileParams{
 		Path: testFile,
@@ -87,7 +164,7 @@ func TestReadFile_WithMetadata(t *testing.T) {
 	}
 
 	tool := MustGetReadFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForRead()
 
 	result, err := tool.Execute(ctx, ReadFileParams{
 		Path:        testFile,
@@ -125,7 +202,7 @@ func TestReadFile_LineRange(t *testing.T) {
 	}
 
 	tool := MustGetReadFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForRead()
 
 	// Test reading lines 3-5
 	result, err := tool.Execute(ctx, ReadFileParams{
@@ -158,7 +235,7 @@ func TestReadFile_BinaryDetection(t *testing.T) {
 	}
 
 	tool := MustGetReadFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForRead()
 
 	result, err := tool.Execute(ctx, ReadFileParams{
 		Path: testFile,
@@ -192,7 +269,7 @@ func TestReadFile_LargeFile(t *testing.T) {
 	}
 
 	tool := MustGetReadFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForRead()
 
 	result, err := tool.Execute(ctx, ReadFileParams{
 		Path: testFile,
@@ -221,7 +298,7 @@ func TestReadFile_LargeFile(t *testing.T) {
 
 func TestReadFile_NonExistentFile(t *testing.T) {
 	tool := MustGetReadFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForRead()
 
 	_, err := tool.Execute(ctx, ReadFileParams{
 		Path: "/non/existent/file.txt",
@@ -235,7 +312,7 @@ func TestReadFile_DirectoryInsteadOfFile(t *testing.T) {
 	tempDir := t.TempDir()
 
 	tool := MustGetReadFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForRead()
 
 	_, err := tool.Execute(ctx, ReadFileParams{
 		Path: tempDir,
@@ -260,7 +337,7 @@ func TestReadFile_PermissionDenied(t *testing.T) {
 	}
 
 	tool := MustGetReadFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForRead()
 
 	_, err := tool.Execute(ctx, ReadFileParams{
 		Path: testFile,
@@ -280,7 +357,7 @@ func TestReadFile_EmptyFile(t *testing.T) {
 	}
 
 	tool := MustGetReadFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForRead()
 
 	result, err := tool.Execute(ctx, ReadFileParams{
 		Path: testFile,
@@ -310,7 +387,7 @@ func TestReadFile_LineRangeValidation(t *testing.T) {
 	}
 
 	tool := MustGetReadFile()
-	ctx := context.Background()
+	ctx := createTestToolContextForRead()
 
 	testCases := []struct {
 		name      string

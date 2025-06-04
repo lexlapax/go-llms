@@ -4,7 +4,6 @@
 package system
 
 import (
-	"context"
 	"os"
 	"os/exec"
 	"runtime"
@@ -119,9 +118,26 @@ func ProcessList() domain.Tool {
 	return atools.NewTool(
 		"process_list",
 		"Lists running processes with filtering and sorting",
-		func(ctx context.Context, params ProcessListParams) (*ProcessListResult, error) {
+		func(ctx *domain.ToolContext, params ProcessListParams) (*ProcessListResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+					ToolName:   "process_list",
+					Parameters: params,
+					RequestID:  ctx.RunID,
+				})
+			}
 			// Get current PID for self-filtering
 			currentPID := os.Getpid()
+			
+			// Check state for default limit if not provided
+			if params.Limit == 0 && ctx.State != nil {
+				if limit, ok := ctx.State.Get("process_list_default_limit"); ok {
+					if l, ok := limit.(int); ok && l > 0 {
+						params.Limit = l
+					}
+				}
+			}
 
 			// Get process list based on platform
 			var processes []ProcessInfo
@@ -176,12 +192,23 @@ func ProcessList() domain.Tool {
 				processes = processes[:params.Limit]
 			}
 
-			return &ProcessListResult{
+			result := &ProcessListResult{
 				Processes: processes,
 				Count:     len(processes),
 				Platform:  runtime.GOOS,
 				Timestamp: time.Now().UTC().Format(time.RFC3339),
-			}, nil
+			}
+			
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+					ToolName:  "process_list",
+					Result:    result,
+					RequestID: ctx.RunID,
+				})
+			}
+			
+			return result, nil
 		},
 		processListParamSchema,
 	)

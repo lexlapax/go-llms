@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 func TestFileMoveRegistration(t *testing.T) {
@@ -40,9 +42,84 @@ func TestFileMoveRegistration(t *testing.T) {
 	}
 }
 
+// mockMoveAgent implements BaseAgent for testing
+type mockMoveAgent struct {
+	id          string
+	name        string
+	description string
+	agentType   domain.AgentType
+	metadata    map[string]interface{}
+}
+
+func (a *mockMoveAgent) ID() string          { return a.id }
+func (a *mockMoveAgent) Name() string        { return a.name }
+func (a *mockMoveAgent) Description() string { return a.description }
+func (a *mockMoveAgent) Type() domain.AgentType { return a.agentType }
+func (a *mockMoveAgent) Parent() domain.BaseAgent { return nil }
+func (a *mockMoveAgent) SetParent(parent domain.BaseAgent) error { return nil }
+func (a *mockMoveAgent) SubAgents() []domain.BaseAgent { return nil }
+func (a *mockMoveAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
+func (a *mockMoveAgent) RemoveSubAgent(name string) error { return nil }
+func (a *mockMoveAgent) FindAgent(name string) domain.BaseAgent { return nil }
+func (a *mockMoveAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
+func (a *mockMoveAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
+	return nil, nil
+}
+func (a *mockMoveAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
+	return nil, nil
+}
+func (a *mockMoveAgent) Initialize(ctx context.Context) error { return nil }
+func (a *mockMoveAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
+func (a *mockMoveAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
+	return nil
+}
+func (a *mockMoveAgent) Cleanup(ctx context.Context) error { return nil }
+func (a *mockMoveAgent) InputSchema() *sdomain.Schema { return nil }
+func (a *mockMoveAgent) OutputSchema() *sdomain.Schema { return nil }
+func (a *mockMoveAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (a *mockMoveAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
+func (a *mockMoveAgent) Validate() error { return nil }
+func (a *mockMoveAgent) Metadata() map[string]interface{} { return a.metadata }
+func (a *mockMoveAgent) SetMetadata(key string, value interface{}) {
+	if a.metadata == nil {
+		a.metadata = make(map[string]interface{})
+	}
+	a.metadata[key] = value
+}
+
+// createTestToolContextForMove creates a ToolContext for testing
+func createTestToolContextForMove() *domain.ToolContext {
+	ctx := context.Background()
+	state := domain.NewState()
+	stateReader := domain.NewStateReader(state)
+	agent := &mockMoveAgent{
+		id:          "test-agent",
+		name:        "Test Agent",
+		description: "Test agent for file move tests",
+		agentType:   domain.AgentTypeCustom,
+		metadata:    make(map[string]interface{}),
+	}
+	
+	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
+	
+	// Create a simple event emitter
+	tc = tc.WithEventEmitter(&testEventEmitterMove{})
+	
+	return tc
+}
+
+// testEventEmitterMove implements EventEmitter for testing
+type testEventEmitterMove struct{}
+
+func (e *testEventEmitterMove) Emit(eventType domain.EventType, data interface{}) {}
+func (e *testEventEmitterMove) EmitProgress(current, total int, message string) {}
+func (e *testEventEmitterMove) EmitMessage(message string) {}
+func (e *testEventEmitterMove) EmitError(err error) {}
+func (e *testEventEmitterMove) EmitCustom(eventName string, data interface{}) {}
+
 func TestFileMoveBasic(t *testing.T) {
 	tool := FileMove()
-	ctx := context.Background()
+	tc := createTestToolContextForMove()
 
 	// Test 1: Simple rename in same directory
 	tempDir := t.TempDir()
@@ -54,7 +131,7 @@ func TestFileMoveBasic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"source":      srcFile,
 		"destination": dstFile,
 	})
@@ -100,7 +177,7 @@ func TestFileMoveBasic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err = tool.Execute(ctx, map[string]interface{}{
+	result, err = tool.Execute(tc, map[string]interface{}{
 		"source":      srcFile2,
 		"destination": dstFile2,
 	})
@@ -124,7 +201,7 @@ func TestFileMoveBasic(t *testing.T) {
 
 func TestFileMoveToDirectory(t *testing.T) {
 	tool := FileMove()
-	ctx := context.Background()
+	tc := createTestToolContextForMove()
 
 	tempDir := t.TempDir()
 	srcFile := filepath.Join(tempDir, "source.txt")
@@ -139,7 +216,7 @@ func TestFileMoveToDirectory(t *testing.T) {
 	}
 
 	// Move file to directory (should preserve filename)
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"source":      srcFile,
 		"destination": targetDir,
 	})
@@ -165,7 +242,7 @@ func TestFileMoveToDirectory(t *testing.T) {
 
 func TestFileMoveOverwrite(t *testing.T) {
 	tool := FileMove()
-	ctx := context.Background()
+	tc := createTestToolContextForMove()
 
 	tempDir := t.TempDir()
 	srcFile := filepath.Join(tempDir, "source.txt")
@@ -180,7 +257,7 @@ func TestFileMoveOverwrite(t *testing.T) {
 	}
 
 	// Test 1: Try without overwrite (should fail)
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"source":      srcFile,
 		"destination": dstFile,
 	})
@@ -202,7 +279,7 @@ func TestFileMoveOverwrite(t *testing.T) {
 	}
 
 	// Test 2: Move with overwrite
-	result, err = tool.Execute(ctx, map[string]interface{}{
+	result, err = tool.Execute(tc, map[string]interface{}{
 		"source":      srcFile,
 		"destination": dstFile,
 		"overwrite":   true,
@@ -225,7 +302,7 @@ func TestFileMoveOverwrite(t *testing.T) {
 
 func TestFileMoveCreateDirs(t *testing.T) {
 	tool := FileMove()
-	ctx := context.Background()
+	tc := createTestToolContextForMove()
 
 	tempDir := t.TempDir()
 	srcFile := filepath.Join(tempDir, "source.txt")
@@ -237,7 +314,7 @@ func TestFileMoveCreateDirs(t *testing.T) {
 	}
 
 	// Test 1: Without create_dirs (should fail)
-	_, err := tool.Execute(ctx, map[string]interface{}{
+	_, err := tool.Execute(tc, map[string]interface{}{
 		"source":      srcFile,
 		"destination": dstFile,
 	})
@@ -246,7 +323,7 @@ func TestFileMoveCreateDirs(t *testing.T) {
 	}
 
 	// Test 2: With create_dirs
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"source":      srcFile,
 		"destination": dstFile,
 		"create_dirs": true,
@@ -268,12 +345,12 @@ func TestFileMoveCreateDirs(t *testing.T) {
 
 func TestFileMoveErrors(t *testing.T) {
 	tool := FileMove()
-	ctx := context.Background()
+	tc := createTestToolContextForMove()
 
 	tempDir := t.TempDir()
 
 	// Test 1: Non-existent source
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"source":      "/non/existent/file.txt",
 		"destination": filepath.Join(tempDir, "dest.txt"),
 	})
@@ -295,7 +372,7 @@ func TestFileMoveErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err = tool.Execute(ctx, map[string]interface{}{
+	result, err = tool.Execute(tc, map[string]interface{}{
 		"source":      srcFile,
 		"destination": srcFile,
 	})
@@ -314,7 +391,7 @@ func TestFileMoveErrors(t *testing.T) {
 
 func TestFileMoveDirectory(t *testing.T) {
 	tool := FileMove()
-	ctx := context.Background()
+	tc := createTestToolContextForMove()
 
 	tempDir := t.TempDir()
 	srcDir := filepath.Join(tempDir, "srcdir")
@@ -332,7 +409,7 @@ func TestFileMoveDirectory(t *testing.T) {
 	}
 
 	// Move entire directory
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"source":      srcDir,
 		"destination": dstDir,
 	})
@@ -364,7 +441,7 @@ func TestFileMoveDirectory(t *testing.T) {
 
 func TestFileMovePreserveAttributes(t *testing.T) {
 	tool := FileMove()
-	ctx := context.Background()
+	tc := createTestToolContextForMove()
 
 	tempDir := t.TempDir()
 	srcFile := filepath.Join(tempDir, "source.txt")
@@ -380,7 +457,7 @@ func TestFileMovePreserveAttributes(t *testing.T) {
 	originalMode := srcInfo.Mode()
 
 	// Move with preserve_attrs
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"source":         srcFile,
 		"destination":    dstFile,
 		"preserve_attrs": true,

@@ -4,7 +4,6 @@
 package feed
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -59,9 +58,9 @@ func TestFeedDiscoverFromHTML(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedDiscover()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"url": server.URL,
 	})
 	if err != nil {
@@ -148,9 +147,9 @@ func TestFeedDiscoverCommonPaths(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedDiscover()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"url": server.URL,
 	})
 	if err != nil {
@@ -199,9 +198,9 @@ func TestFeedDiscoverRelativeURLs(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedDiscover()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"url": server.URL + "/blog/page.html",
 	})
 	if err != nil {
@@ -237,10 +236,10 @@ func TestFeedDiscoverRelativeURLs(t *testing.T) {
 
 func TestFeedDiscoverErrors(t *testing.T) {
 	tool := FeedDiscover()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test invalid URL
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"url": "not-a-valid-url",
 	})
 	if err != nil {
@@ -257,7 +256,7 @@ func TestFeedDiscoverErrors(t *testing.T) {
 	}
 
 	// Test non-existent domain
-	result, err = tool.Execute(ctx, map[string]interface{}{
+	result, err = tool.Execute(tc, map[string]interface{}{
 		"url": "http://non-existent-domain-12345.com",
 	})
 	if err != nil {
@@ -283,9 +282,9 @@ func TestFeedDiscoverTimeout(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedDiscover()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"url":     server.URL,
 		"timeout": 1, // 1 second timeout
 	})
@@ -325,10 +324,10 @@ func TestFeedDiscoverNoFollowRedirects(t *testing.T) {
 	defer server.Close()
 
 	tool := FeedDiscover()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test 1: Page with feeds should work
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"url": server.URL + "/page-with-feeds",
 	})
 	if err != nil {
@@ -349,7 +348,7 @@ func TestFeedDiscoverNoFollowRedirects(t *testing.T) {
 	}
 
 	// Test 2: Redirect page with follow_redirects=false should give an error
-	result2, err := tool.Execute(ctx, map[string]interface{}{
+	result2, err := tool.Execute(tc, map[string]interface{}{
 		"url":              server.URL + "/page-with-redirect",
 		"follow_redirects": false,
 	})

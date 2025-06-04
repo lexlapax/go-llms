@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins"
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
@@ -111,7 +112,15 @@ func FileMove() domain.Tool {
 	return atools.NewTool(
 		"file_move",
 		"Moves or renames files and directories",
-		func(ctx context.Context, params FileMoveParams) (*FileMoveResult, error) {
+		func(ctx *domain.ToolContext, params FileMoveParams) (*FileMoveResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.EmitCustom("file_move.start", map[string]interface{}{
+					"source":      params.Source,
+					"destination": params.Destination,
+				})
+			}
+
 			// Clean and resolve paths
 			srcPath := filepath.Clean(params.Source)
 			dstPath := filepath.Clean(params.Destination)
@@ -124,6 +133,35 @@ func FileMove() domain.Tool {
 			absDst, err := filepath.Abs(dstPath)
 			if err != nil {
 				return nil, fmt.Errorf("invalid destination path: %w", err)
+			}
+
+			// Check for restricted paths from state
+			if restrictedPathsVal, ok := ctx.State.Get("file.restricted_paths"); ok {
+				if restrictedPaths, ok := restrictedPathsVal.([]interface{}); ok && len(restrictedPaths) > 0 {
+					for _, restricted := range restrictedPaths {
+						if restrictedStr, ok := restricted.(string); ok {
+							// Check if source or destination is within restricted path
+							if isSubPath(absSrc, restrictedStr) {
+								return nil, fmt.Errorf("source path %s is within restricted path %s", absSrc, restrictedStr)
+							}
+							// Calculate final destination path if destination is a directory
+							finalDstPath := absDst
+							if dstInfo, err := os.Stat(absDst); err == nil && dstInfo.IsDir() {
+								finalDstPath = filepath.Join(absDst, filepath.Base(absSrc))
+							}
+							if isSubPath(absDst, restrictedStr) || isSubPath(finalDstPath, restrictedStr) {
+								return nil, fmt.Errorf("destination path %s is within restricted path %s", absDst, restrictedStr)
+							}
+						}
+					}
+				}
+			}
+
+			// Emit checking source event
+			if ctx.Events != nil {
+				ctx.Events.EmitCustom("file_move.checking_source", map[string]interface{}{
+					"path": absSrc,
+				})
 			}
 
 			// Check if source exists
@@ -163,8 +201,27 @@ func FileMove() domain.Tool {
 			// Check if it's just a rename (same directory)
 			isRename := filepath.Dir(absSrc) == filepath.Dir(finalDst)
 
+			// Emit checking destination event
+			if ctx.Events != nil {
+				ctx.Events.EmitCustom("file_move.checking_destination", map[string]interface{}{
+					"path":      finalDst,
+					"exists":    dstErr == nil,
+					"is_rename": isRename,
+				})
+			}
+
+			// Get overwrite permission from state if not explicitly set
+			overwrite := params.Overwrite
+			if !overwrite {
+				if allowOverwrite, ok := ctx.State.Get("file.allow_overwrite"); ok {
+					if boolVal, ok := allowOverwrite.(bool); ok && boolVal {
+						overwrite = true
+					}
+				}
+			}
+
 			// Check if destination already exists
-			if _, err := os.Stat(finalDst); err == nil && !params.Overwrite {
+			if _, err := os.Stat(finalDst); err == nil && !overwrite {
 				return &FileMoveResult{
 					Source:      absSrc,
 					Destination: finalDst,
@@ -182,39 +239,100 @@ func FileMove() domain.Tool {
 				}
 			}
 
-			// Try atomic rename first (works only on same filesystem)
-			err = os.Rename(absSrc, finalDst)
-			if err == nil {
-				// Successful atomic move
-				return &FileMoveResult{
-					Source:         absSrc,
-					Destination:    finalDst,
-					Moved:          true,
-					WasRename:      isRename,
-					WasCrossDevice: false,
-					Message:        "Successfully moved",
-				}, nil
+			// Check if we should prefer copy-then-delete from state
+			preferCopyDelete := false
+			if preferCopy, ok := ctx.State.Get("file.prefer_copy_delete"); ok {
+				if boolVal, ok := preferCopy.(bool); ok {
+					preferCopyDelete = boolVal
+				}
 			}
 
-			// If rename failed, might be cross-device
+			// Emit moving event
+			if ctx.Events != nil {
+				ctx.Events.EmitCustom("file_move.moving", map[string]interface{}{
+					"method": "rename",
+				})
+			}
+
+			// Try atomic rename first (unless prefer_copy_delete is set)
+			var moveErr error
+			wasCrossDevice := false
+			
+			if !preferCopyDelete {
+				moveErr = os.Rename(absSrc, finalDst)
+				if moveErr == nil {
+					// Successful atomic move
+					result := &FileMoveResult{
+						Source:         absSrc,
+						Destination:    finalDst,
+						Moved:          true,
+						WasRename:      isRename,
+						WasCrossDevice: false,
+						Message:        "Successfully moved",
+					}
+					
+					// Emit completion event
+					if ctx.Events != nil {
+						ctx.Events.EmitCustom("file_move.completed", map[string]interface{}{
+							"result":           result,
+							"source":           absSrc,
+							"destination":      finalDst,
+							"was_rename":       isRename,
+							"was_cross_device": false,
+							"method":           "atomic_rename",
+							"file_size":        srcInfo.Size(),
+							"is_directory":     srcInfo.IsDir(),
+						})
+					}
+					
+					return result, nil
+				}
+			}
+
+			// If rename failed or prefer_copy_delete is set, might need cross-device move
 			// Only attempt cross-device move for files, not directories
 			if srcInfo.IsDir() {
-				return nil, fmt.Errorf("cannot move directory across devices: %w", err)
+				return nil, fmt.Errorf("cannot move directory across devices: %w", moveErr)
+			}
+
+			// Emit copying event for cross-device move
+			if ctx.Events != nil {
+				ctx.Events.EmitCustom("file_move.copying", map[string]interface{}{
+					"reason": "cross_device_or_preferred",
+				})
 			}
 
 			// Perform cross-device file move (copy then delete)
-			if err := crossDeviceMove(ctx, absSrc, finalDst, srcInfo, params.PreserveAttrs); err != nil {
+			if err := crossDeviceMove(ctx.Context, absSrc, finalDst, srcInfo, params.PreserveAttrs); err != nil {
 				return nil, fmt.Errorf("cross-device move failed: %w", err)
 			}
 
-			return &FileMoveResult{
+			wasCrossDevice = true
+			
+			result := &FileMoveResult{
 				Source:         absSrc,
 				Destination:    finalDst,
 				Moved:          true,
 				WasRename:      false,
-				WasCrossDevice: true,
+				WasCrossDevice: wasCrossDevice,
 				Message:        "Successfully moved (cross-device)",
-			}, nil
+			}
+			
+			// Emit completion event
+			if ctx.Events != nil {
+				ctx.Events.EmitCustom("file_move.completed", map[string]interface{}{
+					"result":           result,
+					"source":           absSrc,
+					"destination":      finalDst,
+					"was_rename":       false,
+					"was_cross_device": wasCrossDevice,
+					"method":           "copy_then_delete",
+					"file_size":        srcInfo.Size(),
+					"is_directory":     srcInfo.IsDir(),
+				})
+			}
+			
+			return result, nil
 		},
 		fileMoveParamSchema,
 	)
@@ -286,4 +404,31 @@ func crossDeviceMove(ctx context.Context, src, dst string, srcInfo os.FileInfo, 
 // This is a convenience function for users who want to ensure the tool exists
 func MustGetFileMove() domain.Tool {
 	return tools.MustGetTool("file_move")
+}
+
+// isSubPath checks if a path is a subpath of a parent path
+func isSubPath(path, parent string) bool {
+	// Clean and resolve both paths
+	cleanPath := filepath.Clean(path)
+	cleanParent := filepath.Clean(parent)
+	
+	// Get absolute paths
+	absPath, err := filepath.Abs(cleanPath)
+	if err != nil {
+		return false
+	}
+	
+	absParent, err := filepath.Abs(cleanParent)
+	if err != nil {
+		return false
+	}
+	
+	// Check if path starts with parent
+	relPath, err := filepath.Rel(absParent, absPath)
+	if err != nil {
+		return false
+	}
+	
+	// If the relative path starts with "..", it's not a subpath
+	return !strings.HasPrefix(relPath, "..")
 }

@@ -16,7 +16,7 @@ func TestDateTimeInfo(t *testing.T) {
 		input := DateTimeInfoInput{
 			Date: "2024-01-15T10:30:00Z",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -64,7 +64,7 @@ func TestDateTimeInfo(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.date[:4], func(t *testing.T) {
 				input := DateTimeInfoInput{Date: tc.date}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -91,7 +91,7 @@ func TestDateTimeInfo(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.date[:7], func(t *testing.T) {
 				input := DateTimeInfoInput{Date: tc.date}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -118,7 +118,7 @@ func TestDateTimeInfo(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.date[:7], func(t *testing.T) {
 				input := DateTimeInfoInput{Date: tc.date}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -136,7 +136,7 @@ func TestDateTimeInfo(t *testing.T) {
 			Date:         "2024-01-15T10:30:00Z", // Monday
 			WeekStartDay: 0,                      // Sunday
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -158,7 +158,7 @@ func TestDateTimeInfo(t *testing.T) {
 			Date:         "2024-01-15T10:30:00Z", // Monday
 			WeekStartDay: 1,                      // Monday
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -179,7 +179,7 @@ func TestDateTimeInfo(t *testing.T) {
 		input := DateTimeInfoInput{
 			Date: "2024-01-15T10:30:00Z",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -198,7 +198,7 @@ func TestDateTimeInfo(t *testing.T) {
 		input := DateTimeInfoInput{
 			Date: "2024-02-15T10:30:00Z", // Q1
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -217,7 +217,7 @@ func TestDateTimeInfo(t *testing.T) {
 		input := DateTimeInfoInput{
 			Date: "2024-06-15T10:30:00Z",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -237,7 +237,7 @@ func TestDateTimeInfo(t *testing.T) {
 			Date:     "2024-01-15T10:30:00Z",
 			Timezone: "America/New_York",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -261,7 +261,7 @@ func TestDateTimeInfo(t *testing.T) {
 		for _, format := range formats {
 			t.Run(format, func(t *testing.T) {
 				input := DateTimeInfoInput{Date: format}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to parse date format %s: %v", format, err)
 				}
@@ -278,7 +278,7 @@ func TestDateTimeInfo(t *testing.T) {
 		input := DateTimeInfoInput{
 			Date: "invalid-date",
 		}
-		_, err := tool.Execute(ctx, input)
+		_, err := tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for invalid date")
 		}
@@ -288,7 +288,7 @@ func TestDateTimeInfo(t *testing.T) {
 		input := DateTimeInfoInput{
 			Date: "2024-01-07T10:30:00Z", // Sunday
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -308,7 +308,7 @@ func TestDateTimeInfo(t *testing.T) {
 		input := DateTimeInfoInput{
 			Date: "2023-12-31T00:00:00Z", // This might be week 52/53 of 2023 or week 1 of 2024
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}

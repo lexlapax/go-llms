@@ -12,7 +12,53 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
+
+// Helper to create test ToolContext
+func createTestToolContext() *domain.ToolContext {
+	return domain.NewToolContext(
+		context.Background(),
+		domain.NewStateReader(domain.NewState()),
+		&mockAgent{},
+		"test-run",
+	)
+}
+
+// mockAgent implements the minimum required methods for BaseAgent
+type mockAgent struct{}
+
+func (m *mockAgent) ID() string                                { return "test-agent" }
+func (m *mockAgent) Name() string                              { return "Test Agent" }
+func (m *mockAgent) Description() string                       { return "Mock agent for testing" }
+func (m *mockAgent) Type() domain.AgentType                    { return domain.AgentTypeCustom }
+func (m *mockAgent) Parent() domain.BaseAgent                  { return nil }
+func (m *mockAgent) SetParent(parent domain.BaseAgent) error   { return nil }
+func (m *mockAgent) SubAgents() []domain.BaseAgent             { return nil }
+func (m *mockAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
+func (m *mockAgent) RemoveSubAgent(name string) error          { return nil }
+func (m *mockAgent) FindAgent(name string) domain.BaseAgent    { return nil }
+func (m *mockAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
+func (m *mockAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
+	return nil, nil
+}
+func (m *mockAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
+	return nil, nil
+}
+func (m *mockAgent) Initialize(ctx context.Context) error                     { return nil }
+func (m *mockAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
+func (m *mockAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
+	return nil
+}
+func (m *mockAgent) Cleanup(ctx context.Context) error                     { return nil }
+func (m *mockAgent) InputSchema() *sdomain.Schema                          { return nil }
+func (m *mockAgent) OutputSchema() *sdomain.Schema                         { return nil }
+func (m *mockAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
+func (m *mockAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return m }
+func (m *mockAgent) Validate() error                                       { return nil }
+func (m *mockAgent) Metadata() map[string]interface{}                      { return nil }
+func (m *mockAgent) SetMetadata(key string, value interface{})             {}
 
 func TestWebFetchRegistration(t *testing.T) {
 	// Test that the tool is registered
@@ -68,7 +114,7 @@ func TestWebFetchBasic(t *testing.T) {
 	defer server.Close()
 
 	tool := WebFetch()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test basic fetch
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -119,7 +165,7 @@ func TestWebFetchTimeout(t *testing.T) {
 	defer server.Close()
 
 	tool := WebFetch()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test with short timeout (1 second, while server sleeps for 2)
 	_, err := tool.Execute(ctx, map[string]interface{}{
@@ -138,7 +184,7 @@ func TestWebFetchTimeout(t *testing.T) {
 
 func TestWebFetchErrorHandling(t *testing.T) {
 	tool := WebFetch()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test 1: Invalid URL
 	_, err := tool.Execute(ctx, map[string]interface{}{
@@ -178,7 +224,7 @@ func TestWebFetchStatusCodes(t *testing.T) {
 			defer server.Close()
 
 			tool := WebFetch()
-			ctx := context.Background()
+			ctx := createTestToolContext()
 
 			result, err := tool.Execute(ctx, map[string]interface{}{
 				"url": server.URL,
@@ -225,7 +271,7 @@ func TestWebFetchContentTypes(t *testing.T) {
 			defer server.Close()
 
 			tool := WebFetch()
-			ctx := context.Background()
+			ctx := createTestToolContext()
 
 			result, err := tool.Execute(ctx, map[string]interface{}{
 				"url": server.URL,
@@ -248,3 +294,76 @@ func TestWebFetchContentTypes(t *testing.T) {
 		})
 	}
 }
+
+func TestWebFetchWithCustomUserAgent(t *testing.T) {
+	// Create test server
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check custom User-Agent
+		if r.UserAgent() != "CustomBot/1.0" {
+			t.Errorf("Expected User-Agent 'CustomBot/1.0', got '%s'", r.UserAgent())
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+	}))
+	defer server.Close()
+
+	tool := WebFetch()
+
+	// Create tool context with custom user agent in state
+	state := domain.NewState()
+	state.Set("user_agent", "CustomBot/1.0")
+	ctx := domain.NewToolContext(
+		context.Background(),
+		domain.NewStateReader(state),
+		&mockAgent{},
+		"test-run",
+	)
+
+	// Test fetch with custom user agent
+	_, err := tool.Execute(ctx, map[string]interface{}{
+		"url": server.URL,
+	})
+	if err != nil {
+		t.Fatalf("Failed to fetch URL: %v", err)
+	}
+}
+
+func TestWebFetchWithAdditionalHeaders(t *testing.T) {
+	// Create test server
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check custom headers
+		if r.Header.Get("X-Custom-Header") != "custom-value" {
+			t.Errorf("Expected X-Custom-Header 'custom-value', got '%s'", r.Header.Get("X-Custom-Header"))
+		}
+		if r.Header.Get("Authorization") != "Bearer token123" {
+			t.Errorf("Expected Authorization 'Bearer token123', got '%s'", r.Header.Get("Authorization"))
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+	}))
+	defer server.Close()
+
+	tool := WebFetch()
+
+	// Create tool context with additional headers in state
+	state := domain.NewState()
+	state.Set("http_headers", map[string]string{
+		"X-Custom-Header": "custom-value",
+		"Authorization":   "Bearer token123",
+	})
+	ctx := domain.NewToolContext(
+		context.Background(),
+		domain.NewStateReader(state),
+		&mockAgent{},
+		"test-run",
+	)
+
+	// Test fetch with additional headers
+	_, err := tool.Execute(ctx, map[string]interface{}{
+		"url": server.URL,
+	})
+	if err != nil {
+		t.Fatalf("Failed to fetch URL: %v", err)
+	}
+}
+

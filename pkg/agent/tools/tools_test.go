@@ -6,8 +6,19 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
+
+// Helper to create test ToolContext
+func createTestContext() *domain.ToolContext {
+	return domain.NewToolContext(
+		context.Background(),
+		domain.NewStateReader(domain.NewState()),
+		nil, // No agent needed for these tests
+		"test-run",
+	)
+}
 
 // TestNewTool tests the NewTool function
 func TestNewTool(t *testing.T) {
@@ -43,7 +54,7 @@ func TestBaseTool_Execute(t *testing.T) {
 			return "Success"
 		}, &sdomain.Schema{Type: "object"})
 
-		result, err := tool.Execute(context.Background(), nil)
+		result, err := tool.Execute(createTestContext(), nil)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -63,7 +74,7 @@ func TestBaseTool_Execute(t *testing.T) {
 			},
 		})
 
-		result, err := tool.Execute(context.Background(), "World")
+		result, err := tool.Execute(createTestContext(), "World")
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -89,7 +100,7 @@ func TestBaseTool_Execute(t *testing.T) {
 			},
 		})
 
-		result, err := tool.Execute(context.Background(), map[string]interface{}{
+		result, err := tool.Execute(createTestContext(), map[string]interface{}{
 			"name": "Alice",
 			"age":  30,
 		})
@@ -117,7 +128,7 @@ func TestBaseTool_Execute(t *testing.T) {
 			},
 		})
 
-		result, err := tool.Execute(context.Background(), "World")
+		result, err := tool.Execute(createTestContext(), "World")
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -132,7 +143,7 @@ func TestBaseTool_Execute(t *testing.T) {
 			return "", ErrTest
 		}, &sdomain.Schema{Type: "object"})
 
-		_, err := tool.Execute(context.Background(), nil)
+		_, err := tool.Execute(createTestContext(), nil)
 		if err != ErrTest {
 			t.Errorf("Expected ErrTest, got %v", err)
 		}

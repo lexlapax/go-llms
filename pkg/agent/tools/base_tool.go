@@ -23,11 +23,12 @@ type Tool struct {
 	paramSchema *sdomain.Schema
 
 	// Pre-computed type information
-	fnType        reflect.Type
-	fnValue       reflect.Value
-	numArgs       int
-	hasContext    bool
-	nonContextArg int
+	fnType         reflect.Type
+	fnValue        reflect.Value
+	numArgs        int
+	hasContext     bool
+	hasToolContext bool
+	nonContextArg  int
 
 	// Cache for commonly used values to reduce allocations
 	argsPool sync.Pool
@@ -49,24 +50,32 @@ func NewTool(name, description string, fn interface{}, paramSchema *sdomain.Sche
 	numArgs := fnType.NumIn()
 
 	// Determine if the function accepts context as first argument
-	hasContext := numArgs > 0 && fnType.In(0).Implements(reflect.TypeOf((*context.Context)(nil)).Elem())
+	// Check for both context.Context and *domain.ToolContext
+	hasContext := false
+	hasToolContext := false
+	if numArgs > 0 {
+		firstArgType := fnType.In(0)
+		hasContext = firstArgType.Implements(reflect.TypeOf((*context.Context)(nil)).Elem())
+		hasToolContext = firstArgType == reflect.TypeOf((*domain.ToolContext)(nil))
+	}
 
 	// Calculate index of the first non-context argument
 	nonContextArg := 0
-	if hasContext {
+	if hasContext || hasToolContext {
 		nonContextArg = 1
 	}
 
 	tool := &Tool{
-		name:          name,
-		description:   description,
-		fn:            fn,
-		paramSchema:   paramSchema,
-		fnType:        fnType,
-		fnValue:       fnValue,
-		numArgs:       numArgs,
-		hasContext:    hasContext,
-		nonContextArg: nonContextArg,
+		name:           name,
+		description:    description,
+		fn:             fn,
+		paramSchema:    paramSchema,
+		fnType:         fnType,
+		fnValue:        fnValue,
+		numArgs:        numArgs,
+		hasContext:     hasContext,
+		hasToolContext: hasToolContext,
+		nonContextArg:  nonContextArg,
 	}
 
 	// Initialize argument pool with pointer to slice for efficient pooling
@@ -96,7 +105,7 @@ func (t *Tool) ParameterSchema() *sdomain.Schema {
 }
 
 // Execute runs the tool with parameters
-func (t *Tool) Execute(ctx context.Context, params interface{}) (interface{}, error) {
+func (t *Tool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 	// Get an arguments slice from the pool
 	argsPtr := t.argsPool.Get().(*[]reflect.Value)
 	args := *argsPtr
@@ -109,8 +118,10 @@ func (t *Tool) Execute(ctx context.Context, params interface{}) (interface{}, er
 	}()
 
 	// If function expects a context, set it as the first argument
-	if t.hasContext {
+	if t.hasToolContext {
 		args[0] = reflect.ValueOf(ctx)
+	} else if t.hasContext {
+		args[0] = reflect.ValueOf(ctx.Context)
 	}
 
 	// Check if we need parameters
@@ -123,7 +134,7 @@ func (t *Tool) Execute(ctx context.Context, params interface{}) (interface{}, er
 	}
 
 	// Handle parameter preparation with optimized path
-	err := t.prepareArguments(ctx, params, args)
+	err := t.prepareArguments(ctx.Context, params, args)
 	if err != nil {
 		return nil, fmt.Errorf("error preparing arguments: %w", err)
 	}

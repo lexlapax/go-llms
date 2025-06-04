@@ -4,7 +4,6 @@
 package feed
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -53,10 +52,10 @@ func TestFeedFilterByKeywords(t *testing.T) {
 	}
 
 	tool := FeedFilter()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Filter for Go-related items
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":     feed,
 		"keywords": []string{"Go", "golang"},
 	})
@@ -120,11 +119,11 @@ func TestFeedFilterByDate(t *testing.T) {
 	}
 
 	tool := FeedFilter()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Filter for items from the last 3 days
 	threeDaysAgo := now.AddDate(0, 0, -3)
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":  feed,
 		"after": threeDaysAgo.Format(time.RFC3339),
 	})
@@ -142,7 +141,7 @@ func TestFeedFilterByDate(t *testing.T) {
 	}
 
 	// Test date range
-	result2, err := tool.Execute(ctx, map[string]interface{}{
+	result2, err := tool.Execute(tc, map[string]interface{}{
 		"feed":   feed,
 		"after":  lastWeek.AddDate(0, 0, -1).Format(time.RFC3339),
 		"before": yesterday.AddDate(0, 0, 1).Format(time.RFC3339),
@@ -194,10 +193,10 @@ func TestFeedFilterByAuthor(t *testing.T) {
 	}
 
 	tool := FeedFilter()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Filter by author
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":    feed,
 		"authors": []string{"John"},
 	})
@@ -248,10 +247,10 @@ func TestFeedFilterByCategories(t *testing.T) {
 	}
 
 	tool := FeedFilter()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Filter by category
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":       feed,
 		"categories": []string{"Technology"},
 	})
@@ -305,10 +304,10 @@ func TestFeedFilterMatchAll(t *testing.T) {
 	}
 
 	tool := FeedFilter()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test match_all = true
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":       feed,
 		"keywords":   []string{"Go"},
 		"authors":    []string{"John"},
@@ -351,10 +350,10 @@ func TestFeedFilterMaxItems(t *testing.T) {
 	}
 
 	tool := FeedFilter()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test max_items limit
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":      feed,
 		"max_items": 3,
 	})
@@ -383,9 +382,9 @@ func TestFeedFilterEmptyFeed(t *testing.T) {
 	}
 
 	tool := FeedFilter()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":     feed,
 		"keywords": []string{"test"},
 	})
@@ -419,10 +418,10 @@ func TestFeedFilterInvalidDateFormat(t *testing.T) {
 	}
 
 	tool := FeedFilter()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test invalid after date
-	_, err := tool.Execute(ctx, map[string]interface{}{
+	_, err := tool.Execute(tc, map[string]interface{}{
 		"feed":  feed,
 		"after": "not-a-date",
 	})
@@ -431,7 +430,7 @@ func TestFeedFilterInvalidDateFormat(t *testing.T) {
 	}
 
 	// Test invalid before date
-	_, err = tool.Execute(ctx, map[string]interface{}{
+	_, err = tool.Execute(tc, map[string]interface{}{
 		"feed":   feed,
 		"before": "2024-13-45", // Invalid date
 	})

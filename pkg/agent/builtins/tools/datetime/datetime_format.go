@@ -4,7 +4,6 @@
 package datetime
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -142,7 +141,16 @@ func DateTimeFormat() agentDomain.Tool {
 	return atools.NewTool(
 		"datetime_format",
 		"Format date/time to various string representations",
-		func(ctx context.Context, input DateTimeFormatInput) (*DateTimeFormatOutput, error) {
+		func(ctx *agentDomain.ToolContext, input DateTimeFormatInput) (*DateTimeFormatOutput, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(agentDomain.EventToolCall, agentDomain.ToolCallEventData{
+					ToolName:   "datetime_format",
+					Parameters: input,
+					RequestID:  ctx.RunID,
+				})
+			}
+
 			// Parse the input date/time
 			parsedTime, err := parseDate(input.DateTime)
 			if err != nil {
@@ -156,6 +164,16 @@ func DateTimeFormat() agentDomain.Tool {
 					return nil, fmt.Errorf("invalid timezone: %w", err)
 				}
 				parsedTime = parsedTime.In(loc)
+			} else if ctx.State != nil {
+				// Check state for default timezone
+				if defaultTZ, exists := ctx.State.Get("default_timezone"); exists {
+					if tzStr, ok := defaultTZ.(string); ok && tzStr != "" {
+						loc, err := time.LoadLocation(tzStr)
+						if err == nil {
+							parsedTime = parsedTime.In(loc)
+						}
+					}
+				}
 			}
 
 			output := &DateTimeFormatOutput{}
@@ -223,6 +241,15 @@ func DateTimeFormat() agentDomain.Tool {
 			// Add localized components if requested
 			if input.Locale != "" {
 				output.Localized = getLocalizedComponents(parsedTime, input.Locale)
+			}
+
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(agentDomain.EventToolResult, agentDomain.ToolResultEventData{
+					ToolName:  "datetime_format",
+					Result:    output,
+					RequestID: ctx.RunID,
+				})
 			}
 
 			return output, nil

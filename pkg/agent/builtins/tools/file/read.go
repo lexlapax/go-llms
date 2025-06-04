@@ -120,16 +120,69 @@ func ReadFile() domain.Tool {
 	return atools.NewTool(
 		"file_read",
 		"Reads file contents with support for large files, line ranges, and metadata",
-		func(ctx context.Context, params ReadFileParams) (*ReadFileResult, error) {
-			// Set default max size (10MB)
+		func(ctx *domain.ToolContext, params ReadFileParams) (*ReadFileResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.EmitMessage(fmt.Sprintf("Starting file read for %s", params.Path))
+			}
+
+			// Get max size from state or use default
 			maxSize := params.MaxSize
 			if maxSize == 0 {
-				maxSize = 10 * 1024 * 1024 // 10MB default
+				// Check state for default max size
+				if ctx.State != nil {
+					if defaultMaxSize, exists := ctx.State.Get("file_read_max_size"); exists {
+						if size, ok := defaultMaxSize.(int64); ok {
+							maxSize = size
+						}
+					}
+				}
+				// Fall back to default if not in state
+				if maxSize == 0 {
+					maxSize = 10 * 1024 * 1024 // 10MB default
+				}
+			}
+
+			// Check file access restrictions from state
+			if ctx.State != nil {
+				if restrictedPaths, exists := ctx.State.Get("file_restricted_paths"); exists {
+					if paths, ok := restrictedPaths.([]string); ok {
+						for _, restricted := range paths {
+							if strings.HasPrefix(params.Path, restricted) {
+								return nil, fmt.Errorf("access denied: path %s is restricted", params.Path)
+							}
+						}
+					}
+				}
+
+				// Check allowed paths if specified
+				if allowedPaths, exists := ctx.State.Get("file_allowed_paths"); exists {
+					if paths, ok := allowedPaths.([]string); ok && len(paths) > 0 {
+						allowed := false
+						for _, allowedPath := range paths {
+							if strings.HasPrefix(params.Path, allowedPath) {
+								allowed = true
+								break
+							}
+						}
+						if !allowed {
+							return nil, fmt.Errorf("access denied: path %s is not in allowed paths", params.Path)
+						}
+					}
+				}
+			}
+
+			// Emit progress event
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(1, 4, "Opening file")
 			}
 
 			// Open file
 			file, err := os.Open(params.Path)
 			if err != nil {
+				if ctx.Events != nil {
+					ctx.Events.EmitError(err)
+				}
 				return nil, fmt.Errorf("error opening file: %w", err)
 			}
 			defer file.Close()
@@ -140,6 +193,10 @@ func ReadFile() domain.Tool {
 
 			// Get file metadata if requested
 			if params.IncludeMeta {
+				if ctx.Events != nil {
+					ctx.Events.EmitProgress(2, 4, "Reading file metadata")
+				}
+
 				stat, err := file.Stat()
 				if err != nil {
 					return nil, fmt.Errorf("error getting file stats: %w", err)
@@ -160,16 +217,35 @@ func ReadFile() domain.Tool {
 				}
 			}
 
+			// Check encoding preferences from state
+			preferredEncoding := ""
+			if ctx.State != nil {
+				if enc, exists := ctx.State.Get("file_preferred_encoding"); exists {
+					if encStr, ok := enc.(string); ok {
+						preferredEncoding = encStr
+					}
+				}
+			}
+
 			// Check if file is binary
 			result.IsBinary, result.Encoding = detectFileType(file)
 			if _, err := file.Seek(0, 0); err != nil {
 				return nil, fmt.Errorf("error resetting file position: %w", err)
 			}
 
+			// Override encoding if preference is set and file is text
+			if preferredEncoding != "" && !result.IsBinary {
+				result.Encoding = preferredEncoding
+			}
+
 			// Read file content
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(3, 4, "Reading file content")
+			}
+
 			if params.LineStart > 0 || params.LineEnd > 0 {
 				// Line-based reading
-				content, lines, err := readFileLines(ctx, file, params.LineStart, params.LineEnd, maxSize)
+				content, lines, err := readFileLines(ctx.Context, file, params.LineStart, params.LineEnd, maxSize)
 				if err != nil {
 					return nil, err
 				}
@@ -177,7 +253,7 @@ func ReadFile() domain.Tool {
 				result.Lines = lines
 			} else {
 				// Full file reading
-				content, err := readFileContent(ctx, file, maxSize)
+				content, err := readFileContent(ctx.Context, file, maxSize)
 				if err != nil {
 					return nil, err
 				}
@@ -193,6 +269,29 @@ func ReadFile() domain.Tool {
 			if int64(len(result.Content)) >= maxSize {
 				result.Warnings = append(result.Warnings,
 					fmt.Sprintf("File truncated at %d bytes", maxSize))
+			}
+
+			// Emit completion event with custom file metadata
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(4, 4, "File read complete")
+				
+				// Emit custom event with file read details
+				fileEventData := map[string]interface{}{
+					"path":         params.Path,
+					"bytes_read":   len(result.Content),
+					"lines_read":   result.Lines,
+					"is_binary":    result.IsBinary,
+					"encoding":     result.Encoding,
+					"elapsed_time": ctx.ElapsedTime().String(),
+				}
+				
+				if result.Metadata != nil {
+					fileEventData["file_size"] = result.Metadata.Size
+					fileEventData["file_extension"] = result.Metadata.Extension
+					fileEventData["absolute_path"] = result.Metadata.AbsolutePath
+				}
+				
+				ctx.Events.EmitCustom("file_read_complete", fileEventData)
 			}
 
 			return result, nil

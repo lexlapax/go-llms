@@ -4,7 +4,6 @@
 package feed
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -45,9 +44,9 @@ func TestFeedExtractBasicFields(t *testing.T) {
 	}
 
 	tool := FeedExtract()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":   feed,
 		"fields": []string{"id", "title", "link"},
 	})
@@ -107,10 +106,10 @@ func TestFeedExtractNestedFields(t *testing.T) {
 	}
 
 	tool := FeedExtract()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test nested field extraction without flattening
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":   feed,
 		"fields": []string{"title", "author.name", "author.email"},
 	})
@@ -154,10 +153,10 @@ func TestFeedExtractWithFlattening(t *testing.T) {
 	}
 
 	tool := FeedExtract()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test with flattening enabled
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":    feed,
 		"fields":  []string{"title", "author.name"},
 		"flatten": true,
@@ -203,9 +202,9 @@ func TestFeedExtractWithMetadata(t *testing.T) {
 	}
 
 	tool := FeedExtract()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":             feed,
 		"fields":           []string{"title"},
 		"include_metadata": true,
@@ -250,9 +249,9 @@ func TestFeedExtractMaxItems(t *testing.T) {
 	}
 
 	tool := FeedExtract()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":      feed,
 		"fields":    []string{"id", "title"},
 		"max_items": 5,
@@ -292,9 +291,9 @@ func TestFeedExtractDateFields(t *testing.T) {
 	}
 
 	tool := FeedExtract()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":   feed,
 		"fields": []string{"title", "published", "updated"},
 	})
@@ -349,9 +348,9 @@ func TestFeedExtractArrayFields(t *testing.T) {
 	}
 
 	tool := FeedExtract()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":   feed,
 		"fields": []string{"title", "categories", "enclosures"},
 	})
@@ -392,9 +391,9 @@ func TestFeedExtractEmptyFeed(t *testing.T) {
 	}
 
 	tool := FeedExtract()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":   feed,
 		"fields": []string{"title"},
 	})
@@ -423,9 +422,9 @@ func TestFeedExtractNoFields(t *testing.T) {
 	}
 
 	tool := FeedExtract()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	_, err := tool.Execute(ctx, map[string]interface{}{
+	_, err := tool.Execute(tc, map[string]interface{}{
 		"feed":   feed,
 		"fields": []string{},
 	})
@@ -446,9 +445,9 @@ func TestFeedExtractNonExistentFields(t *testing.T) {
 	}
 
 	tool := FeedExtract()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":   feed,
 		"fields": []string{"nonexistent", "invalid.field"},
 	})
@@ -487,10 +486,10 @@ func TestFeedExtractFullAuthorObject(t *testing.T) {
 	}
 
 	tool := FeedExtract()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Request full author object (no sub-field)
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":   feed,
 		"fields": []string{"title", "author"},
 	})

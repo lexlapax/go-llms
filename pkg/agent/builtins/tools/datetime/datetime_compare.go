@@ -4,7 +4,6 @@
 package datetime
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"time"
@@ -128,7 +127,16 @@ func DateTimeCompare() agentDomain.Tool {
 	return atools.NewTool(
 		"datetime_compare",
 		"Compare dates and times with various operations",
-		func(ctx context.Context, input DateTimeCompareInput) (*DateTimeCompareOutput, error) {
+		func(ctx *agentDomain.ToolContext, input DateTimeCompareInput) (*DateTimeCompareOutput, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(agentDomain.EventToolCall, agentDomain.ToolCallEventData{
+					ToolName:   "datetime_compare",
+					Parameters: input,
+					RequestID:  ctx.RunID,
+				})
+			}
+
 			output := &DateTimeCompareOutput{}
 
 			// Apply timezone if specified
@@ -138,6 +146,18 @@ func DateTimeCompare() agentDomain.Tool {
 				loc, err = time.LoadLocation(input.Timezone)
 				if err != nil {
 					return nil, fmt.Errorf("invalid timezone: %w", err)
+				}
+			} else if ctx.State != nil {
+				// Check state for default timezone
+				if defaultTZ, exists := ctx.State.Get("default_timezone"); exists {
+					if tzStr, ok := defaultTZ.(string); ok && tzStr != "" {
+						var err error
+						loc, err = time.LoadLocation(tzStr)
+						if err != nil {
+							// Fall back to UTC if timezone is invalid
+							loc = time.UTC
+						}
+					}
 				}
 			}
 
@@ -267,6 +287,15 @@ func DateTimeCompare() agentDomain.Tool {
 
 			default:
 				return nil, fmt.Errorf("invalid operation: %s", input.Operation)
+			}
+
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(agentDomain.EventToolResult, agentDomain.ToolResultEventData{
+					ToolName:  "datetime_compare",
+					Result:    output,
+					RequestID: ctx.RunID,
+				})
 			}
 
 			return output, nil

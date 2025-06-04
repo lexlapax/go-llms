@@ -4,7 +4,6 @@
 package system
 
 import (
-	"context"
 	"runtime"
 	"testing"
 
@@ -40,7 +39,7 @@ func TestGetSystemInfoRegistration(t *testing.T) {
 
 func TestGetSystemInfoBasic(t *testing.T) {
 	tool := GetSystemInfo()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test 1: Basic system info (no optional fields)
 	result, err := tool.Execute(ctx, map[string]interface{}{})
@@ -87,7 +86,7 @@ func TestGetSystemInfoBasic(t *testing.T) {
 
 func TestGetSystemInfoWithMemory(t *testing.T) {
 	tool := GetSystemInfo()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	result, err := tool.Execute(ctx, map[string]interface{}{
 		"include_memory": true,
@@ -115,7 +114,7 @@ func TestGetSystemInfoWithMemory(t *testing.T) {
 
 func TestGetSystemInfoWithRuntime(t *testing.T) {
 	tool := GetSystemInfo()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	result, err := tool.Execute(ctx, map[string]interface{}{
 		"include_runtime": true,
@@ -151,7 +150,7 @@ func TestGetSystemInfoWithRuntime(t *testing.T) {
 
 func TestGetSystemInfoWithEnvironment(t *testing.T) {
 	tool := GetSystemInfo()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	result, err := tool.Execute(ctx, map[string]interface{}{
 		"include_environment": true,
@@ -183,7 +182,7 @@ func TestGetSystemInfoWithEnvironment(t *testing.T) {
 
 func TestGetSystemInfoFull(t *testing.T) {
 	tool := GetSystemInfo()
-	ctx := context.Background()
+	ctx := createTestToolContext()
 
 	// Test with all optional fields
 	result, err := tool.Execute(ctx, map[string]interface{}{

@@ -4,7 +4,6 @@
 package feed
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -54,9 +53,9 @@ func TestFeedAggregateBasic(t *testing.T) {
 	}
 
 	tool := FeedAggregate()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feeds":          []UnifiedFeed{feed1, feed2},
 		"merge_metadata": true,
 	})
@@ -114,10 +113,10 @@ func TestFeedAggregateSortByDate(t *testing.T) {
 	}
 
 	tool := FeedAggregate()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test ascending date sort (default is ascending now)
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feeds":   []UnifiedFeed{feed},
 		"sort_by": "date",
 	})
@@ -142,7 +141,7 @@ func TestFeedAggregateSortByDate(t *testing.T) {
 	}
 
 	// Test descending date sort
-	result2, err := tool.Execute(ctx, map[string]interface{}{
+	result2, err := tool.Execute(tc, map[string]interface{}{
 		"feeds":           []UnifiedFeed{feed},
 		"sort_by":         "date",
 		"sort_descending": true,
@@ -196,10 +195,10 @@ func TestFeedAggregateSortByTitle(t *testing.T) {
 	}
 
 	tool := FeedAggregate()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test ascending title sort (default for title)
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feeds":   []UnifiedFeed{feed},
 		"sort_by": "title",
 	})
@@ -264,10 +263,10 @@ func TestFeedAggregateRemoveDuplicates(t *testing.T) {
 	}
 
 	tool := FeedAggregate()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test with duplicate removal
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feeds":        []UnifiedFeed{feed1, feed2},
 		"remove_dupes": true,
 	})
@@ -311,10 +310,10 @@ func TestFeedAggregateMaxItems(t *testing.T) {
 	}
 
 	tool := FeedAggregate()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test max items limit
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feeds":     []UnifiedFeed{feed},
 		"max_items": 5,
 	})
@@ -350,10 +349,10 @@ func TestFeedAggregateNoMetadataMerge(t *testing.T) {
 	}
 
 	tool := FeedAggregate()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	mergeMetadata := false
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feeds":          []UnifiedFeed{feed1, feed2},
 		"merge_metadata": mergeMetadata,
 	})
@@ -378,10 +377,10 @@ func TestFeedAggregateNoMetadataMerge(t *testing.T) {
 
 func TestFeedAggregateEmptyFeeds(t *testing.T) {
 	tool := FeedAggregate()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test with empty feeds array
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feeds": []UnifiedFeed{},
 	})
 	if err != nil {
@@ -409,10 +408,10 @@ func TestFeedAggregateInvalidSortBy(t *testing.T) {
 	}
 
 	tool := FeedAggregate()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test invalid sort_by field
-	_, err := tool.Execute(ctx, map[string]interface{}{
+	_, err := tool.Execute(tc, map[string]interface{}{
 		"feeds":   []UnifiedFeed{feed},
 		"sort_by": "invalid",
 	})
@@ -452,9 +451,9 @@ func TestFeedAggregateDuplicatesByContent(t *testing.T) {
 	}
 
 	tool := FeedAggregate()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feeds":        []UnifiedFeed{feed1, feed2},
 		"remove_dupes": true,
 	})

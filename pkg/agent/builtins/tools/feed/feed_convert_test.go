@@ -4,7 +4,6 @@
 package feed
 
 import (
-	"context"
 	"encoding/json"
 	"encoding/xml"
 	"strings"
@@ -48,9 +47,9 @@ func TestFeedConvertToRSS(t *testing.T) {
 	}
 
 	tool := FeedConvert()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":        feed,
 		"target_type": "rss",
 		"pretty":      true,
@@ -114,9 +113,9 @@ func TestFeedConvertToAtom(t *testing.T) {
 	}
 
 	tool := FeedConvert()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":        feed,
 		"target_type": "atom",
 	})
@@ -180,9 +179,9 @@ func TestFeedConvertToJSONFeed(t *testing.T) {
 	}
 
 	tool := FeedConvert()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	result, err := tool.Execute(tc, map[string]interface{}{
 		"feed":            feed,
 		"target_type":     "json",
 		"include_content": false, // Use description only
@@ -255,10 +254,10 @@ func TestFeedConvertPrettyPrint(t *testing.T) {
 	}
 
 	tool := FeedConvert()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test with pretty=false
-	result1, err := tool.Execute(ctx, map[string]interface{}{
+	result1, err := tool.Execute(tc, map[string]interface{}{
 		"feed":        feed,
 		"target_type": "json",
 		"pretty":      false,
@@ -273,7 +272,7 @@ func TestFeedConvertPrettyPrint(t *testing.T) {
 	}
 
 	// Test with pretty=true
-	result2, err := tool.Execute(ctx, map[string]interface{}{
+	result2, err := tool.Execute(tc, map[string]interface{}{
 		"feed":        feed,
 		"target_type": "json",
 		"pretty":      true,
@@ -295,13 +294,13 @@ func TestFeedConvertEmptyFeed(t *testing.T) {
 	}
 
 	tool := FeedConvert()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test all formats with empty feed
 	formats := []string{"rss", "atom", "json"}
 
 	for _, format := range formats {
-		result, err := tool.Execute(ctx, map[string]interface{}{
+		result, err := tool.Execute(tc, map[string]interface{}{
 			"feed":        feed,
 			"target_type": format,
 		})
@@ -328,9 +327,9 @@ func TestFeedConvertInvalidFormat(t *testing.T) {
 	}
 
 	tool := FeedConvert()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
-	_, err := tool.Execute(ctx, map[string]interface{}{
+	_, err := tool.Execute(tc, map[string]interface{}{
 		"feed":        feed,
 		"target_type": "invalid",
 	})
@@ -353,13 +352,13 @@ func TestFeedConvertWithoutAuthor(t *testing.T) {
 	}
 
 	tool := FeedConvert()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Test all formats - should not fail without author
 	formats := []string{"rss", "atom", "json"}
 
 	for _, format := range formats {
-		result, err := tool.Execute(ctx, map[string]interface{}{
+		result, err := tool.Execute(tc, map[string]interface{}{
 			"feed":        feed,
 			"target_type": format,
 		})
@@ -392,10 +391,10 @@ func TestFeedConvertDateHandling(t *testing.T) {
 	_ = time.Date(2024, 1, 16, 10, 30, 0, 0, time.UTC)
 
 	tool := FeedConvert()
-	ctx := context.Background()
+	tc := createTestToolContext()
 
 	// Convert to Atom (which requires updated date)
-	result1, err := tool.Execute(ctx, map[string]interface{}{
+	result1, err := tool.Execute(tc, map[string]interface{}{
 		"feed":        feed1,
 		"target_type": "atom",
 	})
@@ -420,7 +419,7 @@ func TestFeedConvertDateHandling(t *testing.T) {
 		},
 	}
 
-	result2, err := tool.Execute(ctx, map[string]interface{}{
+	result2, err := tool.Execute(tc, map[string]interface{}{
 		"feed":        feed3,
 		"target_type": "atom",
 	})

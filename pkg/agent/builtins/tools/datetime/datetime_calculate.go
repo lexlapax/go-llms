@@ -4,7 +4,6 @@
 package datetime
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -116,7 +115,25 @@ func DateTimeCalculate() agentDomain.Tool {
 	return atools.NewTool(
 		"datetime_calculate",
 		"Perform date/time arithmetic operations",
-		func(ctx context.Context, input DateTimeCalculateInput) (*DateTimeCalculateOutput, error) {
+		func(ctx *agentDomain.ToolContext, input DateTimeCalculateInput) (*DateTimeCalculateOutput, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(agentDomain.EventToolCall, agentDomain.ToolCallEventData{
+					ToolName:   "datetime_calculate",
+					Parameters: input,
+					RequestID:  ctx.RunID,
+				})
+			}
+			
+			// Check state for default timezone if not provided
+			if input.Timezone == "" && ctx.State != nil {
+				if val, ok := ctx.State.Get("datetime_default_timezone"); ok {
+					if tz, ok := val.(string); ok && tz != "" {
+						input.Timezone = tz
+					}
+				}
+			}
+			
 			// Parse the start date
 			startTime, err := parseDate(input.StartDate)
 			if err != nil {
@@ -212,6 +229,15 @@ func DateTimeCalculate() agentDomain.Tool {
 				return nil, fmt.Errorf("invalid operation: %s", input.Operation)
 			}
 
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(agentDomain.EventToolResult, agentDomain.ToolResultEventData{
+					ToolName:  "datetime_calculate",
+					Result:    output,
+					RequestID: ctx.RunID,
+				})
+			}
+			
 			return output, nil
 		},
 		dateTimeCalculateParamSchema,

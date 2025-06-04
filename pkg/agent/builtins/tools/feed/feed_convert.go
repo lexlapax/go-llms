@@ -4,7 +4,6 @@
 package feed
 
 import (
-	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -98,8 +97,49 @@ func FeedConvert() domain.Tool {
 	return atools.NewTool(
 		"feed_convert",
 		"Converts feeds between RSS, Atom, and JSON Feed formats",
-		func(ctx context.Context, params FeedConvertParams) (*FeedConvertResult, error) {
-			return convertFeed(params)
+		func(ctx *domain.ToolContext, params FeedConvertParams) (*FeedConvertResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+					ToolName:   "feed_convert",
+					Parameters: params,
+					RequestID:  ctx.RunID,
+				})
+			}
+			
+			// Check state for default format preferences
+			if params.TargetType == "" && ctx.State != nil {
+				if val, ok := ctx.State.Get("feed_convert_default_format"); ok {
+					if format, ok := val.(string); ok && format != "" {
+						params.TargetType = format
+					}
+				}
+			}
+			
+			// Check state for default pretty print setting
+			if !params.Pretty && ctx.State != nil {
+				if val, ok := ctx.State.Get("feed_convert_pretty_print"); ok {
+					if pretty, ok := val.(bool); ok {
+						params.Pretty = pretty
+					}
+				}
+			}
+			
+			result, err := convertFeed(params)
+			if err != nil {
+				return nil, err
+			}
+			
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+					ToolName:  "feed_convert",
+					Result:    result,
+					RequestID: ctx.RunID,
+				})
+			}
+			
+			return result, nil
 		},
 		feedConvertParamSchema,
 	)

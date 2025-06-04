@@ -4,7 +4,6 @@
 package feed
 
 import (
-	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -283,11 +282,38 @@ func FeedFetch() domain.Tool {
 	return atools.NewTool(
 		"feed_fetch",
 		"Fetches and parses feeds in RSS, Atom, or JSON Feed format",
-		func(ctx context.Context, params FeedFetchParams) (*FeedFetchResult, error) {
-			// Set default timeout
+		func(ctx *domain.ToolContext, params FeedFetchParams) (*FeedFetchResult, error) {
+			// Emit start event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+					ToolName:   "feed_fetch",
+					Parameters: params,
+					RequestID:  ctx.RunID,
+				})
+			}
+
+			// Check state for default timeout if not provided
 			timeout := 30 * time.Second
 			if params.Timeout > 0 {
 				timeout = time.Duration(params.Timeout) * time.Second
+			} else if ctx.State != nil {
+				if val, ok := ctx.State.Get("feed_fetch_default_timeout"); ok {
+					if t, ok := val.(int); ok && t > 0 {
+						timeout = time.Duration(t) * time.Second
+					}
+				}
+			}
+
+			// Check state for default user agent if not provided
+			userAgent := "go-llms-feed/1.0"
+			if params.UserAgent != "" {
+				userAgent = params.UserAgent
+			} else if ctx.State != nil {
+				if val, ok := ctx.State.Get("feed_fetch_user_agent"); ok {
+					if ua, ok := val.(string); ok && ua != "" {
+						userAgent = ua
+					}
+				}
 			}
 
 			// Create HTTP client with timeout
@@ -296,16 +322,12 @@ func FeedFetch() domain.Tool {
 			}
 
 			// Create request with context
-			req, err := http.NewRequestWithContext(ctx, "GET", params.URL, nil)
+			req, err := http.NewRequestWithContext(ctx.Context, "GET", params.URL, nil)
 			if err != nil {
 				return nil, fmt.Errorf("error creating request: %w", err)
 			}
 
-			// Set user agent
-			userAgent := "go-llms-feed/1.0"
-			if params.UserAgent != "" {
-				userAgent = params.UserAgent
-			}
+			// Set user agent header
 			req.Header.Set("User-Agent", userAgent)
 
 			// Set conditional headers
@@ -325,11 +347,22 @@ func FeedFetch() domain.Tool {
 
 			// Handle 304 Not Modified
 			if resp.StatusCode == http.StatusNotModified {
-				return &FeedFetchResult{
+				result := &FeedFetchResult{
 					Status:      resp.StatusCode,
 					NotModified: true,
 					Headers:     extractHeaders(resp.Header),
-				}, nil
+				}
+				
+				// Emit result event
+				if ctx.Events != nil {
+					ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+						ToolName:  "feed_fetch",
+						Result:    result,
+						RequestID: ctx.RunID,
+					})
+				}
+				
+				return result, nil
 			}
 
 			// Check status code
@@ -355,12 +388,23 @@ func FeedFetch() domain.Tool {
 				feed.Items = feed.Items[:params.MaxItems]
 			}
 
-			return &FeedFetchResult{
+			result := &FeedFetchResult{
 				Feed:    *feed,
 				Status:  resp.StatusCode,
 				Headers: extractHeaders(resp.Header),
 				Format:  format,
-			}, nil
+			}
+			
+			// Emit result event
+			if ctx.Events != nil {
+				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+					ToolName:  "feed_fetch",
+					Result:    result,
+					RequestID: ctx.RunID,
+				})
+			}
+			
+			return result, nil
 		},
 		feedFetchParamSchema,
 	)

@@ -35,7 +35,7 @@ func TestDateTimeCalculate(t *testing.T) {
 					Unit:      tc.unit,
 					Value:     tc.value,
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -69,7 +69,7 @@ func TestDateTimeCalculate(t *testing.T) {
 					Unit:      tc.unit,
 					Value:     tc.value,
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to execute tool: %v", err)
 				}
@@ -88,7 +88,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			StartDate: "2024-01-15T10:30:00Z",
 			EndDate:   "2024-01-20T15:45:30Z",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -124,7 +124,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			StartDate: "2000-01-15T00:00:00Z",
 			EndDate:   "2024-03-20T00:00:00Z",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -155,7 +155,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			Operation: "age",
 			StartDate: "2000-01-15T00:00:00Z",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -178,7 +178,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			StartDate:     "2024-01-15T10:30:00Z",
 			TargetWeekday: 5, // Friday
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -197,7 +197,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			StartDate:     "2024-01-15T10:30:00Z",
 			TargetWeekday: 5, // Friday
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -216,7 +216,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			StartDate: "2024-01-15T10:30:00Z",
 			Value:     5,
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -238,7 +238,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			StartDate: "2024-01-22T10:30:00Z",
 			Value:     5,
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -260,7 +260,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			Value:           5,
 			IncludeWeekends: true,
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -280,7 +280,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			Value:     5,
 			Timezone:  "America/New_York",
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -300,7 +300,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			Unit:      "months",
 			Value:     1,
 		}
-		result, err := tool.Execute(ctx, input)
+		result, err := tool.Execute(createTestToolContext(ctx), input)
 		if err != nil {
 			t.Fatalf("Failed to execute tool: %v", err)
 		}
@@ -318,7 +318,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			Operation: "invalid",
 			StartDate: "2024-01-15T10:30:00Z",
 		}
-		_, err := tool.Execute(ctx, input)
+		_, err := tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for invalid operation")
 		}
@@ -331,7 +331,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			StartDate: "2024-01-15T10:30:00Z",
 			Value:     5,
 		}
-		_, err := tool.Execute(ctx, input)
+		_, err := tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for missing unit")
 		}
@@ -341,7 +341,7 @@ func TestDateTimeCalculate(t *testing.T) {
 			Operation: "duration",
 			StartDate: "2024-01-15T10:30:00Z",
 		}
-		_, err = tool.Execute(ctx, input)
+		_, err = tool.Execute(createTestToolContext(ctx), input)
 		if err == nil {
 			t.Error("Expected error for missing end_date")
 		}
@@ -365,7 +365,7 @@ func TestDateTimeCalculate(t *testing.T) {
 					Unit:      "days",
 					Value:     1,
 				}
-				result, err := tool.Execute(ctx, input)
+				result, err := tool.Execute(createTestToolContext(ctx), input)
 				if err != nil {
 					t.Fatalf("Failed to parse date format %s: %v", format, err)
 				}
