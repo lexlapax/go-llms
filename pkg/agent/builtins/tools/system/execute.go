@@ -208,7 +208,7 @@ func ExecuteCommand() domain.Tool {
 		"Executes system commands with enhanced control and security",
 		func(ctx *domain.ToolContext, params ExecuteCommandParams) (*ExecuteCommandResult, error) {
 			startTime := time.Now()
-			
+
 			// Emit start event
 			if ctx.Events != nil {
 				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
@@ -242,7 +242,7 @@ func ExecuteCommand() domain.Tool {
 					}
 				}
 			}
-			
+
 			// Validate command in safe mode
 			if safeMode {
 				if err := validateCommandSafety(params.Command, ctx); err != nil {
@@ -310,7 +310,7 @@ func ExecuteCommand() domain.Tool {
 			if ctx.Events != nil {
 				ctx.Events.EmitMessage(fmt.Sprintf("Executing command: %s", params.Command))
 			}
-			
+
 			// Execute command
 			err := cmd.Run()
 			duration := time.Since(startTime)
@@ -348,7 +348,7 @@ func ExecuteCommand() domain.Tool {
 				result.ExitCode = 0
 				result.Success = true
 			}
-			
+
 			// Emit result event
 			if ctx.Events != nil {
 				if result.Success {
@@ -412,7 +412,7 @@ func validateCommandSafety(command string, ctx *domain.ToolContext) error {
 
 	// Check if command is in the safe commands list
 	commandAllowed := safeCommands[baseCmd]
-	
+
 	// Check state for additional allowed commands
 	if !commandAllowed && ctx != nil && ctx.State != nil {
 		if allowedCmds, ok := ctx.State.Get("allowed_commands"); ok {
@@ -426,7 +426,7 @@ func validateCommandSafety(command string, ctx *domain.ToolContext) error {
 			}
 		}
 	}
-	
+
 	// In strict safe mode, only allow explicitly safe commands
 	// This is more restrictive but safer for untrusted input
 	if !commandAllowed {
@@ -437,7 +437,7 @@ func validateCommandSafety(command string, ctx *domain.ToolContext) error {
 			// Check the base command from the path
 			baseCmd = filepath.Base(parts[0])
 			commandAllowed = safeCommands[baseCmd]
-			
+
 			// Check state again for the base command
 			if !commandAllowed && ctx != nil && ctx.State != nil {
 				if allowedCmds, ok := ctx.State.Get("allowed_commands"); ok {
@@ -451,7 +451,7 @@ func validateCommandSafety(command string, ctx *domain.ToolContext) error {
 					}
 				}
 			}
-			
+
 			if !commandAllowed {
 				return fmt.Errorf("command '%s' is not in the safe command allowlist", baseCmd)
 			}

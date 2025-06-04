@@ -106,7 +106,7 @@ func FeedConvert() domain.Tool {
 					RequestID:  ctx.RunID,
 				})
 			}
-			
+
 			// Check state for default format preferences
 			if params.TargetType == "" && ctx.State != nil {
 				if val, ok := ctx.State.Get("feed_convert_default_format"); ok {
@@ -115,7 +115,7 @@ func FeedConvert() domain.Tool {
 					}
 				}
 			}
-			
+
 			// Check state for default pretty print setting
 			if !params.Pretty && ctx.State != nil {
 				if val, ok := ctx.State.Get("feed_convert_pretty_print"); ok {
@@ -124,12 +124,12 @@ func FeedConvert() domain.Tool {
 					}
 				}
 			}
-			
+
 			result, err := convertFeed(params)
 			if err != nil {
 				return nil, err
 			}
-			
+
 			// Emit result event
 			if ctx.Events != nil {
 				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
@@ -138,7 +138,7 @@ func FeedConvert() domain.Tool {
 					RequestID: ctx.RunID,
 				})
 			}
-			
+
 			return result, nil
 		},
 		feedConvertParamSchema,

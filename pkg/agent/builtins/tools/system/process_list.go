@@ -129,7 +129,7 @@ func ProcessList() domain.Tool {
 			}
 			// Get current PID for self-filtering
 			currentPID := os.Getpid()
-			
+
 			// Check state for default limit if not provided
 			if params.Limit == 0 && ctx.State != nil {
 				if limit, ok := ctx.State.Get("process_list_default_limit"); ok {
@@ -198,7 +198,7 @@ func ProcessList() domain.Tool {
 				Platform:  runtime.GOOS,
 				Timestamp: time.Now().UTC().Format(time.RFC3339),
 			}
-			
+
 			// Emit result event
 			if ctx.Events != nil {
 				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
@@ -207,7 +207,7 @@ func ProcessList() domain.Tool {
 					RequestID: ctx.RunID,
 				})
 			}
-			
+
 			return result, nil
 		},
 		processListParamSchema,

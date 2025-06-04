@@ -352,7 +352,7 @@ func FeedFetch() domain.Tool {
 					NotModified: true,
 					Headers:     extractHeaders(resp.Header),
 				}
-				
+
 				// Emit result event
 				if ctx.Events != nil {
 					ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
@@ -361,7 +361,7 @@ func FeedFetch() domain.Tool {
 						RequestID: ctx.RunID,
 					})
 				}
-				
+
 				return result, nil
 			}
 
@@ -394,7 +394,7 @@ func FeedFetch() domain.Tool {
 				Headers: extractHeaders(resp.Header),
 				Format:  format,
 			}
-			
+
 			// Emit result event
 			if ctx.Events != nil {
 				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
@@ -403,7 +403,7 @@ func FeedFetch() domain.Tool {
 					RequestID: ctx.RunID,
 				})
 			}
-			
+
 			return result, nil
 		},
 		feedFetchParamSchema,

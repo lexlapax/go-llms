@@ -12,10 +12,89 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/datetime"
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/datetime" // for registration
+	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 )
+
+// Helper types for creating a minimal ToolContext for standalone tool execution
+
+// minimalStateReader implements StateReader interface with empty state
+type minimalStateReader struct {
+	state *agentDomain.State
+}
+
+func (m *minimalStateReader) Get(key string) (interface{}, bool) {
+	return m.state.Get(key)
+}
+
+func (m *minimalStateReader) Values() map[string]interface{} {
+	return m.state.Values()
+}
+
+func (m *minimalStateReader) GetArtifact(id string) (*agentDomain.Artifact, bool) {
+	return m.state.GetArtifact(id)
+}
+
+func (m *minimalStateReader) Artifacts() map[string]*agentDomain.Artifact {
+	return m.state.Artifacts()
+}
+
+func (m *minimalStateReader) Messages() []agentDomain.Message {
+	return m.state.Messages()
+}
+
+func (m *minimalStateReader) GetMetadata(key string) (interface{}, bool) {
+	return m.state.GetMetadata(key)
+}
+
+func (m *minimalStateReader) Has(key string) bool {
+	return m.state.Has(key)
+}
+
+func (m *minimalStateReader) Keys() []string {
+	values := m.state.Values()
+	keys := make([]string, 0, len(values))
+	for k := range values {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// minimalEventEmitter implements EventEmitter interface with no-op methods
+type minimalEventEmitter struct{}
+
+func (m *minimalEventEmitter) Emit(eventType agentDomain.EventType, data interface{}) {}
+func (m *minimalEventEmitter) EmitProgress(current, total int, message string)        {}
+func (m *minimalEventEmitter) EmitMessage(message string)                             {}
+func (m *minimalEventEmitter) EmitError(err error)                                    {}
+func (m *minimalEventEmitter) EmitCustom(eventName string, data interface{})          {}
+
+// createToolContext creates a minimal ToolContext for standalone tool execution
+func createToolContext(ctx context.Context) *agentDomain.ToolContext {
+	state := agentDomain.NewState()
+	stateReader := &minimalStateReader{state: state}
+
+	toolCtx := &agentDomain.ToolContext{
+		Context:   ctx,
+		State:     stateReader,
+		RunID:     "standalone-execution",
+		Retry:     0,
+		StartTime: time.Now(),
+		Events:    &minimalEventEmitter{},
+		Agent: agentDomain.AgentInfo{
+			ID:          "standalone",
+			Name:        "standalone-tool-executor",
+			Description: "Minimal agent for standalone tool execution",
+			Type:        agentDomain.AgentTypeLLM,
+			Metadata:    make(map[string]interface{}),
+		},
+	}
+
+	return toolCtx
+}
 
 func main() {
 	ctx := context.Background()
+	toolCtx := createToolContext(ctx)
 
 	// List all datetime tools
 	fmt.Println("=== Available DateTime Tools ===")
@@ -33,7 +112,7 @@ func main() {
 	nowTool := tools.MustGetTool("datetime_now")
 
 	// Get current time in New York
-	result, err := nowTool.Execute(ctx, map[string]interface{}{
+	result, err := nowTool.Execute(toolCtx, map[string]interface{}{
 		"timezone":           "America/New_York",
 		"include_components": true,
 		"include_week_info":  true,
@@ -70,7 +149,7 @@ func main() {
 	timezones := []string{"UTC", "Europe/London", "Asia/Tokyo", "Australia/Sydney"}
 	fmt.Println("Current time in different timezones:")
 	for _, tz := range timezones {
-		result, _ := nowTool.Execute(ctx, map[string]interface{}{
+		result, _ := nowTool.Execute(toolCtx, map[string]interface{}{
 			"timezone": tz,
 			"format":   "15:04 MST on Monday, Jan 2",
 		})
@@ -98,7 +177,7 @@ func main() {
 
 	fmt.Println("Parsing various date formats:")
 	for _, dateStr := range dateStrings {
-		parseResult, err := parseTool.Execute(ctx, map[string]interface{}{
+		parseResult, err := parseTool.Execute(toolCtx, map[string]interface{}{
 			"date_string": dateStr,
 			"timezone":    "America/Los_Angeles",
 		})
@@ -120,7 +199,7 @@ func main() {
 
 	// Add time units
 	fmt.Println("Adding time units:")
-	calcResult, err := calcTool.Execute(ctx, map[string]interface{}{
+	calcResult, err := calcTool.Execute(toolCtx, map[string]interface{}{
 		"operation":  "add",
 		"start_date": "2024-01-15T10:00:00Z",
 		"unit":       "days",
@@ -136,7 +215,7 @@ func main() {
 
 	// Add business days
 	fmt.Println("\nBusiness day calculations:")
-	businessResult, err := calcTool.Execute(ctx, map[string]interface{}{
+	businessResult, err := calcTool.Execute(toolCtx, map[string]interface{}{
 		"operation":  "add_business_days",
 		"start_date": "2024-01-15T10:00:00Z",
 		"value":      5,
@@ -153,7 +232,7 @@ func main() {
 	// Calculate age
 	fmt.Println("\nAge calculation:")
 	birthDate := "1990-05-15T00:00:00Z"
-	ageResult, err := calcTool.Execute(ctx, map[string]interface{}{
+	ageResult, err := calcTool.Execute(toolCtx, map[string]interface{}{
 		"operation":  "age",
 		"start_date": birthDate,
 	})
@@ -172,7 +251,7 @@ func main() {
 
 	// Calculate duration between dates
 	fmt.Println("\nDuration calculation:")
-	durationResult, err := calcTool.Execute(ctx, map[string]interface{}{
+	durationResult, err := calcTool.Execute(toolCtx, map[string]interface{}{
 		"operation":  "duration",
 		"start_date": "2024-01-01T00:00:00Z",
 		"end_date":   "2024-12-31T23:59:59Z",
@@ -197,7 +276,7 @@ func main() {
 	formatTool := tools.MustGetTool("datetime_format")
 
 	// Format in multiple formats
-	formatResult, err := formatTool.Execute(ctx, map[string]interface{}{
+	formatResult, err := formatTool.Execute(toolCtx, map[string]interface{}{
 		"datetime":    "2024-12-25T10:30:00Z",
 		"format_type": "multiple",
 		"formats":     []string{"RFC3339", "Kitchen", "Monday, January 2, 2006"},
@@ -224,7 +303,7 @@ func main() {
 	// Relative time formatting
 	fmt.Println("\nRelative time formatting:")
 	twoHoursAgo := time.Now().Add(-2 * time.Hour).Format(time.RFC3339)
-	relativeResult, _ := formatTool.Execute(ctx, map[string]interface{}{
+	relativeResult, _ := formatTool.Execute(toolCtx, map[string]interface{}{
 		"datetime":    twoHoursAgo,
 		"format_type": "relative",
 	})
@@ -236,7 +315,7 @@ func main() {
 	fmt.Println("\nLocalized date formatting:")
 	locales := []string{"en", "es", "fr", "de", "ja"}
 	for _, locale := range locales {
-		locResult, _ := formatTool.Execute(ctx, map[string]interface{}{
+		locResult, _ := formatTool.Execute(toolCtx, map[string]interface{}{
 			"datetime":    "2024-07-14T14:00:00Z", // Bastille Day
 			"format_type": "standard",
 			"locale":      locale,
@@ -262,7 +341,7 @@ func main() {
 
 	fmt.Printf("Meeting at %s UTC:\n", meetingTime[:16])
 	for _, zone := range zones {
-		result, _ := convertTool.Execute(ctx, map[string]interface{}{
+		result, _ := convertTool.Execute(toolCtx, map[string]interface{}{
 			"operation":     "timezone",
 			"datetime":      meetingTime,
 			"from_timezone": "UTC",
@@ -279,7 +358,7 @@ func main() {
 
 	// Unix timestamp conversion
 	fmt.Println("\nUnix timestamp conversions:")
-	unixResult, err := convertTool.Execute(ctx, map[string]interface{}{
+	unixResult, err := convertTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "to_timestamp",
 		"datetime":  "2024-01-01T00:00:00Z",
 	})
@@ -290,7 +369,7 @@ func main() {
 		fmt.Printf("  Unix milliseconds: %d\n", output.TimestampMillis)
 
 		// Convert back from unix
-		fromUnixResult, _ := convertTool.Execute(ctx, map[string]interface{}{
+		fromUnixResult, _ := convertTool.Execute(toolCtx, map[string]interface{}{
 			"operation": "from_timestamp",
 			"timestamp": output.Timestamp,
 			"timezone":  "UTC",
@@ -308,7 +387,7 @@ func main() {
 
 	// Get info for leap year date
 	leapDate := "2024-02-29T00:00:00Z"
-	infoResult, err := infoTool.Execute(ctx, map[string]interface{}{
+	infoResult, err := infoTool.Execute(toolCtx, map[string]interface{}{
 		"date": leapDate, // Changed from "date_time" to "date"
 	})
 	if err != nil {
@@ -328,7 +407,7 @@ func main() {
 
 	// Get info for current date
 	fmt.Println("\nCurrent date information:")
-	currentInfo, _ := infoTool.Execute(ctx, map[string]interface{}{
+	currentInfo, _ := infoTool.Execute(toolCtx, map[string]interface{}{
 		"date": time.Now().Format(time.RFC3339),
 	})
 	if output, ok := currentInfo.(*datetime.DateTimeInfoOutput); ok {
@@ -346,7 +425,7 @@ func main() {
 	// Compare two dates
 	date1 := "2024-01-15T10:00:00Z"
 	date2 := "2024-01-20T15:30:00Z"
-	compareResult, err := compareTool.Execute(ctx, map[string]interface{}{
+	compareResult, err := compareTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "compare",
 		"date1":     date1,
 		"date2":     date2,
@@ -378,12 +457,12 @@ func main() {
 		"2024-07-04T00:00:00Z",
 	}
 
-	minResult, _ := compareTool.Execute(ctx, map[string]interface{}{
+	minResult, _ := compareTool.Execute(toolCtx, map[string]interface{}{
 		"operation":    "find_extreme",
 		"dates":        dates,
 		"extreme_type": "earliest",
 	})
-	maxResult, _ := compareTool.Execute(ctx, map[string]interface{}{
+	maxResult, _ := compareTool.Execute(toolCtx, map[string]interface{}{
 		"operation":    "find_extreme",
 		"dates":        dates,
 		"extreme_type": "latest",
@@ -399,7 +478,7 @@ func main() {
 
 	// Sort multiple dates
 	fmt.Println("\nSorting dates:")
-	sortResult, err := compareTool.Execute(ctx, map[string]interface{}{
+	sortResult, err := compareTool.Execute(toolCtx, map[string]interface{}{
 		"operation":  "sort",
 		"dates":      dates,
 		"sort_order": "desc",
@@ -417,7 +496,7 @@ func main() {
 
 	// Check date ranges
 	fmt.Println("\nDate range checks:")
-	rangeResult, _ := compareTool.Execute(ctx, map[string]interface{}{
+	rangeResult, _ := compareTool.Execute(toolCtx, map[string]interface{}{
 		"operation":   "range_check",
 		"date1":       "2024-06-15T00:00:00Z",
 		"range_start": "2024-06-01T00:00:00Z",

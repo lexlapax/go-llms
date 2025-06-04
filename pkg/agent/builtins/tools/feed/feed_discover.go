@@ -117,7 +117,7 @@ func FeedDiscover() domain.Tool {
 					RequestID:  ctx.RunID,
 				})
 			}
-			
+
 			// Check state for default values
 			if params.Timeout <= 0 {
 				timeout := 30 // default 30 seconds
@@ -130,7 +130,7 @@ func FeedDiscover() domain.Tool {
 				}
 				params.Timeout = timeout
 			}
-			
+
 			if params.MaxSize <= 0 {
 				maxSize := int64(10 * 1024 * 1024) // default 10MB
 				if ctx.State != nil {
@@ -144,7 +144,7 @@ func FeedDiscover() domain.Tool {
 				}
 				params.MaxSize = maxSize
 			}
-			
+
 			// Default to following redirects if not specified
 			if params.FollowRedirects == nil {
 				followRedirects := true
@@ -162,7 +162,7 @@ func FeedDiscover() domain.Tool {
 			if err != nil {
 				return nil, err
 			}
-			
+
 			// Emit result event
 			if ctx.Events != nil {
 				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
@@ -171,7 +171,7 @@ func FeedDiscover() domain.Tool {
 					RequestID: ctx.RunID,
 				})
 			}
-			
+
 			return result, nil
 		},
 		feedDiscoverParamSchema,

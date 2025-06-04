@@ -201,7 +201,7 @@ func GetSystemInfo() domain.Tool {
 					}
 				}
 			}
-			
+
 			// Include memory statistics if requested
 			if params.IncludeMemory {
 				info.Memory = getMemoryInfo()
@@ -216,7 +216,7 @@ func GetSystemInfo() domain.Tool {
 			if params.IncludeEnvironment {
 				info.Environment = getEnvironmentInfo()
 			}
-			
+
 			// Emit result event
 			if ctx.Events != nil {
 				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{

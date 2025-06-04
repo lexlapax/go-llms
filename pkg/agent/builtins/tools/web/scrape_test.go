@@ -28,30 +28,36 @@ func createTestToolContextForScrape() *domain.ToolContext {
 // mockScrapeAgent implements the minimum required methods for BaseAgent
 type mockScrapeAgent struct{}
 
-func (m *mockScrapeAgent) ID() string          { return "test-agent" }
-func (m *mockScrapeAgent) Name() string        { return "Test Agent" }
-func (m *mockScrapeAgent) Description() string { return "Mock agent for testing" }
-func (m *mockScrapeAgent) Type() domain.AgentType { return domain.AgentTypeCustom }
-func (m *mockScrapeAgent) Parent() domain.BaseAgent { return nil }
-func (m *mockScrapeAgent) SetParent(parent domain.BaseAgent) error { return nil }
-func (m *mockScrapeAgent) SubAgents() []domain.BaseAgent { return nil }
-func (m *mockScrapeAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
-func (m *mockScrapeAgent) RemoveSubAgent(name string) error { return nil }
-func (m *mockScrapeAgent) FindAgent(name string) domain.BaseAgent { return nil }
+func (m *mockScrapeAgent) ID() string                                { return "test-agent" }
+func (m *mockScrapeAgent) Name() string                              { return "Test Agent" }
+func (m *mockScrapeAgent) Description() string                       { return "Mock agent for testing" }
+func (m *mockScrapeAgent) Type() domain.AgentType                    { return domain.AgentTypeCustom }
+func (m *mockScrapeAgent) Parent() domain.BaseAgent                  { return nil }
+func (m *mockScrapeAgent) SetParent(parent domain.BaseAgent) error   { return nil }
+func (m *mockScrapeAgent) SubAgents() []domain.BaseAgent             { return nil }
+func (m *mockScrapeAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
+func (m *mockScrapeAgent) RemoveSubAgent(name string) error          { return nil }
+func (m *mockScrapeAgent) FindAgent(name string) domain.BaseAgent    { return nil }
 func (m *mockScrapeAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
-func (m *mockScrapeAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) { return nil, nil }
-func (m *mockScrapeAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) { return nil, nil }
-func (m *mockScrapeAgent) Initialize(ctx context.Context) error { return nil }
+func (m *mockScrapeAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
+	return nil, nil
+}
+func (m *mockScrapeAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
+	return nil, nil
+}
+func (m *mockScrapeAgent) Initialize(ctx context.Context) error                     { return nil }
 func (m *mockScrapeAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
-func (m *mockScrapeAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error { return nil }
-func (m *mockScrapeAgent) Cleanup(ctx context.Context) error { return nil }
-func (m *mockScrapeAgent) InputSchema() *sdomain.Schema { return nil }
-func (m *mockScrapeAgent) OutputSchema() *sdomain.Schema { return nil }
-func (m *mockScrapeAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (m *mockScrapeAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
+	return nil
+}
+func (m *mockScrapeAgent) Cleanup(ctx context.Context) error                     { return nil }
+func (m *mockScrapeAgent) InputSchema() *sdomain.Schema                          { return nil }
+func (m *mockScrapeAgent) OutputSchema() *sdomain.Schema                         { return nil }
+func (m *mockScrapeAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
 func (m *mockScrapeAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return m }
-func (m *mockScrapeAgent) Validate() error { return nil }
-func (m *mockScrapeAgent) Metadata() map[string]interface{} { return nil }
-func (m *mockScrapeAgent) SetMetadata(key string, value interface{}) {}
+func (m *mockScrapeAgent) Validate() error                                       { return nil }
+func (m *mockScrapeAgent) Metadata() map[string]interface{}                      { return nil }
+func (m *mockScrapeAgent) SetMetadata(key string, value interface{})             {}
 
 func TestWebScrapeRegistration(t *testing.T) {
 	// Test that the tool is registered
@@ -294,7 +300,7 @@ func TestWebScrapeMetadataOnly(t *testing.T) {
 	}
 
 	// Metadata should be present
-	if scrapeResult.Metadata == nil || len(scrapeResult.Metadata) == 0 {
+	if len(scrapeResult.Metadata) == 0 {
 		t.Error("Expected metadata to be extracted")
 	}
 }
@@ -334,7 +340,7 @@ func TestWebScrapeInvalidURL(t *testing.T) {
 
 func TestWebScrapeWithCustomSelectors(t *testing.T) {
 	tool := WebScrape()
-	
+
 	// Create tool context with custom selectors in state
 	state := domain.NewState()
 	state.Set("scrape_selectors", []string{"div", "span"})
@@ -370,12 +376,12 @@ func TestWebScrapeWithCustomSelectors(t *testing.T) {
 	}
 
 	scrapeResult := result.(*WebScrapeResult)
-	
+
 	// Should have results for div, span (from state) and p (from params)
 	if scrapeResult.Selectors == nil {
 		t.Fatal("Expected selector results")
 	}
-	
+
 	if _, ok := scrapeResult.Selectors["div"]; !ok {
 		t.Error("Expected div selector results from state")
 	}

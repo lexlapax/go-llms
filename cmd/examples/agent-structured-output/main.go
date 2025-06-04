@@ -40,41 +40,41 @@ const (
 
 // Task represents a project task
 type Task struct {
-	ID          string     `json:"id" validate:"required" description:"Unique task identifier"`
-	Title       string     `json:"title" validate:"required" description:"Task title"`
-	Description string     `json:"description" description:"Detailed task description"`
-	Status      TaskStatus `json:"status" validate:"required,oneof=pending in_progress completed cancelled" description:"Current task status"`
-	Priority    Priority   `json:"priority" validate:"required,oneof=low medium high urgent" description:"Task priority level"`
-	DueDate     *time.Time `json:"due_date,omitempty" description:"Task due date (optional)"`
-	EstimatedHours float64 `json:"estimated_hours" validate:"min=0" description:"Estimated hours to complete"`
-	Tags        []string   `json:"tags" description:"Task tags for categorization"`
-	CreatedAt   time.Time  `json:"created_at" validate:"required" description:"When the task was created"`
+	ID             string     `json:"id" validate:"required" description:"Unique task identifier"`
+	Title          string     `json:"title" validate:"required" description:"Task title"`
+	Description    string     `json:"description" description:"Detailed task description"`
+	Status         TaskStatus `json:"status" validate:"required,oneof=pending in_progress completed cancelled" description:"Current task status"`
+	Priority       Priority   `json:"priority" validate:"required,oneof=low medium high urgent" description:"Task priority level"`
+	DueDate        *time.Time `json:"due_date,omitempty" description:"Task due date (optional)"`
+	EstimatedHours float64    `json:"estimated_hours" validate:"min=0" description:"Estimated hours to complete"`
+	Tags           []string   `json:"tags" description:"Task tags for categorization"`
+	CreatedAt      time.Time  `json:"created_at" validate:"required" description:"When the task was created"`
 }
 
 // ProjectAnalysis represents analysis of a project
 type ProjectAnalysis struct {
-	ProjectName     string    `json:"project_name" validate:"required" description:"Name of the project"`
-	TotalTasks      int       `json:"total_tasks" validate:"min=0" description:"Total number of tasks"`
-	CompletedTasks  int       `json:"completed_tasks" validate:"min=0" description:"Number of completed tasks"`
-	PendingTasks    int       `json:"pending_tasks" validate:"min=0" description:"Number of pending tasks"`
-	InProgressTasks int       `json:"in_progress_tasks" validate:"min=0" description:"Number of tasks in progress"`
-	HighPriorityTasks int     `json:"high_priority_tasks" validate:"min=0" description:"Number of high priority tasks"`
-	OverdueTasks    int       `json:"overdue_tasks" validate:"min=0" description:"Number of overdue tasks"`
-	EstimatedHours  float64   `json:"estimated_hours" validate:"min=0" description:"Total estimated hours"`
-	CompletionRate  float64   `json:"completion_rate" validate:"min=0,max=100" description:"Completion percentage"`
-	Recommendations []string  `json:"recommendations" description:"Recommendations for project improvement"`
-	Risks          []string   `json:"risks" description:"Identified project risks"`
-	NextActions    []string   `json:"next_actions" description:"Suggested next actions"`
+	ProjectName       string   `json:"project_name" validate:"required" description:"Name of the project"`
+	TotalTasks        int      `json:"total_tasks" validate:"min=0" description:"Total number of tasks"`
+	CompletedTasks    int      `json:"completed_tasks" validate:"min=0" description:"Number of completed tasks"`
+	PendingTasks      int      `json:"pending_tasks" validate:"min=0" description:"Number of pending tasks"`
+	InProgressTasks   int      `json:"in_progress_tasks" validate:"min=0" description:"Number of tasks in progress"`
+	HighPriorityTasks int      `json:"high_priority_tasks" validate:"min=0" description:"Number of high priority tasks"`
+	OverdueTasks      int      `json:"overdue_tasks" validate:"min=0" description:"Number of overdue tasks"`
+	EstimatedHours    float64  `json:"estimated_hours" validate:"min=0" description:"Total estimated hours"`
+	CompletionRate    float64  `json:"completion_rate" validate:"min=0,max=100" description:"Completion percentage"`
+	Recommendations   []string `json:"recommendations" description:"Recommendations for project improvement"`
+	Risks             []string `json:"risks" description:"Identified project risks"`
+	NextActions       []string `json:"next_actions" description:"Suggested next actions"`
 }
 
 // MeetingNotes represents structured meeting notes
 type MeetingNotes struct {
-	MeetingTitle   string    `json:"meeting_title" validate:"required" description:"Title of the meeting"`
-	Date           time.Time `json:"date" validate:"required" description:"Meeting date"`
-	Attendees      []string  `json:"attendees" validate:"required,min=1" description:"List of meeting attendees"`
-	Duration       int       `json:"duration" validate:"min=1" description:"Meeting duration in minutes"`
-	KeyDiscussions []string  `json:"key_discussions" description:"Main discussion points"`
-	Decisions      []string  `json:"decisions" description:"Decisions made during the meeting"`
+	MeetingTitle   string       `json:"meeting_title" validate:"required" description:"Title of the meeting"`
+	Date           time.Time    `json:"date" validate:"required" description:"Meeting date"`
+	Attendees      []string     `json:"attendees" validate:"required,min=1" description:"List of meeting attendees"`
+	Duration       int          `json:"duration" validate:"min=1" description:"Meeting duration in minutes"`
+	KeyDiscussions []string     `json:"key_discussions" description:"Main discussion points"`
+	Decisions      []string     `json:"decisions" description:"Decisions made during the meeting"`
 	ActionItems    []ActionItem `json:"action_items" description:"Action items from the meeting"`
 	NextMeeting    *time.Time   `json:"next_meeting,omitempty" description:"Next meeting date if scheduled"`
 }
@@ -122,7 +122,7 @@ Use realistic data and provide meaningful insights in your responses.`)
 
 	// Example 1: Generate structured task data
 	fmt.Println("=== Example 1: Structured Task Generation ===")
-	
+
 	taskSchema, err := reflection.GenerateSchema(Task{})
 	if err != nil {
 		log.Fatalf("Failed to generate task schema: %v", err)
@@ -142,7 +142,7 @@ Respond only with valid JSON, no additional text.`, taskSchemaJSON)
 
 	// Example 2: Project Analysis with Complex Schema
 	fmt.Println("\n=== Example 2: Project Analysis ===")
-	
+
 	analysisSchema, err := reflection.GenerateSchema(ProjectAnalysis{})
 	if err != nil {
 		log.Fatalf("Failed to generate analysis schema: %v", err)
@@ -176,7 +176,7 @@ Respond only with valid JSON, no additional text.`, projectData, analysisSchemaJ
 
 	// Example 3: Meeting Notes Structure
 	fmt.Println("\n=== Example 3: Structured Meeting Notes ===")
-	
+
 	meetingSchema, err := reflection.GenerateSchema(MeetingNotes{})
 	if err != nil {
 		log.Fatalf("Failed to generate meeting notes schema: %v", err)
@@ -233,7 +233,7 @@ Respond only with valid JSON, no additional text.`, meetingTranscript, meetingSc
 
 func demonstrateTaskGeneration(agent *core.LLMAgent, ctx context.Context, prompt string) {
 	fmt.Println("Generating structured task...")
-	
+
 	state := agentDomain.NewState()
 	state.Set("prompt", prompt)
 
@@ -251,7 +251,7 @@ func demonstrateTaskGeneration(agent *core.LLMAgent, ctx context.Context, prompt
 
 func demonstrateProjectAnalysis(agent *core.LLMAgent, ctx context.Context, prompt string) {
 	fmt.Println("Generating structured project analysis...")
-	
+
 	state := agentDomain.NewState()
 	state.Set("prompt", prompt)
 
@@ -269,7 +269,7 @@ func demonstrateProjectAnalysis(agent *core.LLMAgent, ctx context.Context, promp
 
 func demonstrateMeetingNotes(agent *core.LLMAgent, ctx context.Context, prompt string) {
 	fmt.Println("Generating structured meeting notes...")
-	
+
 	state := agentDomain.NewState()
 	state.Set("prompt", prompt)
 
@@ -297,14 +297,14 @@ func demonstrateSchemaValidation() {
 
 	// Valid task data
 	validTask := Task{
-		ID:          "task-001",
-		Title:       "Implement OAuth",
-		Description: "Add OAuth authentication to the application",
-		Status:      TaskStatusPending,
-		Priority:    PriorityHigh,
+		ID:             "task-001",
+		Title:          "Implement OAuth",
+		Description:    "Add OAuth authentication to the application",
+		Status:         TaskStatusPending,
+		Priority:       PriorityHigh,
 		EstimatedHours: 8.5,
-		Tags:        []string{"authentication", "security", "backend"},
-		CreatedAt:   time.Now(),
+		Tags:           []string{"authentication", "security", "backend"},
+		CreatedAt:      time.Now(),
 	}
 
 	taskJSON, _ := json.MarshalIndent(validTask, "", "  ")
@@ -338,7 +338,7 @@ func demonstrateAdvancedSchemas() {
 	actionItemSchema, _ := reflection.GenerateSchema(ActionItem{})
 	actionItemJSON, _ := json.MarshalIndent(actionItemSchema, "", "  ")
 	fmt.Printf("\nActionItem Schema (nested object):\n%s\n", actionItemJSON)
-	
+
 	// Show that meetingSchema contains the action items
 	fmt.Printf("\nMeeting schema has %d properties\n", len(meetingSchema.Properties))
 

@@ -274,7 +274,7 @@ func ReadFile() domain.Tool {
 			// Emit completion event with custom file metadata
 			if ctx.Events != nil {
 				ctx.Events.EmitProgress(4, 4, "File read complete")
-				
+
 				// Emit custom event with file read details
 				fileEventData := map[string]interface{}{
 					"path":         params.Path,
@@ -284,13 +284,13 @@ func ReadFile() domain.Tool {
 					"encoding":     result.Encoding,
 					"elapsed_time": ctx.ElapsedTime().String(),
 				}
-				
+
 				if result.Metadata != nil {
 					fileEventData["file_size"] = result.Metadata.Size
 					fileEventData["file_extension"] = result.Metadata.Extension
 					fileEventData["absolute_path"] = result.Metadata.AbsolutePath
 				}
-				
+
 				ctx.Events.EmitCustom("file_read_complete", fileEventData)
 			}
 

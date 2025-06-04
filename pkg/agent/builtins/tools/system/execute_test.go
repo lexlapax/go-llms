@@ -25,16 +25,16 @@ type mockSystemAgent struct {
 	metadata    map[string]interface{}
 }
 
-func (a *mockSystemAgent) ID() string          { return a.id }
-func (a *mockSystemAgent) Name() string        { return a.name }
-func (a *mockSystemAgent) Description() string { return a.description }
-func (a *mockSystemAgent) Type() domain.AgentType { return a.agentType }
-func (a *mockSystemAgent) Parent() domain.BaseAgent { return nil }
-func (a *mockSystemAgent) SetParent(parent domain.BaseAgent) error { return nil }
-func (a *mockSystemAgent) SubAgents() []domain.BaseAgent { return nil }
-func (a *mockSystemAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
-func (a *mockSystemAgent) RemoveSubAgent(name string) error { return nil }
-func (a *mockSystemAgent) FindAgent(name string) domain.BaseAgent { return nil }
+func (a *mockSystemAgent) ID() string                                { return a.id }
+func (a *mockSystemAgent) Name() string                              { return a.name }
+func (a *mockSystemAgent) Description() string                       { return a.description }
+func (a *mockSystemAgent) Type() domain.AgentType                    { return a.agentType }
+func (a *mockSystemAgent) Parent() domain.BaseAgent                  { return nil }
+func (a *mockSystemAgent) SetParent(parent domain.BaseAgent) error   { return nil }
+func (a *mockSystemAgent) SubAgents() []domain.BaseAgent             { return nil }
+func (a *mockSystemAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
+func (a *mockSystemAgent) RemoveSubAgent(name string) error          { return nil }
+func (a *mockSystemAgent) FindAgent(name string) domain.BaseAgent    { return nil }
 func (a *mockSystemAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
 func (a *mockSystemAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
 	return nil, nil
@@ -42,18 +42,18 @@ func (a *mockSystemAgent) Run(ctx context.Context, input *domain.State) (*domain
 func (a *mockSystemAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
 	return nil, nil
 }
-func (a *mockSystemAgent) Initialize(ctx context.Context) error { return nil }
+func (a *mockSystemAgent) Initialize(ctx context.Context) error                     { return nil }
 func (a *mockSystemAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
 func (a *mockSystemAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
 	return nil
 }
-func (a *mockSystemAgent) Cleanup(ctx context.Context) error { return nil }
-func (a *mockSystemAgent) InputSchema() *sdomain.Schema { return nil }
-func (a *mockSystemAgent) OutputSchema() *sdomain.Schema { return nil }
-func (a *mockSystemAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (a *mockSystemAgent) Cleanup(ctx context.Context) error                     { return nil }
+func (a *mockSystemAgent) InputSchema() *sdomain.Schema                          { return nil }
+func (a *mockSystemAgent) OutputSchema() *sdomain.Schema                         { return nil }
+func (a *mockSystemAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
 func (a *mockSystemAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
-func (a *mockSystemAgent) Validate() error { return nil }
-func (a *mockSystemAgent) Metadata() map[string]interface{} { return a.metadata }
+func (a *mockSystemAgent) Validate() error                                       { return nil }
+func (a *mockSystemAgent) Metadata() map[string]interface{}                      { return a.metadata }
 func (a *mockSystemAgent) SetMetadata(key string, value interface{}) {
 	if a.metadata == nil {
 		a.metadata = make(map[string]interface{})
@@ -65,10 +65,10 @@ func (a *mockSystemAgent) SetMetadata(key string, value interface{}) {
 type testEventEmitterSystem struct{}
 
 func (e *testEventEmitterSystem) Emit(eventType domain.EventType, data interface{}) {}
-func (e *testEventEmitterSystem) EmitProgress(current, total int, message string) {}
-func (e *testEventEmitterSystem) EmitMessage(message string) {}
-func (e *testEventEmitterSystem) EmitError(err error) {}
-func (e *testEventEmitterSystem) EmitCustom(eventName string, data interface{}) {}
+func (e *testEventEmitterSystem) EmitProgress(current, total int, message string)   {}
+func (e *testEventEmitterSystem) EmitMessage(message string)                        {}
+func (e *testEventEmitterSystem) EmitError(err error)                               {}
+func (e *testEventEmitterSystem) EmitCustom(eventName string, data interface{})     {}
 
 // createTestToolContext creates a ToolContext for testing
 func createTestToolContext() *domain.ToolContext {
@@ -82,7 +82,7 @@ func createTestToolContext() *domain.ToolContext {
 		agentType:   domain.AgentTypeCustom,
 		metadata:    make(map[string]interface{}),
 	}
-	
+
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
 	tc = tc.WithEventEmitter(&testEventEmitterSystem{})
 	return tc

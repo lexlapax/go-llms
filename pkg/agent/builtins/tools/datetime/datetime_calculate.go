@@ -124,7 +124,7 @@ func DateTimeCalculate() agentDomain.Tool {
 					RequestID:  ctx.RunID,
 				})
 			}
-			
+
 			// Check state for default timezone if not provided
 			if input.Timezone == "" && ctx.State != nil {
 				if val, ok := ctx.State.Get("datetime_default_timezone"); ok {
@@ -133,7 +133,7 @@ func DateTimeCalculate() agentDomain.Tool {
 					}
 				}
 			}
-			
+
 			// Parse the start date
 			startTime, err := parseDate(input.StartDate)
 			if err != nil {
@@ -237,7 +237,7 @@ func DateTimeCalculate() agentDomain.Tool {
 					RequestID: ctx.RunID,
 				})
 			}
-			
+
 			return output, nil
 		},
 		dateTimeCalculateParamSchema,

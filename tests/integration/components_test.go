@@ -15,30 +15,36 @@ import (
 // mockAgent implements the minimum required methods for BaseAgent
 type mockAgent struct{}
 
-func (m *mockAgent) ID() string          { return "test-agent" }
-func (m *mockAgent) Name() string        { return "Test Agent" }
-func (m *mockAgent) Description() string { return "Mock agent for testing" }
-func (m *mockAgent) Type() domain.AgentType { return domain.AgentTypeCustom }
-func (m *mockAgent) Parent() domain.BaseAgent { return nil }
-func (m *mockAgent) SetParent(parent domain.BaseAgent) error { return nil }
-func (m *mockAgent) SubAgents() []domain.BaseAgent { return nil }
-func (m *mockAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
-func (m *mockAgent) RemoveSubAgent(name string) error { return nil }
-func (m *mockAgent) FindAgent(name string) domain.BaseAgent { return nil }
+func (m *mockAgent) ID() string                                { return "test-agent" }
+func (m *mockAgent) Name() string                              { return "Test Agent" }
+func (m *mockAgent) Description() string                       { return "Mock agent for testing" }
+func (m *mockAgent) Type() domain.AgentType                    { return domain.AgentTypeCustom }
+func (m *mockAgent) Parent() domain.BaseAgent                  { return nil }
+func (m *mockAgent) SetParent(parent domain.BaseAgent) error   { return nil }
+func (m *mockAgent) SubAgents() []domain.BaseAgent             { return nil }
+func (m *mockAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
+func (m *mockAgent) RemoveSubAgent(name string) error          { return nil }
+func (m *mockAgent) FindAgent(name string) domain.BaseAgent    { return nil }
 func (m *mockAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
-func (m *mockAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) { return nil, nil }
-func (m *mockAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) { return nil, nil }
-func (m *mockAgent) Initialize(ctx context.Context) error { return nil }
+func (m *mockAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
+	return nil, nil
+}
+func (m *mockAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
+	return nil, nil
+}
+func (m *mockAgent) Initialize(ctx context.Context) error                     { return nil }
 func (m *mockAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
-func (m *mockAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error { return nil }
-func (m *mockAgent) Cleanup(ctx context.Context) error { return nil }
-func (m *mockAgent) InputSchema() *sdomain.Schema { return nil }
-func (m *mockAgent) OutputSchema() *sdomain.Schema { return nil }
-func (m *mockAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (m *mockAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
+	return nil
+}
+func (m *mockAgent) Cleanup(ctx context.Context) error                     { return nil }
+func (m *mockAgent) InputSchema() *sdomain.Schema                          { return nil }
+func (m *mockAgent) OutputSchema() *sdomain.Schema                         { return nil }
+func (m *mockAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
 func (m *mockAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return m }
-func (m *mockAgent) Validate() error { return nil }
-func (m *mockAgent) Metadata() map[string]interface{} { return nil }
-func (m *mockAgent) SetMetadata(key string, value interface{}) {}
+func (m *mockAgent) Validate() error                                       { return nil }
+func (m *mockAgent) Metadata() map[string]interface{}                      { return nil }
+func (m *mockAgent) SetMetadata(key string, value interface{})             {}
 
 // Helper to create test ToolContext
 func createTestToolContext() *domain.ToolContext {
@@ -257,7 +263,7 @@ func TestComponentsIntegration(t *testing.T) {
 		// Make repeated calls to exercise object pooling and caching
 		for i := 0; i < 1000; i++ {
 			toolCtx := createTestToolContext()
-		_, err := userTool.Execute(toolCtx, userData)
+			_, err := userTool.Execute(toolCtx, userData)
 			if err != nil {
 				t.Fatalf("Error on iteration %d: %v", i, err)
 			}

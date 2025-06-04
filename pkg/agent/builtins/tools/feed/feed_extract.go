@@ -109,7 +109,7 @@ func FeedExtract() domain.Tool {
 					RequestID:  ctx.RunID,
 				})
 			}
-			
+
 			// Check state for default max items if not provided
 			if params.MaxItems == 0 && ctx.State != nil {
 				if val, ok := ctx.State.Get("feed_extract_max_items"); ok {
@@ -118,7 +118,7 @@ func FeedExtract() domain.Tool {
 					}
 				}
 			}
-			
+
 			// Check state for default fields if none provided
 			if len(params.Fields) == 0 && ctx.State != nil {
 				if val, ok := ctx.State.Get("feed_extract_default_fields"); ok {
@@ -127,12 +127,12 @@ func FeedExtract() domain.Tool {
 					}
 				}
 			}
-			
+
 			result, err := extractFromFeed(params)
 			if err != nil {
 				return nil, err
 			}
-			
+
 			// Emit result event
 			if ctx.Events != nil {
 				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
@@ -141,7 +141,7 @@ func FeedExtract() domain.Tool {
 					RequestID: ctx.RunID,
 				})
 			}
-			
+
 			return result, nil
 		},
 		feedExtractParamSchema,

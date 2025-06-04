@@ -136,17 +136,17 @@ func TestAgentTool_CustomMappers(t *testing.T) {
 
 func TestAgentTool_StateInput(t *testing.T) {
 	agent := NewMockAgent("state-agent", "Tests state input")
-	
+
 	tool := NewAgentTool(agent)
 
 	// Execute with State input
 	inputState := domain.NewState()
 	inputState.Set("test", "value")
-	
+
 	toolCtx := createTestToolContext()
 	result, err := tool.Execute(toolCtx, inputState)
 	require.NoError(t, err)
-	
+
 	// Should get processed result (DefaultResultMapper returns "result" value directly)
 	assert.Equal(t, "processed", result)
 }
@@ -180,7 +180,7 @@ func TestAgentTool_ParameterSchema(t *testing.T) {
 	}
 
 	tool := NewAgentTool(agent).WithParameterSchema(customSchema)
-	
+
 	schema := tool.ParameterSchema()
 	assert.NotNil(t, schema)
 	assert.Equal(t, "Custom parameters", schema.Description)

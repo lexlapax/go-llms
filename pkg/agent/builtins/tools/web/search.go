@@ -20,6 +20,11 @@ import (
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
+// contextKey is a custom type to avoid collisions in context values
+type contextKey string
+
+const searchAPIKeyContext contextKey = "search_api_key"
+
 // WebSearchParams defines parameters for the WebSearch tool
 type WebSearchParams struct {
 	Query       string `json:"query"`
@@ -164,7 +169,7 @@ func WebSearch() domain.Tool {
 				// Check for API keys or custom search endpoints
 				if apiKey, exists := ctx.State.Get("search_api_key"); exists {
 					// Store for use in search functions (could be passed via context)
-					ctx.Context = context.WithValue(ctx.Context, "search_api_key", apiKey)
+					ctx.Context = context.WithValue(ctx.Context, searchAPIKeyContext, apiKey)
 				}
 			}
 
@@ -207,10 +212,10 @@ func WebSearch() domain.Tool {
 			if ctx.Events != nil {
 				ctx.Events.EmitProgress(4, 4, "Search complete")
 				ctx.Events.EmitCustom("search_complete", map[string]interface{}{
-					"query":        params.Query,
-					"engine":       params.Engine,
-					"resultCount":  len(results),
-					"timeMs":       time.Since(startTime).Milliseconds(),
+					"query":       params.Query,
+					"engine":      params.Engine,
+					"resultCount": len(results),
+					"timeMs":      time.Since(startTime).Milliseconds(),
 				})
 			}
 
@@ -350,14 +355,14 @@ func searchSearx(ctx *domain.ToolContext, client *http.Client, query string, max
 				if ctx.Events != nil {
 					ctx.Events.EmitProgress(2, 4, "Querying Searx instance")
 				}
-				
+
 				// Implementation would go here for custom Searx instance
 				// For now, still return error
 				return nil, fmt.Errorf("searx search implementation pending for URL: %s", urlStr)
 			}
 		}
 	}
-	
+
 	// For now, return an error as Searx requires a running instance
 	return nil, fmt.Errorf("searx search not implemented - requires searx_url in state")
 }

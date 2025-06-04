@@ -13,7 +13,7 @@ func TestDateTimeCompare(t *testing.T) {
 
 	t.Run("compare operation", func(t *testing.T) {
 		tc := createTestToolContext(ctx)
-		
+
 		// Test date1 before date2
 		input := DateTimeCompareInput{
 			Operation: "compare",

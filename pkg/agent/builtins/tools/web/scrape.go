@@ -303,11 +303,11 @@ func WebScrape() domain.Tool {
 			if ctx.Events != nil {
 				ctx.Events.EmitProgress(5, 5, "Complete")
 				ctx.Events.EmitCustom("scrape_complete", map[string]interface{}{
-					"url":         params.URL,
-					"statusCode":  resp.StatusCode,
-					"textLength":  len(result.Text),
-					"linkCount":   len(result.Links),
-					"metaCount":   len(result.Metadata),
+					"url":          params.URL,
+					"statusCode":   resp.StatusCode,
+					"textLength":   len(result.Text),
+					"linkCount":    len(result.Links),
+					"metaCount":    len(result.Metadata),
 					"selectorHits": len(result.Selectors),
 				})
 			}
@@ -327,7 +327,7 @@ func extractMetadata(html string) map[string]string {
 	for _, match := range matches {
 		if len(match) > 1 {
 			attrs := parseAttributes(match[1])
-			
+
 			// Handle different meta tag formats
 			if name, hasName := attrs["name"]; hasName {
 				if content, hasContent := attrs["content"]; hasContent {
@@ -353,10 +353,10 @@ func extractTextContent(html string) string {
 	// Remove script and style tags
 	cleaned := scriptRegex.ReplaceAllString(html, "")
 	cleaned = styleRegex.ReplaceAllString(cleaned, "")
-	
+
 	// Remove all HTML tags
 	cleaned = tagRegex.ReplaceAllString(cleaned, " ")
-	
+
 	// Decode HTML entities (basic ones)
 	cleaned = strings.ReplaceAll(cleaned, "&amp;", "&")
 	cleaned = strings.ReplaceAll(cleaned, "&lt;", "<")
@@ -364,35 +364,35 @@ func extractTextContent(html string) string {
 	cleaned = strings.ReplaceAll(cleaned, "&quot;", "\"")
 	cleaned = strings.ReplaceAll(cleaned, "&#39;", "'")
 	cleaned = strings.ReplaceAll(cleaned, "&nbsp;", " ")
-	
+
 	// Clean up whitespace
 	cleaned = whitespaceRegex.ReplaceAllString(cleaned, " ")
 	cleaned = strings.TrimSpace(cleaned)
-	
+
 	return cleaned
 }
 
 // extractLinkElements extracts links from HTML
 func extractLinkElements(html string, baseURL *url.URL) []LinkInfo {
 	var links []LinkInfo
-	
+
 	matches := linkRegex.FindAllStringSubmatch(html, -1)
 	for _, match := range matches {
 		if len(match) > 3 {
 			href := match[2]
 			text := strings.TrimSpace(match[3])
-			
+
 			// Clean up link text
 			text = tagRegex.ReplaceAllString(text, "")
 			text = whitespaceRegex.ReplaceAllString(text, " ")
 			text = strings.TrimSpace(text)
-			
+
 			// Resolve relative URLs
 			linkURL, err := baseURL.Parse(href)
 			if err != nil {
 				continue
 			}
-			
+
 			// Determine link type
 			linkType := "internal"
 			if linkURL.Host != "" && linkURL.Host != baseURL.Host {
@@ -400,7 +400,7 @@ func extractLinkElements(html string, baseURL *url.URL) []LinkInfo {
 			} else if strings.HasPrefix(href, "#") {
 				linkType = "anchor"
 			}
-			
+
 			links = append(links, LinkInfo{
 				URL:  linkURL.String(),
 				Text: text,
@@ -408,20 +408,20 @@ func extractLinkElements(html string, baseURL *url.URL) []LinkInfo {
 			})
 		}
 	}
-	
+
 	return links
 }
 
 // processSelectors processes simplified CSS-like selectors
 func processSelectors(html string, selectors []string) map[string][]string {
 	results := make(map[string][]string)
-	
+
 	for _, selector := range selectors {
 		selector = strings.TrimSpace(selector)
 		if selector == "" {
 			continue
 		}
-		
+
 		// Support simple tag selectors
 		if isSimpleTag(selector) {
 			matches := findTagContent(html, selector)
@@ -432,7 +432,7 @@ func processSelectors(html string, selectors []string) map[string][]string {
 		// Additional selector types could be implemented here
 		// For now, we keep it simple with just tag names
 	}
-	
+
 	return results
 }
 
@@ -446,11 +446,11 @@ func isSimpleTag(selector string) bool {
 // findTagContent finds content of specific HTML tags
 func findTagContent(html, tagName string) []string {
 	var contents []string
-	
+
 	// Create regex for the specific tag
 	tagPattern := regexp.MustCompile(fmt.Sprintf(`(?i)<%s[^>]*>([^<]*)</%s>`, tagName, tagName))
 	matches := tagPattern.FindAllStringSubmatch(html, -1)
-	
+
 	for _, match := range matches {
 		if len(match) > 1 {
 			content := strings.TrimSpace(match[1])
@@ -459,24 +459,24 @@ func findTagContent(html, tagName string) []string {
 			}
 		}
 	}
-	
+
 	return contents
 }
 
 // parseAttributes parses HTML attributes from a string
 func parseAttributes(attrString string) map[string]string {
 	attrs := make(map[string]string)
-	
+
 	// Simple attribute parsing
 	attrPattern := regexp.MustCompile(`(\w+)=["']([^"']+)["']`)
 	matches := attrPattern.FindAllStringSubmatch(attrString, -1)
-	
+
 	for _, match := range matches {
 		if len(match) > 2 {
 			attrs[strings.ToLower(match[1])] = match[2]
 		}
 	}
-	
+
 	return attrs
 }
 

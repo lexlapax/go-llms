@@ -491,7 +491,6 @@ func sortRecords(records [][]string, hasHeaders bool, params map[string]interfac
 	// The params parameter would contain sorting configuration like column and order
 	_ = hasHeaders // Mark as intentionally unused for now
 	_ = params     // Mark as intentionally unused for now
-	
 	return &CSVProcessOutput{
 		Result:   records,
 		RowCount: len(records),

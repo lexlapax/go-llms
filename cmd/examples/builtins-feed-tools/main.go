@@ -19,8 +19,86 @@ import (
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/feed"
 )
 
+// Helper types for creating a minimal ToolContext for standalone tool execution
+
+// minimalStateReader implements StateReader interface with empty state
+type minimalStateReader struct {
+	state *agentDomain.State
+}
+
+func (m *minimalStateReader) Get(key string) (interface{}, bool) {
+	return m.state.Get(key)
+}
+
+func (m *minimalStateReader) Values() map[string]interface{} {
+	return m.state.Values()
+}
+
+func (m *minimalStateReader) GetArtifact(id string) (*agentDomain.Artifact, bool) {
+	return m.state.GetArtifact(id)
+}
+
+func (m *minimalStateReader) Artifacts() map[string]*agentDomain.Artifact {
+	return m.state.Artifacts()
+}
+
+func (m *minimalStateReader) Messages() []agentDomain.Message {
+	return m.state.Messages()
+}
+
+func (m *minimalStateReader) GetMetadata(key string) (interface{}, bool) {
+	return m.state.GetMetadata(key)
+}
+
+func (m *minimalStateReader) Has(key string) bool {
+	return m.state.Has(key)
+}
+
+func (m *minimalStateReader) Keys() []string {
+	values := m.state.Values()
+	keys := make([]string, 0, len(values))
+	for k := range values {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// minimalEventEmitter implements EventEmitter interface with no-op methods
+type minimalEventEmitter struct{}
+
+func (m *minimalEventEmitter) Emit(eventType agentDomain.EventType, data interface{}) {}
+func (m *minimalEventEmitter) EmitProgress(current, total int, message string)        {}
+func (m *minimalEventEmitter) EmitMessage(message string)                             {}
+func (m *minimalEventEmitter) EmitError(err error)                                    {}
+func (m *minimalEventEmitter) EmitCustom(eventName string, data interface{})          {}
+
+// createToolContext creates a minimal ToolContext for standalone tool execution
+func createToolContext(ctx context.Context) *agentDomain.ToolContext {
+	state := agentDomain.NewState()
+	stateReader := &minimalStateReader{state: state}
+
+	toolCtx := &agentDomain.ToolContext{
+		Context:   ctx,
+		State:     stateReader,
+		RunID:     "standalone-execution",
+		Retry:     0,
+		StartTime: time.Now(),
+		Events:    &minimalEventEmitter{},
+		Agent: agentDomain.AgentInfo{
+			ID:          "standalone",
+			Name:        "standalone-tool-executor",
+			Description: "Minimal agent for standalone tool execution",
+			Type:        agentDomain.AgentTypeLLM,
+			Metadata:    make(map[string]interface{}),
+		},
+	}
+
+	return toolCtx
+}
+
 func main() {
 	ctx := context.Background()
+	toolCtx := createToolContext(ctx)
 
 	// Demonstrate tool discovery
 	fmt.Println("=== Available Feed Tools ===")
@@ -47,7 +125,7 @@ func main() {
 	fmt.Println("Attempting to fetch a real feed (with fallback to mock data)...")
 
 	var fetchResult interface{}
-	result, err := fetchTool.Execute(ctx, map[string]interface{}{
+	result, err := fetchTool.Execute(toolCtx, map[string]interface{}{
 		"url":        "https://hnrss.org/frontpage",
 		"max_items":  5,
 		"timeout":    10,
@@ -55,7 +133,7 @@ func main() {
 	})
 	if err != nil {
 		fmt.Printf("Primary feed failed: %v, trying backup...\n", err)
-		result, err = fetchTool.Execute(ctx, map[string]interface{}{
+		result, err = fetchTool.Execute(toolCtx, map[string]interface{}{
 			"url":       "https://www.reddit.com/r/golang/.rss",
 			"max_items": 5,
 			"timeout":   10,
@@ -99,7 +177,7 @@ func main() {
 	fmt.Println("=== Example 2: Feed Discovery ===")
 	fmt.Println("Attempting to discover feeds from a website...")
 
-	discoverResult, err := discoverTool.Execute(ctx, map[string]interface{}{
+	discoverResult, err := discoverTool.Execute(toolCtx, map[string]interface{}{
 		"url":              "https://blog.golang.org",
 		"follow_links":     true,
 		"max_depth":        2,
@@ -145,7 +223,7 @@ func main() {
 		feedForFilter = createMockFeedFetchResult().Feed
 	}
 
-	filterResult, err := filterTool.Execute(ctx, map[string]interface{}{
+	filterResult, err := filterTool.Execute(toolCtx, map[string]interface{}{
 		"feed":      feedForFilter,
 		"keywords":  []string{"go", "golang", "programming"},
 		"after":     time.Now().AddDate(0, 0, -30).Format(time.RFC3339), // Last 30 days
@@ -197,7 +275,7 @@ func main() {
 		feed2.Items[0].ID = "secondary-item-1"
 	}
 
-	aggregateResult, err := aggregateTool.Execute(ctx, map[string]interface{}{
+	aggregateResult, err := aggregateTool.Execute(toolCtx, map[string]interface{}{
 		"feeds":       []interface{}{feed1, feed2},
 		"deduplicate": true,
 		"sort_by":     "date",
@@ -235,7 +313,7 @@ func main() {
 	fmt.Println("=== Example 5: Feed Format Conversion ===")
 	fmt.Println("Converting feed to different formats...")
 
-	convertResult, err := convertTool.Execute(ctx, map[string]interface{}{
+	convertResult, err := convertTool.Execute(toolCtx, map[string]interface{}{
 		"feed":         feedForFilter,
 		"target_type":  "json",
 		"pretty_print": true,
@@ -271,7 +349,7 @@ func main() {
 	fmt.Println("=== Example 6: Feed Data Extraction ===")
 	fmt.Println("Extracting specific fields from feed items...")
 
-	extractResult, err := extractTool.Execute(ctx, map[string]interface{}{
+	extractResult, err := extractTool.Execute(toolCtx, map[string]interface{}{
 		"feed":      feedForFilter,
 		"fields":    []string{"title", "link", "published", "author"},
 		"max_items": 5,

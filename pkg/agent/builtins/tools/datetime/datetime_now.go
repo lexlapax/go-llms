@@ -118,7 +118,7 @@ func DateTimeNow() agentDomain.Tool {
 					RequestID:  ctx.RunID,
 				})
 			}
-			
+
 			// Check state for default timezone if not provided
 			if input.Timezone == "" && ctx.State != nil {
 				if val, ok := ctx.State.Get("datetime_default_timezone"); ok {
@@ -127,7 +127,7 @@ func DateTimeNow() agentDomain.Tool {
 					}
 				}
 			}
-			
+
 			// Check state for default format if not provided
 			if input.Format == "" && ctx.State != nil {
 				if val, ok := ctx.State.Get("datetime_default_format"); ok {
@@ -136,7 +136,7 @@ func DateTimeNow() agentDomain.Tool {
 					}
 				}
 			}
-			
+
 			now := time.Now()
 
 			output := &DateTimeNowOutput{
@@ -232,7 +232,7 @@ func DateTimeNow() agentDomain.Tool {
 					RequestID: ctx.RunID,
 				})
 			}
-			
+
 			return output, nil
 		},
 		dateTimeNowParamSchema,

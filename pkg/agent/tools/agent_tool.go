@@ -13,10 +13,10 @@ import (
 
 // AgentTool wraps a BaseAgent to expose it as a Tool
 type AgentTool struct {
-	agent         domain.BaseAgent
-	paramSchema   *sdomain.Schema
-	stateMapper   StateMapper
-	resultMapper  ResultMapper
+	agent        domain.BaseAgent
+	paramSchema  *sdomain.Schema
+	stateMapper  StateMapper
+	resultMapper ResultMapper
 }
 
 // StateMapper converts tool parameters to agent State

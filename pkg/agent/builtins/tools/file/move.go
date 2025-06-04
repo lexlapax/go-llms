@@ -257,7 +257,7 @@ func FileMove() domain.Tool {
 			// Try atomic rename first (unless prefer_copy_delete is set)
 			var moveErr error
 			wasCrossDevice := false
-			
+
 			if !preferCopyDelete {
 				moveErr = os.Rename(absSrc, finalDst)
 				if moveErr == nil {
@@ -270,7 +270,7 @@ func FileMove() domain.Tool {
 						WasCrossDevice: false,
 						Message:        "Successfully moved",
 					}
-					
+
 					// Emit completion event
 					if ctx.Events != nil {
 						ctx.Events.EmitCustom("file_move.completed", map[string]interface{}{
@@ -284,7 +284,7 @@ func FileMove() domain.Tool {
 							"is_directory":     srcInfo.IsDir(),
 						})
 					}
-					
+
 					return result, nil
 				}
 			}
@@ -308,7 +308,7 @@ func FileMove() domain.Tool {
 			}
 
 			wasCrossDevice = true
-			
+
 			result := &FileMoveResult{
 				Source:         absSrc,
 				Destination:    finalDst,
@@ -317,7 +317,7 @@ func FileMove() domain.Tool {
 				WasCrossDevice: wasCrossDevice,
 				Message:        "Successfully moved (cross-device)",
 			}
-			
+
 			// Emit completion event
 			if ctx.Events != nil {
 				ctx.Events.EmitCustom("file_move.completed", map[string]interface{}{
@@ -331,7 +331,7 @@ func FileMove() domain.Tool {
 					"is_directory":     srcInfo.IsDir(),
 				})
 			}
-			
+
 			return result, nil
 		},
 		fileMoveParamSchema,
@@ -384,7 +384,7 @@ func crossDeviceMove(ctx context.Context, src, dst string, srcInfo os.FileInfo, 
 	// Check context before deleting source
 	select {
 	case <-ctx.Done():
-		// Context cancelled, don't delete source
+		// Context canceled, don't delete source
 		os.Remove(dst) // Clean up destination
 		return ctx.Err()
 	default:
@@ -411,24 +411,24 @@ func isSubPath(path, parent string) bool {
 	// Clean and resolve both paths
 	cleanPath := filepath.Clean(path)
 	cleanParent := filepath.Clean(parent)
-	
+
 	// Get absolute paths
 	absPath, err := filepath.Abs(cleanPath)
 	if err != nil {
 		return false
 	}
-	
+
 	absParent, err := filepath.Abs(cleanParent)
 	if err != nil {
 		return false
 	}
-	
+
 	// Check if path starts with parent
 	relPath, err := filepath.Rel(absParent, absPath)
 	if err != nil {
 		return false
 	}
-	
+
 	// If the relative path starts with "..", it's not a subpath
 	return !strings.HasPrefix(relPath, "..")
 }

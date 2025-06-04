@@ -320,7 +320,7 @@ func FileList() domain.Tool {
 
 				// Apply filters
 				isDir := info.IsDir()
-				
+
 				// Track directories processed
 				if isDir {
 					directoriesProcessed++
@@ -426,16 +426,16 @@ func FileList() domain.Tool {
 			// Emit completion event with summary
 			if ctx.Events != nil {
 				summary := map[string]interface{}{
-					"path":                 absPath,
-					"pattern":              params.Pattern,
-					"files_found":          len(files),
-					"total_scanned":        totalCount,
-					"filtered_out":         filteredOut,
+					"path":                  absPath,
+					"pattern":               params.Pattern,
+					"files_found":           len(files),
+					"total_scanned":         totalCount,
+					"filtered_out":          filteredOut,
 					"directories_processed": directoriesProcessed,
-					"recursive":            params.Recursive,
-					"truncated":            truncated,
-					"sort_by":              params.SortBy,
-					"elapsed_time":         ctx.ElapsedTime().String(),
+					"recursive":             params.Recursive,
+					"truncated":             truncated,
+					"sort_by":               params.SortBy,
+					"elapsed_time":          ctx.ElapsedTime().String(),
 				}
 				ctx.Events.EmitCustom("file_list_complete", summary)
 			}

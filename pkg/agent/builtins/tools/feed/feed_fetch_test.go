@@ -14,7 +14,6 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 )
 
-
 func TestFeedFetchRegistration(t *testing.T) {
 	// Test that the tool is registered
 	tool, ok := tools.GetTool("feed_fetch")

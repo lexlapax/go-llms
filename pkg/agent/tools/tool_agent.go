@@ -8,17 +8,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/core"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
 // ToolAgent wraps a Tool to expose it as a BaseAgent
 type ToolAgent struct {
 	*core.BaseAgentImpl
-	tool          domain.Tool
-	paramMapper   ParamMapper
-	stateUpdater  StateUpdater
-	executeFunc   func(context.Context, *domain.State) (*domain.State, error)
+	tool         domain.Tool
+	paramMapper  ParamMapper
+	stateUpdater StateUpdater
+	executeFunc  func(context.Context, *domain.State) (*domain.State, error)
 }
 
 // ParamMapper extracts tool parameters from agent State

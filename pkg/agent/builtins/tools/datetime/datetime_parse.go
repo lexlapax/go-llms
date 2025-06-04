@@ -173,7 +173,7 @@ func DateTimeParse() agentDomain.Tool {
 				output.Valid = true
 				output.DetectedFormat = "relative date"
 				output.UnixTimestamp = parsedTime.Unix()
-				
+
 				// Emit result event
 				if ctx.Events != nil {
 					ctx.Events.Emit(agentDomain.EventToolResult, agentDomain.ToolResultEventData{
@@ -182,7 +182,7 @@ func DateTimeParse() agentDomain.Tool {
 						RequestID: ctx.RunID,
 					})
 				}
-				
+
 				return output, nil
 			}
 
@@ -193,7 +193,7 @@ func DateTimeParse() agentDomain.Tool {
 					output.Valid = true
 					output.DetectedFormat = "custom format"
 					output.UnixTimestamp = parsedTime.Unix()
-					
+
 					// Emit result event
 					if ctx.Events != nil {
 						ctx.Events.Emit(agentDomain.EventToolResult, agentDomain.ToolResultEventData{
@@ -202,7 +202,7 @@ func DateTimeParse() agentDomain.Tool {
 							RequestID: ctx.RunID,
 						})
 					}
-					
+
 					return output, nil
 				} else {
 					output.ValidationErrors = append(output.ValidationErrors, fmt.Sprintf("Failed to parse with custom format: %v", err))
@@ -217,7 +217,7 @@ func DateTimeParse() agentDomain.Tool {
 						output.Valid = true
 						output.DetectedFormat = format.name
 						output.UnixTimestamp = parsedTime.Unix()
-						
+
 						// Emit result event
 						if ctx.Events != nil {
 							ctx.Events.Emit(agentDomain.EventToolResult, agentDomain.ToolResultEventData{
@@ -226,7 +226,7 @@ func DateTimeParse() agentDomain.Tool {
 								RequestID: ctx.RunID,
 							})
 						}
-						
+
 						return output, nil
 					}
 				}
@@ -240,7 +240,7 @@ func DateTimeParse() agentDomain.Tool {
 						output.Valid = true
 						output.DetectedFormat = "Unix timestamp (seconds)"
 						output.UnixTimestamp = timestamp
-						
+
 						// Emit result event
 						if ctx.Events != nil {
 							ctx.Events.Emit(agentDomain.EventToolResult, agentDomain.ToolResultEventData{
@@ -249,7 +249,7 @@ func DateTimeParse() agentDomain.Tool {
 								RequestID: ctx.RunID,
 							})
 						}
-						
+
 						return output, nil
 					} else if timestamp > 1000000000000 && timestamp < 4102444800000 { // milliseconds
 						parsedTime := time.Unix(timestamp/1000, (timestamp%1000)*1000000).In(loc)
@@ -257,7 +257,7 @@ func DateTimeParse() agentDomain.Tool {
 						output.Valid = true
 						output.DetectedFormat = "Unix timestamp (milliseconds)"
 						output.UnixTimestamp = parsedTime.Unix()
-						
+
 						// Emit result event
 						if ctx.Events != nil {
 							ctx.Events.Emit(agentDomain.EventToolResult, agentDomain.ToolResultEventData{
@@ -266,7 +266,7 @@ func DateTimeParse() agentDomain.Tool {
 								RequestID: ctx.RunID,
 							})
 						}
-						
+
 						return output, nil
 					}
 				}
@@ -274,7 +274,7 @@ func DateTimeParse() agentDomain.Tool {
 
 			// If we couldn't parse the date
 			output.ValidationErrors = append(output.ValidationErrors, "Unable to parse date string with any known format")
-			
+
 			// Emit result event
 			if ctx.Events != nil {
 				ctx.Events.Emit(agentDomain.EventToolResult, agentDomain.ToolResultEventData{
@@ -283,7 +283,7 @@ func DateTimeParse() agentDomain.Tool {
 					RequestID: ctx.RunID,
 				})
 			}
-			
+
 			return output, nil
 		},
 		dateTimeParseParamSchema,

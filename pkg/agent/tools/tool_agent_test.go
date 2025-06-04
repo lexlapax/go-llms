@@ -16,10 +16,10 @@ import (
 
 // MockTool for testing
 type MockTool struct {
-	name         string
-	description  string
-	executeFunc  func(ctx *domain.ToolContext, params interface{}) (interface{}, error)
-	paramSchema  *sdomain.Schema
+	name        string
+	description string
+	executeFunc func(ctx *domain.ToolContext, params interface{}) (interface{}, error)
+	paramSchema *sdomain.Schema
 }
 
 func (m *MockTool) Name() string        { return m.name }
@@ -194,7 +194,7 @@ func TestToolAgent_SingleParamMapper(t *testing.T) {
 
 	result, err := agent.Run(context.Background(), state)
 	require.NoError(t, err)
-	
+
 	resultVal, _ := result.Get("result")
 	assert.Equal(t, "Input was: Hello, World!", resultVal)
 
@@ -276,7 +276,7 @@ func TestToolAgent_WithSchema(t *testing.T) {
 	}
 
 	agent := NewToolAgent(tool)
-	
+
 	// The agent should have the tool's schema as input schema
 	// Note: This would require adding InputSchema() method to ToolAgent
 	// For now, we just verify the agent was created successfully

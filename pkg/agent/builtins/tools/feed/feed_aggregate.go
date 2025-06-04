@@ -117,7 +117,7 @@ func FeedAggregate() domain.Tool {
 					RequestID:  ctx.RunID,
 				})
 			}
-			
+
 			// Check state for default sort options if not provided
 			if params.SortBy == "" && ctx.State != nil {
 				if val, ok := ctx.State.Get("feed_aggregate_default_sort"); ok {
@@ -126,7 +126,7 @@ func FeedAggregate() domain.Tool {
 					}
 				}
 			}
-			
+
 			// Check state for default max items if not provided
 			if params.MaxItems == 0 && ctx.State != nil {
 				if val, ok := ctx.State.Get("feed_aggregate_max_items"); ok {
@@ -135,12 +135,12 @@ func FeedAggregate() domain.Tool {
 					}
 				}
 			}
-			
+
 			result, err := aggregateFeeds(params)
 			if err != nil {
 				return nil, err
 			}
-			
+
 			// Emit result event
 			if ctx.Events != nil {
 				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
@@ -149,7 +149,7 @@ func FeedAggregate() domain.Tool {
 					RequestID: ctx.RunID,
 				})
 			}
-			
+
 			return result, nil
 		},
 		feedAggregateParamSchema,

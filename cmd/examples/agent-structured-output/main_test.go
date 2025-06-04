@@ -59,7 +59,7 @@ func TestProjectAnalysisSchema(t *testing.T) {
 
 	// Check for key properties
 	requiredProperties := []string{
-		"project_name", "total_tasks", "completed_tasks", 
+		"project_name", "total_tasks", "completed_tasks",
 		"completion_rate", "recommendations", "risks", "next_actions",
 	}
 
@@ -121,15 +121,15 @@ func TestActionItemSchema(t *testing.T) {
 func TestTaskJSONMarshaling(t *testing.T) {
 	now := time.Now()
 	task := Task{
-		ID:          "test-001",
-		Title:       "Test Task",
-		Description: "A test task for validation",
-		Status:      TaskStatusPending,
-		Priority:    PriorityHigh,
-		DueDate:     &now,
+		ID:             "test-001",
+		Title:          "Test Task",
+		Description:    "A test task for validation",
+		Status:         TaskStatusPending,
+		Priority:       PriorityHigh,
+		DueDate:        &now,
 		EstimatedHours: 5.5,
-		Tags:        []string{"test", "validation"},
-		CreatedAt:   now,
+		Tags:           []string{"test", "validation"},
+		CreatedAt:      now,
 	}
 
 	// Test marshaling
@@ -159,18 +159,18 @@ func TestTaskJSONMarshaling(t *testing.T) {
 
 func TestProjectAnalysisValidation(t *testing.T) {
 	analysis := ProjectAnalysis{
-		ProjectName:     "Test Project",
-		TotalTasks:      10,
-		CompletedTasks:  3,
-		PendingTasks:    5,
-		InProgressTasks: 2,
+		ProjectName:       "Test Project",
+		TotalTasks:        10,
+		CompletedTasks:    3,
+		PendingTasks:      5,
+		InProgressTasks:   2,
 		HighPriorityTasks: 2,
-		OverdueTasks:    1,
-		EstimatedHours:  45.5,
-		CompletionRate:  30.0,
-		Recommendations: []string{"Focus on high priority tasks", "Review overdue items"},
-		Risks:          []string{"Resource constraints", "Timeline pressure"},
-		NextActions:    []string{"Prioritize overdue tasks", "Allocate additional resources"},
+		OverdueTasks:      1,
+		EstimatedHours:    45.5,
+		CompletionRate:    30.0,
+		Recommendations:   []string{"Focus on high priority tasks", "Review overdue items"},
+		Risks:             []string{"Resource constraints", "Timeline pressure"},
+		NextActions:       []string{"Prioritize overdue tasks", "Allocate additional resources"},
 	}
 
 	// Test JSON marshaling

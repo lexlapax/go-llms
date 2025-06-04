@@ -85,9 +85,7 @@ func JSONProcess() domain.Tool {
 				if input.Operation == "transform" && input.Transform == "prettify" {
 					if indentSize, exists := ctx.State.Get("json_prettify_indent"); exists {
 						// Note: This could be used in the prettify operation if needed
-						if _, ok := indentSize.(int); ok {
-							// Could use this indent size in prettify operation
-						}
+						_ = indentSize // Mark as intentionally unused for now
 					}
 				}
 			}

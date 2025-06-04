@@ -126,7 +126,7 @@ func FeedFilter() domain.Tool {
 					RequestID:  ctx.RunID,
 				})
 			}
-			
+
 			// Check state for default max items if not provided
 			if params.MaxItems == 0 && ctx.State != nil {
 				if val, ok := ctx.State.Get("feed_filter_max_items"); ok {
@@ -135,7 +135,7 @@ func FeedFilter() domain.Tool {
 					}
 				}
 			}
-			
+
 			// Check state for default match mode if not provided
 			if !params.MatchAll && ctx.State != nil {
 				if val, ok := ctx.State.Get("feed_filter_match_all"); ok {
@@ -144,12 +144,12 @@ func FeedFilter() domain.Tool {
 					}
 				}
 			}
-			
+
 			result, err := filterFeed(params)
 			if err != nil {
 				return nil, err
 			}
-			
+
 			// Emit result event
 			if ctx.Events != nil {
 				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
@@ -158,7 +158,7 @@ func FeedFilter() domain.Tool {
 					RequestID: ctx.RunID,
 				})
 			}
-			
+
 			return result, nil
 		},
 		feedFilterParamSchema,

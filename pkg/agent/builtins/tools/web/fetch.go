@@ -200,4 +200,3 @@ func WebFetch() domain.Tool {
 func MustGetWebFetch() domain.Tool {
 	return tools.MustGetTool("web_fetch")
 }
-

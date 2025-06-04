@@ -366,4 +366,3 @@ func TestWebFetchWithAdditionalHeaders(t *testing.T) {
 		t.Fatalf("Failed to fetch URL: %v", err)
 	}
 }
-

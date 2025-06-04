@@ -20,19 +20,19 @@ type mockAgent struct {
 	metadata    map[string]interface{}
 }
 
-func (a *mockAgent) ID() string                         { return a.id }
-func (a *mockAgent) Name() string                       { return a.name }
-func (a *mockAgent) Description() string                { return a.description }
-func (a *mockAgent) Type() domain.AgentType             { return a.agentType }
-func (a *mockAgent) Metadata() map[string]interface{}   { return a.metadata }
+func (a *mockAgent) ID() string                       { return a.id }
+func (a *mockAgent) Name() string                     { return a.name }
+func (a *mockAgent) Description() string              { return a.description }
+func (a *mockAgent) Type() domain.AgentType           { return a.agentType }
+func (a *mockAgent) Metadata() map[string]interface{} { return a.metadata }
 
 // Hierarchy Management
-func (a *mockAgent) Parent() domain.BaseAgent                { return nil }
-func (a *mockAgent) SetParent(parent domain.BaseAgent) error { return nil }
-func (a *mockAgent) SubAgents() []domain.BaseAgent           { return nil }
-func (a *mockAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
-func (a *mockAgent) RemoveSubAgent(name string) error         { return nil }
-func (a *mockAgent) FindAgent(name string) domain.BaseAgent   { return nil }
+func (a *mockAgent) Parent() domain.BaseAgent                  { return nil }
+func (a *mockAgent) SetParent(parent domain.BaseAgent) error   { return nil }
+func (a *mockAgent) SubAgents() []domain.BaseAgent             { return nil }
+func (a *mockAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
+func (a *mockAgent) RemoveSubAgent(name string) error          { return nil }
+func (a *mockAgent) FindAgent(name string) domain.BaseAgent    { return nil }
 func (a *mockAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
 
 // Execution
@@ -44,9 +44,11 @@ func (a *mockAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan d
 }
 
 // Lifecycle Hooks
-func (a *mockAgent) Initialize(ctx context.Context) error { return nil }
+func (a *mockAgent) Initialize(ctx context.Context) error                     { return nil }
 func (a *mockAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
-func (a *mockAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error { return nil }
+func (a *mockAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
+	return nil
+}
 func (a *mockAgent) Cleanup(ctx context.Context) error { return nil }
 
 // Schema Definition
@@ -54,9 +56,9 @@ func (a *mockAgent) InputSchema() *sdomain.Schema  { return nil }
 func (a *mockAgent) OutputSchema() *sdomain.Schema { return nil }
 
 // Configuration
-func (a *mockAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (a *mockAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
 func (a *mockAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
-func (a *mockAgent) Validate() error { return nil }
+func (a *mockAgent) Validate() error                                       { return nil }
 
 // Metadata
 func (a *mockAgent) SetMetadata(key string, value interface{}) {
@@ -127,10 +129,10 @@ func createTestToolContext(ctx context.Context) *domain.ToolContext {
 	stateReader := domain.NewStateReader(state)
 
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
-	
+
 	// Create a simple event emitter
 	tc = tc.WithEventEmitter(&testEventEmitter{})
-	
+
 	return tc
 }
 
@@ -153,9 +155,9 @@ func createTestToolContextWithState(ctx context.Context, values map[string]inter
 	stateReader := domain.NewStateReader(state)
 
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
-	
+
 	// Create a simple event emitter
 	tc = tc.WithEventEmitter(&testEventEmitter{})
-	
+
 	return tc
 }

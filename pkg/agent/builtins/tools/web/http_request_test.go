@@ -26,34 +26,36 @@ type mockHTTPAgent struct {
 	metadata    map[string]interface{}
 }
 
-func (m *mockHTTPAgent) ID() string                                        { return m.id }
-func (m *mockHTTPAgent) Name() string                                      { return m.name }
-func (m *mockHTTPAgent) Description() string                               { return m.description }
-func (m *mockHTTPAgent) Type() domain.AgentType                            { return domain.AgentTypeCustom }
-func (m *mockHTTPAgent) Parent() domain.BaseAgent                          { return nil }
-func (m *mockHTTPAgent) SetParent(parent domain.BaseAgent) error           { return nil }
-func (m *mockHTTPAgent) SubAgents() []domain.BaseAgent                     { return nil }
-func (m *mockHTTPAgent) AddSubAgent(agent domain.BaseAgent) error          { return nil }
-func (m *mockHTTPAgent) RemoveSubAgent(name string) error                  { return nil }
-func (m *mockHTTPAgent) FindAgent(name string) domain.BaseAgent            { return nil }
-func (m *mockHTTPAgent) FindSubAgent(name string) domain.BaseAgent         { return nil }
+func (m *mockHTTPAgent) ID() string                                { return m.id }
+func (m *mockHTTPAgent) Name() string                              { return m.name }
+func (m *mockHTTPAgent) Description() string                       { return m.description }
+func (m *mockHTTPAgent) Type() domain.AgentType                    { return domain.AgentTypeCustom }
+func (m *mockHTTPAgent) Parent() domain.BaseAgent                  { return nil }
+func (m *mockHTTPAgent) SetParent(parent domain.BaseAgent) error   { return nil }
+func (m *mockHTTPAgent) SubAgents() []domain.BaseAgent             { return nil }
+func (m *mockHTTPAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
+func (m *mockHTTPAgent) RemoveSubAgent(name string) error          { return nil }
+func (m *mockHTTPAgent) FindAgent(name string) domain.BaseAgent    { return nil }
+func (m *mockHTTPAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
 func (m *mockHTTPAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
 	return input, nil
 }
 func (m *mockHTTPAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
 	return nil, nil
 }
-func (m *mockHTTPAgent) Initialize(ctx context.Context) error                                       { return nil }
-func (m *mockHTTPAgent) BeforeRun(ctx context.Context, state *domain.State) error                   { return nil }
-func (m *mockHTTPAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error { return nil }
-func (m *mockHTTPAgent) Cleanup(ctx context.Context) error                                          { return nil }
-func (m *mockHTTPAgent) InputSchema() *sdomain.Schema                                               { return nil }
-func (m *mockHTTPAgent) OutputSchema() *sdomain.Schema                                              { return nil }
-func (m *mockHTTPAgent) Config() domain.AgentConfig                                                 { return domain.AgentConfig{} }
-func (m *mockHTTPAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent                      { return m }
-func (m *mockHTTPAgent) Validate() error                                                            { return nil }
-func (m *mockHTTPAgent) Metadata() map[string]interface{}                                           { return m.metadata }
-func (m *mockHTTPAgent) SetMetadata(key string, value interface{})                                  {
+func (m *mockHTTPAgent) Initialize(ctx context.Context) error                     { return nil }
+func (m *mockHTTPAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
+func (m *mockHTTPAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
+	return nil
+}
+func (m *mockHTTPAgent) Cleanup(ctx context.Context) error                     { return nil }
+func (m *mockHTTPAgent) InputSchema() *sdomain.Schema                          { return nil }
+func (m *mockHTTPAgent) OutputSchema() *sdomain.Schema                         { return nil }
+func (m *mockHTTPAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
+func (m *mockHTTPAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return m }
+func (m *mockHTTPAgent) Validate() error                                       { return nil }
+func (m *mockHTTPAgent) Metadata() map[string]interface{}                      { return m.metadata }
+func (m *mockHTTPAgent) SetMetadata(key string, value interface{}) {
 	if m.metadata == nil {
 		m.metadata = make(map[string]interface{})
 	}
@@ -76,7 +78,7 @@ func createTestToolContextForHTTP() *domain.ToolContext {
 
 	// Create the tool context
 	tc := domain.NewToolContext(context.Background(), stateReader, agent, "test-run-id")
-	
+
 	return tc
 }
 

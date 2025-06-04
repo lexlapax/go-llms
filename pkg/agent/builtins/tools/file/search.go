@@ -212,7 +212,7 @@ func FileSearch() domain.Tool {
 
 			// Update params with calculated maxResults
 			params.MaxResults = maxResults
-			
+
 			// Set include line numbers default
 			if !params.IncludeLineNumbers {
 				params.IncludeLineNumbers = true // Default to showing line numbers
@@ -255,14 +255,14 @@ func FileSearch() domain.Tool {
 				if ctx.Events != nil {
 					ctx.Events.EmitProgress(0, 1, fmt.Sprintf("Searching file: %s", absPath))
 				}
-				
+
 				fileMatches, err := searchFile(ctx.Context, absPath, searchPattern, searchRegex, params, encoding)
 				if err != nil {
 					return nil, err
 				}
 				matches = fileMatches
 				filesSearched = 1
-				
+
 				if ctx.Events != nil {
 					ctx.Events.EmitProgress(1, 1, "File search complete")
 				}
@@ -276,7 +276,7 @@ func FileSearch() domain.Tool {
 				totalFiles := 0
 				processedFiles := 0
 				if ctx.Events != nil {
-					filepath.Walk(absPath, func(path string, info os.FileInfo, err error) error {
+					_ = filepath.Walk(absPath, func(path string, info os.FileInfo, err error) error {
 						if err != nil || info.IsDir() {
 							return nil
 						}
@@ -380,7 +380,7 @@ func FileSearch() domain.Tool {
 					"file_pattern":   params.FilePattern,
 					"elapsed_time":   ctx.ElapsedTime().String(),
 				})
-				
+
 				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
 					ToolName:  "file_search",
 					RequestID: ctx.RunID,

@@ -111,10 +111,10 @@ func TestToolContext_ElapsedTime(t *testing.T) {
 	agent := &mockAgent{id: "test", name: "test", agentType: AgentTypeCustom}
 
 	tc := NewToolContext(ctx, NewStateReader(state), agent, "run-1")
-	
+
 	// Sleep a bit
 	time.Sleep(10 * time.Millisecond)
-	
+
 	elapsed := tc.ElapsedTime()
 	assert.True(t, elapsed >= 10*time.Millisecond)
 }
@@ -250,33 +250,33 @@ type mockAgent struct {
 	metadata    map[string]interface{}
 }
 
-func (m *mockAgent) ID() string                                          { return m.id }
-func (m *mockAgent) Name() string                                        { return m.name }
-func (m *mockAgent) Description() string                                 { return m.description }
-func (m *mockAgent) Type() AgentType                                     { return m.agentType }
-func (m *mockAgent) Parent() BaseAgent                                   { return nil }
-func (m *mockAgent) SetParent(parent BaseAgent) error                    { return nil }
-func (m *mockAgent) SubAgents() []BaseAgent                              { return nil }
-func (m *mockAgent) AddSubAgent(agent BaseAgent) error                   { return nil }
-func (m *mockAgent) RemoveSubAgent(name string) error                    { return nil }
-func (m *mockAgent) FindAgent(name string) BaseAgent                     { return nil }
-func (m *mockAgent) FindSubAgent(name string) BaseAgent                  { return nil }
+func (m *mockAgent) ID() string                                            { return m.id }
+func (m *mockAgent) Name() string                                          { return m.name }
+func (m *mockAgent) Description() string                                   { return m.description }
+func (m *mockAgent) Type() AgentType                                       { return m.agentType }
+func (m *mockAgent) Parent() BaseAgent                                     { return nil }
+func (m *mockAgent) SetParent(parent BaseAgent) error                      { return nil }
+func (m *mockAgent) SubAgents() []BaseAgent                                { return nil }
+func (m *mockAgent) AddSubAgent(agent BaseAgent) error                     { return nil }
+func (m *mockAgent) RemoveSubAgent(name string) error                      { return nil }
+func (m *mockAgent) FindAgent(name string) BaseAgent                       { return nil }
+func (m *mockAgent) FindSubAgent(name string) BaseAgent                    { return nil }
 func (m *mockAgent) Run(ctx context.Context, input *State) (*State, error) { return nil, nil }
 func (m *mockAgent) RunAsync(ctx context.Context, input *State) (<-chan Event, error) {
 	return nil, nil
 }
-func (m *mockAgent) Initialize(ctx context.Context) error                             { return nil }
-func (m *mockAgent) BeforeRun(ctx context.Context, state *State) error                { return nil }
+func (m *mockAgent) Initialize(ctx context.Context) error              { return nil }
+func (m *mockAgent) BeforeRun(ctx context.Context, state *State) error { return nil }
 func (m *mockAgent) AfterRun(ctx context.Context, state *State, result *State, err error) error {
 	return nil
 }
-func (m *mockAgent) Cleanup(ctx context.Context) error          { return nil }
-func (m *mockAgent) InputSchema() *domain.Schema                { return nil }
-func (m *mockAgent) OutputSchema() *domain.Schema               { return nil }
-func (m *mockAgent) Config() AgentConfig                         { return AgentConfig{} }
-func (m *mockAgent) WithConfig(config AgentConfig) BaseAgent     { return m }
-func (m *mockAgent) Validate() error                             { return nil }
-func (m *mockAgent) Metadata() map[string]interface{}            { return m.metadata }
+func (m *mockAgent) Cleanup(ctx context.Context) error         { return nil }
+func (m *mockAgent) InputSchema() *domain.Schema               { return nil }
+func (m *mockAgent) OutputSchema() *domain.Schema              { return nil }
+func (m *mockAgent) Config() AgentConfig                       { return AgentConfig{} }
+func (m *mockAgent) WithConfig(config AgentConfig) BaseAgent   { return m }
+func (m *mockAgent) Validate() error                           { return nil }
+func (m *mockAgent) Metadata() map[string]interface{}          { return m.metadata }
 func (m *mockAgent) SetMetadata(key string, value interface{}) {}
 
 type mockEventDispatcher struct {
@@ -291,7 +291,7 @@ func (m *mockEventDispatcher) Subscribe(handler EventHandler, filters ...EventFi
 	return "sub-1"
 }
 func (m *mockEventDispatcher) Unsubscribe(subscriptionID string) {}
-func (m *mockEventDispatcher) Close() {}
+func (m *mockEventDispatcher) Close()                            {}
 
 type mockEventEmitter struct {
 	events []interface{}

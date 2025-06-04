@@ -243,7 +243,7 @@ func filterData(data []interface{}, field, condition string) ([]interface{}, err
 
 	for _, item := range data {
 		fieldValue, err := getFieldValue(item, field)
-		
+
 		match := false
 
 		switch operator {
@@ -255,9 +255,9 @@ func filterData(data []interface{}, field, condition string) ([]interface{}, err
 			if err != nil {
 				continue
 			}
-			
+
 			fieldStr := fmt.Sprintf("%v", fieldValue)
-			
+
 			switch operator {
 			case "eq", "=", "==":
 				match = fieldStr == value

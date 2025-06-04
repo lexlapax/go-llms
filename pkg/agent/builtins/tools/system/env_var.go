@@ -210,7 +210,7 @@ func GetEnvironmentVariable() domain.Tool {
 				Count:     len(variables),
 				Query:     query,
 			}
-			
+
 			// Emit result event
 			if ctx.Events != nil {
 				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
@@ -219,7 +219,7 @@ func GetEnvironmentVariable() domain.Tool {
 					RequestID: ctx.RunID,
 				})
 			}
-			
+
 			return result, nil
 		},
 		getEnvironmentVariableParamSchema,
@@ -265,7 +265,7 @@ func isSensitiveVariable(name string, ctx *domain.ToolContext) bool {
 			return true
 		}
 	}
-	
+
 	// Check state for additional sensitive patterns
 	if ctx != nil && ctx.State != nil {
 		if patterns, ok := ctx.State.Get("sensitive_env_patterns"); ok {

@@ -24,16 +24,16 @@ type mockWriteAgent struct {
 	metadata    map[string]interface{}
 }
 
-func (a *mockWriteAgent) ID() string          { return a.id }
-func (a *mockWriteAgent) Name() string        { return a.name }
-func (a *mockWriteAgent) Description() string { return a.description }
-func (a *mockWriteAgent) Type() domain.AgentType { return a.agentType }
-func (a *mockWriteAgent) Parent() domain.BaseAgent { return nil }
-func (a *mockWriteAgent) SetParent(parent domain.BaseAgent) error { return nil }
-func (a *mockWriteAgent) SubAgents() []domain.BaseAgent { return nil }
-func (a *mockWriteAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
-func (a *mockWriteAgent) RemoveSubAgent(name string) error { return nil }
-func (a *mockWriteAgent) FindAgent(name string) domain.BaseAgent { return nil }
+func (a *mockWriteAgent) ID() string                                { return a.id }
+func (a *mockWriteAgent) Name() string                              { return a.name }
+func (a *mockWriteAgent) Description() string                       { return a.description }
+func (a *mockWriteAgent) Type() domain.AgentType                    { return a.agentType }
+func (a *mockWriteAgent) Parent() domain.BaseAgent                  { return nil }
+func (a *mockWriteAgent) SetParent(parent domain.BaseAgent) error   { return nil }
+func (a *mockWriteAgent) SubAgents() []domain.BaseAgent             { return nil }
+func (a *mockWriteAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
+func (a *mockWriteAgent) RemoveSubAgent(name string) error          { return nil }
+func (a *mockWriteAgent) FindAgent(name string) domain.BaseAgent    { return nil }
 func (a *mockWriteAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
 func (a *mockWriteAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
 	return nil, nil
@@ -41,18 +41,18 @@ func (a *mockWriteAgent) Run(ctx context.Context, input *domain.State) (*domain.
 func (a *mockWriteAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
 	return nil, nil
 }
-func (a *mockWriteAgent) Initialize(ctx context.Context) error { return nil }
+func (a *mockWriteAgent) Initialize(ctx context.Context) error                     { return nil }
 func (a *mockWriteAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
 func (a *mockWriteAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
 	return nil
 }
-func (a *mockWriteAgent) Cleanup(ctx context.Context) error { return nil }
-func (a *mockWriteAgent) InputSchema() *sdomain.Schema { return nil }
-func (a *mockWriteAgent) OutputSchema() *sdomain.Schema { return nil }
-func (a *mockWriteAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (a *mockWriteAgent) Cleanup(ctx context.Context) error                     { return nil }
+func (a *mockWriteAgent) InputSchema() *sdomain.Schema                          { return nil }
+func (a *mockWriteAgent) OutputSchema() *sdomain.Schema                         { return nil }
+func (a *mockWriteAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
 func (a *mockWriteAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
-func (a *mockWriteAgent) Validate() error { return nil }
-func (a *mockWriteAgent) Metadata() map[string]interface{} { return a.metadata }
+func (a *mockWriteAgent) Validate() error                                       { return nil }
+func (a *mockWriteAgent) Metadata() map[string]interface{}                      { return a.metadata }
 func (a *mockWriteAgent) SetMetadata(key string, value interface{}) {
 	if a.metadata == nil {
 		a.metadata = make(map[string]interface{})
@@ -72,12 +72,12 @@ func createTestToolContextForWrite() *domain.ToolContext {
 		agentType:   domain.AgentTypeCustom,
 		metadata:    make(map[string]interface{}),
 	}
-	
+
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
-	
+
 	// Create a simple event emitter
 	tc = tc.WithEventEmitter(&testWriteEventEmitter{})
-	
+
 	return tc
 }
 
@@ -85,10 +85,10 @@ func createTestToolContextForWrite() *domain.ToolContext {
 type testWriteEventEmitter struct{}
 
 func (e *testWriteEventEmitter) Emit(eventType domain.EventType, data interface{}) {}
-func (e *testWriteEventEmitter) EmitProgress(current, total int, message string) {}
-func (e *testWriteEventEmitter) EmitMessage(message string) {}
-func (e *testWriteEventEmitter) EmitError(err error) {}
-func (e *testWriteEventEmitter) EmitCustom(eventName string, data interface{}) {}
+func (e *testWriteEventEmitter) EmitProgress(current, total int, message string)   {}
+func (e *testWriteEventEmitter) EmitMessage(message string)                        {}
+func (e *testWriteEventEmitter) EmitError(err error)                               {}
+func (e *testWriteEventEmitter) EmitCustom(eventName string, data interface{})     {}
 
 func TestWriteFileRegistration(t *testing.T) {
 	// Test that the tool is registered

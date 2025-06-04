@@ -45,9 +45,10 @@
   - [x] Phase 4.1: Revisit existing Tool interface and see if it needs updates based on current agent/workflow
   - [x] Phase 4.2: Implement AgentTool wrapper
   - [x] Phase 4.3: Create tool context system - COMPLETED (February 2025)
-  - [ ] Phase 4.4: Add bidirectional agent-tool conversion utilities
-  - [ ] Phase 4.5: Ensure all current tools in builtins/tools work with agents
-  - [ ] Phase 4.6: Create examples demonstrating enhanced tool capabilities - tell me before implementing what.
+  - [x] Phase 4.4: Fix all builtins-* examples to use the redone tools with ToolContext - COMPLETED (February 2025)
+  - [ ] Phase 4.5: Add bidirectional agent-tool conversion utilities
+  - [ ] Phase 4.6: Ensure all current tools in builtins/tools work with agents
+  - [ ] Phase 4.7: Create examples demonstrating enhanced tool capabilities - tell me before implementing what.
 
 - [ ] Phase 5: Advanced Features (Week 5)
   - [ ] State persistence and serialization, present plan before implementation

@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	// Import built-in file tools - this triggers auto-registration
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
@@ -17,6 +18,83 @@ import (
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 )
+
+// Helper types for creating a minimal ToolContext for standalone tool execution
+
+// minimalStateReader implements StateReader interface with empty state
+type minimalStateReader struct {
+	state *agentDomain.State
+}
+
+func (m *minimalStateReader) Get(key string) (interface{}, bool) {
+	return m.state.Get(key)
+}
+
+func (m *minimalStateReader) Values() map[string]interface{} {
+	return m.state.Values()
+}
+
+func (m *minimalStateReader) GetArtifact(id string) (*agentDomain.Artifact, bool) {
+	return m.state.GetArtifact(id)
+}
+
+func (m *minimalStateReader) Artifacts() map[string]*agentDomain.Artifact {
+	return m.state.Artifacts()
+}
+
+func (m *minimalStateReader) Messages() []agentDomain.Message {
+	return m.state.Messages()
+}
+
+func (m *minimalStateReader) GetMetadata(key string) (interface{}, bool) {
+	return m.state.GetMetadata(key)
+}
+
+func (m *minimalStateReader) Has(key string) bool {
+	return m.state.Has(key)
+}
+
+func (m *minimalStateReader) Keys() []string {
+	values := m.state.Values()
+	keys := make([]string, 0, len(values))
+	for k := range values {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// minimalEventEmitter implements EventEmitter interface with no-op methods
+type minimalEventEmitter struct{}
+
+func (m *minimalEventEmitter) Emit(eventType agentDomain.EventType, data interface{}) {}
+func (m *minimalEventEmitter) EmitProgress(current, total int, message string)        {}
+func (m *minimalEventEmitter) EmitMessage(message string)                             {}
+func (m *minimalEventEmitter) EmitError(err error)                                    {}
+func (m *minimalEventEmitter) EmitCustom(eventName string, data interface{})          {}
+
+// createToolContext creates a minimal ToolContext for standalone tool execution
+func createToolContext(ctx context.Context) *agentDomain.ToolContext {
+	state := agentDomain.NewState()
+	stateReader := &minimalStateReader{state: state}
+
+	toolCtx := &agentDomain.ToolContext{
+		Context:   ctx,
+		State:     stateReader,
+		RunID:     "standalone-execution",
+		Retry:     0,
+		StartTime: time.Now(),
+		Events:    &minimalEventEmitter{},
+		Agent: agentDomain.AgentInfo{
+			ID:          "standalone",
+			Name:        "standalone-tool-executor",
+			Description: "Minimal agent for standalone tool execution",
+			Type:        agentDomain.AgentTypeLLM,
+			Metadata:    make(map[string]interface{}),
+		},
+	}
+
+	return toolCtx
+}
 
 func main() {
 	fmt.Println("=== File Tools Example ===")
@@ -43,6 +121,7 @@ func main() {
 
 	// Demonstrate direct tool usage
 	ctx := context.Background()
+	toolCtx := createToolContext(ctx)
 	// Use a temp directory to avoid leaving files if interrupted
 	demoDir, err := os.MkdirTemp("", "file_tools_demo_*")
 	if err != nil {
@@ -63,7 +142,7 @@ func main() {
   }
 }`
 
-	result, err := writeTool.Execute(ctx, map[string]interface{}{
+	result, err := writeTool.Execute(toolCtx, map[string]interface{}{
 		"path":    configFile,
 		"content": initialConfig,
 	})
@@ -87,7 +166,7 @@ func main() {
   }
 }`
 
-	result, err = writeTool.Execute(ctx, map[string]interface{}{
+	result, err = writeTool.Execute(toolCtx, map[string]interface{}{
 		"path":    configFile,
 		"content": updatedConfig,
 		"atomic":  true,
@@ -108,7 +187,7 @@ func main() {
 
 	// Example 2: Read file with metadata
 	fmt.Println("\n=== Example 2: Read with Metadata ===")
-	result, err = readTool.Execute(ctx, map[string]interface{}{
+	result, err = readTool.Execute(toolCtx, map[string]interface{}{
 		"path":         configFile,
 		"include_meta": true,
 	})
@@ -136,7 +215,7 @@ func main() {
 	logFile := filepath.Join(demoDir, "app.log")
 
 	// Write initial log entry
-	_, err = writeTool.Execute(ctx, map[string]interface{}{
+	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
 		"path":    logFile,
 		"content": "2024-01-31 10:00:00 - Application started\n",
 	})
@@ -145,7 +224,7 @@ func main() {
 	}
 
 	// Append more log entries
-	_, err = writeTool.Execute(ctx, map[string]interface{}{
+	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
 		"path":    logFile,
 		"content": "2024-01-31 10:00:01 - Configuration loaded\n",
 		"append":  true,
@@ -154,7 +233,7 @@ func main() {
 		log.Printf("Error appending to log: %v", err)
 	}
 
-	_, err = writeTool.Execute(ctx, map[string]interface{}{
+	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
 		"path":    logFile,
 		"content": "2024-01-31 10:00:02 - Server listening on port 8080\n",
 		"append":  true,
@@ -164,7 +243,7 @@ func main() {
 	}
 
 	// Read the full log
-	result, err = readTool.Execute(ctx, map[string]interface{}{
+	result, err = readTool.Execute(toolCtx, map[string]interface{}{
 		"path": logFile,
 	})
 	if err != nil {
@@ -187,7 +266,7 @@ func main() {
 	for i := 1; i <= 20; i++ {
 		content += fmt.Sprintf("Line %d: This is some content on line %d\n", i, i)
 	}
-	_, err = writeTool.Execute(ctx, map[string]interface{}{
+	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
 		"path":    largeFile,
 		"content": content,
 	})
@@ -196,7 +275,7 @@ func main() {
 	}
 
 	// Read only lines 5-10
-	result, err = readTool.Execute(ctx, map[string]interface{}{
+	result, err = readTool.Execute(toolCtx, map[string]interface{}{
 		"path":       largeFile,
 		"line_start": 5,
 		"line_end":   10,
@@ -246,7 +325,7 @@ func main() {
 
 	// Example 6: File List operation
 	fmt.Println("\n=== Example 6: File List ===")
-	result, err = listTool.Execute(ctx, map[string]interface{}{
+	result, err = listTool.Execute(toolCtx, map[string]interface{}{
 		"path":      demoDir,
 		"recursive": false,
 	})
@@ -269,7 +348,7 @@ func main() {
 
 	// Example 7: File Search operation
 	fmt.Println("\n=== Example 7: File Search ===")
-	result, err = searchTool.Execute(ctx, map[string]interface{}{
+	result, err = searchTool.Execute(toolCtx, map[string]interface{}{
 		"path":      demoDir,
 		"pattern":   "*.json",
 		"recursive": false,
@@ -293,7 +372,7 @@ func main() {
 	fmt.Println("\n=== Example 8: File Move ===")
 	// Create a test file to move
 	moveTestFile := filepath.Join(demoDir, "move_test.txt")
-	_, err = writeTool.Execute(ctx, map[string]interface{}{
+	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
 		"path":    moveTestFile,
 		"content": "This file will be moved",
 	})
@@ -303,7 +382,7 @@ func main() {
 
 	// Move the file
 	movedFile := filepath.Join(demoDir, "moved_file.txt")
-	result, err = moveTool.Execute(ctx, map[string]interface{}{
+	result, err = moveTool.Execute(toolCtx, map[string]interface{}{
 		"source":      moveTestFile,
 		"destination": movedFile,
 	})
@@ -324,7 +403,7 @@ func main() {
 	fmt.Println("\n=== Example 9: File Delete ===")
 	// Create a test file to delete
 	deleteTestFile := filepath.Join(demoDir, "delete_test.txt")
-	_, err = writeTool.Execute(ctx, map[string]interface{}{
+	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
 		"path":    deleteTestFile,
 		"content": "This file will be deleted",
 	})
@@ -333,7 +412,7 @@ func main() {
 	}
 
 	// Delete the file
-	result, err = deleteTool.Execute(ctx, map[string]interface{}{
+	result, err = deleteTool.Execute(toolCtx, map[string]interface{}{
 		"path": deleteTestFile,
 	})
 	if err != nil {
@@ -351,7 +430,7 @@ func main() {
 
 	// Example 10: Advanced read with content search
 	fmt.Println("\n=== Example 10: Content Search in Files ===")
-	result, err = searchTool.Execute(ctx, map[string]interface{}{
+	result, err = searchTool.Execute(toolCtx, map[string]interface{}{
 		"path":         demoDir,
 		"pattern":      "Line",
 		"file_pattern": "*.txt",

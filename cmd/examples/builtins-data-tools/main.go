@@ -8,14 +8,94 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
+	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 )
+
+// Helper types for creating a minimal ToolContext for standalone tool execution
+
+// minimalStateReader implements StateReader interface with empty state
+type minimalStateReader struct {
+	state *agentDomain.State
+}
+
+func (m *minimalStateReader) Get(key string) (interface{}, bool) {
+	return m.state.Get(key)
+}
+
+func (m *minimalStateReader) Values() map[string]interface{} {
+	return m.state.Values()
+}
+
+func (m *minimalStateReader) GetArtifact(id string) (*agentDomain.Artifact, bool) {
+	return m.state.GetArtifact(id)
+}
+
+func (m *minimalStateReader) Artifacts() map[string]*agentDomain.Artifact {
+	return m.state.Artifacts()
+}
+
+func (m *minimalStateReader) Messages() []agentDomain.Message {
+	return m.state.Messages()
+}
+
+func (m *minimalStateReader) GetMetadata(key string) (interface{}, bool) {
+	return m.state.GetMetadata(key)
+}
+
+func (m *minimalStateReader) Has(key string) bool {
+	return m.state.Has(key)
+}
+
+func (m *minimalStateReader) Keys() []string {
+	values := m.state.Values()
+	keys := make([]string, 0, len(values))
+	for k := range values {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// minimalEventEmitter implements EventEmitter interface with no-op methods
+type minimalEventEmitter struct{}
+
+func (m *minimalEventEmitter) Emit(eventType agentDomain.EventType, data interface{}) {}
+func (m *minimalEventEmitter) EmitProgress(current, total int, message string)        {}
+func (m *minimalEventEmitter) EmitMessage(message string)                             {}
+func (m *minimalEventEmitter) EmitError(err error)                                    {}
+func (m *minimalEventEmitter) EmitCustom(eventName string, data interface{})          {}
+
+// createToolContext creates a minimal ToolContext for standalone tool execution
+func createToolContext(ctx context.Context) *agentDomain.ToolContext {
+	state := agentDomain.NewState()
+	stateReader := &minimalStateReader{state: state}
+
+	toolCtx := &agentDomain.ToolContext{
+		Context:   ctx,
+		State:     stateReader,
+		RunID:     "standalone-execution",
+		Retry:     0,
+		StartTime: time.Now(),
+		Events:    &minimalEventEmitter{},
+		Agent: agentDomain.AgentInfo{
+			ID:          "standalone",
+			Name:        "standalone-tool-executor",
+			Description: "Minimal agent for standalone tool execution",
+			Type:        agentDomain.AgentTypeLLM,
+			Metadata:    make(map[string]interface{}),
+		},
+	}
+
+	return toolCtx
+}
 
 func main() {
 	ctx := context.Background()
+	toolCtx := createToolContext(ctx)
 
 	// List all data tools
 	fmt.Println("=== Available Data Tools ===")
@@ -49,7 +129,7 @@ func main() {
 
 	// 1. Parse JSON
 	fmt.Println("1. Parse and validate JSON:")
-	parseResult, err := jsonTool.Execute(ctx, map[string]interface{}{
+	parseResult, err := jsonTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "parse",
 		"data":      jsonData,
 	})
@@ -62,7 +142,7 @@ func main() {
 
 	// 2. Query with JSONPath - simple queries
 	fmt.Println("\n2. JSONPath query - get first user:")
-	queryResult, err := jsonTool.Execute(ctx, map[string]interface{}{
+	queryResult, err := jsonTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "query",
 		"data":      jsonData,
 		"jsonpath":  "$.users[0]",
@@ -87,7 +167,7 @@ func main() {
 		"Last updated":     "$.metadata.last_updated",
 	}
 	for desc, path := range queries {
-		result, _ := jsonTool.Execute(ctx, map[string]interface{}{
+		result, _ := jsonTool.Execute(toolCtx, map[string]interface{}{
 			"operation": "query",
 			"data":      jsonData,
 			"jsonpath":  path,
@@ -99,7 +179,7 @@ func main() {
 
 	// 4. Transform JSON - flatten
 	fmt.Println("\n4. Transform JSON - flatten:")
-	flattenResult, err := jsonTool.Execute(ctx, map[string]interface{}{
+	flattenResult, err := jsonTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "transform",
 		"data":      jsonData,
 		"transform": "flatten",
@@ -115,7 +195,7 @@ func main() {
 
 	// 5. Query to get users array
 	fmt.Println("\n5. Extract user array using JSONPath:")
-	extractResult, err := jsonTool.Execute(ctx, map[string]interface{}{
+	extractResult, err := jsonTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "query",
 		"data":      jsonData,
 		"jsonpath":  "$.users",
@@ -157,7 +237,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 1. Parse CSV
 	fmt.Println("1. Parse CSV with headers:")
-	parseCSV, err := csvTool.Execute(ctx, map[string]interface{}{
+	parseCSV, err := csvTool.Execute(toolCtx, map[string]interface{}{
 		"operation":   "parse",
 		"data":        csvData,
 		"has_headers": true, // Fixed parameter name (plural)
@@ -173,7 +253,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 2. Filter CSV - Engineering department (fixed parameter name)
 	fmt.Println("\n2. Filter Engineering employees:")
-	filterResult, err := csvTool.Execute(ctx, map[string]interface{}{
+	filterResult, err := csvTool.Execute(toolCtx, map[string]interface{}{
 		"operation":        "filter",
 		"data":             csvData,
 		"filter_condition": "department:eq:Engineering", // Fixed parameter name
@@ -198,7 +278,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 3. Filter high salaries (fixed parameter name)
 	fmt.Println("\n3. Filter high salaries (> 65000):")
-	highSalaryFilter, err := csvTool.Execute(ctx, map[string]interface{}{
+	highSalaryFilter, err := csvTool.Execute(toolCtx, map[string]interface{}{
 		"operation":        "filter",
 		"data":             csvData,
 		"filter_condition": "salary:gt:65000", // Fixed parameter name
@@ -221,7 +301,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 4. Convert CSV to JSON (fixed operation)
 	fmt.Println("\n4. Convert CSV to JSON:")
-	csvToJson, err := csvTool.Execute(ctx, map[string]interface{}{
+	csvToJson, err := csvTool.Execute(toolCtx, map[string]interface{}{
 		"operation":   "to_json", // Fixed: use to_json operation directly
 		"data":        csvData,
 		"has_headers": true, // Fixed parameter name (plural)
@@ -243,7 +323,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 5. Get statistics
 	fmt.Println("\n5. Calculate statistics for numeric columns:")
-	statsResult, err := csvTool.Execute(ctx, map[string]interface{}{
+	statsResult, err := csvTool.Execute(toolCtx, map[string]interface{}{
 		"operation":   "transform",
 		"data":        csvData,
 		"transform":   "statistics",
@@ -311,7 +391,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 1. Parse XML
 	fmt.Println("1. Parse and validate XML:")
-	parseXML, err := xmlTool.Execute(ctx, map[string]interface{}{
+	parseXML, err := xmlTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "parse",
 		"data":      xmlData,
 	})
@@ -336,7 +416,7 @@ Grace,31,Sales,62000,5,4.3`
 	}
 
 	for desc, xpath := range xpathQueries {
-		result, err := xmlTool.Execute(ctx, map[string]interface{}{
+		result, err := xmlTool.Execute(toolCtx, map[string]interface{}{
 			"operation": "query",
 			"data":      xmlData,
 			"xpath":     xpath,
@@ -350,7 +430,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 3. Convert XML to JSON
 	fmt.Println("\n3. Convert XML to JSON:")
-	xmlToJsonResult, err := xmlTool.Execute(ctx, map[string]interface{}{
+	xmlToJsonResult, err := xmlTool.Execute(toolCtx, map[string]interface{}{
 		"operation":          "to_json",
 		"data":               xmlData,
 		"include_attributes": true,
@@ -395,7 +475,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 1. Filter - high scores (fixed format)
 	fmt.Println("1. Filter students with scores > 85:")
-	filterHighScores, err := transformTool.Execute(ctx, map[string]interface{}{
+	filterHighScores, err := transformTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "filter",
 		"data":      string(transformDataJSON),
 		"field":     "score",
@@ -416,7 +496,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 2. Map - extract names
 	fmt.Println("\n2. Map - extract student names:")
-	mapNames, err := transformTool.Execute(ctx, map[string]interface{}{
+	mapNames, err := transformTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "map",
 		"data":      string(transformDataJSON),
 		"map_type":  "extract_field", // Fixed parameter name
@@ -442,7 +522,7 @@ Grace,31,Sales,62000,5,4.3`
 	}
 
 	for _, op := range reduceOps {
-		result, _ := transformTool.Execute(ctx, map[string]interface{}{
+		result, _ := transformTool.Execute(toolCtx, map[string]interface{}{
 			"operation":   "reduce",
 			"data":        string(transformDataJSON),
 			"reduce_type": op.reducer, // Fixed parameter name
@@ -455,7 +535,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 4. Group by grade
 	fmt.Println("\n4. Group students by grade:")
-	groupByGrade, err := transformTool.Execute(ctx, map[string]interface{}{
+	groupByGrade, err := transformTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "group_by",
 		"data":      string(transformDataJSON),
 		"field":     "grade",
@@ -474,7 +554,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 5. Group by subject
 	fmt.Println("\n5. Group by subject:")
-	groupBySubject, _ := transformTool.Execute(ctx, map[string]interface{}{
+	groupBySubject, _ := transformTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "group_by",
 		"data":      string(transformDataJSON),
 		"field":     "subject",
@@ -491,7 +571,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 6. Sort by score descending
 	fmt.Println("\n6. Sort students by score (descending):")
-	sortByScore, err := transformTool.Execute(ctx, map[string]interface{}{
+	sortByScore, err := transformTool.Execute(toolCtx, map[string]interface{}{
 		"operation":  "sort",
 		"data":       string(transformDataJSON),
 		"field":      "score",
@@ -512,7 +592,7 @@ Grace,31,Sales,62000,5,4.3`
 
 	// 7. Get unique values
 	fmt.Println("\n7. Get unique grades:")
-	uniqueGrades, _ := transformTool.Execute(ctx, map[string]interface{}{
+	uniqueGrades, _ := transformTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "unique",
 		"data":      string(transformDataJSON),
 		"field":     "grade",
@@ -525,7 +605,7 @@ Grace,31,Sales,62000,5,4.3`
 	fmt.Println("\n8. Reverse student list:")
 	firstThree := transformData[:3]
 	firstThreeJSON, _ := json.Marshal(firstThree)
-	reverseList, _ := transformTool.Execute(ctx, map[string]interface{}{
+	reverseList, _ := transformTool.Execute(toolCtx, map[string]interface{}{
 		"operation": "reverse",
 		"data":      string(firstThreeJSON),
 	})

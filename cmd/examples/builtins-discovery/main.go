@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	// Import built-in components - this triggers auto-registration
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
@@ -21,6 +22,83 @@ import (
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 )
+
+// Helper types for creating a minimal ToolContext for standalone tool execution
+
+// minimalStateReader implements StateReader interface with empty state
+type minimalStateReader struct {
+	state *agentDomain.State
+}
+
+func (m *minimalStateReader) Get(key string) (interface{}, bool) {
+	return m.state.Get(key)
+}
+
+func (m *minimalStateReader) Values() map[string]interface{} {
+	return m.state.Values()
+}
+
+func (m *minimalStateReader) GetArtifact(id string) (*agentDomain.Artifact, bool) {
+	return m.state.GetArtifact(id)
+}
+
+func (m *minimalStateReader) Artifacts() map[string]*agentDomain.Artifact {
+	return m.state.Artifacts()
+}
+
+func (m *minimalStateReader) Messages() []agentDomain.Message {
+	return m.state.Messages()
+}
+
+func (m *minimalStateReader) GetMetadata(key string) (interface{}, bool) {
+	return m.state.GetMetadata(key)
+}
+
+func (m *minimalStateReader) Has(key string) bool {
+	return m.state.Has(key)
+}
+
+func (m *minimalStateReader) Keys() []string {
+	values := m.state.Values()
+	keys := make([]string, 0, len(values))
+	for k := range values {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// minimalEventEmitter implements EventEmitter interface with no-op methods
+type minimalEventEmitter struct{}
+
+func (m *minimalEventEmitter) Emit(eventType agentDomain.EventType, data interface{}) {}
+func (m *minimalEventEmitter) EmitProgress(current, total int, message string)        {}
+func (m *minimalEventEmitter) EmitMessage(message string)                             {}
+func (m *minimalEventEmitter) EmitError(err error)                                    {}
+func (m *minimalEventEmitter) EmitCustom(eventName string, data interface{})          {}
+
+// createToolContext creates a minimal ToolContext for standalone tool execution
+func createToolContext(ctx context.Context) *agentDomain.ToolContext {
+	state := agentDomain.NewState()
+	stateReader := &minimalStateReader{state: state}
+
+	toolCtx := &agentDomain.ToolContext{
+		Context:   ctx,
+		State:     stateReader,
+		RunID:     "standalone-execution",
+		Retry:     0,
+		StartTime: time.Now(),
+		Events:    &minimalEventEmitter{},
+		Agent: agentDomain.AgentInfo{
+			ID:          "standalone",
+			Name:        "standalone-tool-executor",
+			Description: "Minimal agent for standalone tool execution",
+			Type:        agentDomain.AgentTypeLLM,
+			Metadata:    make(map[string]interface{}),
+		},
+	}
+
+	return toolCtx
+}
 
 func main() {
 	// Display registry summary
@@ -85,6 +163,7 @@ func main() {
 
 	// Demonstrate different tool usage examples
 	ctx := context.Background()
+	toolCtx := createToolContext(ctx)
 
 	// Example 1: Using a file tool
 	fmt.Println("Example 1: Using File Tool")
@@ -101,7 +180,7 @@ func main() {
 	fmt.Println("Example 2: Using DateTime Tool")
 	dateTool, found := tools.GetTool("datetime_now")
 	if found {
-		result, err := dateTool.Execute(ctx, map[string]interface{}{
+		result, err := dateTool.Execute(toolCtx, map[string]interface{}{
 			"timezone": "UTC",
 			"format":   "RFC3339",
 		})
@@ -117,7 +196,7 @@ func main() {
 	fmt.Println("Example 3: Using Data Transform Tool")
 	transformTool, found := tools.GetTool("data_transform")
 	if found {
-		result, err := transformTool.Execute(ctx, map[string]interface{}{
+		result, err := transformTool.Execute(toolCtx, map[string]interface{}{
 			"data":      []interface{}{5, 2, 8, 1, 9},
 			"operation": "sort",
 			"options": map[string]interface{}{

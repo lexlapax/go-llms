@@ -51,16 +51,16 @@ type mockMoveAgent struct {
 	metadata    map[string]interface{}
 }
 
-func (a *mockMoveAgent) ID() string          { return a.id }
-func (a *mockMoveAgent) Name() string        { return a.name }
-func (a *mockMoveAgent) Description() string { return a.description }
-func (a *mockMoveAgent) Type() domain.AgentType { return a.agentType }
-func (a *mockMoveAgent) Parent() domain.BaseAgent { return nil }
-func (a *mockMoveAgent) SetParent(parent domain.BaseAgent) error { return nil }
-func (a *mockMoveAgent) SubAgents() []domain.BaseAgent { return nil }
-func (a *mockMoveAgent) AddSubAgent(agent domain.BaseAgent) error { return nil }
-func (a *mockMoveAgent) RemoveSubAgent(name string) error { return nil }
-func (a *mockMoveAgent) FindAgent(name string) domain.BaseAgent { return nil }
+func (a *mockMoveAgent) ID() string                                { return a.id }
+func (a *mockMoveAgent) Name() string                              { return a.name }
+func (a *mockMoveAgent) Description() string                       { return a.description }
+func (a *mockMoveAgent) Type() domain.AgentType                    { return a.agentType }
+func (a *mockMoveAgent) Parent() domain.BaseAgent                  { return nil }
+func (a *mockMoveAgent) SetParent(parent domain.BaseAgent) error   { return nil }
+func (a *mockMoveAgent) SubAgents() []domain.BaseAgent             { return nil }
+func (a *mockMoveAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
+func (a *mockMoveAgent) RemoveSubAgent(name string) error          { return nil }
+func (a *mockMoveAgent) FindAgent(name string) domain.BaseAgent    { return nil }
 func (a *mockMoveAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
 func (a *mockMoveAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
 	return nil, nil
@@ -68,18 +68,18 @@ func (a *mockMoveAgent) Run(ctx context.Context, input *domain.State) (*domain.S
 func (a *mockMoveAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
 	return nil, nil
 }
-func (a *mockMoveAgent) Initialize(ctx context.Context) error { return nil }
+func (a *mockMoveAgent) Initialize(ctx context.Context) error                     { return nil }
 func (a *mockMoveAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
 func (a *mockMoveAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
 	return nil
 }
-func (a *mockMoveAgent) Cleanup(ctx context.Context) error { return nil }
-func (a *mockMoveAgent) InputSchema() *sdomain.Schema { return nil }
-func (a *mockMoveAgent) OutputSchema() *sdomain.Schema { return nil }
-func (a *mockMoveAgent) Config() domain.AgentConfig { return domain.AgentConfig{} }
+func (a *mockMoveAgent) Cleanup(ctx context.Context) error                     { return nil }
+func (a *mockMoveAgent) InputSchema() *sdomain.Schema                          { return nil }
+func (a *mockMoveAgent) OutputSchema() *sdomain.Schema                         { return nil }
+func (a *mockMoveAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
 func (a *mockMoveAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
-func (a *mockMoveAgent) Validate() error { return nil }
-func (a *mockMoveAgent) Metadata() map[string]interface{} { return a.metadata }
+func (a *mockMoveAgent) Validate() error                                       { return nil }
+func (a *mockMoveAgent) Metadata() map[string]interface{}                      { return a.metadata }
 func (a *mockMoveAgent) SetMetadata(key string, value interface{}) {
 	if a.metadata == nil {
 		a.metadata = make(map[string]interface{})
@@ -99,12 +99,12 @@ func createTestToolContextForMove() *domain.ToolContext {
 		agentType:   domain.AgentTypeCustom,
 		metadata:    make(map[string]interface{}),
 	}
-	
+
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
-	
+
 	// Create a simple event emitter
 	tc = tc.WithEventEmitter(&testEventEmitterMove{})
-	
+
 	return tc
 }
 
@@ -112,10 +112,10 @@ func createTestToolContextForMove() *domain.ToolContext {
 type testEventEmitterMove struct{}
 
 func (e *testEventEmitterMove) Emit(eventType domain.EventType, data interface{}) {}
-func (e *testEventEmitterMove) EmitProgress(current, total int, message string) {}
-func (e *testEventEmitterMove) EmitMessage(message string) {}
-func (e *testEventEmitterMove) EmitError(err error) {}
-func (e *testEventEmitterMove) EmitCustom(eventName string, data interface{}) {}
+func (e *testEventEmitterMove) EmitProgress(current, total int, message string)   {}
+func (e *testEventEmitterMove) EmitMessage(message string)                        {}
+func (e *testEventEmitterMove) EmitError(err error)                               {}
+func (e *testEventEmitterMove) EmitCustom(eventName string, data interface{})     {}
 
 func TestFileMoveBasic(t *testing.T) {
 	tool := FileMove()
