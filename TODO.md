@@ -39,28 +39,24 @@
   - [ ] Update benchmarks to use core.LLMAgent (benchmarks/) (REVISIT)
   - [ ] Update stress tests to use core.LLMAgent (tests/stress/) (REVISIT)
 
-- [ ] Phase 3: Workflow Agents (Week 3-4)
-  - [ ] Implement workflow agent base
-  - [ ] Ensure Hooks work with workflow Agents
-  - [ ] Create SequentialAgent
-  - [ ] Create ParallelAgent
-  - [ ] Create ConditionalAgent
-  - [ ] Create LoopAgent
+- [x] Phase 3: Workflow Agents - COMPLETED (February 3, 2025) - see TODO-DONE.md
 
 - [ ] Phase 4: Agent-Tool Integration (Week 4)
+  - [ ] Revisit existing Tool interface and see if it needs updates based on current agent/workflow
   - [ ] Implement AgentTool wrapper
   - [ ] Create tool context system
   - [ ] Add bidirectional agent-tool conversion utilities
+  - [ ] make sure all current tools until builtins/tools work with agents
 
 - [ ] Phase 5: Advanced Features (Week 5)
-  - [ ] State persistence and serialization
-  - [ ] Agent discovery and registry
+  - [ ] State persistence and serialization, present plan before implementation
+  - [ ] Agent discovery and registry, present plan before implementation
   - [ ] Advanced merge strategies for parallel agents
   - [ ] Streaming support for long-running agents
 
 - [ ] Phase 6: Migration and Testing (Week 5-6)
   - [ ] Remove old superfluos code, examples and tests
-  - [ ] Create migration guide
+  - [ ] no need for migration guide - update documentation to new codebase
   - [ ] Redo Examples
     - [ ] Come up with an example plan based on codebase for product
     - [ ] remove invalid examples

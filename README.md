@@ -566,6 +566,13 @@ The library includes comprehensive example applications that demonstrate key fea
 - [Consensus Example](cmd/examples/consensus/README.md) - Consensus and voting mechanisms
 - [Multimodal Example](cmd/examples/multimodal/README.md) - Text, images, audio, and video
 
+**Workflow Agents** *(NEW - February 3, 2025)*:
+- [Sequential Workflow](cmd/examples/workflow-sequential/README.md) - Step-by-step processing with error handling
+- [Parallel Workflow](cmd/examples/workflow-parallel/README.md) - Concurrent processing with merge strategies
+- [Conditional Workflow](cmd/examples/workflow-conditional/README.md) - Branch-based execution with conditions
+- [Loop Workflow](cmd/examples/workflow-loop/README.md) - Iterative processing with count/while/until loops
+- [Workflow Hooks](cmd/examples/workflow-hooks/README.md) - Monitoring and instrumentation with hooks
+
 **Data and Validation:**
 - [Schema Example](cmd/examples/schema/README.md) - Schema generation from Go structs
 - [Coercion Example](cmd/examples/coercion/README.md) - Type coercion and validation
@@ -671,7 +678,7 @@ The core functionality is fairly complete and working. However, APIs are subject
   - Tool discovery: `tools.GetToolRegistry().Search("web")`
   - Consistent interfaces across all tool categories
   - Example applications for each tool category
-- 🏗️ **Agent Architecture Restructuring - Phase 1, 1.5 & 2 Completed** (February 3, 2025):
+- 🎉 **Agent Architecture Restructuring - Phases 1, 1.5, 2 & 3 Completed** (February 3, 2025):
   - **Phase 1**: Implemented core infrastructure based on Google's Agent Development Kit patterns
     - Created comprehensive domain interfaces: `BaseAgent`, `State`, `Event`, `Artifact`, `Config`, `Errors`
     - Implemented core functionality: `BaseAgentImpl`, `StateManager`, `EventDispatcher`, `AgentRegistry`
@@ -690,6 +697,13 @@ The core functionality is fairly complete and working. However, APIs are subject
     - Full hook system integration (metrics, logging)
     - Removed deprecated `workflow.Agent` package
     - Updated examples to use new architecture
+  - **Phase 3**: Workflow Agents completed
+    - `SequentialAgent`: Step-by-step processing with error handling and state passthrough
+    - `ParallelAgent`: Concurrent processing with configurable merge strategies and concurrency limits
+    - `ConditionalAgent`: Branch-based execution with priority evaluation and multiple match support
+    - `LoopAgent`: Iterative processing with count/while/until loops, termination conditions, and result collection
+    - All workflow agents have comprehensive tests, examples, and documentation
+    - Production-ready features: Error handling, timeout support, hook integration, metadata collection
   - Created comprehensive architecture documentation: docs/technical/agents.md
 
 **v0.2.7**

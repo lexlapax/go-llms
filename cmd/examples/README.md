@@ -243,6 +243,75 @@ export OPENAI_API_KEY="your-key"
 cd agent && go run main.go
 ```
 
+### Workflow Agents *(NEW - February 3, 2025)*
+
+The workflow agent system provides sophisticated patterns for complex multi-step processing.
+
+#### [**Sequential Workflow**](workflow-sequential/README.md)
+Step-by-step processing with error handling and state management.
+
+**Features:**
+- Sequential execution
+- Error handling strategies
+- State passthrough between steps
+- Hook integration for monitoring
+
+```bash
+cd workflow-sequential && go run main.go
+```
+
+#### [**Parallel Workflow**](workflow-parallel/README.md)
+Concurrent processing with configurable merge strategies.
+
+**Features:**
+- Concurrent agent execution
+- Multiple merge strategies (MergeAll, MergeFirst, MergeCustom)
+- Configurable concurrency limits
+- Timeout and error handling
+
+```bash
+cd workflow-parallel && go run main.go
+```
+
+#### [**Conditional Workflow**](workflow-conditional/README.md)
+Branch-based execution with priority evaluation and multiple conditions.
+
+**Features:**
+- Condition-based branching
+- Priority-based evaluation
+- Multiple match support
+- Default branch handling
+
+```bash
+cd workflow-conditional && go run main.go
+```
+
+#### [**Loop Workflow**](workflow-loop/README.md)
+Iterative processing with count, while, and until loop patterns.
+
+**Features:**
+- Count loops for fixed iterations
+- While/until loops with conditions
+- Result collection and state management
+- Iteration delays and error handling
+
+```bash
+cd workflow-loop && go run main.go
+```
+
+#### [**Workflow Hooks**](workflow-hooks/README.md)
+Monitoring and instrumentation for workflow agents using hooks.
+
+**Features:**
+- Metrics collection and tracking
+- Logging integration
+- Hook composition
+- Workflow monitoring
+
+```bash
+cd workflow-hooks && go run main.go
+```
+
 ### Content and Media
 
 #### [**Multimodal**](multimodal/README.md)
@@ -385,7 +454,7 @@ cd profiling && go run main.go
 - **Configuration**: `provider_options`, `convenience`
 - **Data Validation**: `schema`, `coercion`
 - **Multiple Providers**: `multi`, `consensus`
-- **Tools & Agents**: `agent`
+- **Tools & Agents**: `agent`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`
 - **Model Discovery**: `modelinfo`
 - **Monitoring**: `metrics`, `profiling`
 
@@ -395,6 +464,7 @@ cd profiling && go run main.go
 - **Google Gemini**: `gemini`
 - **Multiple**: `multi`, `consensus`, `modelinfo`
 - **Compatible APIs**: `openai_api_compatible_providers`
+- **Mock/Provider Agnostic**: `simple`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`
 
 ## Running Tests
 

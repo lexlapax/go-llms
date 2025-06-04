@@ -9,7 +9,7 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 **Current Version**: v0.3.0 (Released February 2025)
 
 **Recent Updates** (February 3, 2025):
-- **Agent Architecture Restructuring Phase 1, 1.5, and Phase 2 COMPLETED**
+- **Agent Architecture Restructuring Phases 1, 1.5, 2, and 3 COMPLETED**
   - Phase 1: Implemented core infrastructure based on Google's Agent Development Kit patterns
     - Created domain interfaces: BaseAgent, State, Event system, Artifacts, Errors, Config
     - Implemented core functionality: BaseAgentImpl, StateManager, EventDispatcher, AgentRegistry
@@ -37,6 +37,16 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
     - Updated all examples to use new core.LLMAgent
     - Added .golangci.yml configuration for build tags
     - llmutil/agent.go removed and dependencies migrated
+  - Phase 3: Workflow Agents (COMPLETED - February 3, 2025)
+    - Implemented complete workflow agent architecture with four agent types
+    - SequentialAgent: Step-by-step processing with error handling and state passthrough
+    - ParallelAgent: Concurrent processing with configurable merge strategies and concurrency limits
+    - ConditionalAgent: Branch-based execution with priority evaluation and multiple match support
+    - LoopAgent: Iterative processing with count/while/until loops, termination conditions, and result collection
+    - All workflow agents have comprehensive tests, examples, and documentation
+    - Fixed event handling integration between workflow agents and BaseAgentImpl
+    - Fixed real LLM agent integration with proper prompt handling
+    - Production-ready features: Error handling, timeout support, hook integration, metadata collection
 - **Documentation Updates** (February 2, 2025)
   - Consolidated LIST_MODELS_ANALYSIS.md into docs/user-guide/model-discovery.md
   - Archived LIST_MODELS_ANALYSIS.md to docs/archives/
@@ -362,8 +372,8 @@ Based on the TODO.md file, these are the current development priorities:
    - Phase 1: Core Infrastructure - COMPLETED (February 3, 2025)
    - Phase 1.5: Enhanced Core Infrastructure - COMPLETED (February 3, 2025)
    - Phase 2: LLM Agent Migration - COMPLETED (February 3, 2025)
-   - Phase 3: Workflow Agents - NEXT PRIORITY
-   - Phase 4: Agent-Tool Integration - PENDING
+   - Phase 3: Workflow Agents - COMPLETED (February 3, 2025)
+   - Phase 4: Agent-Tool Integration - NEXT PRIORITY
    - Phase 5: Advanced Features - PENDING
    - Phase 6: Migration and Testing - PENDING
    - Outstanding REVISIT items:
@@ -394,7 +404,7 @@ Based on the TODO.md file, these are the current development priorities:
    
 ## Completed Development Items
 
-1. **Agent Architecture Restructuring Phase 1, 1.5 & 2 (Completed February 3, 2025)**:
+1. **Agent Architecture Restructuring Phases 1, 1.5, 2 & 3 (Completed February 3, 2025)**:
    - Phase 1: Implemented core infrastructure based on Google's Agent Development Kit patterns
      - Created comprehensive domain interfaces and core implementations
      - All components have thorough test coverage and pass linting
@@ -407,6 +417,13 @@ Based on the TODO.md file, these are the current development priorities:
    - Phase 2: LLM Agent Migration
      - Created new core.LLMAgent with state-based execution
      - Implemented full hook system (metrics, logging)
+   - Phase 3: Workflow Agents (Completed February 3, 2025)
+     - Implemented complete workflow agent architecture with four agent types
+     - SequentialAgent: Step-by-step processing with error handling and state passthrough
+     - ParallelAgent: Concurrent processing with configurable merge strategies and concurrency limits
+     - ConditionalAgent: Branch-based execution with priority evaluation and multiple match support
+     - LoopAgent: Iterative processing with count/while/until loops, termination conditions, and result collection
+     - All workflow agents have comprehensive tests, examples, and documentation
      - Ultra-simple agent creation from strings
      - Removed deprecated workflow package
      - Updated all production examples

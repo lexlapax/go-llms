@@ -45,6 +45,7 @@ const (
 	EventSubAgentStart EventType = "subagent.start"
 	EventSubAgentEnd   EventType = "subagent.end"
 	EventWorkflowStep  EventType = "workflow.step"
+	EventWorkflowStart EventType = "workflow.start"
 )
 
 // NewEvent creates a new event

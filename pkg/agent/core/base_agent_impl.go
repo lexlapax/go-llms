@@ -356,6 +356,41 @@ func (a *BaseAgentImpl) EmitEvent(eventType domain.EventType, data interface{}) 
 	}
 }
 
+// Subscribe adds an event handler with optional filters
+func (a *BaseAgentImpl) Subscribe(handler domain.EventHandler, filters ...domain.EventFilter) string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	// Create dispatcher if it doesn't exist
+	if a.dispatcher == nil {
+		a.dispatcher = NewEventDispatcher(100) // Default buffer size
+	}
+
+	return a.dispatcher.Subscribe(handler, filters...)
+}
+
+// Unsubscribe removes an event handler
+func (a *BaseAgentImpl) Unsubscribe(subscriptionID string) {
+	a.mu.RLock()
+	dispatcher := a.dispatcher
+	a.mu.RUnlock()
+
+	if dispatcher != nil {
+		dispatcher.Unsubscribe(subscriptionID)
+	}
+}
+
+// OnEvent is a convenience method to subscribe to events with a function handler
+func (a *BaseAgentImpl) OnEvent(handler func(event *domain.Event)) string {
+	// Convert function to EventHandler interface
+	eventHandler := domain.EventHandlerFunc(func(event domain.Event) error {
+		handler(&event)
+		return nil
+	})
+
+	return a.Subscribe(eventHandler)
+}
+
 // Helper methods
 
 // hasCircularDependency checks if setting the given parent would create a circular dependency
