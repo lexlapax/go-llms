@@ -84,6 +84,8 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 ## Agent Architecture Restructuring
 
 - [Agent Architecture](/docs/technical/agents.md) - Complete agent architecture documentation including design, implementation, and future plans
+- [Phase 2 Summary](/PHASE2_SUMMARY.md) - Summary of LLM Agent Migration completion
+- [LLM Agent Migration Status](/LLMAGENT_MIGRATION_STATUS.md) - Detailed migration tracking and guide
 
 ## Contributing
 

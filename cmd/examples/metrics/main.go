@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
@@ -197,13 +197,13 @@ func main() {
 	mockProvider := provider.NewMockProvider()
 
 	// Create the metrics hook
-	metricsHook := workflow.NewMetricsHook()
+	metricsHook := core.NewLLMMetricsHook()
 
 	// Create the logging hook
-	loggingHook := workflow.NewLoggingHook(logger, workflow.LogLevelDetailed)
+	loggingHook := core.NewLoggingHook(logger, core.LogLevelDetailed)
 
 	// Create agent with both hooks
-	agent := workflow.NewAgent(mockProvider).
+	agent := core.NewAgent("metrics-agent", mockProvider).
 		WithHook(metricsHook).
 		WithHook(loggingHook)
 
@@ -213,8 +213,8 @@ func main() {
 	agent.AddTool(NewDummyTool("unreliableTool", 100*time.Millisecond, 30))
 	agent.AddTool(NewCalculatorTool())
 
-	// Setup context with metrics tracking
-	ctx := workflow.WithMetrics(context.Background())
+	// Setup context
+	ctx := context.Background()
 
 	fmt.Println("🔍 Running agent with metrics collection")
 	fmt.Println("==========================================")
@@ -240,7 +240,7 @@ func main() {
 }
 
 // runAgentOperations runs the agent multiple times with different prompts
-func runAgentOperations(ctx context.Context, agent domain.Agent, count int) {
+func runAgentOperations(ctx context.Context, agent *core.LLMAgent, count int) {
 	prompts := []string{
 		"Calculate 123 + 456",
 		"What's the capital of France?",
@@ -255,13 +255,22 @@ func runAgentOperations(ctx context.Context, agent domain.Agent, count int) {
 	for i := 0; i < count && i < len(prompts); i++ {
 		fmt.Printf("\n➡️ Running operation %d: %s\n", i+1, prompts[i])
 
-		result, err := agent.Run(ctx, prompts[i])
+		// Create state with the prompt
+		state := domain.NewState()
+		state.Set("prompt", prompts[i])
+
+		resultState, err := agent.Run(ctx, state)
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			continue
 		}
 
-		fmt.Printf("✅ Result: %s\n", truncateString(fmt.Sprintf("%v", result), 60))
+		// Extract result from state
+		if result, exists := resultState.Get("result"); exists {
+			fmt.Printf("✅ Result: %s\n", truncateString(fmt.Sprintf("%v", result), 60))
+		} else {
+			fmt.Printf("⚠️ No result found in state\n")
+		}
 
 		// Add a small delay between operations
 		time.Sleep(100 * time.Millisecond)
@@ -269,7 +278,7 @@ func runAgentOperations(ctx context.Context, agent domain.Agent, count int) {
 }
 
 // printMetrics prints the collected metrics
-func printMetrics(metrics workflow.Metrics) {
+func printMetrics(metrics core.Metrics) {
 	fmt.Println("\n📊 Agent Metrics Report")
 	fmt.Println("====================")
 	fmt.Printf("Total Requests:      %d\n", metrics.Requests)

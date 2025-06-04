@@ -17,7 +17,8 @@ import (
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"     // Import for side effects (registration)
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/system"   // Import for side effects (registration)
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"      // Import for side effects (registration)
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
+	"github.com/lexlapax/go-llms/pkg/agent/core"
+	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 )
 
@@ -147,18 +148,22 @@ func main() {
 		dateCalc, _ := tools.GetTool("datetime_calculate")
 
 		// Create agent with multiple built-in tools
-		agent := workflow.NewAgent(p).
-			SetSystemPrompt("You are a helpful assistant with access to web, JSON, and date/time tools.").
-			AddTool(webFetch).
-			AddTool(jsonProcess).
-			AddTool(dateCalc)
+		agent := core.NewAgent("discovery-agent", p)
+		agent.SetSystemPrompt("You are a helpful assistant with access to web, JSON, and date/time tools.")
+		agent.AddTool(webFetch)
+		agent.AddTool(jsonProcess)
+		agent.AddTool(dateCalc)
 
 		// Use the agent
-		result, err := agent.Run(ctx, "What day of the week will it be 30 days from now? Use the datetime_calculate tool.")
+		state := agentDomain.NewState()
+		state.Set("prompt", "What day of the week will it be 30 days from now? Use the datetime_calculate tool.")
+		resultState, err := agent.Run(ctx, state)
 		if err != nil {
 			log.Printf("Error running agent: %v", err)
 		} else {
-			fmt.Printf("Agent response: %v\n", result)
+			if result, exists := resultState.Get("result"); exists {
+				fmt.Printf("Agent response: %v\n", result)
+			}
 		}
 	}
 

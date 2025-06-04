@@ -12,7 +12,8 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/feed"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
+	"github.com/lexlapax/go-llms/pkg/agent/core"
+	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/feed"
@@ -317,19 +318,22 @@ func main() {
 
 		// Create provider and agent
 		p := provider.NewOpenAIProvider(apiKey, "gpt-4o-mini")
-		agent := workflow.NewAgent(p).
-			SetSystemPrompt("You are a feed processing assistant that can fetch, filter, and analyze RSS/Atom feeds.").
-			AddTool(fetchTool).
-			AddTool(filterTool).
-			AddTool(extractTool)
+		agent := core.NewAgent("feed-processing-agent", p)
+		agent.SetSystemPrompt("You are a feed processing assistant that can fetch, filter, and analyze RSS/Atom feeds.")
+		agent.AddTool(fetchTool)
+		agent.AddTool(filterTool)
+		agent.AddTool(extractTool)
 
 		// Use the agent for feed analysis
-		agentResult, err := agent.Run(ctx,
-			"Fetch the Hacker News RSS feed, filter for items containing 'Go' or 'golang', and extract the titles and links of the top 3 items.")
+		state := agentDomain.NewState()
+		state.Set("prompt", "Fetch the Hacker News RSS feed, filter for items containing 'Go' or 'golang', and extract the titles and links of the top 3 items.")
+		resultState, err := agent.Run(ctx, state)
 		if err != nil {
 			log.Printf("Error running feed agent: %v", err)
 		} else {
-			fmt.Printf("Agent response: %v\n", agentResult)
+			if result, exists := resultState.Get("result"); exists {
+				fmt.Printf("Agent response: %v\n", result)
+			}
 		}
 	} else {
 		fmt.Println("=== Agent Example Skipped (no API key) ===")

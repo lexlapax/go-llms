@@ -9,14 +9,14 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 **Current Version**: v0.3.0 (Released February 2025)
 
 **Recent Updates** (February 3, 2025):
-- **Agent Architecture Restructuring Phase 1 & 1.5 - COMPLETED**
+- **Agent Architecture Restructuring Phase 1, 1.5, and Phase 2 COMPLETED**
   - Phase 1: Implemented core infrastructure based on Google's Agent Development Kit patterns
     - Created domain interfaces: BaseAgent, State, Event system, Artifacts, Errors, Config
     - Implemented core functionality: BaseAgentImpl, StateManager, EventDispatcher, AgentRegistry
     - Created comprehensive tests with good coverage (domain: 52.9%, core: 38.9%)
     - All tests passing, code meets linting standards
     - Created comprehensive architecture documentation: docs/technical/agents.md
-  - Phase 1.5: Enhanced Core Infrastructure (COMPLETED - February 3, 2025)
+  - Phase 1.5: Enhanced Core Infrastructure (COMPLETED)
     - Implemented Handoff interface for agent delegation with fluent builder pattern
     - Implemented Guardrails interface for input/output validation
     - Enhanced RunContext with generic type-safe dependency injection
@@ -25,6 +25,18 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
     - Implemented StateTransforms with 15+ transformation functions
     - Implemented TracingHook for OpenTelemetry-compatible instrumentation
     - All components have comprehensive tests with 100% coverage and zero linting issues
+  - Phase 2: LLM Agent Migration (COMPLETED)
+    - Implemented new LLMAgent with full integration of Phase 1.5 components
+    - Ultra-simple agent creation from provider/model strings: `NewAgentFromString("agent", "claude")`
+    - State-based execution replacing message-based approach
+    - Tool calling integrated with new State management
+    - Full hook system implementation (metrics, logging)
+    - Comprehensive provider string parsing with aliases and model inference
+    - Created pkg/agent/core/llm_agent.go, provider_parser.go with full test coverage
+    - Removed deprecated workflow.Agent package entirely
+    - Updated all examples to use new core.LLMAgent
+    - Added .golangci.yml configuration for build tags
+    - llmutil/agent.go removed and dependencies migrated
 - **Documentation Updates** (February 2, 2025)
   - Consolidated LIST_MODELS_ANALYSIS.md into docs/user-guide/model-discovery.md
   - Archived LIST_MODELS_ANALYSIS.md to docs/archives/
@@ -349,11 +361,15 @@ Based on the TODO.md file, these are the current development priorities:
 1. **Agent Architecture Restructuring** (Currently Active - HIGH PRIORITY):
    - Phase 1: Core Infrastructure - COMPLETED (February 3, 2025)
    - Phase 1.5: Enhanced Core Infrastructure - COMPLETED (February 3, 2025)
-   - Phase 2: LLM Agent Migration - NEXT PRIORITY
-   - Phase 3: Workflow Agents - PENDING
+   - Phase 2: LLM Agent Migration - COMPLETED (February 3, 2025)
+   - Phase 3: Workflow Agents - NEXT PRIORITY
    - Phase 4: Agent-Tool Integration - PENDING
    - Phase 5: Advanced Features - PENDING
    - Phase 6: Migration and Testing - PENDING
+   - Outstanding REVISIT items:
+     - Update integration tests to use core.LLMAgent
+     - Update benchmarks to use core.LLMAgent
+     - Update stress tests to use core.LLMAgent
    
 2. **Model Context Protocol Support**:
    - Add Model Context Protocol Client support for Agents
@@ -378,16 +394,23 @@ Based on the TODO.md file, these are the current development priorities:
    
 ## Completed Development Items
 
-1. **Agent Architecture Restructuring Phase 1 & 1.5 (Completed February 3, 2025)**:
+1. **Agent Architecture Restructuring Phase 1, 1.5 & 2 (Completed February 3, 2025)**:
    - Phase 1: Implemented core infrastructure based on Google's Agent Development Kit patterns
      - Created comprehensive domain interfaces and core implementations
      - All components have thorough test coverage and pass linting
      - Successfully laid foundation for LLM agents and workflow agents
-   - Phase 1.5: Enhanced Core Infrastructure (Completed February 3, 2025)
+   - Phase 1.5: Enhanced Core Infrastructure
      - Implemented Handoff, Guardrails, enhanced RunContext, FunctionalEventStream
      - Implemented StateValidator, StateTransforms, and TracingHook components
      - All 7 components have comprehensive tests with 100% coverage
      - Zero linting issues, fully prepared for Phase 2 LLM Agent Migration
+   - Phase 2: LLM Agent Migration
+     - Created new core.LLMAgent with state-based execution
+     - Implemented full hook system (metrics, logging)
+     - Ultra-simple agent creation from strings
+     - Removed deprecated workflow package
+     - Updated all production examples
+     - Created .golangci.yml for build tag management
    
 2. **Built-in Components Implementation (Completed Phases 1-2.6, February 2, 2025)**:
    - Phase 1: Implemented comprehensive registry system with search and discovery

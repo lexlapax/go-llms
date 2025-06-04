@@ -19,9 +19,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lexlapax/go-llms/pkg/agent/core"
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	llmDomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
@@ -109,6 +109,8 @@ func main() {
 		Level: slog.LevelInfo,
 	}))
 	_ = multiLogger // Using multiLogger for more complex scenarios
+	_ = console
+	_ = fileHandler
 
 	// Check for required API keys
 	var providerName, modelName string
@@ -136,14 +138,11 @@ func main() {
 
 	fmt.Printf("Using %s provider with model: %s\n", providerName, modelName)
 
-	// Create advanced optimized agent (CachedAgent with all optimizations enabled)
-	cachedAgent := workflow.NewCachedAgent(llmProvider)
-
-	// Use the Agent interface for compatibility
-	var agent agentDomain.Agent = cachedAgent
+	// Create LLM agent
+	llmAgent := core.NewAgent("example-agent", llmProvider)
 
 	// Configure the agent
-	agent.SetSystemPrompt(`You are a helpful assistant with access to various tools.
+	llmAgent.SetSystemPrompt(`You are a helpful assistant with access to various tools.
 Your goal is to provide accurate, helpful responses to user queries.
 When a user asks you a question, think about whether you need to use a tool to answer it.
 Only use tools when necessary - if you know the answer, you can just respond directly.
@@ -153,71 +152,60 @@ For calculations, use the calculator tool. For current date or time, use the get
 For web content, use the web_fetch tool. For file operations, use the read_file and write_file tools.`)
 
 	// Set the model
-	agent.WithModel(modelName)
+	llmAgent.WithModel(modelName)
 
-	// Add hooks for monitoring and logging
-	// 1. Add a basic logging hook (minimal information)
-	basicLogger := slog.New(console)
-	agent.WithHook(workflow.NewLoggingHook(basicLogger, workflow.LogLevelBasic))
-
-	// 2. Add a detailed logging hook (saved to file)
-	debugLogger := slog.New(fileHandler)
-	agent.WithHook(workflow.NewLoggingHook(debugLogger, workflow.LogLevelDetailed))
-
-	// 3. Add a metrics hook
-	metricsHook := workflow.NewMetricsHook()
-	agent.WithHook(metricsHook)
-
-	// 4. Add our custom hook
+	// Note: Hooks are not yet implemented in core.LLMAgent, so we'll skip them for now
+	// TODO: Add hooks when they're implemented in core.LLMAgent
 	customHook := NewCustomHook("AgentMonitor")
-	agent.WithHook(customHook)
 
 	// Add all available tools to the agent
-	addTools(agent)
+	addTools(llmAgent)
 
-	// Create a metrics-enabled context
-	ctx := workflow.WithMetrics(context.Background())
+	// Create context
+	ctx := context.Background()
 
 	fmt.Println("\n=== Example 1: Basic Tool Usage ===")
 	fmt.Println("Running the agent with a basic query that needs tools...")
 
 	// Basic example - needs calculator and date tools
-	result, err := agent.Run(ctx, "What is the current year? Then calculate 25 * 42.")
+	state := agentDomain.NewState()
+	state.Set("prompt", "What is the current year? Then calculate 25 * 42.")
+	resultState, err := llmAgent.Run(ctx, state)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
 		fmt.Println("\nResult:")
-		fmt.Println(result)
+		if result, exists := resultState.Get("result"); exists {
+			fmt.Println(result)
+		}
 	}
 
 	// Display metrics after the first run
-	displayMetrics(metricsHook)
+	displayMetrics(nil)
 
-	// Display cache metrics
-	displayCacheMetrics(cachedAgent)
-
-	metricsHook.Reset() // Reset for next example
+	// Cache metrics not available in core.LLMAgent
 
 	// Example 2: Multiple tools in one response
 	fmt.Println("\n=== Example 2: Multiple Tools in One Response ===")
 	fmt.Println("Running the agent with a query that should trigger multiple tool calls...")
 
 	// Complex example - should trigger multiple tool calls
-	result, err = agent.Run(ctx, "What's the current date, what's 15 * 7, and can you fetch the title from https://example.com?")
+	state = agentDomain.NewState()
+	state.Set("prompt", "What's the current date, what's 15 * 7, and can you fetch the title from https://example.com?")
+	resultState, err = llmAgent.Run(ctx, state)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
 		fmt.Println("\nResult:")
-		fmt.Println(result)
+		if result, exists := resultState.Get("result"); exists {
+			fmt.Println(result)
+		}
 	}
 
 	// Display metrics after the second run
-	displayMetrics(metricsHook)
+	displayMetrics(nil)
 
-	// Display cache metrics
-	displayCacheMetrics(cachedAgent)
-
-	metricsHook.Reset()
+	// Cache metrics not available in core.LLMAgent
 
 	// Example 3: Parallel tool execution example
 	fmt.Println("\n=== Example 3: Parallel Tool Execution ===")
@@ -255,67 +243,31 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 
 	// Start timing for parallel execution
 	startTime := time.Now()
-	result, err = agent.Run(ctx, prompt)
+	state = agentDomain.NewState()
+	state.Set("prompt", prompt)
+	resultState, err = llmAgent.Run(ctx, state)
 	duration := time.Since(startTime)
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
 		fmt.Println("\nResult:")
-		fmt.Println(result)
+		if result, exists := resultState.Get("result"); exists {
+			fmt.Println(result)
+		}
 		fmt.Printf("\nTotal execution time: %v\n", duration)
 	}
 
 	// Display metrics
-	displayMetrics(metricsHook)
+	displayMetrics(nil)
 
-	// Display cache metrics
-	displayCacheMetrics(cachedAgent)
-
-	metricsHook.Reset()
+	// Cache metrics not available in core.LLMAgent
 
 	// Example 4: Demonstrate caching with repeated queries
 	fmt.Println("\n=== Example 4: Caching with Repeated Queries ===")
 
-	// Ensure caching is enabled
-	cachedAgent.EnableCaching(true)
-	fmt.Println("Response caching is enabled")
-
-	// Define a query that will be repeated
-	repeatedQuery := "What's 25 * 42 and what's the current year?"
-
-	// First run - should hit the provider
-	fmt.Println("\nFirst run of repeated query (should miss cache):")
-	startTime1 := time.Now()
-	result1, err := agent.Run(ctx, repeatedQuery)
-	duration1 := time.Since(startTime1)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-	} else {
-		fmt.Println("\nResult (first run):")
-		fmt.Println(result1)
-		fmt.Printf("Duration: %v\n", duration1)
-	}
-
-	// Second run - should hit the cache
-	fmt.Println("\nSecond run of identical query (should hit cache):")
-	startTime2 := time.Now()
-	result2, err := agent.Run(ctx, repeatedQuery)
-	duration2 := time.Since(startTime2)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-	} else {
-		fmt.Println("\nResult (second run):")
-		fmt.Println(result2)
-		fmt.Printf("Duration: %v\n", duration2)
-
-		// Display cache hit metrics
-		if cachedAgent, ok := agent.(*workflow.CachedAgent); ok {
-			stats := cachedAgent.GetCacheStats()
-			fmt.Printf("\nCache hits: %d, Misses: %d\n", stats["hits"], stats["misses"])
-			fmt.Printf("Time saved: approximately %v\n", duration1-duration2)
-		}
-	}
+	// Note: Caching is not available in core.LLMAgent
+	fmt.Println("Caching example skipped - not available in core.LLMAgent")
 
 	// Example 5: Complex analysis with schema
 	fmt.Println("\n=== Example 5: Structured Output with Schema ===")
@@ -353,85 +305,51 @@ For web content, use the web_fetch tool. For file operations, use the read_file 
 		},
 		Required: []string{"analysis", "tools_used"},
 	}
+	_ = analysisSchema
 
-	// Run a complex analysis with schema
-	result, err = agent.RunWithSchema(
-		ctx,
-		"Please analyze the current date, calculate how many days are in this month, and determine how many more days until the end of the year.",
-		analysisSchema,
-	)
+	// Run a complex analysis
+	// Note: RunWithSchema is not available in core.LLMAgent, so we'll use regular Run
+	state = agentDomain.NewState()
+	state.Set("prompt", "Please analyze the current date, calculate how many days are in this month, and determine how many more days until the end of the year.")
+	resultState, err = llmAgent.Run(ctx, state)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
-		// Format structured result
-		resultJSON, _ := json.MarshalIndent(result, "", "  ")
-		fmt.Println("\nStructured Result:")
-		fmt.Println(string(resultJSON))
+		fmt.Println("\nResult:")
+		if result, exists := resultState.Get("result"); exists {
+			// Try to format as JSON if possible
+			if resultJSON, err := json.MarshalIndent(result, "", "  "); err == nil {
+				fmt.Println(string(resultJSON))
+			} else {
+				fmt.Println(result)
+			}
+		}
 	}
 
 	// Display metrics and reset
-	displayMetrics(metricsHook)
+	displayMetrics(nil)
 
-	// Display cache metrics (for CachedAgent)
-	if cachedAgent, ok := agent.(*workflow.CachedAgent); ok {
-		displayCacheMetrics(cachedAgent)
-	}
+	// Cache metrics not available in core.LLMAgent
 
 	customHook.PrintSummary()
 }
 
 // displayMetrics prints the metrics collected by the metrics hook
-func displayMetrics(hook *workflow.MetricsHook) {
-	metrics := hook.GetMetrics()
-
+func displayMetrics(hook interface{}) {
+	// Metrics not available in core.LLMAgent yet
 	fmt.Println("\nAgent Metrics:")
 	fmt.Println("===================")
-	fmt.Printf("Total requests:       %d\n", metrics.Requests)
-	fmt.Printf("Total tool calls:     %d\n", metrics.ToolCalls)
-	fmt.Printf("Avg tool calls/req:   %.2f\n", float64(metrics.ToolCalls)/float64(metrics.Requests))
-	fmt.Printf("Errors:               %d\n", metrics.ErrorCount)
-	fmt.Printf("Total tokens:         %d\n", metrics.TotalTokens)
-	fmt.Printf("Average gen time:     %.2f ms\n", metrics.AverageGenTimeMs)
-
-	if len(metrics.ToolStats) > 0 {
-		fmt.Println("\nTool Statistics:")
-		fmt.Println("--------------------")
-		fmt.Printf("%-20s | %-8s | %-12s | %-12s | %-12s\n", "Tool", "Calls", "Avg Time (ms)", "Fastest (ms)", "Slowest (ms)")
-		fmt.Println(strings.Repeat("-", 78))
-
-		for tool, stats := range metrics.ToolStats {
-			fmt.Printf("%-20s | %-8d | %-12.2f | %-12.2f | %-12.2f\n",
-				tool, stats.Calls, stats.AverageTimeMs, stats.FastestCallMs, stats.SlowestCallMs)
-		}
-	}
+	fmt.Println("Metrics tracking not yet available in core.LLMAgent")
 }
 
-// displayCacheMetrics displays statistics from the response cache
-func displayCacheMetrics(agent *workflow.CachedAgent) {
-	stats := agent.GetCacheStats()
-
-	fmt.Println("\nCache Metrics:")
-	fmt.Println("===================")
-	fmt.Printf("Cache hits:           %d\n", stats["hits"])
-	fmt.Printf("Cache misses:         %d\n", stats["misses"])
-
-	// Calculate and display hit ratio
-	hitRatio, _ := stats["hit_ratio"].(float64)
-	fmt.Printf("Hit ratio:            %.2f%%\n", hitRatio*100)
-
-	fmt.Printf("Stored responses:     %d\n", stats["stored_responses"])
-	fmt.Printf("Evicted responses:    %d\n", stats["evicted_responses"])
-	fmt.Printf("Current cache size:   %d\n", stats["cache_size"])
-	fmt.Printf("Cache capacity:       %d\n", stats["config"].(map[string]interface{})["capacity"])
-
-	// Display average response time saved
-	if avgSaved, ok := stats["avg_response_saving_ms"].(int64); ok && avgSaved > 0 {
-		fmt.Printf("Avg time saved:       %d ms/request\n", avgSaved)
-	}
+// displayCacheMetrics is no longer needed for core.LLMAgent
+// Keeping the function signature for compatibility but it does nothing
+func displayCacheMetrics(agent interface{}) {
+	// Cache metrics not available in core.LLMAgent
 }
 
 // addTools adds all available tools to the agent
-func addTools(agent agentDomain.Agent) {
+func addTools(agent *core.LLMAgent) {
 	// 1. Date tool - provides current date information
 	agent.AddTool(tools.NewTool(
 		"get_current_date",

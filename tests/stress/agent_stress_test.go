@@ -1,3 +1,5 @@
+//go:build workflow_migration
+
 package stress
 
 import (

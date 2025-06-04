@@ -479,22 +479,19 @@ providerPool := llmutil.NewProviderPool(
     llmutil.StrategyRoundRobin,
 )
 
-// Create an agent with common configuration
-agentConfig := llmutil.AgentConfig{
-    Provider:      provider,
-    SystemPrompt:  "You are a helpful assistant with access to tools.",
-    EnableCaching: true,
-    Tools:         []agentDomain.Tool{calculatorTool},
-    Hooks:         []agentDomain.Hook{workflow.NewMetricsHook()},
-}
-agent := llmutil.CreateAgent(agentConfig)
+// Create an agent using core.LLMAgent
+agent := core.NewAgent("my-agent", provider)
+agent.SetSystemPrompt("You are a helpful assistant with access to tools.")
+agent.AddTool(calculatorTool)
 
 // Run an agent with timeout
-result, err := llmutil.RunWithTimeout(
-    agent,
-    "What is 7 * 6?",
-    10*time.Second, // timeout
-)
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+
+state := agentDomain.NewState()
+state.Set("prompt", "What is 7 * 6?")
+
+resultState, err := agent.Run(ctx, state)
 ```
 
 See the `cmd/examples/` directory for more comprehensive examples.
@@ -613,7 +610,7 @@ For more information on testing, see the [Testing Framework documentation](docs/
 
 ## Development Status
 
-### Current Version: v0.3.0
+### Current Version: v0.3.0 (Active Development)
 
 The core functionality is fairly complete and working. However, APIs are subject to change to accommodate new unforeseen developments in upstream APIs.
 
@@ -674,21 +671,26 @@ The core functionality is fairly complete and working. However, APIs are subject
   - Tool discovery: `tools.GetToolRegistry().Search("web")`
   - Consistent interfaces across all tool categories
   - Example applications for each tool category
-- 🏗️ **Agent Architecture Restructuring - Phase 1 Completed** (February 3, 2025):
-  - Implemented core infrastructure based on Google's Agent Development Kit patterns
-  - Created comprehensive domain interfaces:
-    - `BaseAgent`: Core agent interface with lifecycle and hierarchy support
-    - `State`: Thread-safe state management with values, artifacts, and messages
-    - `Event`: Comprehensive event system for agent lifecycle monitoring
-    - `Artifact`, `Config`, `Errors`: Supporting types
-  - Implemented core functionality:
-    - `BaseAgentImpl`: Common agent functionality implementation
-    - `StateManager`: State lifecycle, transforms, and merge strategies
-    - `EventDispatcher`: Asynchronous event distribution with filtering
-    - `AgentRegistry`: Agent discovery and management
-  - All components have thorough test coverage (domain: 52.9%, core: 38.9%)
+- 🏗️ **Agent Architecture Restructuring - Phase 1, 1.5 & 2 Completed** (February 3, 2025):
+  - **Phase 1**: Implemented core infrastructure based on Google's Agent Development Kit patterns
+    - Created comprehensive domain interfaces: `BaseAgent`, `State`, `Event`, `Artifact`, `Config`, `Errors`
+    - Implemented core functionality: `BaseAgentImpl`, `StateManager`, `EventDispatcher`, `AgentRegistry`
+    - All components have thorough test coverage (domain: 52.9%, core: 38.9%)
+  - **Phase 1.5**: Enhanced Core Infrastructure with advanced features
+    - `Handoff`: Agent delegation with fluent builder pattern
+    - `Guardrails`: Input/output validation framework
+    - `RunContext[D]`: Generic type-safe dependency injection
+    - `FunctionalEventStream`: Functional operations (filter, map, reduce)
+    - `StateValidator`: Built-in validators with composite logic
+    - `StateTransforms`: 15+ transformation functions
+    - `TracingHook`: OpenTelemetry-compatible instrumentation
+  - **Phase 2**: LLM Agent Migration completed
+    - New `core.LLMAgent` with state-based execution
+    - Ultra-simple agent creation: `NewAgentFromString("agent", "claude")`
+    - Full hook system integration (metrics, logging)
+    - Removed deprecated `workflow.Agent` package
+    - Updated examples to use new architecture
   - Created comprehensive architecture documentation: docs/technical/agents.md
-  - Laid foundation for next phases: LLM agents, workflow agents, and agent-tool integration
 
 **v0.2.7**
 - ✅ **Built-in Components Implementation (Phases 1-2.6)**

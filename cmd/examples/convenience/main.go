@@ -10,9 +10,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/lexlapax/go-llms/pkg/agent/core"
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
@@ -181,7 +181,7 @@ func main() {
 		}
 	}
 
-	// Example 6: Agent creation with convenience function
+	// Example 6: Agent creation with core.LLMAgent
 	fmt.Println("\n=== Example 6: Agent Creation ===")
 
 	// Create a simple calculator tool
@@ -209,29 +209,28 @@ func main() {
 		},
 	)
 
-	// Create an agent config
-	agentConfig := llmutil.AgentConfig{
-		Provider:      llmProvider,
-		SystemPrompt:  "You are a helpful assistant with access to tools.",
-		EnableCaching: true,
-		Tools:         []agentDomain.Tool{calculatorTool},
-		Hooks:         []agentDomain.Hook{workflow.NewMetricsHook()},
-	}
-
-	// Create the agent using the convenience function
-	agent := llmutil.CreateAgent(agentConfig)
+	// Create the agent using core.LLMAgent
+	agent := core.NewAgent("calculator-agent", llmProvider)
+	agent.SetSystemPrompt("You are a helpful assistant with access to tools.")
+	agent.AddTool(calculatorTool)
 
 	// Run the agent with a timeout
-	agentResult, agentErr := llmutil.RunWithTimeout(
-		agent,
-		"What is 7 * 6?",
-		10*time.Second, // timeout
-	)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	state := agentDomain.NewState()
+	state.Set("prompt", "What is 7 * 6?")
+
+	resultState, agentErr := agent.Run(ctx, state)
 
 	if agentErr != nil {
 		fmt.Printf("Agent error: %v\n", agentErr)
 	} else {
-		fmt.Printf("Agent result: %v\n", agentResult)
+		if result, exists := resultState.Get("result"); exists {
+			fmt.Printf("Agent result: %v\n", result)
+		} else {
+			fmt.Println("No result found in agent state")
+		}
 	}
 
 	fmt.Println("\nUtility Functions Demo Completed")

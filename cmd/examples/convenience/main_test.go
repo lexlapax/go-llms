@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lexlapax/go-llms/pkg/agent/core"
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
@@ -148,20 +148,10 @@ func TestAgentCreation(t *testing.T) {
 		},
 	)
 
-	// Create a metrics hook
-	metricsHook := workflow.NewMetricsHook()
-
-	// Create an agent config
-	agentConfig := llmutil.AgentConfig{
-		Provider:      mockProvider,
-		SystemPrompt:  "You are a helpful assistant with access to tools.",
-		EnableCaching: true,
-		Tools:         []agentDomain.Tool{calculatorTool},
-		Hooks:         []agentDomain.Hook{metricsHook},
-	}
-
-	// Create the agent
-	agent := llmutil.CreateAgent(agentConfig)
+	// Create the agent using core.LLMAgent
+	agent := core.NewAgent("test-agent", mockProvider)
+	agent.SetSystemPrompt("You are a helpful assistant with access to tools.")
+	agent.AddTool(calculatorTool)
 
 	if agent == nil {
 		t.Error("Agent creation failed, agent is nil")
@@ -171,14 +161,24 @@ func TestAgentCreation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	result, err := agent.Run(ctx, "What is 7 * 6?")
+	// Create state for the agent
+	state := agentDomain.NewState()
+	state.Set("prompt", "What is 7 * 6?")
+
+	resultState, err := agent.Run(ctx, state)
 
 	if err != nil {
 		t.Errorf("Error running agent: %v", err)
 	}
 
-	if result == nil {
-		t.Error("Agent result is nil")
+	if resultState == nil {
+		t.Error("Agent result state is nil")
+	} else {
+		if result, exists := resultState.Get("result"); !exists {
+			t.Error("No result in state")
+		} else if result == nil {
+			t.Error("Agent result is nil")
+		}
 	}
 }
 
@@ -186,31 +186,41 @@ func TestRunWithTimeout(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
 
 	// Create a simple agent
-	agent := workflow.NewAgent(mockProvider)
+	agent := core.NewAgent("test-agent", mockProvider)
 	agent.SetSystemPrompt("You are a helpful assistant.")
 
 	// Run with a reasonable timeout
-	result, err := llmutil.RunWithTimeout(
-		agent,
-		"What is 7 * 6?",
-		5*time.Second,
-	)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	state := agentDomain.NewState()
+	state.Set("prompt", "What is 7 * 6?")
+
+	resultState, err := agent.Run(ctx, state)
 
 	if err != nil {
 		t.Errorf("Error running with timeout: %v", err)
 	}
 
-	if result == nil {
-		t.Error("Result from RunWithTimeout is nil")
+	if resultState == nil {
+		t.Error("Result state from agent is nil")
+	} else {
+		if result, exists := resultState.Get("result"); !exists {
+			t.Error("No result in state")
+		} else if result == nil {
+			t.Error("Result from agent is nil")
+		}
 	}
 
 	// Run with a very short timeout to test timeout handling
 	// Note: This is expected to fail with a timeout error
-	_, err = llmutil.RunWithTimeout(
-		agent,
-		"Complex question that requires thinking",
-		1*time.Millisecond, // Extremely short timeout
-	)
+	shortCtx, shortCancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+	defer shortCancel()
+
+	state2 := agentDomain.NewState()
+	state2.Set("prompt", "Complex question that requires thinking")
+
+	_, err = agent.Run(shortCtx, state2)
 
 	// This may or may not timeout depending on the mock implementation speed
 	// So we don't test the error condition here as it's not deterministic

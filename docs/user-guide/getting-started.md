@@ -311,22 +311,19 @@ providerPool := llmutil.NewProviderPool(
     llmutil.StrategyRoundRobin,
 )
 
-// Create an agent with common configuration
-agentConfig := llmutil.AgentConfig{
-    Provider:      provider,
-    SystemPrompt:  "You are a helpful assistant with access to tools.",
-    EnableCaching: true,
-    Tools:         []agentDomain.Tool{calculatorTool},
-    Hooks:         []agentDomain.Hook{workflow.NewMetricsHook()},
-}
-agent := llmutil.CreateAgent(agentConfig)
+// Create an agent using core.LLMAgent
+agent := core.NewAgent("my-agent", provider)
+agent.SetSystemPrompt("You are a helpful assistant with access to tools.")
+agent.AddTool(calculatorTool)
 
 // Run an agent with timeout
-result, err := llmutil.RunWithTimeout(
-    agent,
-    "What is 7 * 6?",
-    10*time.Second, // timeout
-)
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+
+state := agentDomain.NewState()
+state.Set("prompt", "What is 7 * 6?")
+
+resultState, err := agent.Run(ctx, state)
 ```
 
 ## Next Steps

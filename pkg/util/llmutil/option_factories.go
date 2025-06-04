@@ -7,6 +7,7 @@ package llmutil
 import (
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 )
@@ -18,7 +19,7 @@ import (
 func WithPerformanceOptions() []domain.ProviderOption {
 	// Create a custom HTTP client with performance tuning
 	httpClient := &http.Client{
-		Timeout: 15,
+		Timeout: 15 * time.Second,
 		Transport: &http.Transport{
 			MaxIdleConns:        100,
 			MaxIdleConnsPerHost: 20,
@@ -39,7 +40,7 @@ func WithPerformanceOptions() []domain.ProviderOption {
 func WithReliabilityOptions() []domain.ProviderOption {
 	// Create a custom HTTP client with reliability tuning
 	httpClient := &http.Client{
-		Timeout: 30,
+		Timeout: 30 * time.Second,
 		Transport: &http.Transport{
 			MaxIdleConns:        200,
 			MaxIdleConnsPerHost: 50,

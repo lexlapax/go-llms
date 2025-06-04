@@ -1,7 +1,7 @@
-package workflow
+// ABOUTME: Provides logging hook for monitoring agent operations
+// ABOUTME: Allows configurable levels of logging detail for debugging and monitoring
 
-// ABOUTME: Provides hook system for agent workflows including built-in logging and metrics hooks
-// ABOUTME: Allows monitoring and customization of agent behavior through lifecycle callbacks
+package core
 
 import (
 	"context"

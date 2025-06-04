@@ -13,7 +13,8 @@ import (
 	// Import built-in file tools - this triggers auto-registration
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
+	"github.com/lexlapax/go-llms/pkg/agent/core"
+	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 )
 
@@ -219,21 +220,25 @@ func main() {
 
 		// Create provider and agent
 		p := provider.NewOpenAIProvider(apiKey, "gpt-4o-mini")
-		agent := workflow.NewAgent(p).
-			SetSystemPrompt("You are a helpful assistant that can read and write files.").
-			AddTool(readTool).
-			AddTool(writeTool)
+		agent := core.NewAgent("file-tools-agent", p)
+		agent.SetSystemPrompt("You are a helpful assistant that can read and write files.")
+		agent.AddTool(readTool)
+		agent.AddTool(writeTool)
 
 		// Use the agent
 		todoFile := filepath.Join(demoDir, "todo.md")
-		result, err := agent.Run(ctx, fmt.Sprintf(
+		state := agentDomain.NewState()
+		state.Set("prompt", fmt.Sprintf(
 			"Create a todo list file at %s with 3 tasks, then read it back and tell me what's in it.",
 			todoFile,
 		))
+		resultState, err := agent.Run(ctx, state)
 		if err != nil {
 			log.Printf("Error running agent: %v", err)
 		} else {
-			fmt.Printf("Agent response: %v\n", result)
+			if result, exists := resultState.Get("result"); exists {
+				fmt.Printf("Agent response: %v\n", result)
+			}
 		}
 	} else {
 		fmt.Println("\n=== Agent Example Skipped (no API key) ===")

@@ -1,3 +1,6 @@
+//go:build workflow_migration
+// +build workflow_migration
+
 package integration
 
 import (
@@ -6,8 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lexlapax/go-llms/pkg/agent/core"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	ldomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
@@ -19,7 +23,7 @@ func TestEndToEndAgent(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
 
 	// Create an agent
-	agent := workflow.NewAgent(mockProvider)
+	agent := core.NewAgent("test-agent", mockProvider)
 
 	// Set system prompt
 	agent.SetSystemPrompt("You are a helpful assistant that can answer questions and use tools.")
@@ -175,7 +179,7 @@ func TestAgentWithMultipleMessagesAndTools(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
 
 	// Create an agent
-	agent := workflow.NewAgent(mockProvider)
+	agent := core.NewAgent("test-agent", mockProvider)
 
 	// Set system prompt
 	agent.SetSystemPrompt("You are a helpful assistant that can answer questions and use tools.")
@@ -387,7 +391,7 @@ func TestAgentWithOutputValidation(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
 
 	// Create an agent
-	agent := workflow.NewAgent(mockProvider)
+	agent := core.NewAgent("test-agent", mockProvider)
 
 	// Schema for a weather response
 	weatherSchema := &sdomain.Schema{

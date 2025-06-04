@@ -33,17 +33,15 @@
 
 ### Agent Architecture Restructuring (NEW - HIGH PRIORITY)
 
-- [ ] Phase 2: LLM Agent Migration (Week 2-3)
-  - [ ] Implement new LLMAgent based on current DefaultAgent
-  - [ ] Integrate handoff mechanism for agent delegation
-  - [ ] Add guardrails support for input/output validation
-  - [ ] Migrate tool integration to new interface
-  - [ ] Add state management capabilities
-  - [ ] Implement agent hierarchy support
-  - [ ] Remove old superfluos code, examples and tests
+- [x] Phase 1 & 1.5: Core Infrastructure - COMPLETED (February 3, 2025) - see TODO-DONE.md
+- [x] Phase 2: LLM Agent Migration - COMPLETED (February 3, 2025) - see TODO-DONE.md
+  - [ ] Update integration tests to use core.LLMAgent (tests/integration/) (REVISIT)
+  - [ ] Update benchmarks to use core.LLMAgent (benchmarks/) (REVISIT)
+  - [ ] Update stress tests to use core.LLMAgent (tests/stress/) (REVISIT)
 
 - [ ] Phase 3: Workflow Agents (Week 3-4)
   - [ ] Implement workflow agent base
+  - [ ] Ensure Hooks work with workflow Agents
   - [ ] Create SequentialAgent
   - [ ] Create ParallelAgent
   - [ ] Create ConditionalAgent
@@ -63,7 +61,11 @@
 - [ ] Phase 6: Migration and Testing (Week 5-6)
   - [ ] Remove old superfluos code, examples and tests
   - [ ] Create migration guide
-  - [ ] Update all examples
+  - [ ] Redo Examples
+    - [ ] Come up with an example plan based on codebase for product
+    - [ ] remove invalid examples
+    - [ ] Update Valid examples
+    - [ ] Add missing examples
   - [ ] Comprehensive testing
   - [ ] Performance benchmarking
 

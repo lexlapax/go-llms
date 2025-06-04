@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"testing"
-	"time"
 
+	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	"github.com/lexlapax/go-llms/pkg/testutils"
 )
@@ -14,7 +13,7 @@ import (
 // TestAgentExample tests the basic agent functionality
 func TestAgentExample(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
-	agent := workflow.NewAgent(mockProvider)
+	agent := core.NewAgent("test-agent", mockProvider)
 
 	// Add a calculator tool
 	agent.AddTool(testutils.CreateCalculatorTool())
@@ -23,21 +22,24 @@ func TestAgentExample(t *testing.T) {
 	agent.SetSystemPrompt("You are a helpful math assistant.")
 
 	// Run the agent
-	result, err := agent.Run(context.Background(), "What is 2+2?")
+	state := domain.NewState()
+	state.Set("prompt", "What is 2+2?")
+	resultState, err := agent.Run(context.Background(), state)
 	if err != nil {
 		t.Fatalf("Agent failed to run: %v", err)
 	}
 
 	// The result should not be empty
-	if result == "" {
-		t.Errorf("Expected non-empty result, got empty string")
+	result, exists := resultState.Get("result")
+	if !exists || result == "" {
+		t.Errorf("Expected non-empty result, got empty or missing")
 	}
 }
 
-// TestCachedAgentExample tests the cached agent capabilities
-func TestCachedAgentExample(t *testing.T) {
+// TestLLMAgentExample tests the LLM agent capabilities
+func TestLLMAgentExample(t *testing.T) {
 	mockProvider := provider.NewMockProvider()
-	agent := workflow.NewCachedAgent(mockProvider)
+	agent := core.NewAgent("test-agent", mockProvider)
 
 	// Add a calculator tool
 	agent.AddTool(testutils.CreateCalculatorTool())
@@ -45,98 +47,77 @@ func TestCachedAgentExample(t *testing.T) {
 	// Set a system prompt
 	agent.SetSystemPrompt("You are a helpful assistant.")
 
-	// Run the agent twice with the same query to test caching
-	result1, err := agent.Run(context.Background(), "What is 2+2?")
+	// Run the agent twice with the same query
+	state1 := domain.NewState()
+	state1.Set("prompt", "What is 2+2?")
+	result1State, err := agent.Run(context.Background(), state1)
 	if err != nil {
 		t.Fatalf("First agent run failed: %v", err)
 	}
 
-	result2, err := agent.Run(context.Background(), "What is 2+2?")
+	state2 := domain.NewState()
+	state2.Set("prompt", "What is 2+2?")
+	result2State, err := agent.Run(context.Background(), state2)
 	if err != nil {
 		t.Fatalf("Second agent run failed: %v", err)
 	}
 
 	// Results should not be empty
-	if result1 == "" || result2 == "" {
+	result1, exists1 := result1State.Get("result")
+	result2, exists2 := result2State.Get("result")
+	if !exists1 || !exists2 || result1 == "" || result2 == "" {
 		t.Errorf("Expected non-empty results")
 	}
-
-	// Check cache stats to verify caching worked
-	stats := agent.GetCacheStats()
-	if stats["hits"].(int) < 1 {
-		t.Logf("Cache stats: %v", stats)
-		t.Errorf("Expected at least 1 cache hit, got %d", stats["hits"].(int))
-	}
 }
 
-// TestMessageManagerExample tests the message manager functionality
-func TestMessageManagerExample(t *testing.T) {
-	// Test message manager with modest limits
-	config := workflow.MessageManagerConfig{
-		UseTokenTruncation:    true,
-		KeepAllSystemMessages: true,
-	}
-	manager := workflow.NewMessageManager(5, 500, config)
+// TestAgentWithTools tests agent with multiple tools
+func TestAgentWithTools(t *testing.T) {
+	mockProvider := provider.NewMockProvider()
+	agent := core.NewAgent("test-agent", mockProvider)
 
-	// Test message management (rest of test implementation)
-	if manager.GetMessageCount() != 0 {
-		t.Errorf("Expected 0 messages initially, got %d", manager.GetMessageCount())
-	}
-}
+	// Add multiple tools
+	agent.AddTool(testutils.CreateCalculatorTool())
 
-// TestToolExecutorExample tests the tool executor functionality
-func TestToolExecutorExample(t *testing.T) {
-	// Create tool map
-	toolMap := make(map[string]domain.Tool)
-
-	// Add calculator tool
-	toolMap["calculator"] = testutils.MockTool{
-		ToolName:        "calculator",
-		ToolDescription: "Perform mathematical calculations",
-		Executor: func(ctx context.Context, params interface{}) (interface{}, error) {
-			return map[string]interface{}{
-				"result": 4,
-			}, nil
-		},
-	}
-
-	// Add date tool
-	toolMap["date"] = testutils.MockTool{
+	// Create a mock date tool
+	agent.AddTool(testutils.MockTool{
 		ToolName:        "date",
 		ToolDescription: "Get the current date",
 		Executor: func(ctx context.Context, params interface{}) (interface{}, error) {
 			return map[string]string{
-				"date": time.Now().Format("2006-01-02"),
+				"date": "2025-02-03",
 			}, nil
 		},
+	})
+
+	// Set system prompt
+	agent.SetSystemPrompt("You are a helpful assistant with access to tools.")
+
+	// Test listing tools
+	tools := agent.ListTools()
+	if len(tools) != 2 {
+		t.Errorf("Expected 2 tools, got %d", len(tools))
 	}
 
-	// Create executor
-	executor := workflow.NewToolExecutor(toolMap, 2, 1*time.Second, nil)
-
-	// Execute multiple tools
-	toolNames := []string{"calculator", "date"}
-	params := []interface{}{
-		map[string]interface{}{"expression": "2+2"},
-		nil,
+	// Test getting a specific tool
+	calcTool, exists := agent.GetTool("calculator")
+	if !exists {
+		t.Errorf("Expected calculator tool to exist")
+	}
+	if calcTool.Name() != "calculator" {
+		t.Errorf("Expected tool name 'calculator', got '%s'", calcTool.Name())
 	}
 
-	results := executor.ExecuteToolsParallel(context.Background(), toolNames, params)
-
-	// Check we have results for both tools
-	if len(results) != 2 {
-		t.Fatalf("Expected 2 results, got %d", len(results))
+	// Run agent with a query that might use tools
+	state := domain.NewState()
+	state.Set("prompt", "What is 10 * 5 and what's today's date?")
+	resultState, err := agent.Run(context.Background(), state)
+	if err != nil {
+		t.Fatalf("Agent run failed: %v", err)
 	}
 
-	// Calculator tool should have succeeded
-	calcResult, exists := results["calculator"]
-	if !exists || calcResult.Status != workflow.ToolStatusSuccess {
-		t.Errorf("Expected calculator success, got %v", calcResult.Status)
-	}
-
-	// Date tool should have succeeded
-	dateResult, exists := results["date"]
-	if !exists || dateResult.Status != workflow.ToolStatusSuccess {
-		t.Errorf("Expected date success, got %v", dateResult.Status)
+	// Check result exists
+	result, exists := resultState.Get("result")
+	if !exists || result == nil {
+		t.Errorf("Expected result in state")
 	}
 }
