@@ -1,7 +1,7 @@
 package main
 
-// ABOUTME: Example demonstrating metrics collection for provider operations
-// ABOUTME: Shows how to track latency, token usage, and pool utilization
+// ABOUTME: Example demonstrating metrics collection for provider operations with ToolContext
+// ABOUTME: Shows how to track latency, token usage, and tool execution with enhanced context
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	llmdomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
@@ -60,7 +61,12 @@ type CalculatorParams struct {
 }
 
 // Execute performs the calculation
-func (t *CalculatorTool) Execute(ctx context.Context, params interface{}) (interface{}, error) {
+func (t *CalculatorTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+	// Emit start event if available
+	if ctx.Events != nil {
+		ctx.Events.EmitMessage("Starting calculation")
+	}
+	
 	// Quick simulation of processing time
 	time.Sleep(10 * time.Millisecond)
 
@@ -75,6 +81,8 @@ func (t *CalculatorTool) Execute(ctx context.Context, params interface{}) (inter
 
 		if a, ok := paramsMap["a"].(float64); ok {
 			calcParams.A = a
+		} else if aInt, ok := paramsMap["a"].(int); ok {
+			calcParams.A = float64(aInt)
 		} else if aStr, ok := paramsMap["a"].(string); ok {
 			if aVal, err := strconv.ParseFloat(aStr, 64); err == nil {
 				calcParams.A = aVal
@@ -83,6 +91,8 @@ func (t *CalculatorTool) Execute(ctx context.Context, params interface{}) (inter
 
 		if b, ok := paramsMap["b"].(float64); ok {
 			calcParams.B = b
+		} else if bInt, ok := paramsMap["b"].(int); ok {
+			calcParams.B = float64(bInt)
 		} else if bStr, ok := paramsMap["b"].(string); ok {
 			if bVal, err := strconv.ParseFloat(bStr, 64); err == nil {
 				calcParams.B = bVal
@@ -91,10 +101,20 @@ func (t *CalculatorTool) Execute(ctx context.Context, params interface{}) (inter
 	}
 
 	// Perform the calculation
+	var result float64
 	switch calcParams.Operation {
 	case "add":
+		result = calcParams.A + calcParams.B
+		if ctx.Events != nil {
+			ctx.Events.EmitCustom("calculation_complete", map[string]interface{}{
+				"operation": "add",
+				"a": calcParams.A,
+				"b": calcParams.B,
+				"result": result,
+			})
+		}
 		return map[string]interface{}{
-			"result": calcParams.A + calcParams.B,
+			"result": result,
 		}, nil
 	case "subtract":
 		return map[string]interface{}{
@@ -149,18 +169,30 @@ func (t *DummyTool) Description() string {
 }
 
 // Execute runs the tool with parameters
-func (t *DummyTool) Execute(ctx context.Context, params interface{}) (interface{}, error) {
+func (t *DummyTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+	// Emit progress events
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(0, 100, fmt.Sprintf("Starting %s", t.name))
+	}
+	
 	// Simulate processing time
 	select {
 	case <-time.After(t.delay):
 		// Continue execution
-	case <-ctx.Done():
-		return nil, ctx.Err()
+		if ctx.Events != nil {
+			ctx.Events.EmitProgress(100, 100, fmt.Sprintf("Completed %s", t.name))
+		}
+	case <-ctx.Context.Done():
+		return nil, ctx.Context.Err()
 	}
 
 	// Random failure based on failPercent
 	if t.failPercent > 0 && time.Now().UnixNano()%100 < int64(t.failPercent) {
-		return nil, fmt.Errorf("tool %s failed (simulated failure)", t.name)
+		err := fmt.Errorf("tool %s failed (simulated failure)", t.name)
+		if ctx.Events != nil {
+			ctx.Events.EmitError(err)
+		}
+		return nil, err
 	}
 
 	// Return a dummy result
@@ -193,8 +225,24 @@ func main() {
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 
-	// Create provider
-	mockProvider := provider.NewMockProvider()
+	// Create provider - try to use a real provider if available
+	var llmProvider llmdomain.Provider
+	
+	// Try OpenAI first
+	if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
+		fmt.Println("🚀 Using OpenAI provider")
+		llmProvider = provider.NewOpenAIProvider(apiKey, "gpt-4o-mini")
+	} else if apiKey := os.Getenv("ANTHROPIC_API_KEY"); apiKey != "" {
+		fmt.Println("🚀 Using Anthropic provider")
+		llmProvider = provider.NewAnthropicProvider(apiKey, "claude-3-haiku-20240307")
+	} else if apiKey := os.Getenv("GEMINI_API_KEY"); apiKey != "" {
+		fmt.Println("🚀 Using Gemini provider")
+		llmProvider = provider.NewGeminiProvider(apiKey, "gemini-1.5-flash")
+	} else {
+		fmt.Println("⚠️  No API key found, using mock provider")
+		fmt.Println("   Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY to use a real provider")
+		llmProvider = provider.NewMockProvider()
+	}
 
 	// Create the metrics hook
 	metricsHook := core.NewLLMMetricsHook()
@@ -203,7 +251,7 @@ func main() {
 	loggingHook := core.NewLoggingHook(logger, core.LogLevelDetailed)
 
 	// Create agent with both hooks
-	agent := core.NewAgent("metrics-agent", mockProvider).
+	agent := core.NewAgent("metrics-agent", llmProvider).
 		WithHook(metricsHook).
 		WithHook(loggingHook)
 
@@ -212,6 +260,17 @@ func main() {
 	agent.AddTool(NewDummyTool("slowTool", 200*time.Millisecond, 0))
 	agent.AddTool(NewDummyTool("unreliableTool", 100*time.Millisecond, 30))
 	agent.AddTool(NewCalculatorTool())
+
+	// Set a system prompt to help the agent understand the tools
+	agent.SetSystemPrompt(`You are a helpful assistant with access to several tools:
+- calculator: Can perform basic math operations (add, subtract, multiply, divide)
+- fastTool: A fast tool for quick queries
+- slowTool: A slower tool for more detailed analysis
+- unreliableTool: A tool that sometimes fails (use with caution)
+
+When asked to calculate, use the calculator tool.
+When asked to use a specific tool, use that tool with appropriate parameters.
+Be concise in your responses.`)
 
 	// Setup context
 	ctx := context.Background()
@@ -242,14 +301,14 @@ func main() {
 // runAgentOperations runs the agent multiple times with different prompts
 func runAgentOperations(ctx context.Context, agent *core.LLMAgent, count int) {
 	prompts := []string{
-		"Calculate 123 + 456",
-		"What's the capital of France?",
-		"Use the fastTool with query 'test'",
-		"Use the slowTool with query 'analysis'",
-		"Use the unreliableTool with query 'risky'",
-		"Tell me about machine learning",
-		"Explain quantum computing",
-		"What is the square root of 144?",
+		"Calculate 123 + 456 using the calculator",
+		"Calculate 50 * 20 using the calculator tool",
+		"Use the fastTool with query 'test data'",
+		"Use the slowTool with query 'detailed analysis'", 
+		"Use the unreliableTool with query 'risky operation'",
+		"Calculate 100 / 4 using the calculator",
+		"Calculate 999 - 333 using the calculator tool",
+		"Use the fastTool to check the status of 'system'",
 	}
 
 	for i := 0; i < count && i < len(prompts); i++ {

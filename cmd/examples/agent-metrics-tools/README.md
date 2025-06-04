@@ -1,15 +1,17 @@
-# Metrics and Monitoring Example
+# Agent Metrics with Tools Example
 
-This example demonstrates how to use hooks for monitoring and collecting metrics in Go-LLMs agents.
+This example demonstrates how to collect detailed metrics from an LLM agent that uses tools, including real-time monitoring and comprehensive statistics.
 
 ## Overview
 
 The example showcases:
 
-1. **Metrics Collection**: Using the `MetricsHook` to gather statistics about agent operations
-2. **Detailed Logging**: Using the `LoggingHook` for real-time visibility into agent actions
-3. **Custom Tools**: Creating tools with configurable performance characteristics for testing
-4. **Combined Hooks**: Using multiple hooks simultaneously for comprehensive monitoring
+1. **Real LLM Providers**: Works with OpenAI, Anthropic, Gemini, or falls back to mock provider
+2. **ToolContext Pattern**: All tools use the new `domain.ToolContext` for enhanced execution context
+3. **Metrics Collection**: Using the `MetricsHook` to gather statistics about agent operations
+4. **Detailed Logging**: Using the `LoggingHook` for real-time visibility into agent actions
+5. **Custom Tools**: Creating tools with configurable performance characteristics and event emission
+6. **Combined Hooks**: Using multiple hooks simultaneously for comprehensive monitoring
 
 ## Key Components
 
@@ -31,14 +33,19 @@ The example uses two hook implementations:
    - Error events
    - Content details (configurable verbosity)
 
-### Simulated Tools
+### Tools with ToolContext
 
-The example includes test tools with configurable characteristics:
+The example includes test tools that demonstrate the new ToolContext pattern:
 
-- **Fast Tool**: Responds quickly with minimal latency
-- **Slow Tool**: Simulates a high-latency external API
-- **Unreliable Tool**: Simulates occasional failures (configurable failure rate)
-- **Calculator Tool**: A real functional tool for calculations
+- **Calculator Tool**: A real functional tool for calculations with event emission
+- **Fast Tool**: Responds quickly (50ms) with progress events
+- **Slow Tool**: Simulates a high-latency external API (200ms)
+- **Unreliable Tool**: Simulates occasional failures (30% failure rate) with error events
+
+All tools implement the updated signature:
+```go
+func (t *Tool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error)
+```
 
 ## How Hooks Work
 
@@ -61,18 +68,33 @@ Each hook implements callbacks for these four events:
 
 ## Running the Example
 
-Build and run the example:
+The example automatically detects available LLM providers:
 
 ```bash
-make example EXAMPLE=metrics
-./bin/metrics
+# With OpenAI
+export OPENAI_API_KEY=your-key-here
+go run main.go
+
+# With Anthropic
+export ANTHROPIC_API_KEY=your-key-here
+go run main.go
+
+# With Gemini
+export GEMINI_API_KEY=your-key-here
+go run main.go
+
+# Or build and run
+make example EXAMPLE=agent-metrics-tools
+./bin/agent-metrics-tools
 ```
 
 The output will show:
 
-1. Detailed logs of agent operations in real-time
-2. A summary of metrics collected during agent operations
-3. A demonstration of metrics reset functionality
+1. Which LLM provider is being used
+2. Detailed logs of agent operations in real-time
+3. Actual tool calls being made with real calculations
+4. A summary of metrics collected during agent operations
+5. A demonstration of metrics reset functionality
 
 ## Implementing Your Own Hooks
 
@@ -106,46 +128,46 @@ Common hook use cases:
 
 ## Example Metrics Output
 
-The metrics report provides insights like:
+With a real LLM provider, the metrics report shows actual tool execution:
 
 ```
+🚀 Using OpenAI provider
+
 📊 Agent Metrics Report
 ====================
-Total Requests:      5
-Total Tool Calls:    7
+Total Requests:      10
+Total Tool Calls:    5
 Error Count:         1
-Estimated Tokens:    1529
-Avg Generation Time: 35.42 ms
+Estimated Tokens:    3063
+Avg Generation Time: 953.90 ms
 
 🔧 Tool Statistics
 -----------------
 {
   "calculator": {
-    "Calls": 1,
-    "AverageTimeMs": 2.0,
-    "FastestCallMs": 2.0,
-    "SlowestCallMs": 2.0
+    "Calls": 2,
+    "AverageTimeMs": 11,
+    "FastestCallMs": 11,
+    "SlowestCallMs": 11
   },
   "fastTool": {
-    "Calls": 2,
-    "AverageTimeMs": 50.5,
-    "FastestCallMs": 50.0,
-    "SlowestCallMs": 51.0
+    "Calls": 1,
+    "AverageTimeMs": 51,
+    "FastestCallMs": 51,
+    "SlowestCallMs": 51
   },
   "slowTool": {
-    "Calls": 2,
-    "AverageTimeMs": 200.5,
-    "FastestCallMs": 200.0,
-    "SlowestCallMs": 201.0
-  },
-  "unreliableTool": {
-    "Calls": 2,
-    "AverageTimeMs": 100.0,
-    "FastestCallMs": 100.0,
-    "SlowestCallMs": 100.0
+    "Calls": 1,
+    "AverageTimeMs": 201,
+    "FastestCallMs": 201,
+    "SlowestCallMs": 201
   }
 }
 ```
+
+The calculator successfully performs operations like:
+- Calculate 123 + 456 = 579
+- Calculate 50 * 20 = 1000
 
 ## Best Practices
 

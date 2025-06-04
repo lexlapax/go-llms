@@ -1,14 +1,15 @@
-# Multimodal Example
+# Provider Multimodal Example
 
-This example demonstrates the multimodal capabilities of the go-llms library, showcasing how to work with different content types including text, images, audio, video, and mixed content.
+This example demonstrates the multimodal capabilities across different LLM providers in the go-llms library, showcasing how each provider handles various content types including text, images, audio, video, and mixed content.
 
 ## Features
 
-- Support for multiple LLM providers (OpenAI, Anthropic, Gemini)
+- Comparison of multimodal support across providers (OpenAI, Anthropic, Gemini)
 - Multiple content modes: text, image, audio, video, and mixed
 - Automatic MIME type detection
-- Provider compatibility checking
+- Provider-specific capability checking
 - Multiple file attachments support
+- Clear demonstration of each provider's multimodal strengths
 
 ## Prerequisites
 
@@ -97,15 +98,15 @@ The example includes comprehensive error handling:
 
 ```bash
 # From the project root
-make build-example EXAMPLE=multimodal
+make build-example EXAMPLE=provider-multimodal
 
 # Or directly
-go build -o multimodal cmd/examples/multimodal/main.go
+go build -o provider-multimodal cmd/examples/provider-multimodal/main.go
 ```
 
 ## Testing
 
 ```bash
 # Run the example tests
-go test ./cmd/examples/multimodal/...
+go test ./cmd/examples/provider-multimodal/...
 ```

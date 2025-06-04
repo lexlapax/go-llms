@@ -1,6 +1,6 @@
-# Model Info Example
+# Utils Model Info Example
 
-This example demonstrates how to use the ModelInfo service to fetch and display information about models available from various LLM providers.
+This example demonstrates the model discovery utility in the go-llms library, showcasing how to fetch and display information about models available from various LLM providers.
 
 ## Features
 

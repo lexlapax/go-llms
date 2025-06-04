@@ -393,18 +393,19 @@ cd workflow-hooks && go run main.go
 
 ### Content and Media
 
-#### [**Multimodal**](multimodal/README.md)
-Working with text, images, audio, video, and file content.
+#### [**Provider Multimodal**](provider-multimodal/README.md)
+Comparison of multimodal capabilities across different LLM providers.
 
 **Features:**
-- Image processing
-- File uploads
-- Audio/video handling
-- URL-based content
+- Provider-specific multimodal support (OpenAI, Anthropic, Gemini)
+- Image processing across all providers
+- Audio/video handling (Gemini only)
+- File uploads and URL-based content
+- Provider compatibility matrix
 
 ```bash
 export OPENAI_API_KEY="your-key"
-cd multimodal && go run main.go --image image.jpg --text "Describe this image"
+cd provider-multimodal && go run main.go -provider openai -mode image -a image.jpg
 ```
 
 ### Configuration and Options
@@ -448,10 +449,10 @@ Type coercion and data conversion for validation.
 cd coercion && go run main.go
 ```
 
-### Model Discovery and Information
+### Utilities
 
-#### [**Model Info**](modelinfo/README.md) 🆕
-**Discover and explore available models from all LLM providers with capability filtering and caching.**
+#### [**Utils Model Info**](utils-modelinfo/README.md) 🆕
+**Model discovery utility to explore available models from all LLM providers with capability filtering and caching.**
 
 **Features:**
 - **Automatic model discovery** from OpenAI, Anthropic, and Google Gemini
@@ -468,7 +469,7 @@ export OPENAI_API_KEY="your-openai-key"
 export ANTHROPIC_API_KEY="your-anthropic-key"  # Optional - has fallback data
 export GEMINI_API_KEY="your-gemini-key"
 
-cd modelinfo
+cd utils-modelinfo
 
 # Get all available models
 go run main.go
@@ -494,18 +495,21 @@ go run main.go --fresh --metadata
 
 ### Monitoring and Performance
 
-#### [**Metrics**](metrics/README.md)
-Performance monitoring and metrics collection.
+#### [**Agent Metrics Tools**](agent-metrics-tools/README.md)
+Performance monitoring and metrics collection for agents with tools.
 
 **Features:**
+- Real LLM provider support (OpenAI, Anthropic, Gemini)
+- ToolContext pattern demonstration
 - Response time tracking
 - Token usage monitoring
+- Tool execution statistics
 - Error rate analysis
-- Custom metrics
+- Event emission from tools
 
 ```bash
 export OPENAI_API_KEY="your-key"
-cd metrics && go run main.go
+cd agent-metrics-tools && go run main.go
 ```
 
 #### [**Profiling**](profiling/README.md)
@@ -524,24 +528,24 @@ cd profiling && go run main.go
 
 ### By Complexity
 - **Beginner**: `simple`, `schema`, `coercion`, `agent-simple-llm`
-- **Intermediate**: `provider-openai`, `provider-anthropic`, `provider-gemini`, `provider-options`, `multimodal`, `modelinfo`, `agent-custom-calculator`
-- **Advanced**: `multi`, `consensus`, `agent-structured-output`, `agent-custom-*`, `workflow-*`, `metrics`, `profiling`
+- **Intermediate**: `provider-openai`, `provider-anthropic`, `provider-gemini`, `provider-options`, `provider-multimodal`, `utils-modelinfo`, `agent-custom-calculator`
+- **Advanced**: `multi`, `consensus`, `agent-structured-output`, `agent-custom-*`, `workflow-*`, `agent-metrics-tools`, `profiling`
 
 ### By Use Case
 - **Text Generation**: `simple`, `provider-openai`, `provider-anthropic`, `provider-gemini`
-- **Multimodal**: `multimodal`, `provider-gemini`
+- **Multimodal**: `provider-multimodal`, `provider-gemini`
 - **Configuration**: `provider-options`, `convenience`
 - **Data Validation**: `schema`, `coercion`
 - **Multiple Providers**: `multi`, `consensus`
 - **Tools & Agents**: `agent-structured-output`, `agent-simple-llm`, `agent-custom-*`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`
-- **Model Discovery**: `modelinfo`
-- **Monitoring**: `metrics`, `profiling`
+- **Model Discovery**: `utils-modelinfo`
+- **Monitoring**: `agent-metrics-tools`, `profiling`
 
 ### By Provider
-- **OpenAI**: `provider-openai`, `multimodal`, `agent-structured-output`, `agent-simple-llm`
-- **Anthropic**: `provider-anthropic`
-- **Google Gemini**: `provider-gemini`
-- **Multiple**: `multi`, `consensus`, `modelinfo`
+- **OpenAI**: `provider-openai`, `provider-multimodal`, `agent-structured-output`, `agent-simple-llm`
+- **Anthropic**: `provider-anthropic`, `provider-multimodal`
+- **Google Gemini**: `provider-gemini`, `provider-multimodal`
+- **Multiple**: `multi`, `consensus`, `utils-modelinfo`
 - **Compatible APIs**: `provider-openai-compatible`
 - **Mock/Provider Agnostic**: `simple`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`
 
@@ -583,7 +587,7 @@ You can build all examples at once using the provided Makefile from the project 
 make build-examples
 
 # Build a specific example
-make build-example EXAMPLE=modelinfo
+make build-example EXAMPLE=utils-modelinfo
 
 # Clean all built examples
 make clean-examples

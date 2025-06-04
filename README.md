@@ -542,7 +542,7 @@ The library includes comprehensive example applications that demonstrate key fea
 
 **Quick Start Examples:**
 - [Simple Example](cmd/examples/simple/README.md) - Basic usage with mock providers
-- [Model Info Example](cmd/examples/modelinfo/README.md) - **NEW** - Model discovery and capability information
+- [Utils Model Info Example](cmd/examples/utils-modelinfo/README.md) - **NEW** - Model discovery utility
 - [Provider Options Example](cmd/examples/provider-options/README.md) - Configuration patterns
 
 **Built-in Tools Examples:**
@@ -565,7 +565,7 @@ The library includes comprehensive example applications that demonstrate key fea
 - [Agent Structured Output](cmd/examples/agent-structured-output/README.md) - Structured output with schemas
 - [Multi-Provider Example](cmd/examples/multi/README.md) - Multiple provider strategies
 - [Consensus Example](cmd/examples/consensus/README.md) - Consensus and voting mechanisms
-- [Multimodal Example](cmd/examples/multimodal/README.md) - Text, images, audio, and video
+- [Provider Multimodal Example](cmd/examples/provider-multimodal/README.md) - Multimodal capabilities across providers
 
 **Workflow Agents** *(NEW - February 3, 2025)*:
 - [Sequential Workflow](cmd/examples/workflow-sequential/README.md) - Step-by-step processing with error handling
@@ -744,7 +744,7 @@ The core functionality is fairly complete and working. However, APIs are subject
   - Updated all import paths and maintained backward compatibility
   - Improved logical organization and reduced package proliferation
 - ✅ **New ModelInfo CLI Example**
-  - Added comprehensive `cmd/examples/modelinfo` application
+  - Added comprehensive `cmd/examples/utils-modelinfo` application
   - Command-line interface for model discovery and filtering
   - Support for filtering by provider, capability, and model name patterns
   - Detailed model information display with JSON output
@@ -784,7 +784,7 @@ The core functionality is fairly complete and working. However, APIs are subject
   - Complete test coverage for new implementation
 
 **v0.2.1**
-- ✅ Added comprehensive multimodal example application
+- ✅ Added comprehensive provider-multimodal example application
   - Complete CLI example with file/URL input
   - Support for text, images, audio, and video content
   - Detailed documentation and usage instructions
