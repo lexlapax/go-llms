@@ -543,7 +543,7 @@ The library includes comprehensive example applications that demonstrate key fea
 **Quick Start Examples:**
 - [Simple Example](cmd/examples/simple/README.md) - Basic usage with mock providers
 - [Model Info Example](cmd/examples/modelinfo/README.md) - **NEW** - Model discovery and capability information
-- [Provider Options Example](cmd/examples/provider_options/README.md) - Configuration patterns
+- [Provider Options Example](cmd/examples/provider-options/README.md) - Configuration patterns
 
 **Built-in Tools Examples:**
 - [Built-in Tools Discovery](cmd/examples/builtins-discovery/README.md) - Discover and use built-in tools
@@ -555,13 +555,14 @@ The library includes comprehensive example applications that demonstrate key fea
 - [Built-in Feed Tools](cmd/examples/builtins-feed-tools/README.md) - **NEW** - RSS, Atom, JSON Feed processing
 
 **Provider Integration:**
-- [OpenAI Example](cmd/examples/openai/README.md) - GPT-4o and GPT-4 Turbo integration
-- [Anthropic Example](cmd/examples/anthropic/README.md) - Claude 3.5 Sonnet integration
-- [Gemini Example](cmd/examples/gemini/README.md) - Google Gemini 2.0 Flash integration
-- [OpenAI Compatible Providers](cmd/examples/openai_api_compatible_providers/README.md) - OpenRouter and Ollama
+- [Provider OpenAI](cmd/examples/provider-openai/README.md) - GPT-4o and GPT-4 Turbo integration
+- [Provider Anthropic](cmd/examples/provider-anthropic/README.md) - Claude 3.5 Sonnet integration
+- [Provider Gemini](cmd/examples/provider-gemini/README.md) - Google Gemini 2.0 Flash integration
+- [Provider OpenAI Compatible](cmd/examples/provider-openai-compatible/README.md) - OpenRouter and Ollama
 
 **Advanced Features:**
-- [Agent Example](cmd/examples/agent/README.md) - Agent workflows with tools
+- [Agent Simple LLM](cmd/examples/agent-simple-llm/README.md) - Ultra-simple agent creation
+- [Agent Structured Output](cmd/examples/agent-structured-output/README.md) - Structured output with schemas
 - [Multi-Provider Example](cmd/examples/multi/README.md) - Multiple provider strategies
 - [Consensus Example](cmd/examples/consensus/README.md) - Consensus and voting mechanisms
 - [Multimodal Example](cmd/examples/multimodal/README.md) - Text, images, audio, and video

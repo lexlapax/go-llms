@@ -26,8 +26,8 @@ export ANTHROPIC_API_KEY=your_anthropic_key
 export GEMINI_API_KEY=your_gemini_key
 
 # Build and run
-make example EXAMPLE=provider_options
-./bin/provider_options
+make example EXAMPLE=provider-options
+./bin/provider-options
 ```
 
 ## Code Structure

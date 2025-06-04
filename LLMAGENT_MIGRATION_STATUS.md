@@ -35,7 +35,7 @@ Successfully updated the following examples to use `core.LLMAgent`:
 - `cmd/examples/builtins-discovery/main.go` - Tool discovery example
 - `cmd/examples/convenience/main.go` - Convenience utilities example
 - `cmd/examples/metrics/main.go` - Metrics example (now uses new hooks)
-- `cmd/examples/simple-llm-agent/main.go` - Simple agent example
+- `cmd/examples/agent-simple-llm/main.go` - Simple agent example
 
 ### 5. Package Cleanup ✓
 - Removed `pkg/agent/workflow` package entirely

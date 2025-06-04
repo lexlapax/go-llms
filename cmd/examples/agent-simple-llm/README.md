@@ -1,4 +1,4 @@
-# Simple LLM Agent Example
+# Agent Simple LLM Example
 
 This example demonstrates the ultra-simple agent creation feature introduced in Phase 2 of the agent architecture restructuring.
 
@@ -19,8 +19,8 @@ export ANTHROPIC_API_KEY=your-key-here
 export GEMINI_API_KEY=your-key-here
 
 # Build and run
-go build -o simple-llm-agent
-./simple-llm-agent
+go build -o agent-simple-llm
+./agent-simple-llm
 ```
 
 ## Examples

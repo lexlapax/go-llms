@@ -43,10 +43,10 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 
 ### Basic Examples
 - [Simple Example](/cmd/examples/simple/README.md) - Basic usage with mock providers
-- [Anthropic Example](/cmd/examples/anthropic/README.md) - Integration with Anthropic Claude
-- [OpenAI Example](/cmd/examples/openai/README.md) - Integration with OpenAI models
-- [Gemini Example](/cmd/examples/gemini/README.md) - Integration with Google Gemini
-- [OpenAI API Compatible Providers](/cmd/examples/openai_api_compatible_providers/README.md) - Using OpenRouter and Ollama
+- [Provider Anthropic](/cmd/examples/provider-anthropic/README.md) - Integration with Anthropic Claude
+- [Provider OpenAI](/cmd/examples/provider-openai/README.md) - Integration with OpenAI models
+- [Provider Gemini](/cmd/examples/provider-gemini/README.md) - Integration with Google Gemini
+- [Provider OpenAI Compatible](/cmd/examples/provider-openai-compatible/README.md) - Using OpenRouter and Ollama
 
 ### Built-in Tools Examples
 - [Built-in Components Examples Guide](/cmd/examples/BUILTINS_EXAMPLES.md) - Complete guide to using built-in components
@@ -59,10 +59,11 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Built-in Feed Tools](/cmd/examples/builtins-feed-tools/README.md) - RSS, Atom, and JSON Feed processing (fetch, filter, aggregate, convert)
 
 ### Advanced Examples
-- [Agent Example](/cmd/examples/agent/README.md) - Agent with tools
+- [Agent Simple LLM](/cmd/examples/agent-simple-llm/README.md) - Ultra-simple agent creation
+- [Agent Structured Output](/cmd/examples/agent-structured-output/README.md) - Structured output with schemas
 - [Multi-Provider Example](/cmd/examples/multi/README.md) - Working with multiple providers
 - [Consensus Example](/cmd/examples/consensus/README.md) - Multi-provider consensus strategies
-- [Provider Options Example](/cmd/examples/provider_options/README.md) - Demonstration of provider options system
+- [Provider Options Example](/cmd/examples/provider-options/README.md) - Demonstration of provider options system
 - [Schema Example](/cmd/examples/schema/README.md) - Schema generation from Go structs
 - [Coercion Example](/cmd/examples/coercion/README.md) - Type coercion for validation
 - [Convenience Example](/cmd/examples/convenience/README.md) - Utility functions for common tasks

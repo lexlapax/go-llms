@@ -37,7 +37,7 @@ Successfully implemented a comprehensive hook system:
 
 ### 5. Example Updates
 Updated all production examples to use the new LLMAgent:
-- `cmd/examples/agent/main.go` - Basic agent example
+- `cmd/examples/agent-structured-output/main.go` - Structured output agent example
 - `cmd/examples/builtins-file-tools/main.go` - File tools example
 - `cmd/examples/builtins-feed-tools/main.go` - Feed tools example
 - `cmd/examples/builtins-discovery/main.go` - Tool discovery example
@@ -112,7 +112,7 @@ agent, _ := core.NewAgentFromString("assistant", "claude")  // Uses alias
 - `pkg/agent/core/logging_hook.go` - LoggingHook implementation
 - `pkg/util/llmutil/provider_parser.go` - Provider string parsing
 - `pkg/util/llmutil/provider_parser_test.go` - Parser tests
-- `cmd/examples/simple-llm-agent/main.go` - Example usage
+- `cmd/examples/agent-simple-llm/main.go` - Example usage
 - `.golangci.yml` - Linting configuration with build tags
 - `LLMAGENT_MIGRATION_STATUS.md` - Migration tracking document
 - `PHASE2_SUMMARY.md` - This summary document

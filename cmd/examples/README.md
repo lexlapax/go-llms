@@ -145,7 +145,7 @@ cd builtins-feed-tools && go run main.go
 
 ### Provider Integration
 
-#### [**OpenAI**](openai/README.md)
+#### [**Provider OpenAI**](provider-openai/README.md)
 Integration with OpenAI's GPT models including GPT-4o and GPT-4 Turbo.
 
 **Features:**
@@ -156,10 +156,10 @@ Integration with OpenAI's GPT models including GPT-4o and GPT-4 Turbo.
 
 ```bash
 export OPENAI_API_KEY="your-key"
-cd openai && go run main.go
+cd provider-openai && go run main.go
 ```
 
-#### [**Anthropic**](anthropic/README.md)
+#### [**Provider Anthropic**](provider-anthropic/README.md)
 Integration with Anthropic's Claude models including Claude 3.5 Sonnet.
 
 **Features:**
@@ -169,10 +169,10 @@ Integration with Anthropic's Claude models including Claude 3.5 Sonnet.
 
 ```bash
 export ANTHROPIC_API_KEY="your-key"
-cd anthropic && go run main.go
+cd provider-anthropic && go run main.go
 ```
 
-#### [**Gemini**](gemini/README.md)
+#### [**Provider Gemini**](provider-gemini/README.md)
 Integration with Google's Gemini models including Gemini 2.0 Flash.
 
 **Features:**
@@ -182,10 +182,10 @@ Integration with Google's Gemini models including Gemini 2.0 Flash.
 
 ```bash
 export GEMINI_API_KEY="your-key"
-cd gemini && go run main.go
+cd provider-gemini && go run main.go
 ```
 
-#### [**OpenAI API Compatible Providers**](openai_api_compatible_providers/README.md)
+#### [**Provider OpenAI Compatible**](provider-openai-compatible/README.md)
 Working with OpenAI-compatible APIs like OpenRouter and Ollama.
 
 **Features:**
@@ -195,7 +195,7 @@ Working with OpenAI-compatible APIs like OpenRouter and Ollama.
 
 ```bash
 export OPENROUTER_API_KEY="your-key"
-cd openai_api_compatible_providers && go run main.go
+cd provider-openai-compatible && go run main.go
 ```
 
 ### Advanced Features
@@ -229,19 +229,98 @@ export GEMINI_API_KEY="your-key"
 cd consensus && go run main.go
 ```
 
-#### [**Agent**](agent/README.md)
-Agent workflows with tool integration for complex tasks.
+#### [**Agent Structured Output**](agent-structured-output/README.md)
+LLM agents with structured output validation using schemas.
 
 **Features:**
-- Tool calling
-- Workflow orchestration
-- Message history
-- Monitoring hooks
+- Schema-driven LLM interactions
+- Type-safe processing
+- Complex data structures
+- Real-world use cases (tasks, meetings, analysis)
 
 ```bash
 export OPENAI_API_KEY="your-key"
-cd agent && go run main.go
+cd agent-structured-output && go run main.go
 ```
+
+#### [**Agent Simple LLM**](agent-simple-llm/README.md)
+Ultra-simple agent creation with string-based provider specification.
+
+**Features:**
+- Minimal agent setup
+- Provider/model aliases
+- String-based configuration
+- State-based interface
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd agent-simple-llm && go run main.go
+```
+
+### Custom Agents *(NEW - February 3, 2025)*
+
+Custom agents provide ultimate flexibility for implementing arbitrary orchestration logic beyond predefined workflow patterns. They can coordinate multiple sub-agents, integrate with external systems, and implement complex conditional logic using standard Go language constructs.
+
+#### [**Agent Custom Story**](agent-custom-story/README.md)
+Multi-LLM coordination with conditional logic for story generation, review, and editing.
+
+**Features:**
+- Sub-agent orchestration
+- Conditional logic based on analysis results
+- State management across multiple steps
+- Event emission for monitoring
+
+```bash
+cd agent-custom-story && go run main.go
+```
+
+#### [**Agent Custom Calculator**](agent-custom-calculator/README.md)
+Pure computational logic without LLM dependencies.
+
+**Features:**
+- Stateless computation patterns
+- Input validation and error handling
+- Simple custom agent implementation
+- Integration with workflow agents
+
+```bash
+cd agent-custom-calculator && go run main.go
+```
+
+#### [**Agent Custom Data Pipeline**](agent-custom-data-pipeline/README.md)
+Database operations combined with data validation and processing.
+
+**Features:**
+- External system integration (mock database)
+- Sub-agent coordination for validation and processing
+- Error handling and rollback patterns
+- Complex state management
+
+```bash
+cd agent-custom-data-pipeline && go run main.go
+```
+
+#### [**Agent Custom API Orchestrator**](agent-custom-api-orchestrator/README.md)
+Multiple API calls with retries, fallbacks, and aggregation.
+
+**Features:**
+- External API integration patterns
+- Retry logic with exponential backoff
+- Parallel API calls with result aggregation
+- Timeout and error handling
+
+```bash
+cd agent-custom-api-orchestrator && go run main.go
+```
+
+**Key Patterns in Custom Agents:**
+
+1. **Sub-Agent Orchestration** - Coordinate multiple agents with custom logic
+2. **External Integration** - Connect with databases, APIs, and external systems
+3. **Complex State Management** - Manage state across multiple operations
+4. **Error Recovery** - Implement retry logic and rollback patterns
+
+Custom agents integrate seamlessly with workflow agents and can be used as building blocks in larger systems.
 
 ### Workflow Agents *(NEW - February 3, 2025)*
 
@@ -330,7 +409,7 @@ cd multimodal && go run main.go --image image.jpg --text "Describe this image"
 
 ### Configuration and Options
 
-#### [**Provider Options**](provider_options/README.md)
+#### [**Provider Options**](provider-options/README.md)
 Demonstration of the provider option system for configuration.
 
 **Features:**
@@ -340,7 +419,7 @@ Demonstration of the provider option system for configuration.
 
 ```bash
 export OPENAI_API_KEY="your-key"
-cd provider_options && go run main.go
+cd provider-options && go run main.go
 ```
 
 ### Data and Validation
@@ -444,26 +523,26 @@ cd profiling && go run main.go
 ## Example Categories
 
 ### By Complexity
-- **Beginner**: `simple`, `schema`, `coercion`
-- **Intermediate**: `openai`, `anthropic`, `gemini`, `provider_options`, `multimodal`, `modelinfo`
-- **Advanced**: `multi`, `consensus`, `agent`, `metrics`, `profiling`
+- **Beginner**: `simple`, `schema`, `coercion`, `agent-simple-llm`
+- **Intermediate**: `provider-openai`, `provider-anthropic`, `provider-gemini`, `provider-options`, `multimodal`, `modelinfo`, `agent-custom-calculator`
+- **Advanced**: `multi`, `consensus`, `agent-structured-output`, `agent-custom-*`, `workflow-*`, `metrics`, `profiling`
 
 ### By Use Case
-- **Text Generation**: `simple`, `openai`, `anthropic`, `gemini`
-- **Multimodal**: `multimodal`, `gemini`
-- **Configuration**: `provider_options`, `convenience`
+- **Text Generation**: `simple`, `provider-openai`, `provider-anthropic`, `provider-gemini`
+- **Multimodal**: `multimodal`, `provider-gemini`
+- **Configuration**: `provider-options`, `convenience`
 - **Data Validation**: `schema`, `coercion`
 - **Multiple Providers**: `multi`, `consensus`
-- **Tools & Agents**: `agent`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`
+- **Tools & Agents**: `agent-structured-output`, `agent-simple-llm`, `agent-custom-*`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`
 - **Model Discovery**: `modelinfo`
 - **Monitoring**: `metrics`, `profiling`
 
 ### By Provider
-- **OpenAI**: `openai`, `multimodal`, `agent`
-- **Anthropic**: `anthropic`
-- **Google Gemini**: `gemini`
+- **OpenAI**: `provider-openai`, `multimodal`, `agent-structured-output`, `agent-simple-llm`
+- **Anthropic**: `provider-anthropic`
+- **Google Gemini**: `provider-gemini`
 - **Multiple**: `multi`, `consensus`, `modelinfo`
-- **Compatible APIs**: `openai_api_compatible_providers`
+- **Compatible APIs**: `provider-openai-compatible`
 - **Mock/Provider Agnostic**: `simple`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`
 
 ## Running Tests

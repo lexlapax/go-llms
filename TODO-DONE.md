@@ -271,7 +271,7 @@
       - [x] multi/main.go (completed)
       - [x] openai_api_compatible_providers/main.go (completed)
       - [x] profiling/main.go (completed)
-      - [x] provider_options/main.go (completed)
+      - [x] provider-options/main.go (completed)
       - [x] schema/main.go (completed)
     - [x] Ensure agent examples properly demonstrate slog with LoggingHook (already done)
     - [x] Verify no mixing of log/fmt for logging in the same example

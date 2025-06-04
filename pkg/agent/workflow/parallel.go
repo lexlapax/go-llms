@@ -156,11 +156,12 @@ func (p *ParallelAgent) Run(ctx context.Context, input *domain.State) (*domain.S
 			}
 
 			stepName := s.Name()
+			startTime := time.Now()
 
 			// Update step status
 			p.updateStepStatus(stepName, StepStatus{
 				State:     StepStateRunning,
-				StartTime: time.Now(),
+				StartTime: startTime,
 			})
 
 			// Emit step start event
@@ -183,7 +184,7 @@ func (p *ParallelAgent) Run(ctx context.Context, input *domain.State) (*domain.S
 				errors[stepName] = err
 				p.updateStepStatus(stepName, StepStatus{
 					State:     StepStateFailed,
-					StartTime: p.status.Steps[stepName].StartTime,
+					StartTime: startTime,
 					EndTime:   time.Now(),
 					Error:     err,
 				})
@@ -196,7 +197,7 @@ func (p *ParallelAgent) Run(ctx context.Context, input *domain.State) (*domain.S
 				}
 				p.updateStepStatus(stepName, StepStatus{
 					State:     StepStateCompleted,
-					StartTime: p.status.Steps[stepName].StartTime,
+					StartTime: startTime,
 					EndTime:   time.Now(),
 				})
 			}
