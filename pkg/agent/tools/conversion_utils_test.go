@@ -6,6 +6,7 @@ package tools
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -142,16 +143,17 @@ func TestNewToolAgentWithEvents(t *testing.T) {
 
 	// Create event dispatcher
 	dispatcher := core.NewEventDispatcher(10)
+	defer dispatcher.Close() // Properly close the dispatcher
 
 	// Create ToolAgent with events
 	toolAgent := NewToolAgentWithEvents(tool, dispatcher)
 	assert.NotNil(t, toolAgent)
 
 	// Subscribe to events
-	eventReceived := false
+	var eventReceived atomic.Bool
 	dispatcher.Subscribe(domain.EventHandlerFunc(func(event domain.Event) error {
 		if event.Type == domain.EventMessage {
-			eventReceived = true
+			eventReceived.Store(true)
 		}
 		return nil
 	}))
@@ -167,7 +169,7 @@ func TestNewToolAgentWithEvents(t *testing.T) {
 	// Give some time for event to be processed
 	// In real usage, events are processed asynchronously
 	assert.Eventually(t, func() bool {
-		return eventReceived
+		return eventReceived.Load()
 	}, 100*time.Millisecond, 10*time.Millisecond, "Event should have been received")
 }
 
@@ -177,6 +179,8 @@ func TestCreateEventForwardingToolContext(t *testing.T) {
 	}
 
 	dispatcher := core.NewEventDispatcher(10)
+	defer dispatcher.Close() // Properly close the dispatcher
+	
 	ctx := context.Background()
 
 	toolCtx := CreateEventForwardingToolContext(ctx, dispatcher, agent, "run-123")
@@ -184,10 +188,10 @@ func TestCreateEventForwardingToolContext(t *testing.T) {
 	assert.NotNil(t, toolCtx.Events)
 
 	// Test event emission
-	eventReceived := false
+	var eventReceived atomic.Bool
 	dispatcher.Subscribe(domain.EventHandlerFunc(func(event domain.Event) error {
 		if event.Type == domain.EventMessage {
-			eventReceived = true
+			eventReceived.Store(true)
 		}
 		return nil
 	}))
@@ -196,7 +200,7 @@ func TestCreateEventForwardingToolContext(t *testing.T) {
 
 	// Give some time for event to be processed
 	assert.Eventually(t, func() bool {
-		return eventReceived
+		return eventReceived.Load()
 	}, 100*time.Millisecond, 10*time.Millisecond)
 }
 

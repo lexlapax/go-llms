@@ -18,7 +18,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	fmt.Println("=== Workflow Composition Examples ===\n")
+	fmt.Println("=== Workflow Composition Examples ===")
 
 	// Example 1: Nested workflows - workflows within workflows
 	nestedWorkflowExample(ctx)
@@ -35,7 +35,7 @@ func main() {
 
 func nestedWorkflowExample(ctx context.Context) {
 	fmt.Println("=== Nested Workflows Example ===")
-	fmt.Println("Demonstrating workflows that contain other workflows...\n")
+	fmt.Println("Demonstrating workflows that contain other workflows...")
 
 	// Create sub-workflow 1: Data validation workflow
 	validationWorkflow := workflow.NewSequentialAgent("validation-workflow").
@@ -89,7 +89,7 @@ func nestedWorkflowExample(ctx context.Context) {
 
 func pipelineExample(ctx context.Context) {
 	fmt.Println("=== Pipeline Composition Example ===")
-	fmt.Println("Building a complex pipeline from simple workflow components...\n")
+	fmt.Println("Building a complex pipeline from simple workflow components...")
 
 	// Create a research pipeline with multiple stages
 
@@ -162,7 +162,7 @@ func pipelineExample(ctx context.Context) {
 
 func complexOrchestrationExample(ctx context.Context) {
 	fmt.Println("=== Complex Orchestration Example ===")
-	fmt.Println("Demonstrating advanced workflow composition with mixed patterns...\n")
+	fmt.Println("Demonstrating advanced workflow composition with mixed patterns...")
 
 	// Create a complex document processing system
 
@@ -249,7 +249,7 @@ func complexOrchestrationExample(ctx context.Context) {
 
 func dynamicCompositionExample(ctx context.Context) {
 	fmt.Println("=== Dynamic Workflow Composition Example ===")
-	fmt.Println("Building workflows dynamically based on configuration...\n")
+	fmt.Println("Building workflows dynamically based on configuration...")
 
 	// Simulate loading workflow configuration
 	workflowConfig := []struct {

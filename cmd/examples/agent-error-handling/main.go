@@ -299,7 +299,7 @@ func (c *CircuitBreakerAgent) Run(ctx context.Context, state *domain.State) (*do
 func main() {
 	ctx := context.Background()
 	
-	fmt.Println("=== Error Handling Examples ===\n")
+	fmt.Println("=== Error Handling Examples ===")
 	
 	// Example 1: Basic retry with exponential backoff
 	retryExample(ctx)
@@ -481,5 +481,5 @@ func circuitBreakerExample(ctx context.Context) {
 		time.Sleep(500 * time.Millisecond)
 	}
 	
-	fmt.Println("\n")
+	fmt.Println()
 }

@@ -30,7 +30,7 @@ func main() {
 		return
 	}
 
-	fmt.Println("=== Multi-Provider Workflow Examples ===\n")
+	fmt.Println("=== Multi-Provider Workflow Examples ===")
 
 	// Example 1: Fastest response pattern
 	fastestExample(ctx, openaiKey, anthropicKey, geminiKey)
@@ -44,7 +44,7 @@ func main() {
 
 func fastestExample(ctx context.Context, openaiKey, anthropicKey, geminiKey string) {
 	fmt.Println("=== Fastest Response Pattern ===")
-	fmt.Println("Running multiple providers in parallel and returning the first response...\n")
+	fmt.Println("Running multiple providers in parallel and returning the first response...")
 
 	// Create agents for available providers
 	var agents []domain.BaseAgent
@@ -124,7 +124,7 @@ func fastestExample(ctx context.Context, openaiKey, anthropicKey, geminiKey stri
 
 func consensusExample(ctx context.Context, openaiKey, anthropicKey, geminiKey string) {
 	fmt.Println("=== Consensus Pattern ===")
-	fmt.Println("Running multiple providers and comparing their responses...\n")
+	fmt.Println("Running multiple providers and comparing their responses...")
 
 	// Create agents
 	var agents []domain.BaseAgent
@@ -237,7 +237,7 @@ func consensusExample(ctx context.Context, openaiKey, anthropicKey, geminiKey st
 
 func primaryFallbackExample(ctx context.Context, openaiKey, anthropicKey, geminiKey string) {
 	fmt.Println("=== Primary with Fallback Pattern ===")
-	fmt.Println("Using sequential workflow to try providers in order...\n")
+	fmt.Println("Using sequential workflow to try providers in order...")
 
 	// Create a sequential workflow that tries providers in order
 	sequentialWorkflow := workflow.NewSequentialAgent("primary-fallback").
@@ -309,7 +309,7 @@ func primaryFallbackExample(ctx context.Context, openaiKey, anthropicKey, gemini
 
 // Mock implementation for demonstration
 func runWithMockAgents(ctx context.Context) {
-	fmt.Println("=== Running with Mock Agents ===\n")
+	fmt.Println("=== Running with Mock Agents ===")
 
 	// Create mock agents with different delays
 	mockAgents := []domain.BaseAgent{

@@ -35,7 +35,7 @@ type Review struct {
 }
 
 func main() {
-	fmt.Println("=== Provider-Level Convenience Functions ===\n")
+	fmt.Println("=== Provider-Level Convenience Functions ===")
 
 	// Example 1: Simple provider creation with convenience function
 	fmt.Println("Example 1: Provider Creation from Environment")

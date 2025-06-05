@@ -376,6 +376,7 @@ func (a *LLMAgent) executeCore(runCtx *domain.RunContext[LLMDeps]) (*domain.Stat
 	// Create result state
 	resultState := domain.NewState()
 	resultState.Set("result", result)
+	resultState.Set("output", result) // Also set output for compatibility
 	resultState.Set("prompt", prompt)
 
 	// Copy over any artifacts or metadata from input state
@@ -403,7 +404,7 @@ func (a *LLMAgent) extractPromptFromState(state *domain.State) (string, error) {
 	}
 
 	// Try different keys for prompt
-	promptKeys := []string{"prompt", "input", "message", "query", "text"}
+	promptKeys := []string{"user_input", "prompt", "input", "message", "query", "text"}
 
 	for _, key := range promptKeys {
 		if value, exists := state.Get(key); exists {
@@ -554,6 +555,11 @@ func (a *LLMAgent) extractToolCalls(content string) ([]string, []any, bool) {
 		return []string{call}, []any{param}, true
 	}
 
+	// 3. Try XML-like format (for compatibility with test mocks)
+	if calls, params, found := a.extractXMLToolCalls(content); found {
+		return calls, params, true
+	}
+
 	return nil, nil, false
 }
 
@@ -688,6 +694,51 @@ func (a *LLMAgent) extractJSONBlocks(content string) []string {
 	}
 
 	return blocks
+}
+
+// Extract XML-like tool calls (for test compatibility)
+func (a *LLMAgent) extractXMLToolCalls(content string) ([]string, []any, bool) {
+	// Look for <tool_calls> tags
+	startTag := "<tool_calls>"
+	endTag := "</tool_calls>"
+	
+	startIdx := strings.Index(content, startTag)
+	if startIdx == -1 {
+		return nil, nil, false
+	}
+	
+	endIdx := strings.Index(content[startIdx:], endTag)
+	if endIdx == -1 {
+		return nil, nil, false
+	}
+	
+	// Extract the content between tags
+	toolCallsContent := content[startIdx+len(startTag) : startIdx+endIdx]
+	toolCallsContent = strings.TrimSpace(toolCallsContent)
+	
+	// Parse as JSON array
+	var toolCalls []struct {
+		Name      string                 `json:"name"`
+		Arguments map[string]interface{} `json:"arguments"`
+	}
+	
+	if err := json.Unmarshal([]byte(toolCallsContent), &toolCalls); err != nil {
+		return nil, nil, false
+	}
+	
+	if len(toolCalls) == 0 {
+		return nil, nil, false
+	}
+	
+	names := make([]string, len(toolCalls))
+	params := make([]any, len(toolCalls))
+	
+	for i, call := range toolCalls {
+		names[i] = call.Name
+		params[i] = call.Arguments
+	}
+	
+	return names, params, true
 }
 
 // Execute tool calls

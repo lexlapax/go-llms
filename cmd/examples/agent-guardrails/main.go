@@ -284,7 +284,7 @@ func (g *GuardedAgent) Run(ctx context.Context, state *domain.State) (*domain.St
 }
 
 func main() {
-	fmt.Println("=== Guardrails Example ===\n")
+	fmt.Println("=== Guardrails Example ===")
 
 	// Create base agent
 	baseAgent, err := core.NewAgentFromString("base-agent", "mock")

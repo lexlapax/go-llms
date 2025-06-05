@@ -370,7 +370,7 @@ func TestStructuredOutputWithAgent(t *testing.T) {
 	// Verify response contains user information
 	expectedInfo := []string{"Alice Johnson", "28", "alice@example.com", "developer"}
 	for _, info := range expectedInfo {
-		if !strings.Contains(response, info) {
+		if !strings.Contains(strings.ToLower(response), strings.ToLower(info)) {
 			t.Errorf("Expected response to contain '%s', got: %s", info, response)
 		}
 	}

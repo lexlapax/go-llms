@@ -115,10 +115,15 @@ Let me calculate 15 × 7 for you.`,
 		// We look for the tool result in the messages to form our response
 		var toolResult string
 		for i := len(messages) - 1; i >= 0; i-- {
-			if messages[i].Role == ldomain.RoleTool {
-				// Extract the result from the tool message
-				toolResult = "105" // We know this is the result of 15 * 7
-				break
+			if messages[i].Role == ldomain.RoleUser {
+				// Check if this message contains tool results
+				if len(messages[i].Content) > 0 && messages[i].Content[0].Type == ldomain.ContentTypeText {
+					content := messages[i].Content[0].Text
+					if strings.Contains(content, "Tool results:") && strings.Contains(content, "105") {
+						toolResult = "105"
+						break
+					}
+				}
 			}
 		}
 

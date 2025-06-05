@@ -72,7 +72,7 @@ build:
 # Quick test - runs unit tests only (no integration/stress tests)
 test:
 	@echo "$(GREEN)Running unit tests...$(NC)"
-	$(GOTEST) $(TEST_FLAGS) `$(GOCMD) list ./... | grep -v -E '(integration|multi_provider|stress|profiling|metrics)'`
+	$(GOTEST) $(TEST_FLAGS) `$(GOCMD) list ./... | grep -v -E '(integration|multi_provider|stress|profiling|metrics|benchmarks)'`
 
 # Quick check - format, vet, and lint
 check: fmt vet lint

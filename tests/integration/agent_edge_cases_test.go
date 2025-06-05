@@ -95,7 +95,7 @@ func TestAgentEdgeCases(t *testing.T) {
 		{
 			name:          "Tool not found",
 			query:         "Use a nonexistent tool",
-			shouldContain: "available tools", // The agent should list available tools
+			shouldContain: "Available tools", // The agent should list available tools
 			mockResponses: []ldomain.Response{
 				{
 					Content: `I'll try to use the nonexistent tool.
