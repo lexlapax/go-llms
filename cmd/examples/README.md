@@ -2,6 +2,17 @@
 
 This directory contains example applications demonstrating various features and capabilities of the Go-LLMs library. Each example is self-contained and includes its own documentation.
 
+## Example Categories
+
+The examples are organized into the following categories:
+
+- **agent-*** - Agent-specific features and patterns
+- **workflow-*** - Workflow agent patterns (sequential, parallel, conditional, loop)
+- **provider-*** - Provider-specific features and integrations
+- **builtins-*** - Built-in tool demonstrations
+- **utils-*** - Utility packages and helpers
+- **structured-*** - Structured output and validation features
+
 ## Quick Start
 
 All examples can be run directly with Go:
@@ -34,199 +45,20 @@ Basic usage patterns with mock providers. Perfect for getting started without AP
 cd simple && go run main.go
 ```
 
-#### [**Convenience**](convenience/README.md) 
-Utility functions and helper patterns for common LLM operations.
+### Agent Examples
+
+#### [**Agent Simple LLM**](agent-simple-llm/README.md)
+Ultra-simple agent creation with string-based provider specification.
 
 **Features:**
-- Batch processing
-- Retry mechanisms
-- Provider pools
-- Configuration helpers
-
-```bash
-cd convenience && go run main.go
-```
-
-### Built-in Components
-
-#### [**Built-ins Discovery**](builtins-discovery/)
-Introduction to the built-in tools registry system.
-
-**Features:**
-- Tool discovery and search
-- Registry categories and tags
-- Basic agent integration
-- Migration from custom tools
-
-```bash
-cd builtins-discovery && go run main.go
-```
-
-#### [**Built-ins File Tools**](builtins-file-tools/)
-Deep dive into enhanced file operation tools.
-
-**Features:**
-- Streaming large files
-- Atomic writes with backups
-- Binary file detection
-- Line range reading
-- File metadata
-
-```bash
-cd builtins-file-tools && go run main.go
-```
-
-#### [**Built-ins Web Tools**](builtins-web-tools/)
-Comprehensive web interaction tools.
-
-**Features:**
-- Web page fetching with smart parsing
-- DuckDuckGo search integration
-- Advanced web scraping
-- Custom HTTP requests
-
-```bash
-cd builtins-web-tools && go run main.go
-```
-
-#### [**Built-ins System Tools**](builtins-system-tools/)
-System information and command execution tools.
-
-**Features:**
-- Safe command execution
-- Environment variable access
-- System information gathering
-- Process listing
-
-```bash
-cd builtins-system-tools && go run main.go
-```
-
-#### [**Built-ins Data Tools**](builtins-data-tools/)
-Powerful data processing and transformation tools.
-
-**Features:**
-- JSON processing with JSONPath
-- CSV parsing and transformation
-- XML to JSON conversion
-- Generic data transformations
-
-```bash
-cd builtins-data-tools && go run main.go
-```
-
-#### [**Built-ins DateTime Tools**](builtins-datetime-tools/)
-Comprehensive date and time manipulation tools.
-
-**Features:**
-- Current time in any timezone
-- Date arithmetic and comparisons
-- Flexible parsing and formatting
-- Business day calculations
-
-```bash
-cd builtins-datetime-tools && go run main.go
-```
-
-#### [**Built-ins Feed Tools**](builtins-feed-tools/)
-RSS, Atom, and JSON Feed processing tools.
-
-**Features:**
-- Fetch and parse feeds (RSS 2.0, Atom 1.0, JSON Feed)
-- Auto-discover feeds from websites
-- Filter items by keywords, dates, authors
-- Aggregate multiple feeds
-- Convert between feed formats
-- Extract specific data from feeds
-
-```bash
-cd builtins-feed-tools && go run main.go
-```
-
-### Provider Integration
-
-#### [**Provider OpenAI**](provider-openai/README.md)
-Integration with OpenAI's GPT models including GPT-4o and GPT-4 Turbo.
-
-**Features:**
-- Text generation
-- Structured output
-- Streaming responses
-- Organization configuration
+- Minimal agent setup
+- Provider/model aliases
+- String-based configuration
+- State-based interface
 
 ```bash
 export OPENAI_API_KEY="your-key"
-cd provider-openai && go run main.go
-```
-
-#### [**Provider Anthropic**](provider-anthropic/README.md)
-Integration with Anthropic's Claude models including Claude 3.5 Sonnet.
-
-**Features:**
-- Conversation handling
-- System prompts
-- Claude-specific optimizations
-
-```bash
-export ANTHROPIC_API_KEY="your-key"
-cd provider-anthropic && go run main.go
-```
-
-#### [**Provider Gemini**](provider-gemini/README.md)
-Integration with Google's Gemini models including Gemini 2.0 Flash.
-
-**Features:**
-- Google AI integration
-- Multimodal capabilities
-- Safety settings
-
-```bash
-export GEMINI_API_KEY="your-key"
-cd provider-gemini && go run main.go
-```
-
-#### [**Provider OpenAI Compatible**](provider-openai-compatible/README.md)
-Working with OpenAI-compatible APIs like OpenRouter and Ollama.
-
-**Features:**
-- OpenRouter integration
-- Ollama local models
-- Custom API endpoints
-
-```bash
-export OPENROUTER_API_KEY="your-key"
-cd provider-openai-compatible && go run main.go
-```
-
-### Advanced Features
-
-#### [**Multi-Provider**](multi/README.md)
-Using multiple LLM providers simultaneously with different strategies.
-
-**Features:**
-- Fastest strategy (first to respond)
-- Primary with fallback
-- Load balancing
-
-```bash
-export OPENAI_API_KEY="your-key"
-export ANTHROPIC_API_KEY="your-key"
-cd multi && go run main.go
-```
-
-#### [**Consensus**](consensus/README.md)
-Advanced multi-provider consensus strategies for improved reliability.
-
-**Features:**
-- Similarity-based consensus
-- Voting mechanisms
-- Quality scoring
-
-```bash
-export OPENAI_API_KEY="your-key" 
-export ANTHROPIC_API_KEY="your-key"
-export GEMINI_API_KEY="your-key"
-cd consensus && go run main.go
+cd agent-simple-llm && go run main.go
 ```
 
 #### [**Agent Structured Output**](agent-structured-output/README.md)
@@ -243,96 +75,6 @@ export OPENAI_API_KEY="your-key"
 cd agent-structured-output && go run main.go
 ```
 
-#### [**Agent Simple LLM**](agent-simple-llm/README.md)
-Ultra-simple agent creation with string-based provider specification.
-
-**Features:**
-- Minimal agent setup
-- Provider/model aliases
-- String-based configuration
-- State-based interface
-
-```bash
-export OPENAI_API_KEY="your-key"
-cd agent-simple-llm && go run main.go
-```
-
-### Tools and Conversion
-
-#### [**Agent Tools Conversion**](agent-tools-conversion/README.md) 🆕
-**Bidirectional conversion between agents and tools with registry integration and event support.**
-
-**Features:**
-- **Agent to Tool conversion** - Use any agent as a tool
-- **Tool to Agent conversion** - Use any tool as an agent
-- **Registry integration** - Bulk registration and discovery
-- **Event forwarding** - Tools can emit events through agents
-- **Schema mapping** - Automatic parameter conversion
-- **Tool chains** - Compose multiple agents as one tool
-- **Advanced mapping** - Path-based and type conversions
-
-**Quick Start:**
-```bash
-cd agent-tools-conversion
-
-# Run specific examples
-go run main.go basic      # Basic conversion
-go run main.go registry   # Registry integration
-go run main.go events     # Event forwarding
-go run main.go schema     # Schema mapping
-go run main.go chain      # Tool chains
-go run main.go mapping    # Advanced mapping
-
-# Run all examples
-go run main.go all
-```
-
-**Use Cases:**
-- Unified interface between agents and tools
-- Legacy tool integration
-- Tool discovery via registries
-- Adding observability to tools
-- Building composite tools
-
-#### [**Agent Workflow as Tool**](agent-workflow-as-tool/README.md) 🆕
-**Multi-stage research pipeline demonstrating workflow agents wrapped as tools for complex orchestration.**
-
-**Features:**
-- **Sequential workflow as tool** - Analysis pipeline with 3 stages
-- **Parallel workflow as tool** - Concurrent source comparison
-- **Custom merge strategies** - Intelligent result combination
-- **LLM agent orchestration** - Main coordinator using workflow tools
-- **Real-world use case** - Research and comparison pipeline
-
-```bash
-export OPENAI_API_KEY="your-key"
-cd agent-workflow-as-tool && go run main.go
-```
-
-**Use Cases:**
-- Complex multi-stage processing
-- Parallel analysis with custom merging
-- Research automation
-- Workflow reusability as tools
-- Agent composition patterns
-
-### Custom Agents *(NEW - February 3, 2025)*
-
-Custom agents provide ultimate flexibility for implementing arbitrary orchestration logic beyond predefined workflow patterns. They can coordinate multiple sub-agents, integrate with external systems, and implement complex conditional logic using standard Go language constructs.
-
-#### [**Agent Custom Story**](agent-custom-story/README.md)
-Multi-LLM coordination with conditional logic for story generation, review, and editing.
-
-**Features:**
-- Sub-agent orchestration
-- Conditional logic based on analysis results
-- State management across multiple steps
-- Event emission for monitoring
-
-```bash
-cd agent-custom-story && go run main.go
-```
-
 #### [**Agent Custom Calculator**](agent-custom-calculator/README.md)
 Pure computational logic without LLM dependencies.
 
@@ -346,213 +88,18 @@ Pure computational logic without LLM dependencies.
 cd agent-custom-calculator && go run main.go
 ```
 
-#### [**Agent Custom Data Pipeline**](agent-custom-data-pipeline/README.md)
-Database operations combined with data validation and processing.
+#### [**Agent LLM Built-in Tools**](agent-llm-builtin-tools/README.md)
+Demonstrates using built-in tools with LLM agents.
 
 **Features:**
-- External system integration (mock database)
-- Sub-agent coordination for validation and processing
-- Error handling and rollback patterns
-- Complex state management
-
-```bash
-cd agent-custom-data-pipeline && go run main.go
-```
-
-#### [**Agent Custom API Orchestrator**](agent-custom-api-orchestrator/README.md)
-Multiple API calls with retries, fallbacks, and aggregation.
-
-**Features:**
-- External API integration patterns
-- Retry logic with exponential backoff
-- Parallel API calls with result aggregation
-- Timeout and error handling
-
-```bash
-cd agent-custom-api-orchestrator && go run main.go
-```
-
-**Key Patterns in Custom Agents:**
-
-1. **Sub-Agent Orchestration** - Coordinate multiple agents with custom logic
-2. **External Integration** - Connect with databases, APIs, and external systems
-3. **Complex State Management** - Manage state across multiple operations
-4. **Error Recovery** - Implement retry logic and rollback patterns
-
-Custom agents integrate seamlessly with workflow agents and can be used as building blocks in larger systems.
-
-### Workflow Agents *(NEW - February 3, 2025)*
-
-The workflow agent system provides sophisticated patterns for complex multi-step processing.
-
-#### [**Sequential Workflow**](workflow-sequential/README.md)
-Step-by-step processing with error handling and state management.
-
-**Features:**
-- Sequential execution
-- Error handling strategies
-- State passthrough between steps
-- Hook integration for monitoring
-
-```bash
-cd workflow-sequential && go run main.go
-```
-
-#### [**Parallel Workflow**](workflow-parallel/README.md)
-Concurrent processing with configurable merge strategies.
-
-**Features:**
-- Concurrent agent execution
-- Multiple merge strategies (MergeAll, MergeFirst, MergeCustom)
-- Configurable concurrency limits
-- Timeout and error handling
-
-```bash
-cd workflow-parallel && go run main.go
-```
-
-#### [**Conditional Workflow**](workflow-conditional/README.md)
-Branch-based execution with priority evaluation and multiple conditions.
-
-**Features:**
-- Condition-based branching
-- Priority-based evaluation
-- Multiple match support
-- Default branch handling
-
-```bash
-cd workflow-conditional && go run main.go
-```
-
-#### [**Loop Workflow**](workflow-loop/README.md)
-Iterative processing with count, while, and until loop patterns.
-
-**Features:**
-- Count loops for fixed iterations
-- While/until loops with conditions
-- Result collection and state management
-- Iteration delays and error handling
-
-```bash
-cd workflow-loop && go run main.go
-```
-
-#### [**Workflow Hooks**](workflow-hooks/README.md)
-Monitoring and instrumentation for workflow agents using hooks.
-
-**Features:**
-- Metrics collection and tracking
-- Logging integration
-- Hook composition
-- Workflow monitoring
-
-```bash
-cd workflow-hooks && go run main.go
-```
-
-### Content and Media
-
-#### [**Provider Multimodal**](provider-multimodal/README.md)
-Comparison of multimodal capabilities across different LLM providers.
-
-**Features:**
-- Provider-specific multimodal support (OpenAI, Anthropic, Gemini)
-- Image processing across all providers
-- Audio/video handling (Gemini only)
-- File uploads and URL-based content
-- Provider compatibility matrix
+- Tool integration patterns
+- Built-in tool usage
+- State management with tools
 
 ```bash
 export OPENAI_API_KEY="your-key"
-cd provider-multimodal && go run main.go -provider openai -mode image -a image.jpg
+cd agent-llm-builtin-tools && go run main.go
 ```
-
-### Configuration and Options
-
-#### [**Provider Options**](provider-options/README.md)
-Demonstration of the provider option system for configuration.
-
-**Features:**
-- Common options (HTTP client, timeouts)
-- Provider-specific options
-- Environment variable configuration
-
-```bash
-export OPENAI_API_KEY="your-key"
-cd provider-options && go run main.go
-```
-
-### Data and Validation
-
-#### [**Schema**](schema/README.md)
-Schema generation from Go structs and validation patterns.
-
-**Features:**
-- Automatic schema generation
-- Struct validation
-- Custom validation rules
-
-```bash
-cd schema && go run main.go
-```
-
-#### [**Coercion**](coercion/README.md)
-Type coercion and data conversion for validation.
-
-**Features:**
-- String to number conversion
-- Array handling
-- Flexible validation
-
-```bash
-cd coercion && go run main.go
-```
-
-### Utilities
-
-#### [**Utils Model Info**](utils-modelinfo/README.md) 🆕
-**Model discovery utility to explore available models from all LLM providers with capability filtering and caching.**
-
-**Features:**
-- **Automatic model discovery** from OpenAI, Anthropic, and Google Gemini
-- **Capability filtering** (multimodal, function calling, streaming, etc.)
-- **Intelligent caching** to reduce API calls and improve performance
-- **Detailed model information** including context windows, token limits, and pricing
-- **Provider comparison** and model recommendation
-- **CLI interface** with flexible filtering options
-
-**Quick Start:**
-```bash
-# Set API keys for the providers you want to query
-export OPENAI_API_KEY="your-openai-key"
-export ANTHROPIC_API_KEY="your-anthropic-key"  # Optional - has fallback data
-export GEMINI_API_KEY="your-gemini-key"
-
-cd utils-modelinfo
-
-# Get all available models
-go run main.go
-
-# Filter by provider
-go run main.go --provider=openai
-
-# Find models that support images
-go run main.go --capability=image-input
-
-# Get models with large context windows
-go run main.go --name="gpt-4" --pretty
-
-# Force fresh data (ignore cache)
-go run main.go --fresh --metadata
-```
-
-**Use Cases:**
-- **Model selection** - Find the best model for your specific needs
-- **Capability assessment** - Determine which models support required features
-- **Cost optimization** - Compare pricing and context window limits
-- **API exploration** - Discover new models as they become available
-
-### Monitoring and Performance
 
 #### [**Agent Metrics Tools**](agent-metrics-tools/README.md)
 Performance monitoring and metrics collection for agents with tools.
@@ -564,62 +111,487 @@ Performance monitoring and metrics collection for agents with tools.
 - Token usage monitoring
 - Tool execution statistics
 - Error rate analysis
-- Event emission from tools
 
 ```bash
 export OPENAI_API_KEY="your-key"
 cd agent-metrics-tools && go run main.go
 ```
 
-#### [**Profiling**](profiling/README.md)
-Performance profiling and optimization techniques.
+#### [**Agent Tools Conversion**](agent-tools-conversion/README.md)
+Bidirectional conversion between agents and tools with registry integration.
+
+**Features:**
+- Agent to Tool conversion
+- Tool to Agent conversion
+- Registry integration
+- Event forwarding
+- Schema mapping
+- Tool chains
+
+```bash
+cd agent-tools-conversion && go run main.go
+```
+
+#### [**Agent Workflow as Tool**](agent-workflow-as-tool/README.md)
+Multi-stage research pipeline demonstrating workflow agents wrapped as tools.
+
+**Features:**
+- Sequential workflow as tool
+- Parallel workflow as tool
+- Custom merge strategies
+- LLM agent orchestration
+- Real-world use case
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd agent-workflow-as-tool && go run main.go
+```
+
+#### [**Agent Advanced Tool Context**](agent-advanced-toolcontext/README.md)
+Advanced tool context features including state access and event emission.
+
+**Features:**
+- State access from tools
+- Event emission
+- Tool context patterns
+
+```bash
+cd agent-advanced-toolcontext && go run main.go
+```
+
+#### [**Agent Error Handling**](agent-error-handling/README.md)
+Error handling patterns for agents.
+
+**Features:**
+- Error recovery strategies
+- Retry mechanisms
+- Graceful degradation
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd agent-error-handling && go run main.go
+```
+
+#### [**Agent State Persistence**](agent-state-persistence/README.md)
+State persistence and serialization for agents.
+
+**Features:**
+- State saving and loading
+- Persistence strategies
+- State migration
+
+```bash
+cd agent-state-persistence && go run main.go
+```
+
+#### [**Agent Guardrails**](agent-guardrails/README.md)
+Input and output validation using guardrails.
+
+**Features:**
+- Input validation
+- Output filtering
+- Safety mechanisms
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd agent-guardrails && go run main.go
+```
+
+#### [**Agent Handoff**](agent-handoff/README.md)
+Agent-to-agent handoff patterns and delegation.
+
+**Features:**
+- Handoff builder pattern
+- Agent chain execution
+- Conditional routing
+- State preservation
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd agent-handoff && go run main.go
+```
+
+#### [**Agent Multi-Coordination**](agent-multi-coordination/README.md)
+Multiple agents coordinating to solve complex tasks.
+
+**Features:**
+- Multi-agent orchestration
+- Parallel coordination
+- Conditional routing
+- Event monitoring
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd agent-multi-coordination && go run main.go
+```
+
+### Workflow Examples
+
+#### [**Workflow Sequential**](workflow-sequential/README.md)
+Step-by-step processing with error handling and state management.
+
+**Features:**
+- Sequential execution
+- Error handling strategies
+- State passthrough between steps
+- Hook integration
+
+```bash
+cd workflow-sequential && go run main.go
+```
+
+#### [**Workflow Parallel**](workflow-parallel/README.md)
+Concurrent processing with configurable merge strategies.
+
+**Features:**
+- Concurrent agent execution
+- Multiple merge strategies
+- Configurable concurrency limits
+- Timeout and error handling
+
+```bash
+cd workflow-parallel && go run main.go
+```
+
+#### [**Workflow Conditional**](workflow-conditional/README.md)
+Branch-based execution with priority evaluation.
+
+**Features:**
+- Condition-based branching
+- Priority-based evaluation
+- Multiple match support
+- Default branch handling
+
+```bash
+cd workflow-conditional && go run main.go
+```
+
+#### [**Workflow Loop**](workflow-loop/README.md)
+Iterative processing with count, while, and until loops.
+
+**Features:**
+- Count loops for fixed iterations
+- While/until loops with conditions
+- Result collection
+- Iteration delays
+
+```bash
+cd workflow-loop && go run main.go
+```
+
+#### [**Workflow Hooks**](workflow-hooks/README.md)
+Monitoring and instrumentation for workflow agents.
+
+**Features:**
+- Metrics collection
+- Logging integration
+- Hook composition
+- Workflow monitoring
+
+```bash
+cd workflow-hooks && go run main.go
+```
+
+#### [**Workflow Composition**](workflow-composition/README.md)
+Complex workflow composition patterns.
+
+**Features:**
+- Nested workflows
+- Dynamic composition
+- Advanced patterns
+
+```bash
+cd workflow-composition && go run main.go
+```
+
+#### [**Workflow Multi-Provider**](workflow-multi-provider/README.md)
+Agent-level multi-provider patterns using workflows.
+
+**Features:**
+- Agent-based provider strategies
+- Consensus at agent level
+- Fallback patterns
+
+```bash
+export OPENAI_API_KEY="your-key"
+export ANTHROPIC_API_KEY="your-key"
+cd workflow-multi-provider && go run main.go
+```
+
+### Provider Examples
+
+#### [**Provider OpenAI**](provider-openai/README.md)
+Direct integration with OpenAI's GPT models.
+
+**Features:**
+- Text generation
+- Structured output
+- Streaming responses
+- Organization configuration
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd provider-openai && go run main.go
+```
+
+#### [**Provider Anthropic**](provider-anthropic/README.md)
+Direct integration with Anthropic's Claude models.
+
+**Features:**
+- Conversation handling
+- System prompts
+- Claude-specific optimizations
+
+```bash
+export ANTHROPIC_API_KEY="your-key"
+cd provider-anthropic && go run main.go
+```
+
+#### [**Provider Gemini**](provider-gemini/README.md)
+Direct integration with Google's Gemini models.
+
+**Features:**
+- Google AI integration
+- Multimodal capabilities
+- Safety settings
+
+```bash
+export GEMINI_API_KEY="your-key"
+cd provider-gemini && go run main.go
+```
+
+#### [**Provider OpenAI Compatible**](provider-openai-compatible/README.md)
+Working with OpenAI-compatible APIs.
+
+**Features:**
+- OpenRouter integration
+- Ollama local models
+- Custom API endpoints
+
+```bash
+export OPENROUTER_API_KEY="your-key"
+cd provider-openai-compatible && go run main.go
+```
+
+#### [**Provider Multimodal**](provider-multimodal/README.md)
+Comparison of multimodal capabilities across providers.
+
+**Features:**
+- Provider-specific multimodal support
+- Image processing
+- Audio/video handling (Gemini)
+- File uploads and URLs
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd provider-multimodal && go run main.go -provider openai -mode image -a image.jpg
+```
+
+#### [**Provider Multi**](provider-multi/README.md)
+Provider-level multi-provider strategies.
+
+**Features:**
+- Fastest strategy
+- Primary with fallback
+- Load balancing
+
+Note: For agent-level multi-provider patterns, see workflow-multi-provider example.
+
+```bash
+export OPENAI_API_KEY="your-key"
+export ANTHROPIC_API_KEY="your-key"
+cd provider-multi && go run main.go
+```
+
+#### [**Provider Consensus**](provider-consensus/README.md)
+Provider-level consensus strategies.
+
+**Features:**
+- Similarity-based consensus
+- Voting mechanisms
+- Quality scoring
+
+Note: For agent-level consensus patterns, see workflow-multi-provider example.
+
+```bash
+export OPENAI_API_KEY="your-key" 
+export ANTHROPIC_API_KEY="your-key"
+export GEMINI_API_KEY="your-key"
+cd provider-consensus && go run main.go
+```
+
+#### [**Provider Options**](provider-options/README.md)
+Provider configuration options.
+
+**Features:**
+- Common options
+- Provider-specific options
+- Environment variables
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd provider-options && go run main.go
+```
+
+#### [**Provider Convenience**](provider-convenience/README.md)
+Provider-level utility functions and helpers.
+
+**Features:**
+- Provider pools
+- Retry mechanisms
+- Configuration helpers
+
+```bash
+cd provider-convenience && go run main.go
+```
+
+### Built-in Tools Examples
+
+#### [**Built-ins Discovery**](builtins-discovery/README.md)
+Introduction to the built-in tools registry system.
+
+**Features:**
+- Tool discovery and search
+- Registry categories and tags
+- Basic agent integration
+
+```bash
+cd builtins-discovery && go run main.go
+```
+
+#### [**Built-ins File Tools**](builtins-file-tools/README.md)
+Enhanced file operation tools.
+
+**Features:**
+- Streaming large files
+- Atomic writes with backups
+- Binary file detection
+- File metadata
+
+```bash
+cd builtins-file-tools && go run main.go
+```
+
+#### [**Built-ins Web Tools**](builtins-web-tools/README.md)
+Web interaction tools.
+
+**Features:**
+- Web page fetching
+- DuckDuckGo search
+- Web scraping
+- HTTP requests
+
+```bash
+cd builtins-web-tools && go run main.go
+```
+
+#### [**Built-ins System Tools**](builtins-system-tools/README.md)
+System information and command execution.
+
+**Features:**
+- Safe command execution
+- Environment variables
+- System information
+- Process listing
+
+```bash
+cd builtins-system-tools && go run main.go
+```
+
+#### [**Built-ins Data Tools**](builtins-data-tools/README.md)
+Data processing and transformation.
+
+**Features:**
+- JSON processing
+- CSV parsing
+- XML conversion
+- Data transformations
+
+```bash
+cd builtins-data-tools && go run main.go
+```
+
+#### [**Built-ins DateTime Tools**](builtins-datetime-tools/README.md)
+Date and time manipulation.
+
+**Features:**
+- Timezone handling
+- Date arithmetic
+- Parsing and formatting
+- Business days
+
+```bash
+cd builtins-datetime-tools && go run main.go
+```
+
+#### [**Built-ins Feed Tools**](builtins-feed-tools/README.md)
+RSS, Atom, and JSON Feed processing.
+
+**Features:**
+- Feed parsing
+- Auto-discovery
+- Filtering
+- Format conversion
+
+```bash
+cd builtins-feed-tools && go run main.go
+```
+
+### Structured Output Examples
+
+#### [**Structured Schema**](structured-schema/README.md)
+Schema generation and validation.
+
+**Features:**
+- Schema generation from Go structs
+- Validation patterns
+- Custom rules
+
+```bash
+cd structured-schema && go run main.go
+```
+
+#### [**Structured Coercion**](structured-coercion/README.md)
+Type coercion and data conversion.
+
+**Features:**
+- Type conversions
+- Flexible validation
+- Data normalization
+
+```bash
+cd structured-coercion && go run main.go
+```
+
+### Utility Examples
+
+#### [**Utils Model Info**](utils-modelinfo/README.md)
+Model discovery and capability assessment.
+
+**Features:**
+- Automatic model discovery
+- Capability filtering
+- Provider comparison
+- Caching
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd utils-modelinfo && go run main.go
+```
+
+#### [**Utils Profiling**](utils-profiling/README.md)
+Performance profiling and optimization.
 
 **Features:**
 - CPU profiling
 - Memory analysis
-- Benchmark comparisons
+- Benchmarks
 
 ```bash
-cd profiling && go run main.go
+cd utils-profiling && go run main.go
 ```
 
-## Example Categories
-
-### By Complexity
-- **Beginner**: `simple`, `schema`, `coercion`, `agent-simple-llm`
-- **Intermediate**: `provider-openai`, `provider-anthropic`, `provider-gemini`, `provider-options`, `provider-multimodal`, `utils-modelinfo`, `agent-custom-calculator`, `agent-tools-conversion`
-- **Advanced**: `multi`, `consensus`, `agent-structured-output`, `agent-custom-*`, `workflow-*`, `agent-metrics-tools`, `agent-workflow-as-tool`, `profiling`
-
-### By Use Case
-- **Text Generation**: `simple`, `provider-openai`, `provider-anthropic`, `provider-gemini`
-- **Multimodal**: `provider-multimodal`, `provider-gemini`
-- **Configuration**: `provider-options`, `convenience`
-- **Data Validation**: `schema`, `coercion`
-- **Multiple Providers**: `multi`, `consensus`
-- **Tools & Agents**: `agent-structured-output`, `agent-simple-llm`, `agent-custom-*`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`, `agent-tools-conversion`, `agent-workflow-as-tool`
-- **Model Discovery**: `utils-modelinfo`
-- **Monitoring**: `agent-metrics-tools`, `profiling`
-
-### By Provider
-- **OpenAI**: `provider-openai`, `provider-multimodal`, `agent-structured-output`, `agent-simple-llm`
-- **Anthropic**: `provider-anthropic`, `provider-multimodal`
-- **Google Gemini**: `provider-gemini`, `provider-multimodal`
-- **Multiple**: `multi`, `consensus`, `utils-modelinfo`
-- **Compatible APIs**: `provider-openai-compatible`
-- **Mock/Provider Agnostic**: `simple`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`
-
-## Running Tests
-
-Each example includes tests that can be run with:
-
-```bash
-cd <example-directory>
-go test ./...
-```
-
-Some integration tests require API keys to be set.
-
-## Common Environment Variables
+## Environment Variables
 
 Most examples use these environment variables:
 
@@ -633,38 +605,38 @@ export OPENROUTER_API_KEY="your-openrouter-api-key"
 # Optional Configuration
 export OPENAI_ORGANIZATION="your-org-id"
 export OPENAI_BASE_URL="https://api.openai.com"  # Custom endpoint
-export LLM_HTTP_TIMEOUT="30"                     # Timeout in seconds
-export LLM_RETRY_ATTEMPTS="3"                    # Retry attempts
 ```
 
-## Building All Examples
+## Building Examples
 
-You can build all examples at once using the provided Makefile from the project root:
+You can build all examples at once using the provided Makefile:
 
 ```bash
 # Build all examples
 make build-examples
 
 # Build a specific example
-make build-example EXAMPLE=utils-modelinfo
+make build-example EXAMPLE=agent-simple-llm
 
 # Clean all built examples
 make clean-examples
 ```
 
-## Getting Help
+## Running Tests
 
-- Check individual example READMEs for detailed usage instructions
-- Review the [User Guides](/docs/user-guide/) for comprehensive documentation
-- See the [API Documentation](/docs/api/) for technical reference
-- Check [Troubleshooting](/docs/user-guide/error-handling.md) for common issues
+Each example includes tests:
+
+```bash
+cd <example-directory>
+go test ./...
+```
 
 ## Contributing
 
 When adding new examples:
 
 1. Create a new directory under `cmd/examples/`
-2. Include `main.go`, `main_test.go`, and `README.md`
-3. Follow the existing patterns and documentation style
-4. Add the example to this README.md
-5. Update the main project README.md examples section
+2. Follow the naming convention (agent-*, workflow-*, provider-*, etc.)
+3. Include `main.go` and `README.md`
+4. Add ABOUTME comments to source files
+5. Update this README.md

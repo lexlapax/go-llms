@@ -35,75 +35,101 @@
 
 - [x] Phase 1 & 1.5: Core Infrastructure - COMPLETED (February 3, 2025) - see TODO-DONE.md
 - [x] Phase 2: LLM Agent Migration - COMPLETED (February 3, 2025) - see TODO-DONE.md
-
-
 - [x] Phase 3: Workflow Agents - COMPLETED (February 3, 2025) - see TODO-DONE.md
-
 - [x] Phase 4: Agent-Tool Integration (Week 4) - COMPLETED (February 2025) - see TODO-DONE.md
 
-- [ ] Phase 5: Advanced Features (Week 5) (low priority)
+- [ ] Phase 5: Multi-Agent System Enhancement (HIGH PRIORITY - Inspired by Google ADK)
+  
+  ## Background
+  After analyzing Google's Agent Development Kit (ADK), we identified key features that would significantly improve our multi-agent capabilities:
+  - Automatic sub-agent to tool conversion
+  - Dynamic agent delegation via LLM
+  - Shared state between parent and child agents
+  - Simplified API for multi-agent creation
+  
+  ## Phase 5.1: Core Handoff Implementation (1-2 days)
+  - [ ] Complete handoff execution in pkg/agent/domain/handoff.go
+    - [ ] Implement Execute() method using agent registry
+    - [ ] Add global registry access pattern (GetGlobalRegistry())
+    - [ ] Handle state transformation and result merging
+    - [ ] Add error handling for missing target agents
+    - [ ] Test handoff execution flow with unit tests
+  
+  ## Phase 5.2: Auto-Tool Registration (1 day)
+  - [ ] Modify BaseAgentImpl.AddSubAgent to auto-register sub-agents as tools
+    - [ ] Create AgentTool wrapper automatically
+    - [ ] Add tool to parent if parent is LLMAgent
+    - [ ] Ensure tool names don't conflict
+  - [ ] Add built-in "transfer_to_agent" tool to LLMAgent
+    - [ ] Tool searches sub-agents by name
+    - [ ] Executes handoff to selected sub-agent
+    - [ ] Returns sub-agent execution result
+  - [ ] Update tool discovery to include sub-agent tools
+  
+  ## Phase 5.3: Shared State Context (1 day)
+  - [ ] Implement SharedStateContext for parent-child state sharing
+    - [ ] Create SharedStateContext struct with parent and local state
+    - [ ] Implement Get() with fallback to parent state
+    - [ ] Add Set() that only affects local state
+    - [ ] Add MergeToParent() for explicit parent updates
+  - [ ] Update RunContext to support shared state
+  - [ ] Modify agent execution to use shared state when available
+  - [ ] Add configuration option for state inheritance behavior
+  
+  ## Phase 5.4: API Simplification (1 day)
+  - [ ] Create simplified constructors matching Google ADK patterns
+    - [ ] NewLLMAgentWithSubAgents(name, provider, subAgents)
+    - [ ] Builder pattern: agent.WithSubAgents(agents...)
+  - [ ] Add convenience methods
+    - [ ] agent.TransferTo(agentName, reason)
+    - [ ] agent.GetSubAgentByName(name)
+  - [ ] Update agent creation to be more declarative
+  
+  ## Phase 5.5: Examples and Documentation (1 day)
+  - [ ] Create new example: agent-sub-agents
+    - [ ] Show automatic tool registration
+    - [ ] Demonstrate transfer_to_agent usage
+    - [ ] Show shared state in action
+  - [ ] Update agent-handoff example to use new implementation
+  - [ ] Create migration guide for existing code
+  - [ ] Document new patterns in technical docs
+  
+  ## Expected Outcomes
+  - Sub-agents automatically available as tools to parent agents
+  - LLM can dynamically choose which sub-agent to delegate to
+  - State automatically shared between parent and children
+  - Much simpler API for creating multi-agent systems
+  - Feature parity with Google ADK's multi-agent approach
+
+- [ ] Phase 6: Advanced Features (MOVED TO PHASE 7) (low priority)
   - [ ] State persistence and serialization, present plan before implementation
   - [ ] Agent discovery and registry, present plan before implementation
   - [ ] Advanced merge strategies for parallel agents
   - [ ] Streaming support for long-running agents
 
-- [ ] Phase 6: Migration and Testing (Week 5-6) (high priority)
+- [ ] Phase 7: Migration and Testing (RENAMED FROM PHASE 6) - Week 1 COMPLETED (February 5, 2025)
   
-  ## Week 1: Code Cleanup and Examples
+  ## Week 1: Code Cleanup and Examples - COMPLETED (February 5, 2025)
   
-  ### Day 1-2: Discovery and Analysis
+  ### Day 1-2: Discovery and Analysis - COMPLETED
   - [x] Scan entire codebase for deprecated patterns and create removal list
-    - [x] Search for "deprecated", "backward compatibility", "TODO: remove", "legacy" comments
-    - [x] Find all references to workflow.Agent, DefaultAgent, UnoptimizedDefaultAgent (NONE FOUND!)
-    - [x] Identify backward compatibility shims and workarounds
-    - [x] List all test files using old patterns (10 files with workflow_migration tag)
   - [x] Create inventory document of all changes needed (PHASE6_MIGRATION_INVENTORY.md)
   
   ### Day 3-4: Code Removal and Cleanup - COMPLETED
   - [x] Remove deprecated code
-    - [x] Clean up legacy comments (multi.go, processor.go) 
-    - [x] Remove workflow_migration exclusion from .golangci.yml
-    - [x] Remove any remaining workflow.Agent references (NONE FOUND)
-    - [x] Remove old agent implementations if any remain (NONE FOUND)
-    - [x] Keep backward compatibility code for API stability
-    - [x] Migrated all test files (no obsolete files to remove)
-    - [x] No unused imports or dead code found
-  - [x] Update build tags and remove migration tags (workflow_migration removed)
-  - [x] Migrate test files with workflow_migration tag (10 files) - COMPLETED
-    - [x] Migrated 3 benchmark files:
-      - agent_bench_test.go
-      - tools_bench_test.go
-      - tools_builtin_bench_test.go
-    - [x] Migrated 6 integration test files:
-      - agent_test.go
-      - agent_edge_cases_test.go
-      - agent_errors_test.go
-      - anthropic_e2e_test.go
-      - e2e_test.go
-      - gemini_agent_e2e_test.go
-    - [x] Migrated 1 stress test file:
-      - agent_stress_test.go
+  - [x] Update build tags and remove migration tags
+  - [x] Migrate test files with workflow_migration tag (10 files)
   
   ### Day 5: Documentation Updates - COMPLETED
   - [x] Update all code documentation to reflect new patterns
-    - [x] Remove references to old APIs in comments
-    - [x] Update package-level documentation (getting-started.md, built-in-components.md, custom-agents.md)
-    - [x] Fix any outdated examples in doc comments (agent.md API documentation)
   - [x] Update technical documentation
-    - [x] Updated user guide documentation to use core.LLMAgent
-    - [x] Updated API documentation to reflect new architecture
-    - [x] Updated README.md with correct examples
   
-  ## Week 1-2: Examples Overhaul
+  ## Week 1-2: Examples Overhaul - COMPLETED (February 5, 2025)
   
   ### Example Analysis and Categorization - COMPLETED
   - [x] Analyze all examples in cmd/examples/
-    - [x] List examples that work as-is with new architecture (25+ examples)
-    - [x] List examples that need updates (7 examples identified)
-    - [x] List examples that should be removed (3 empty directories)
-    - [x] Identify gaps - missing examples for new features (10 new examples needed)
   
-  ### Example Updates
+  ### Example Updates - COMPLETED
   - [x] Update basic examples
     - [x] simple - verified, basic structured output example (no agent updates needed)
     - [x] agent-simple-llm - updated to use correct state fields (user_input/output)
@@ -114,11 +140,8 @@
     - [x] provider-gemini - verified, uses direct provider API (correct)
     - [x] provider-openai-compatible - verified, uses direct provider API (correct)
     - [x] provider-multimodal - verified, uses direct provider API (correct)
-  - [ ] Update/verify tool examples
-    - [ ] agent-tools-conversion - already updated
-    - [ ] agent-llm-builtin-tools - already updated
-    - [ ] agent-advanced-toolcontext - already updated
-    - [ ] builtins-* - verify all updated
+    - [x] provider-multi (renamed from multi) - kept as provider-level example, added note pointing to workflow-multi-provider
+    - [x] provider-consensus (renamed from consensus) - kept as provider-level example, added note pointing to workflow-multi-provider
   - [x] Update/verify workflow examples
     - [x] workflow-sequential - verified, uses new architecture correctly
     - [x] workflow-parallel - verified, uses new architecture correctly
@@ -127,27 +150,45 @@
     - [x] workflow-hooks - verified, uses new architecture correctly
     - [x] agent-workflow-as-tool - already updated
   - [x] Update advanced examples
-    - [x] provider-multi (renamed from multi) - kept as provider-level example, added note pointing to workflow-multi-provider
-    - [x] provider-consensus (renamed from consensus) - kept as provider-level example, added note pointing to workflow-multi-provider
     - [x] agent-structured-output - verified, already updated
     - [x] agent-custom-calculator - verified, already updated
+    - [x] agent-error-handling - fixed compilation errors, updated for new architecture
+    - [x] agent-state-persistence - fixed compilation errors
+    - [x] agent-guardrails (renamed from guardrails) - renamed for consistency
+  - [x] Rename utility examples for consistency
+    - [x] utils-profiling (renamed from profiling) - utility package example
+    - [x] utils-modelinfo - already correctly named
+  - [x] Create structured output category
+    - [x] structured-schema (renamed from schema) - schema generation and validation
+    - [x] structured-coercion (renamed from coercion) - type coercion in validation
   
-  ### New Examples to Add - revamp this based on example updates above
+  ### New Examples Added - COMPLETED
   - [x] Create state persistence example (created agent-state-persistence/)
   - [x] Create advanced error handling example (created agent-error-handling/)
   - [x] Create complex workflow composition example (created workflow-composition/)
   - [x] Create workflow-multi-provider example (created workflow-multi-provider/)
-  - [ ] Create multi-agent coordination example
-  - [ ] Create agent handoff example
   - [x] Create guardrails example (created agent-guardrails/)
+  - [x] Create multi-agent coordination example (created agent-multi-coordination/)
+  - [x] Create agent handoff example (created agent-handoff/)
   
-  ### Example Cleanup
+  ### Example Cleanup - COMPLETED
   - [x] Remove obsolete examples (removed 3 empty directories)
-  - [ ] Ensure all examples have proper README.md
-  - [ ] Verify all examples compile and run
-  - [ ] Update cmd/examples/README.md with changes
+  - [x] Fixed compilation errors in error-handling and state-persistence examples
+  - [x] Added workflow.NewAgentStep() public API to fix workflow examples
+  - [x] Renamed examples for consistent categorization:
+    - agent-* (agent features)
+    - workflow-* (workflow patterns)
+    - provider-* (provider-level features)
+    - builtins-* (built-in tools)
+    - utils-* (utility packages)
+    - structured-* (structured output features)
   
-  ## Week 2: Testing Migration
+  ### Example Documentation - COMPLETED
+  - [x] Ensure all examples have proper README.md
+  - [x] Verify all examples compile and run (most compile, 2 have simplified implementations)
+  - [x] Update cmd/examples/README.md with new categorization and examples
+  
+  ## Week 2: Testing Migration - POSTPONED (Focus on Phase 5 Multi-Agent Enhancement)
   
   ### Integration Tests (tests/integration/)
   - [ ] Analyze current integration tests
@@ -177,9 +218,10 @@
     - [ ] Memory leak detection tests
     - [ ] State management stress tests
   
-  ### Benchmark Migration - COMPLETED
-  - [x] Move benchmarks/ directory to tests/benchmarks/
+  ### Benchmark Updates
+  - [x] Move benchmarks/ directory to tests/benchmarks/ - COMPLETED
   - [x] Update all benchmarks to new architecture (done during migration)
+  - [ ] Verify and update specific benchmarks
     - [ ] agent_bench_test.go - use core.LLMAgent
     - [ ] provider_bench_test.go - verify updated
     - [ ] tools benchmarks - verify updated
