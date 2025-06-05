@@ -27,11 +27,14 @@ func ExampleAgentTool() {
 		})).
 		WithResultMapper(tools.CreateResultMapper("processed_text"))
 
+	// Create a mock agent for the tool context
+	mockAgent := core.NewBaseAgent("example-agent", "Example agent", domain.AgentTypeCustom)
+	
 	// Use the tool
 	ctx := domain.NewToolContext(
 		context.Background(),
 		domain.NewStateReader(domain.NewState()),
-		nil,
+		mockAgent,
 		"example-run",
 	)
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -95,7 +98,8 @@ func ExampleAgentTool_bidirectional() {
 		log.Fatal(err)
 	}
 
-	if processed, exists := result.Get("processed_text"); exists {
+	// The round-trip conversion adds "output_" prefix to result fields
+	if processed, exists := result.Get("output_processed_text"); exists {
 		fmt.Printf("Processed: %v\n", processed)
 	}
 	// Output: Processed: TEST MESSAGE

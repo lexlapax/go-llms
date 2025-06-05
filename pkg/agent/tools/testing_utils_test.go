@@ -57,9 +57,15 @@ func TestCreateMockAgentForTool(t *testing.T) {
 	assert.NotNil(t, result)
 
 	// Check result contains expected data
-	status, exists := result.Get("status")
-	assert.True(t, exists)
+	// The DefaultStateUpdater puts result fields under "output_" prefix
+	status, exists := result.Get("output_status")
+	assert.True(t, exists, "Expected output_status field in result")
 	assert.Equal(t, "success", status)
+	
+	// Also check that success flag is set
+	success, exists := result.Get("success")
+	assert.True(t, exists, "Expected success field in result")
+	assert.Equal(t, true, success)
 }
 
 func TestValidateAgentToolConversion(t *testing.T) {

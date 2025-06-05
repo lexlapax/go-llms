@@ -89,7 +89,15 @@
     - [x] Implemented state access allowing tools to read agent state
     - [x] Created comprehensive example combining all ToolContext features
     - [x] Fixed compilation issues with EventHandler and EmitCustom usage
-  - [ ] Create an example of an agent calling another agent that's wrapped as a tool.
+  - [x] Create an example of an agent calling another agent that's wrapped as a tool - COMPLETED (February 2025)
+    - [x] Design multi-stage research pipeline with workflow agents
+    - [x] Create Analysis Pipeline using SequentialAgent (3 stages)
+    - [x] Create Comparison Tool using ParallelAgent (2 branches)
+    - [x] Wrap workflow agents as tools using AgentTool
+    - [x] Create Research Coordinator LLM agent with all tools
+    - [x] Implement custom merge strategy for parallel comparison
+    - [x] Add comprehensive example with real research scenario
+    - [x] Document the architecture and usage patterns
 
 - [ ] Phase 5: Advanced Features (Week 5)
   - [ ] State persistence and serialization, present plan before implementation

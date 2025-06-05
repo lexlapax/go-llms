@@ -294,6 +294,28 @@ go run main.go all
 - Adding observability to tools
 - Building composite tools
 
+#### [**Agent Workflow as Tool**](agent-workflow-as-tool/README.md) 🆕
+**Multi-stage research pipeline demonstrating workflow agents wrapped as tools for complex orchestration.**
+
+**Features:**
+- **Sequential workflow as tool** - Analysis pipeline with 3 stages
+- **Parallel workflow as tool** - Concurrent source comparison
+- **Custom merge strategies** - Intelligent result combination
+- **LLM agent orchestration** - Main coordinator using workflow tools
+- **Real-world use case** - Research and comparison pipeline
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd agent-workflow-as-tool && go run main.go
+```
+
+**Use Cases:**
+- Complex multi-stage processing
+- Parallel analysis with custom merging
+- Research automation
+- Workflow reusability as tools
+- Agent composition patterns
+
 ### Custom Agents *(NEW - February 3, 2025)*
 
 Custom agents provide ultimate flexibility for implementing arbitrary orchestration logic beyond predefined workflow patterns. They can coordinate multiple sub-agents, integrate with external systems, and implement complex conditional logic using standard Go language constructs.
@@ -566,7 +588,7 @@ cd profiling && go run main.go
 ### By Complexity
 - **Beginner**: `simple`, `schema`, `coercion`, `agent-simple-llm`
 - **Intermediate**: `provider-openai`, `provider-anthropic`, `provider-gemini`, `provider-options`, `provider-multimodal`, `utils-modelinfo`, `agent-custom-calculator`, `agent-tools-conversion`
-- **Advanced**: `multi`, `consensus`, `agent-structured-output`, `agent-custom-*`, `workflow-*`, `agent-metrics-tools`, `profiling`
+- **Advanced**: `multi`, `consensus`, `agent-structured-output`, `agent-custom-*`, `workflow-*`, `agent-metrics-tools`, `agent-workflow-as-tool`, `profiling`
 
 ### By Use Case
 - **Text Generation**: `simple`, `provider-openai`, `provider-anthropic`, `provider-gemini`
@@ -574,7 +596,7 @@ cd profiling && go run main.go
 - **Configuration**: `provider-options`, `convenience`
 - **Data Validation**: `schema`, `coercion`
 - **Multiple Providers**: `multi`, `consensus`
-- **Tools & Agents**: `agent-structured-output`, `agent-simple-llm`, `agent-custom-*`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`, `agent-tools-conversion`
+- **Tools & Agents**: `agent-structured-output`, `agent-simple-llm`, `agent-custom-*`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`, `agent-tools-conversion`, `agent-workflow-as-tool`
 - **Model Discovery**: `utils-modelinfo`
 - **Monitoring**: `agent-metrics-tools`, `profiling`
 

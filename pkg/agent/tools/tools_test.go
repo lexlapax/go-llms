@@ -12,10 +12,15 @@ import (
 
 // Helper to create test ToolContext
 func createTestContext() *domain.ToolContext {
+	// Create a mock agent for testing
+	mockAgent := NewTestAgentToolBuilder("test-agent").
+		WithDescription("Test agent for tool tests").
+		BuildAgent()
+		
 	return domain.NewToolContext(
 		context.Background(),
 		domain.NewStateReader(domain.NewState()),
-		nil, // No agent needed for these tests
+		mockAgent,
 		"test-run",
 	)
 }

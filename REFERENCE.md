@@ -61,6 +61,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 ### Advanced Examples
 - [Agent Simple LLM](/cmd/examples/agent-simple-llm/README.md) - Ultra-simple agent creation
 - [Agent Structured Output](/cmd/examples/agent-structured-output/README.md) - Structured output with schemas
+- [Agent Workflow as Tool](/cmd/examples/agent-workflow-as-tool/README.md) - Multi-stage research pipeline with workflow agents as tools
 - [Multi-Provider Example](/cmd/examples/multi/README.md) - Working with multiple providers
 - [Consensus Example](/cmd/examples/consensus/README.md) - Multi-provider consensus strategies
 - [Provider Options Example](/cmd/examples/provider-options/README.md) - Demonstration of provider options system

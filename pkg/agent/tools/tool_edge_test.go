@@ -12,10 +12,15 @@ import (
 
 // Helper to create test ToolContext
 func createEdgeTestContext() *domain.ToolContext {
+	// Use TestAgentToolBuilder to create a proper mock agent
+	mockAgent := NewTestAgentToolBuilder("test-agent").
+		WithDescription("Test agent for edge cases").
+		BuildAgent()
+	
 	return domain.NewToolContext(
 		context.Background(),
 		domain.NewStateReader(domain.NewState()),
-		nil,
+		mockAgent,
 		"edge-test-run",
 	)
 }
