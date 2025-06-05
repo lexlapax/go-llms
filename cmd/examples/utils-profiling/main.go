@@ -3,8 +3,8 @@
 
 package main
 
-// ABOUTME: Example demonstrating performance profiling of LLM operations
-// ABOUTME: Shows how to capture CPU and memory profiles for optimization
+// ABOUTME: Example demonstrating the profiling utilities for performance analysis
+// ABOUTME: Shows how to capture CPU and memory profiles using the util/profiling package
 
 import (
 	"context"

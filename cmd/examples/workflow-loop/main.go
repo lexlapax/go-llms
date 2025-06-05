@@ -268,38 +268,7 @@ func advancedLoopExample() {
 // Helper functions
 
 func createAgentStep(name string, agent domain.BaseAgent) workflow.WorkflowStep {
-	return &agentStep{
-		name:  name,
-		agent: agent,
-	}
-}
-
-type agentStep struct {
-	name  string
-	agent domain.BaseAgent
-}
-
-func (s *agentStep) Name() string {
-	return s.name
-}
-
-func (s *agentStep) Execute(ctx context.Context, state *workflow.WorkflowState) (*workflow.WorkflowState, error) {
-	result, err := s.agent.Run(ctx, state.State)
-	if err != nil {
-		return state, err
-	}
-
-	return &workflow.WorkflowState{
-		State:    result,
-		Metadata: make(map[string]interface{}),
-	}, nil
-}
-
-func (s *agentStep) Validate() error {
-	if s.agent == nil {
-		return fmt.Errorf("agent cannot be nil")
-	}
-	return s.agent.Validate()
+	return workflow.NewAgentStep(name, agent)
 }
 
 func createMockAgent(name, response string, delay time.Duration) domain.BaseAgent {

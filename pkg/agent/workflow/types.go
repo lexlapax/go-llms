@@ -5,6 +5,7 @@ package workflow
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
@@ -118,4 +119,58 @@ type WorkflowDefinition struct {
 	Steps          []WorkflowStep
 	Parallel       bool
 	MaxConcurrency int
+}
+
+// AgentStep wraps an agent as a workflow step
+type AgentStep struct {
+	name  string
+	agent domain.BaseAgent
+}
+
+// NewAgentStep creates a new AgentStep from a BaseAgent
+func NewAgentStep(name string, agent domain.BaseAgent) WorkflowStep {
+	return &AgentStep{
+		name:  name,
+		agent: agent,
+	}
+}
+
+// Name returns the step name
+func (s *AgentStep) Name() string {
+	return s.name
+}
+
+// Execute runs the agent
+func (s *AgentStep) Execute(ctx context.Context, state *WorkflowState) (*WorkflowState, error) {
+	// Run the agent with the domain state
+	result, err := s.agent.Run(ctx, state.State)
+	if err != nil {
+		return state, err
+	}
+
+	// Create new workflow state with the result
+	newWorkflowState := &WorkflowState{
+		State:    result,
+		Metadata: make(map[string]interface{}),
+	}
+
+	// Copy workflow metadata to avoid concurrent map writes
+	if state.Metadata != nil {
+		for k, v := range state.Metadata {
+			newWorkflowState.Metadata[k] = v
+		}
+	}
+
+	// Add step execution metadata
+	newWorkflowState.Metadata[fmt.Sprintf("step_%s_completed", s.name)] = time.Now()
+
+	return newWorkflowState, nil
+}
+
+// Validate validates the step
+func (s *AgentStep) Validate() error {
+	if s.agent == nil {
+		return fmt.Errorf("agent cannot be nil")
+	}
+	return s.agent.Validate()
 }

@@ -1,6 +1,8 @@
-# Multi-Provider Example
+# Provider-Level Multi-Provider Example
 
-This example demonstrates how to use the Multi-Provider functionality of the Go-LLMs library to work with multiple LLM providers simultaneously using different strategies.
+This example demonstrates how to use the Multi-Provider functionality at the **provider level** in the Go-LLMs library to work with multiple LLM providers simultaneously using different strategies.
+
+> **Note**: This example shows provider-level multi-provider usage. For agent-based multi-provider orchestration with full workflow support, see the [workflow-multi-provider](../workflow-multi-provider) example.
 
 ## Overview
 

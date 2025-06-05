@@ -1,6 +1,6 @@
-# Schema Generation Example
+# Structured Output: Schema Generation Example
 
-This example demonstrates how to automatically generate JSON schemas from Go structs using Go-LLMs reflection capabilities. It showcases a key feature of Go-LLMs that enables type-safe interactions with LLMs by generating JSON schemas that LLMs can use to structure their outputs.
+This example demonstrates how to automatically generate JSON schemas from Go structs for structured output extraction using Go-LLMs reflection capabilities. It showcases a key feature of Go-LLMs that enables type-safe interactions with LLMs by generating JSON schemas that LLMs can use to structure their outputs.
 
 ## Overview
 

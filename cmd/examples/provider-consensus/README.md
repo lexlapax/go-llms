@@ -1,6 +1,8 @@
-# Multi-Provider Consensus Strategy Example
+# Provider-Level Consensus Strategy Example
 
-This example demonstrates the different consensus strategies available in Go-LLMs for using multiple LLM providers together and finding agreement among their responses.
+This example demonstrates the different consensus strategies available at the **provider level** in Go-LLMs for using multiple LLM providers together and finding agreement among their responses.
+
+> **Note**: This example shows provider-level consensus strategies. For agent-based consensus patterns with full workflow support, see the consensus pattern in the [workflow-multi-provider](../workflow-multi-provider) example.
 
 ## Overview
 

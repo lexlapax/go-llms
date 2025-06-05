@@ -1,6 +1,6 @@
-# Guardrails Example
+# Agent Guardrails Example
 
-This example demonstrates how to implement guardrails for input/output validation and safety in agent systems. Guardrails help ensure that agents operate within defined boundaries and don't process or generate harmful content.
+This example demonstrates how to implement agent-level guardrails for input/output validation and safety in the agent framework. Guardrails help ensure that agents operate within defined boundaries and don't process or generate harmful content.
 
 ## Features
 

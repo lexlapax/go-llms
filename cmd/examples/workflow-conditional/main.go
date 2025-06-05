@@ -407,54 +407,9 @@ func createMockAgent(name, response string, delay time.Duration) domain.BaseAgen
 	return agent
 }
 
-// We need to create our own AgentStep since the fields are not exported
-type agentStep struct {
-	name  string
-	agent domain.BaseAgent
-}
-
-func (s *agentStep) Name() string {
-	return s.name
-}
-
-func (s *agentStep) Execute(ctx context.Context, state *workflow.WorkflowState) (*workflow.WorkflowState, error) {
-	// Run the agent with the domain state
-	result, err := s.agent.Run(ctx, state.State)
-	if err != nil {
-		return state, err
-	}
-
-	// Create new workflow state with the result
-	newWorkflowState := &workflow.WorkflowState{
-		State:    result,
-		Metadata: make(map[string]interface{}),
-	}
-
-	// Copy workflow metadata to avoid concurrent map writes
-	if state.Metadata != nil {
-		for k, v := range state.Metadata {
-			newWorkflowState.Metadata[k] = v
-		}
-	}
-
-	// Add step execution metadata
-	newWorkflowState.Metadata[fmt.Sprintf("step_%s_completed", s.name)] = time.Now()
-
-	return newWorkflowState, nil
-}
-
-func (s *agentStep) Validate() error {
-	if s.agent == nil {
-		return fmt.Errorf("agent cannot be nil")
-	}
-	return s.agent.Validate()
-}
-
+// Helper function to create agent steps
 func createAgentStep(name string, agent domain.BaseAgent) workflow.WorkflowStep {
-	return &agentStep{
-		name:  name,
-		agent: agent,
-	}
+	return workflow.NewAgentStep(name, agent)
 }
 
 type mockAgent struct {

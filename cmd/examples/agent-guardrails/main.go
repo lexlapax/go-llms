@@ -1,5 +1,5 @@
-// ABOUTME: Example demonstrating guardrails for input/output validation and safety
-// ABOUTME: Shows how to implement content filtering, validation rules, and safety checks
+// ABOUTME: Example demonstrating agent-level guardrails for input/output validation and safety
+// ABOUTME: Shows how to implement content filtering, validation rules, and safety checks for agents
 
 package main
 

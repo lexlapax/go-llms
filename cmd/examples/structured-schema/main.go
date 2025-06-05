@@ -1,7 +1,7 @@
 package main
 
-// ABOUTME: Example demonstrating schema validation and structured output extraction
-// ABOUTME: Shows how to define schemas and validate LLM responses against them
+// ABOUTME: Example demonstrating structured output with schema generation and validation
+// ABOUTME: Shows how to define schemas, generate them from Go structs, and validate data
 
 import (
 	"encoding/json"

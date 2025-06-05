@@ -1,6 +1,6 @@
-# Profiling Example
+# Profiling Utilities Example
 
-This example demonstrates how to use the profiling utilities in the Go-LLMs project.
+This example demonstrates how to use the profiling utilities from the util/profiling package in the Go-LLMs project.
 
 ## Features
 
@@ -13,10 +13,10 @@ This example demonstrates how to use the profiling utilities in the Go-LLMs proj
 
 ```bash
 # Build the example
-make build-example EXAMPLE=profiling
+make build-example EXAMPLE=utils-profiling
 
 # Run the example
-./bin/profiling
+./bin/utils-profiling
 ```
 
 ## How It Works

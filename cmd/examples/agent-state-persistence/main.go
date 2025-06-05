@@ -31,11 +31,7 @@ func NewPersistentState(filename string) *PersistentState {
 // Save persists the state to a file
 func (ps *PersistentState) Save() error {
 	// Get all state data
-	data := make(map[string]interface{})
-	for _, key := range ps.Keys() {
-		value, _ := ps.Get(key)
-		data[key] = value
-	}
+	data := ps.Values()
 
 	// Marshal to JSON
 	jsonData, err := json.MarshalIndent(data, "", "  ")

@@ -1,7 +1,7 @@
 package main
 
-// ABOUTME: Example demonstrating multi-provider strategies for LLM requests
-// ABOUTME: Shows fastest, primary, and consensus strategies for provider orchestration
+// ABOUTME: Example demonstrating provider-level multi-provider strategies for LLM requests
+// ABOUTME: Shows fastest and primary strategies using direct provider APIs
 
 import (
 	"context"

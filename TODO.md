@@ -105,40 +105,41 @@
   
   ### Example Updates
   - [x] Update basic examples
-    - [x] simple - verified, focuses on schema/structured output (no agent updates needed)
+    - [x] simple - verified, basic structured output example (no agent updates needed)
     - [x] agent-simple-llm - updated to use correct state fields (user_input/output)
-    - [x] convenience - updated to use core.LLMAgent with proper ToolContext
-  - [ ] Update provider examples (verify all use new patterns)
-    - [ ] provider-openai
-    - [ ] provider-anthropic
-    - [ ] provider-gemini
-    - [ ] provider-openai-compatible
-    - [ ] provider-multimodal
+    - [x] provider-convenience (renamed from convenience) - removed agent code, focused on provider-level utilities
+  - [x] Update provider examples (verify all use new patterns)
+    - [x] provider-openai - verified, uses direct provider API (correct)
+    - [x] provider-anthropic - verified, uses direct provider API (correct)
+    - [x] provider-gemini - verified, uses direct provider API (correct)
+    - [x] provider-openai-compatible - verified, uses direct provider API (correct)
+    - [x] provider-multimodal - verified, uses direct provider API (correct)
   - [ ] Update/verify tool examples
     - [ ] agent-tools-conversion - already updated
     - [ ] agent-llm-builtin-tools - already updated
     - [ ] agent-advanced-toolcontext - already updated
     - [ ] builtins-* - verify all updated
-  - [ ] Update/verify workflow examples
-    - [ ] workflow-sequential
-    - [ ] workflow-parallel
-    - [ ] workflow-conditional
-    - [ ] workflow-loop
-    - [ ] workflow-hooks
-    - [ ] agent-workflow-as-tool - already updated
-  - [ ] Update advanced examples
-    - [ ] multi - may not need this - perhaps - create another example using workflows and specialized agents 
-    - [ ] consensus - may not need this - perhaps -create another example using workflows and specialized agents
-    - [ ] agent-structured-output - verify updated
-    - [ ] agent-custom-* - verify all custom examples
+  - [x] Update/verify workflow examples
+    - [x] workflow-sequential - verified, uses new architecture correctly
+    - [x] workflow-parallel - verified, uses new architecture correctly
+    - [x] workflow-conditional - fixed, added workflow.NewAgentStep() public API
+    - [x] workflow-loop - fixed, added workflow.NewAgentStep() public API
+    - [x] workflow-hooks - verified, uses new architecture correctly
+    - [x] agent-workflow-as-tool - already updated
+  - [x] Update advanced examples
+    - [x] provider-multi (renamed from multi) - kept as provider-level example, added note pointing to workflow-multi-provider
+    - [x] provider-consensus (renamed from consensus) - kept as provider-level example, added note pointing to workflow-multi-provider
+    - [x] agent-structured-output - verified, already updated
+    - [x] agent-custom-calculator - verified, already updated
   
   ### New Examples to Add - revamp this based on example updates above
-  - [x] Create state persistence example (created state-persistence/)
-  - [x] Create advanced error handling example (created error-handling/)
-  - [ ] Create complex workflow composition example
+  - [x] Create state persistence example (created agent-state-persistence/)
+  - [x] Create advanced error handling example (created agent-error-handling/)
+  - [x] Create complex workflow composition example (created workflow-composition/)
+  - [x] Create workflow-multi-provider example (created workflow-multi-provider/)
   - [ ] Create multi-agent coordination example
   - [ ] Create agent handoff example
-  - [x] Create guardrails example (created guardrails/)
+  - [x] Create guardrails example (created agent-guardrails/)
   
   ### Example Cleanup
   - [x] Remove obsolete examples (removed 3 empty directories)

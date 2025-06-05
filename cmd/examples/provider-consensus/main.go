@@ -1,7 +1,7 @@
 package main
 
-// ABOUTME: Example demonstrating consensus strategy across multiple providers
-// ABOUTME: Shows how to get agreement between different LLM providers
+// ABOUTME: Example demonstrating provider-level consensus strategy across multiple providers
+// ABOUTME: Shows how to get agreement between different LLM providers using direct provider APIs
 
 import (
 	"context"

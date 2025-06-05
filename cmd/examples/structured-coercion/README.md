@@ -1,6 +1,6 @@
-# Advanced Type Coercion Example
+# Structured Output: Type Coercion Example
 
-This example demonstrates the comprehensive type coercion functionality available in the Go-LLMs library, which allows for flexible handling of different data types in your schema validations.
+This example demonstrates the comprehensive type coercion functionality for structured output validation in the Go-LLMs library, which allows for flexible handling of different data types when extracting structured data from LLM responses.
 
 ## Overview
 
