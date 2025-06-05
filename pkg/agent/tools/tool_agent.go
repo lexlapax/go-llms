@@ -15,10 +15,11 @@ import (
 // ToolAgent wraps a Tool to expose it as a BaseAgent
 type ToolAgent struct {
 	*core.BaseAgentImpl
-	tool         domain.Tool
-	paramMapper  ParamMapper
-	stateUpdater StateUpdater
-	executeFunc  func(context.Context, *domain.State) (*domain.State, error)
+	tool            domain.Tool
+	paramMapper     ParamMapper
+	stateUpdater    StateUpdater
+	executeFunc     func(context.Context, *domain.State) (*domain.State, error)
+	eventDispatcher domain.EventDispatcher // Added for event support
 }
 
 // ParamMapper extracts tool parameters from agent State
@@ -79,6 +80,12 @@ func (ta *ToolAgent) WithStateUpdater(updater StateUpdater) *ToolAgent {
 	return ta
 }
 
+// WithEventDispatcher sets the event dispatcher
+func (ta *ToolAgent) WithEventDispatcher(dispatcher domain.EventDispatcher) *ToolAgent {
+	ta.eventDispatcher = dispatcher
+	return ta
+}
+
 // execute is the internal execution function
 func (ta *ToolAgent) execute(ctx context.Context, state *domain.State) (*domain.State, error) {
 	// Extract parameters from State
@@ -95,9 +102,16 @@ func (ta *ToolAgent) execute(ctx context.Context, state *domain.State) (*domain.
 		fmt.Sprintf("toolagent-%s-%d", ta.ID(), time.Now().UnixNano()),
 	)
 
-	// If we have an event dispatcher, set up event emitter
-	// Note: ToolAgent would need to have access to a dispatcher for full functionality
-	// For now, tools wrapped as agents won't emit events unless we enhance this
+	// If we have an event dispatcher, enhance the tool context with event emission
+	if ta.eventDispatcher != nil {
+		emitter := &toolEventEmitter{
+			dispatcher: ta.eventDispatcher,
+			agentID:    ta.ID(),
+			agentName:  ta.Name(),
+			runID:      toolContext.RunID,
+		}
+		toolContext.Events = emitter
+	}
 
 	// Execute the tool with ToolContext
 	result, err := ta.tool.Execute(toolContext, params)
@@ -206,4 +220,53 @@ func CreateStateUpdaterWithPrefix(prefix string) StateUpdater {
 
 		return state, nil
 	}
+}
+
+// toolEventEmitter provides event emission for tools wrapped as agents
+type toolEventEmitter struct {
+	dispatcher domain.EventDispatcher
+	agentID    string
+	agentName  string
+	runID      string
+}
+
+func (e *toolEventEmitter) Emit(eventType domain.EventType, data interface{}) {
+	if e.dispatcher != nil {
+		e.dispatcher.Dispatch(domain.Event{
+			Type:      eventType,
+			AgentID:   e.agentID,
+			AgentName: e.agentName,
+			Data:      data,
+		})
+	}
+}
+
+func (e *toolEventEmitter) EmitProgress(current, total int, message string) {
+	e.Emit(domain.EventProgress, domain.ProgressEventData{
+		Current: current,
+		Total:   total,
+		Message: message,
+	})
+}
+
+func (e *toolEventEmitter) EmitMessage(message string) {
+	e.Emit(domain.EventMessage, message)
+}
+
+func (e *toolEventEmitter) EmitError(err error) {
+	if e.dispatcher != nil {
+		e.dispatcher.Dispatch(domain.Event{
+			Type:      domain.EventAgentError,
+			AgentID:   e.agentID,
+			AgentName: e.agentName,
+			Error:     err,
+		})
+	}
+}
+
+func (e *toolEventEmitter) EmitCustom(eventName string, data interface{}) {
+	e.Emit(domain.EventMessage, map[string]interface{}{
+		"type": eventName,
+		"data": data,
+	})
 }

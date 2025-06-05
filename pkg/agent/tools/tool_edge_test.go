@@ -21,6 +21,7 @@ func createEdgeTestContext() *domain.ToolContext {
 }
 
 // TestToolEdgeCases tests edge cases for the tool implementation
+// nolint:gocyclo // This test function contains many subtests
 func TestToolEdgeCases(t *testing.T) {
 	// Test cases for empty/nil parameters
 	t.Run("NilParameters", func(t *testing.T) {

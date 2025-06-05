@@ -92,6 +92,7 @@ func (c *parameterTypeCache) getStructFields(structType reflect.Type) []fieldInf
 }
 
 // canConvert checks if a type can be converted to another type
+// nolint:gocyclo // This function handles many type conversion checks
 func (c *parameterTypeCache) canConvert(sourceType, targetType reflect.Type) bool {
 	// Direct assignability is fastest
 	if sourceType.AssignableTo(targetType) {

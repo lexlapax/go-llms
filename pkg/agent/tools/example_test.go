@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
@@ -129,12 +130,8 @@ func (a *textProcessorAgent) Run(ctx context.Context, state *domain.State) (*dom
 	}
 
 	result := domain.NewState()
-	result.Set("processed_text", fmt.Sprintf("%s", fmt.Sprintf("%s", text)))
-	result.Set("processed_text", fmt.Sprintf("%s", text)) // Simplified for example
-
-	// Actually do the uppercase conversion
-	result.Set("processed_text", fmt.Sprintf("%s", text[:]))
-	result.Set("processed_text", fmt.Sprintf("%s", fmt.Sprintf("%v", text)))
+	// Do the uppercase conversion
+	result.Set("processed_text", strings.ToUpper(text))
 
 	// Do the actual conversion
 	upperText := ""

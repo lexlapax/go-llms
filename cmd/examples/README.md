@@ -257,6 +257,43 @@ export OPENAI_API_KEY="your-key"
 cd agent-simple-llm && go run main.go
 ```
 
+### Tools and Conversion
+
+#### [**Agent Tools Conversion**](agent-tools-conversion/README.md) 🆕
+**Bidirectional conversion between agents and tools with registry integration and event support.**
+
+**Features:**
+- **Agent to Tool conversion** - Use any agent as a tool
+- **Tool to Agent conversion** - Use any tool as an agent
+- **Registry integration** - Bulk registration and discovery
+- **Event forwarding** - Tools can emit events through agents
+- **Schema mapping** - Automatic parameter conversion
+- **Tool chains** - Compose multiple agents as one tool
+- **Advanced mapping** - Path-based and type conversions
+
+**Quick Start:**
+```bash
+cd agent-tools-conversion
+
+# Run specific examples
+go run main.go basic      # Basic conversion
+go run main.go registry   # Registry integration
+go run main.go events     # Event forwarding
+go run main.go schema     # Schema mapping
+go run main.go chain      # Tool chains
+go run main.go mapping    # Advanced mapping
+
+# Run all examples
+go run main.go all
+```
+
+**Use Cases:**
+- Unified interface between agents and tools
+- Legacy tool integration
+- Tool discovery via registries
+- Adding observability to tools
+- Building composite tools
+
 ### Custom Agents *(NEW - February 3, 2025)*
 
 Custom agents provide ultimate flexibility for implementing arbitrary orchestration logic beyond predefined workflow patterns. They can coordinate multiple sub-agents, integrate with external systems, and implement complex conditional logic using standard Go language constructs.
@@ -528,7 +565,7 @@ cd profiling && go run main.go
 
 ### By Complexity
 - **Beginner**: `simple`, `schema`, `coercion`, `agent-simple-llm`
-- **Intermediate**: `provider-openai`, `provider-anthropic`, `provider-gemini`, `provider-options`, `provider-multimodal`, `utils-modelinfo`, `agent-custom-calculator`
+- **Intermediate**: `provider-openai`, `provider-anthropic`, `provider-gemini`, `provider-options`, `provider-multimodal`, `utils-modelinfo`, `agent-custom-calculator`, `agent-tools-conversion`
 - **Advanced**: `multi`, `consensus`, `agent-structured-output`, `agent-custom-*`, `workflow-*`, `agent-metrics-tools`, `profiling`
 
 ### By Use Case
@@ -537,7 +574,7 @@ cd profiling && go run main.go
 - **Configuration**: `provider-options`, `convenience`
 - **Data Validation**: `schema`, `coercion`
 - **Multiple Providers**: `multi`, `consensus`
-- **Tools & Agents**: `agent-structured-output`, `agent-simple-llm`, `agent-custom-*`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`
+- **Tools & Agents**: `agent-structured-output`, `agent-simple-llm`, `agent-custom-*`, `workflow-sequential`, `workflow-parallel`, `workflow-conditional`, `workflow-loop`, `workflow-hooks`, `agent-tools-conversion`
 - **Model Discovery**: `utils-modelinfo`
 - **Monitoring**: `agent-metrics-tools`, `profiling`
 

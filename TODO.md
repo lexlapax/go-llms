@@ -46,9 +46,50 @@
   - [x] Phase 4.2: Implement AgentTool wrapper
   - [x] Phase 4.3: Create tool context system - COMPLETED (February 2025)
   - [x] Phase 4.4: Fix all builtins-* examples to use the redone tools with ToolContext - COMPLETED (February 2025)
-  - [ ] Phase 4.5: Add bidirectional agent-tool conversion utilities
-  - [ ] Phase 4.6: Ensure all current tools in builtins/tools work with agents
-  - [ ] Phase 4.7: Create examples demonstrating enhanced tool capabilities - tell me before implementing what.
+  - [x] Phase 4.5: Add bidirectional agent-tool conversion utilities - COMPLETED (February 2025)
+    - [x] Create pkg/agent/tools/conversion_utils.go with core utilities
+    - [x] Implement Event Dispatcher Integration (HIGH PRIORITY)
+      - [x] NewToolAgentWithEvents for full event support
+      - [x] CreateEventForwardingToolContext for event forwarding
+      - [x] Update ToolAgent to support event dispatcher injection
+    - [x] Implement Registry Integration Utilities (HIGH PRIORITY)
+      - [x] RegisterAgentAsTool to convert and register agents
+      - [x] ConvertToolCategoryToAgents for batch conversion
+      - [x] RegisterAgentsAsTools for bulk registration
+      - [x] Integration with existing tool registry
+    - [x] Implement Automatic Schema Mapping (MEDIUM PRIORITY)
+      - [x] DeriveToolSchemaFromAgent for auto-generation
+      - [x] ValidateConversionCompatibility for round-trip validation
+      - [x] GenerateSmartMappers based on schema analysis
+    - [x] Implement Common Conversion Patterns (MEDIUM PRIORITY)
+      - [x] WrapLLMAgentAsTool helper
+      - [x] WrapWorkflowAgentAsTool helper
+      - [x] CreateToolChainFromAgents for chaining
+      - [x] RoundTripConvert with validation
+    - [x] Implement Advanced Mapping Utilities (LOW PRIORITY)
+      - [x] CreatePathMapper for path-based extraction
+      - [x] CreateTypeConversionMapper for type conversions
+      - [x] CreateNestedStateMapper for complex structures
+    - [x] Create Testing Utilities
+      - [x] AssertRoundTripEquivalence test helper
+      - [x] CreateMockAgentForTool for testing
+      - [x] ValidateAgentToolConversion validator
+    - [x] Create comprehensive tests for all utilities
+    - [x] Create examples demonstrating conversion utilities
+    - [x] Update documentation with conversion patterns
+  - [x] Phase 4.6: Ensure all current tools in builtins/tools work with agents - COMPLETED (February 2025)
+    - [x] Created comprehensive agent-llm-builtin-tools example demonstrating all tool categories
+    - [x] Fixed compilation issues with LLMAgent creation and hook implementation
+    - [x] Demonstrated proper system prompts for each tool category
+    - [x] Included tool call monitoring with hooks
+  - [x] Phase 4.7: Create examples demonstrating enhanced tool capabilities - COMPLETED (February 2025)
+    - [x] Created agent-advanced-toolcontext example demonstrating Advanced ToolContext features
+    - [x] Showed event emission with progress reporting, custom events, and error handling
+    - [x] Demonstrated retry mechanism with tools detecting retry attempts
+    - [x] Implemented state access allowing tools to read agent state
+    - [x] Created comprehensive example combining all ToolContext features
+    - [x] Fixed compilation issues with EventHandler and EmitCustom usage
+  - [ ] Create an example of an agent calling another agent that's wrapped as a tool.
 
 - [ ] Phase 5: Advanced Features (Week 5)
   - [ ] State persistence and serialization, present plan before implementation

@@ -144,6 +144,7 @@ func (t *Tool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}
 }
 
 // prepareArguments converts the params to the appropriate argument types for the function
+// nolint:gocyclo // This function handles many parameter conversion cases
 func (t *Tool) prepareArguments(ctx context.Context, params interface{}, args []reflect.Value) error {
 	// If no more arguments needed besides context, we're done
 	if t.nonContextArg >= t.numArgs {
@@ -236,6 +237,7 @@ func (t *Tool) prepareArguments(ctx context.Context, params interface{}, args []
 
 // optimizedConvertValue attempts to convert a value to the target type
 // This version is optimized to reduce allocations
+// nolint:gocyclo // This function handles many type conversion cases
 func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflect.Value, bool) {
 	// Special handling for interface{} type
 	if value.Type().Kind() == reflect.Interface && !value.IsNil() {
@@ -405,6 +407,7 @@ func isNumericType(t reflect.Type) bool {
 }
 
 // convertValue attempts to convert a value to the target type (fallback method)
+// nolint:gocyclo // This function handles many type conversion cases
 func convertValue(value reflect.Value, targetType reflect.Type) (reflect.Value, bool) {
 	// If directly assignable, return as is
 	if value.Type().AssignableTo(targetType) {

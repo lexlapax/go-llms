@@ -346,6 +346,166 @@ response, err := agent.Run(ctx, workflow.UserMessage(
 ))
 ```
 
+## Agent-Tool Conversion
+
+Go-LLMs provides powerful bidirectional conversion utilities that allow seamless interoperability between agents and tools:
+
+### Converting Agents to Tools
+
+Any agent can be used as a tool, making it easy to compose complex behaviors:
+
+```go
+import (
+    "github.com/lexlapax/go-llms/pkg/agent/core"
+    "github.com/lexlapax/go-llms/pkg/agent/tools"
+)
+
+// Create any agent
+myAgent := core.NewBaseAgent("analyzer", "Analyzes data", domain.AgentTypeCustom)
+
+// Convert to tool
+tool := tools.NewAgentTool(myAgent)
+
+// Use as a tool
+ctx := domain.NewToolContext(context.Background(), nil, myAgent, "run-123")
+result, err := tool.Execute(ctx, map[string]interface{}{
+    "data": "analyze this text",
+})
+
+// Or use with LLM agents
+llmAgent := tools.WrapLLMAgentAsTool(myLLMAgent) // Optimized for LLM agents
+```
+
+### Converting Tools to Agents
+
+Built-in tools can be used as agents, enabling them to participate in workflows:
+
+```go
+// Get a built-in tool
+webFetchTool := tools.MustGetTool("web_fetch")
+
+// Convert to agent
+agent := tools.NewToolAgent(webFetchTool)
+
+// Use as an agent in workflows
+state := domain.NewState()
+state.Set("url", "https://example.com")
+result, err := agent.Run(context.Background(), state)
+
+// With event support
+dispatcher := core.NewEventDispatcher(100)
+agentWithEvents := tools.NewToolAgentWithEvents(webFetchTool, dispatcher)
+```
+
+### Registry Integration
+
+Convert and register multiple agents or tools at once:
+
+```go
+// Register agents as tools
+agents := []domain.BaseAgent{agent1, agent2, agent3}
+err := tools.RegisterAgentsAsTools(agents, registry, tools.ConversionOptions{
+    NamePrefix:          "agent_",
+    AutoGenerateMappers: true,
+})
+
+// Convert entire tool categories to agents
+webAgents, err := tools.ConvertToolCategoryToAgents(registry, "web")
+```
+
+### Schema Mapping
+
+Automatic schema conversion between agent and tool interfaces:
+
+```go
+// Derive tool schema from agent
+toolSchema := tools.DeriveToolSchemaFromAgent(myAgent)
+
+// Validate conversion compatibility
+errors := tools.ValidateAgentToolConversion(myAgent, myTool)
+
+// Generate smart mappers from schemas
+stateMapper, resultMapper := tools.GenerateSmartMappers(
+    agent.InputSchema(),
+    agent.OutputSchema(),
+)
+```
+
+### Advanced Mapping
+
+Sophisticated parameter and state transformations:
+
+```go
+// Path-based extraction for nested data
+mapper := tools.CreatePathMapper(map[string]string{
+    "userName": "user.profile.name",
+    "userAge":  "user.details.age",
+})
+
+// Type conversions
+typeMapper := tools.CreateTypeConversionMapper(map[string]func(interface{}) interface{}{
+    "age": func(v interface{}) interface{} {
+        // Convert string to int
+        if str, ok := v.(string); ok {
+            return parseInt(str)
+        }
+        return v
+    },
+})
+
+// Flatten nested structures
+flatMapper := tools.CreateNestedStateMapper(true)
+```
+
+### Tool Chains
+
+Create composite tools from multiple agents:
+
+```go
+// Chain agents together
+preprocessor := createPreprocessAgent()
+analyzer := createAnalyzerAgent()
+formatter := createFormatterAgent()
+
+// Create a single tool from the chain
+pipelineTool := tools.CreateToolChainFromAgents(
+    preprocessor,
+    analyzer,
+    formatter,
+)
+
+// Use as a single tool
+result, err := pipelineTool.Execute(ctx, inputData)
+```
+
+### Event Forwarding
+
+Enable tools to emit events through the agent event system:
+
+```go
+// Create event-aware tool context
+dispatcher := core.NewEventDispatcher(100)
+toolCtx := tools.CreateEventForwardingToolContext(
+    ctx, dispatcher, agent, "run-123",
+)
+
+// Tools can now emit events
+if toolCtx.Events != nil {
+    toolCtx.Events.EmitProgress(50, 100, "Processing...")
+    toolCtx.Events.EmitMessage("Analysis complete")
+}
+```
+
+### Best Practices for Conversion
+
+1. **Use Type-Specific Wrappers**: Use `WrapLLMAgentAsTool` for LLM agents, `WrapWorkflowAgentAsTool` for workflows
+2. **Validate Conversions**: Use `ValidateAgentToolConversion` to ensure compatibility
+3. **Leverage Auto-Mapping**: Enable `AutoGenerateMappers` for automatic schema-based conversions
+4. **Test Round-Trip**: Use `RoundTripConvert` to verify bidirectional conversion works correctly
+5. **Handle Events**: Use event-enabled wrappers when monitoring is needed
+
+For a complete example, see the [agent-tools-conversion example](../../cmd/examples/agent-tools-conversion/).
+
 ## Creating Custom Tools
 
 You can create custom tools that integrate with the built-in registry:

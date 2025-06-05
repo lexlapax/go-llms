@@ -66,7 +66,7 @@ func (t *CalculatorTool) Execute(ctx *domain.ToolContext, params interface{}) (i
 	if ctx.Events != nil {
 		ctx.Events.EmitMessage("Starting calculation")
 	}
-	
+
 	// Quick simulation of processing time
 	time.Sleep(10 * time.Millisecond)
 
@@ -108,9 +108,9 @@ func (t *CalculatorTool) Execute(ctx *domain.ToolContext, params interface{}) (i
 		if ctx.Events != nil {
 			ctx.Events.EmitCustom("calculation_complete", map[string]interface{}{
 				"operation": "add",
-				"a": calcParams.A,
-				"b": calcParams.B,
-				"result": result,
+				"a":         calcParams.A,
+				"b":         calcParams.B,
+				"result":    result,
 			})
 		}
 		return map[string]interface{}{
@@ -174,7 +174,7 @@ func (t *DummyTool) Execute(ctx *domain.ToolContext, params interface{}) (interf
 	if ctx.Events != nil {
 		ctx.Events.EmitProgress(0, 100, fmt.Sprintf("Starting %s", t.name))
 	}
-	
+
 	// Simulate processing time
 	select {
 	case <-time.After(t.delay):
@@ -227,7 +227,7 @@ func main() {
 
 	// Create provider - try to use a real provider if available
 	var llmProvider llmdomain.Provider
-	
+
 	// Try OpenAI first
 	if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
 		fmt.Println("🚀 Using OpenAI provider")
@@ -304,7 +304,7 @@ func runAgentOperations(ctx context.Context, agent *core.LLMAgent, count int) {
 		"Calculate 123 + 456 using the calculator",
 		"Calculate 50 * 20 using the calculator tool",
 		"Use the fastTool with query 'test data'",
-		"Use the slowTool with query 'detailed analysis'", 
+		"Use the slowTool with query 'detailed analysis'",
 		"Use the unreliableTool with query 'risky operation'",
 		"Calculate 100 / 4 using the calculator",
 		"Calculate 999 - 333 using the calculator tool",
