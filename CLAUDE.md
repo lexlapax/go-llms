@@ -8,8 +8,8 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 
 **Current Version**: v0.3.0 (Released February 2025)
 
-**Recent Updates** (February 4, 2025):
-- **Agent Architecture Restructuring Phases 1-4 COMPLETED**
+**Recent Updates** (February 5, 2025):
+- **Agent Architecture Restructuring Phases 1-4 COMPLETED, Phase 6 IN PROGRESS**
   - Phase 1: Core Infrastructure (COMPLETED)
     - Created domain interfaces: BaseAgent, State, Event system, Artifacts, Errors, Config
     - Implemented core functionality: BaseAgentImpl, StateManager, EventDispatcher, AgentRegistry
@@ -49,6 +49,23 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
     - Created agent-workflow-as-tool example demonstrating multi-stage research pipeline
     - Fixed all test failures in agent/tools package
     - Full integration between agents and tools with event forwarding and state sharing
+  - Phase 6: Migration and Testing (IN PROGRESS - February 5, 2025)
+    - Day 1-2: Discovery and Analysis - COMPLETED
+    - Day 3-4: Code Removal and Cleanup - COMPLETED
+      - Removed deprecated code and legacy comments
+      - Removed workflow_migration build tags
+      - Migrated all 10 test files to new architecture
+      - Moved benchmarks directory to tests/benchmarks
+    - Day 5: Documentation Updates - COMPLETED
+      - Updated all user guide documentation (getting-started.md, built-in-components.md, custom-agents.md)
+      - Updated API documentation (agent.md)
+      - Updated README.md with new architecture examples
+    - Week 1-2: Examples Overhaul - IN PROGRESS
+      - Analyzed and categorized all examples
+      - Updated basic examples (simple, agent-simple-llm, convenience)
+      - Removed 3 empty example directories
+      - Created new examples: state-persistence, error-handling, guardrails
+      - Still need to verify provider examples and create remaining new examples
 - **Documentation Updates** (February 2, 2025)
   - Consolidated LIST_MODELS_ANALYSIS.md into docs/user-guide/model-discovery.md
   - Archived LIST_MODELS_ANALYSIS.md to docs/archives/
@@ -370,23 +387,28 @@ Debug logging is implemented using build tags, so there's no performance impact 
 
 Based on the TODO.md file, these are the current development priorities:
 
-1. **Phase 6: Migration and Testing** (HIGH PRIORITY - Next Focus):
-   - Remove old superfluous code, examples and tests
-   - Scan all product code for backward compatibility code and update
-   - Update documentation to new codebase
-   - Review and update examples:
-     - Create example plan based on current codebase
-     - Remove invalid examples
-     - Update valid examples
-     - Add missing examples
-   - Comprehensive testing:
-     - Update integration tests to use core.LLMAgent
-     - Examine and update all integration tests
-     - Update stress tests to use core.LLMAgent
-   - Performance benchmarking:
-     - Move benchmarks directory under tests/
-     - Update benchmarks to use core.LLMAgent
-     - Review and update all benchmark tests
+1. **Phase 6: Migration and Testing** (HIGH PRIORITY - Currently Active):
+   - Week 1: Code Cleanup and Examples (IN PROGRESS)
+     - Day 1-2: Discovery and Analysis - COMPLETED
+     - Day 3-4: Code Removal and Cleanup - COMPLETED
+     - Day 5: Documentation Updates - COMPLETED
+   - Week 1-2: Examples Overhaul (IN PROGRESS)
+     - Example Analysis and Categorization - COMPLETED
+     - Example Updates - IN PROGRESS
+       - Basic examples updated (simple, agent-simple-llm, convenience)
+       - Need to verify provider examples
+       - Need to update advanced examples (multi, consensus, etc.)
+     - New Examples to Add - IN PROGRESS
+       - Created: state-persistence, error-handling, guardrails
+       - Still needed: workflow composition, multi-agent coordination, agent handoff
+     - Example Cleanup - IN PROGRESS
+       - Removed 3 empty directories
+       - Need to ensure all examples have README.md files
+       - Need to verify all examples compile and run
+   - Week 2: Testing Migration - PENDING
+     - Integration tests need updating to core.LLMAgent
+     - Stress tests need updating
+     - Benchmarks moved to tests/benchmarks but need updating
    
 2. **Model Context Protocol Support**:
    - Add Model Context Protocol Client support for Agents
