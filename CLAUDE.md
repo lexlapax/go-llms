@@ -8,9 +8,9 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 
 **Current Version**: v0.3.0 (Released February 2025)
 
-**Recent Updates** (February 3, 2025):
-- **Agent Architecture Restructuring Phases 1, 1.5, 2, and 3 COMPLETED**
-  - Phase 1: Implemented core infrastructure based on Google's Agent Development Kit patterns
+**Recent Updates** (February 4, 2025):
+- **Agent Architecture Restructuring Phases 1-4 COMPLETED**
+  - Phase 1: Core Infrastructure (COMPLETED)
     - Created domain interfaces: BaseAgent, State, Event system, Artifacts, Errors, Config
     - Implemented core functionality: BaseAgentImpl, StateManager, EventDispatcher, AgentRegistry
     - Created comprehensive tests with good coverage (domain: 52.9%, core: 38.9%)
@@ -32,21 +32,23 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
     - Tool calling integrated with new State management
     - Full hook system implementation (metrics, logging)
     - Comprehensive provider string parsing with aliases and model inference
-    - Created pkg/agent/core/llm_agent.go, provider_parser.go with full test coverage
     - Removed deprecated workflow.Agent package entirely
     - Updated all examples to use new core.LLMAgent
-    - Added .golangci.yml configuration for build tags
-    - llmutil/agent.go removed and dependencies migrated
-  - Phase 3: Workflow Agents (COMPLETED - February 3, 2025)
+  - Phase 3: Workflow Agents (COMPLETED)
     - Implemented complete workflow agent architecture with four agent types
     - SequentialAgent: Step-by-step processing with error handling and state passthrough
     - ParallelAgent: Concurrent processing with configurable merge strategies and concurrency limits
     - ConditionalAgent: Branch-based execution with priority evaluation and multiple match support
     - LoopAgent: Iterative processing with count/while/until loops, termination conditions, and result collection
     - All workflow agents have comprehensive tests, examples, and documentation
-    - Fixed event handling integration between workflow agents and BaseAgentImpl
-    - Fixed real LLM agent integration with proper prompt handling
     - Production-ready features: Error handling, timeout support, hook integration, metadata collection
+  - Phase 4: Agent-Tool Integration (COMPLETED - February 4, 2025)
+    - Implemented bidirectional agent-tool conversion utilities
+    - Created comprehensive tool context system with state access and event emission
+    - Updated all built-in tools to use new ToolContext interface
+    - Created agent-workflow-as-tool example demonstrating multi-stage research pipeline
+    - Fixed all test failures in agent/tools package
+    - Full integration between agents and tools with event forwarding and state sharing
 - **Documentation Updates** (February 2, 2025)
   - Consolidated LIST_MODELS_ANALYSIS.md into docs/user-guide/model-discovery.md
   - Archived LIST_MODELS_ANALYSIS.md to docs/archives/
@@ -368,35 +370,48 @@ Debug logging is implemented using build tags, so there's no performance impact 
 
 Based on the TODO.md file, these are the current development priorities:
 
-1. **Agent Architecture Restructuring** (Currently Active - HIGH PRIORITY):
-   - Phase 1: Core Infrastructure - COMPLETED (February 3, 2025)
-   - Phase 1.5: Enhanced Core Infrastructure - COMPLETED (February 3, 2025)
-   - Phase 2: LLM Agent Migration - COMPLETED (February 3, 2025)
-   - Phase 3: Workflow Agents - COMPLETED (February 3, 2025)
-   - Phase 4: Agent-Tool Integration - NEXT PRIORITY
-   - Phase 5: Advanced Features - PENDING
-   - Phase 6: Migration and Testing - PENDING
-   - Outstanding REVISIT items:
+1. **Phase 6: Migration and Testing** (HIGH PRIORITY - Next Focus):
+   - Remove old superfluous code, examples and tests
+   - Scan all product code for backward compatibility code and update
+   - Update documentation to new codebase
+   - Review and update examples:
+     - Create example plan based on current codebase
+     - Remove invalid examples
+     - Update valid examples
+     - Add missing examples
+   - Comprehensive testing:
      - Update integration tests to use core.LLMAgent
-     - Update benchmarks to use core.LLMAgent
+     - Examine and update all integration tests
      - Update stress tests to use core.LLMAgent
+   - Performance benchmarking:
+     - Move benchmarks directory under tests/
+     - Update benchmarks to use core.LLMAgent
+     - Review and update all benchmark tests
    
 2. **Model Context Protocol Support**:
    - Add Model Context Protocol Client support for Agents
    - Add Model Context Protocol Server support for Workflows or Agents
    
-3. **Built-in Agents** (POSTPONED until after architecture restructuring):
-   - Phase 3: Build useful built-in agents with and without tools
-   - Phase 4: Build useful multi-agent workflows
+3. **Phase 5: Advanced Features** (LOW PRIORITY):
+   - State persistence and serialization
+   - Agent discovery and registry
+   - Advanced merge strategies for parallel agents
+   - Streaming support for long-running agents
    
-3. **Performance Optimizations** (Marked for REVISIT):
+4. **Built-in Agents** (POSTPONED until after architecture restructuring):
+   - Text Agents (summarize, extract, analyze, translate)
+   - Research Agents (web researcher, document analyzer, fact checker)
+   - Coding Agents (code reviewer, test generator, doc writer)
+   - Data Agents (analyst, report generator, data cleaner)
+   - Feed Agents (news monitor, aggregator, summarizer, curator)
+   
+5. **Performance Optimizations** (Marked for REVISIT):
    - Create benchmark harness for A/B testing optimizations
    - Implement visualization for memory allocation patterns
    - Create real-world test scenarios for end-to-end performance
    - Advanced optimizations including adaptive channel buffer sizing, pool prewarming, etc.
-   - Performance validation with metrics and benchmarks
    
-4. **Final Documentation and Release**:
+6. **Final Documentation and Release**:
    - Fix identified cross-link issues (path inconsistencies, broken links) - REVISIT
    - Perform final consistency check across all documentation - REVISIT
    - API refinement based on usage feedback
@@ -404,8 +419,8 @@ Based on the TODO.md file, these are the current development priorities:
    
 ## Completed Development Items
 
-1. **Agent Architecture Restructuring Phases 1, 1.5, 2 & 3 (Completed February 3, 2025)**:
-   - Phase 1: Implemented core infrastructure based on Google's Agent Development Kit patterns
+1. **Agent Architecture Restructuring Phases 1-4 (Completed February 4, 2025)**:
+   - Phase 1: Core Infrastructure
      - Created comprehensive domain interfaces and core implementations
      - All components have thorough test coverage and pass linting
      - Successfully laid foundation for LLM agents and workflow agents
@@ -413,21 +428,24 @@ Based on the TODO.md file, these are the current development priorities:
      - Implemented Handoff, Guardrails, enhanced RunContext, FunctionalEventStream
      - Implemented StateValidator, StateTransforms, and TracingHook components
      - All 7 components have comprehensive tests with 100% coverage
-     - Zero linting issues, fully prepared for Phase 2 LLM Agent Migration
    - Phase 2: LLM Agent Migration
      - Created new core.LLMAgent with state-based execution
      - Implemented full hook system (metrics, logging)
-   - Phase 3: Workflow Agents (Completed February 3, 2025)
+     - Ultra-simple agent creation from strings
+     - Removed deprecated workflow package
+     - Updated all production examples
+   - Phase 3: Workflow Agents
      - Implemented complete workflow agent architecture with four agent types
      - SequentialAgent: Step-by-step processing with error handling and state passthrough
      - ParallelAgent: Concurrent processing with configurable merge strategies and concurrency limits
      - ConditionalAgent: Branch-based execution with priority evaluation and multiple match support
      - LoopAgent: Iterative processing with count/while/until loops, termination conditions, and result collection
-     - All workflow agents have comprehensive tests, examples, and documentation
-     - Ultra-simple agent creation from strings
-     - Removed deprecated workflow package
-     - Updated all production examples
-     - Created .golangci.yml for build tag management
+   - Phase 4: Agent-Tool Integration
+     - Implemented bidirectional agent-tool conversion utilities
+     - Created comprehensive tool context system with state access and event emission
+     - Updated all built-in tools to use new ToolContext interface
+     - Created agent-workflow-as-tool example demonstrating multi-stage research pipeline
+     - Fixed all test failures in agent/tools package
    
 2. **Built-in Components Implementation (Completed Phases 1-2.6, February 2, 2025)**:
    - Phase 1: Implemented comprehensive registry system with search and discovery
