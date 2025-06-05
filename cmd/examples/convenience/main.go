@@ -188,7 +188,7 @@ func main() {
 	calculatorTool := tools.NewTool(
 		"calculator",
 		"Perform mathematical calculations",
-		func(params struct {
+		func(ctx agentDomain.ToolContext, params struct {
 			Expression string `json:"expression"`
 		}) (map[string]interface{}, error) {
 			return map[string]interface{}{
@@ -210,7 +210,10 @@ func main() {
 	)
 
 	// Create the agent using core.LLMAgent
-	agent := core.NewAgent("calculator-agent", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("calculator-agent", modelName, deps)
 	agent.SetSystemPrompt("You are a helpful assistant with access to tools.")
 	agent.AddTool(calculatorTool)
 
@@ -219,17 +222,17 @@ func main() {
 	defer cancel()
 
 	state := agentDomain.NewState()
-	state.Set("prompt", "What is 7 * 6?")
+	state.Set("user_input", "What is 7 * 6?")
 
 	resultState, agentErr := agent.Run(ctx, state)
 
 	if agentErr != nil {
 		fmt.Printf("Agent error: %v\n", agentErr)
 	} else {
-		if result, exists := resultState.Get("result"); exists {
-			fmt.Printf("Agent result: %v\n", result)
+		if output, exists := resultState.Get("output"); exists {
+			fmt.Printf("Agent result: %v\n", output)
 		} else {
-			fmt.Println("No result found in agent state")
+			fmt.Println("No output found in agent state")
 		}
 	}
 

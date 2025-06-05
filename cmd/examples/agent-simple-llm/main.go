@@ -65,28 +65,28 @@ func main() {
 		defer cancel()
 
 		state := domain.NewState()
-		state.Set("prompt", "What is 2+2?")
+		state.Set("user_input", "What is 2+2?")
 
 		resultState, err := agent1.Run(ctxWithTimeout, state)
 		if err != nil {
 			log.Printf("Agent1 error: %v", err)
 		} else {
-			if result, exists := resultState.Get("result"); exists {
-				fmt.Printf("Agent1 response: %v\n", result)
+			if output, exists := resultState.Get("output"); exists {
+				fmt.Printf("Agent1 response: %v\n", output)
 			}
 		}
 	}
 
 	// Using the new state-based interface
 	state := domain.NewState()
-	state.Set("prompt", "Tell me a short joke")
+	state.Set("user_input", "Tell me a short joke")
 
 	resultState, err := mockAgent.Run(ctx, state)
 	if err != nil {
 		log.Fatalf("Mock agent error: %v", err)
 	}
 
-	if joke, exists := resultState.Get("result"); exists {
+	if joke, exists := resultState.Get("output"); exists {
 		fmt.Printf("Mock agent joke: %v\n", joke)
 	}
 

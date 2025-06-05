@@ -227,18 +227,29 @@ For more details on the Multi-Provider feature, see the [Multi-Provider Guide](m
 The Agent feature allows LLMs to interact with tools and perform complex tasks:
 
 ```go
+import (
+    "log/slog"
+    
+    "github.com/lexlapax/go-llms/pkg/agent/core"
+    "github.com/lexlapax/go-llms/pkg/agent/domain"
+    "github.com/lexlapax/go-llms/pkg/agent/tools"
+)
+
 // Create a provider
 llmProvider := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"), "gpt-4o")
 
-// Create an agent with string output type
-agent := workflow.NewAgent[struct{}, string](llmProvider).
-    SetSystemPrompt("You are a helpful assistant with access to tools.")
+// Create an agent using core.LLMAgent
+deps := core.LLMDeps{
+    Provider: llmProvider,
+}
+agent := core.NewLLMAgent("my-agent", "gpt-4o", deps)
+agent.SetSystemPrompt("You are a helpful assistant with access to tools.")
 
 // Add a calculator tool
 agent.AddTool(tools.NewTool(
     "calculator",
     "Perform mathematical calculations",
-    func(ctx context.Context, params map[string]interface{}) (interface{}, error) {
+    func(ctx domain.ToolContext, params map[string]interface{}) (interface{}, error) {
         expression, _ := params["expression"].(string)
         // Implement calculation...
         return result, nil
@@ -246,15 +257,22 @@ agent.AddTool(tools.NewTool(
 ))
 
 // Add a logging hook
-agent.AddHook(workflow.NewLoggingHook(slog.Default(), workflow.LogLevelDetailed))
+agent.WithHook(&core.LoggingHook{
+    Logger: slog.Default(),
+    Level:  core.LogLevelDetailed,
+})
 
 // Run the agent
-result, err := agent.Run(context.Background(), "What is the square root of 144?", struct{}{})
+state := domain.NewState()
+state.Set("user_input", "What is the square root of 144?")
+
+resultState, err := agent.Run(context.Background(), state)
 if err != nil {
     log.Fatalf("Agent error: %v", err)
 }
 
-fmt.Printf("Agent result: %v\n", result)
+output, _ := resultState.Get("output")
+fmt.Printf("Agent result: %v\n", output)
 ```
 
 ## Prompt Enhancement
@@ -311,8 +329,11 @@ providerPool := llmutil.NewProviderPool(
     llmutil.StrategyRoundRobin,
 )
 
-// Create an agent using core.LLMAgent
-agent := core.NewAgent("my-agent", provider)
+// Create an agent from provider string
+agent, err := core.NewAgentFromString("my-agent", "openai")
+if err != nil {
+    log.Fatalf("Failed to create agent: %v", err)
+}
 agent.SetSystemPrompt("You are a helpful assistant with access to tools.")
 agent.AddTool(calculatorTool)
 
@@ -320,8 +341,8 @@ agent.AddTool(calculatorTool)
 ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 defer cancel()
 
-state := agentDomain.NewState()
-state.Set("prompt", "What is 7 * 6?")
+state := domain.NewState()
+state.Set("user_input", "What is 7 * 6?")
 
 resultState, err := agent.Run(ctx, state)
 ```

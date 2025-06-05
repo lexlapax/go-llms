@@ -862,6 +862,3 @@ func sortResultsByTime(results []fallbackResult) {
 		}
 	}
 }
-
-// The legacy_selectConsensusTextResult function has been removed
-// as the implementation has moved to consensus.go

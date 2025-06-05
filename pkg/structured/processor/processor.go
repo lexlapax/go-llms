@@ -94,5 +94,3 @@ func (p *StructuredProcessor) ToJSON(obj interface{}) (string, error) {
 
 	return string(jsonBytes), nil
 }
-
-// Legacy extraction functions are replaced by the optimized ExtractJSON

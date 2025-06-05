@@ -4,10 +4,6 @@
 run:
   # timeout for analysis
   timeout: 5m
-  
-  # Build tags to use
-  build-tags:
-    - "!workflow_migration"
 
 linters:
   enable-all: false

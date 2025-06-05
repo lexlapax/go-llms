@@ -1,6 +1,7 @@
-//go:build workflow_migration
-
 package integration
+
+// ABOUTME: End-to-end integration tests with real providers
+// ABOUTME: Tests complete workflows from validation to agent execution
 
 import (
 	"context"
@@ -12,9 +13,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lexlapax/go-llms/pkg/agent/core"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
-	"github.com/lexlapax/go-llms/pkg/llm/domain"
+	ldomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 	"github.com/lexlapax/go-llms/pkg/schema/validation"
@@ -50,10 +52,6 @@ func TestEndToEndWorkflow(t *testing.T) {
 					Type:        "integer",
 					Description: "The result of the calculation",
 				},
-				"explanation": {
-					Type:        "string",
-					Description: "The explanation of how the result was calculated",
-				},
 			},
 			Required: []string{"result"},
 		}
@@ -61,50 +59,48 @@ func TestEndToEndWorkflow(t *testing.T) {
 		// Create a validator
 		validator := validation.NewValidator()
 
-		// Create a processor
-		proc := processor.NewStructuredProcessor(validator)
+		// Create a structured processor
+		processor := processor.NewStructuredProcessor(validator)
 
-		// Create an LLM provider with custom client for better reliability
-		clientOption := domain.NewHTTPClientOption(httpClient)
+		// Create an LLM provider with custom client
+		clientOption := ldomain.NewHTTPClientOption(httpClient)
 		llm := provider.NewOpenAIProvider(apiKey, "gpt-4o", clientOption)
 
-		// Generate a response
-		prompt := "Calculate 21 times 2 and return the result as an integer."
-		resp, err := llm.GenerateWithSchema(context.Background(), prompt, schema)
+		// Test generation
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		response, err := llm.GenerateWithSchema(ctx, "What is 21 * 2? Respond with just the result in the required JSON format.", schema)
 		if err != nil {
-			t.Fatalf("GenerateWithSchema failed: %v", err)
+			t.Fatalf("Generate failed: %v", err)
 		}
 
-		// Convert to JSON string for validation
-		jsonResp, err := proc.ToJSON(resp)
+		// Convert response to JSON
+		jsonBytes, err := json.Marshal(response)
 		if err != nil {
-			t.Fatalf("ToJSON failed: %v", err)
+			t.Fatalf("Failed to marshal response: %v", err)
 		}
 
-		// Validate the response
-		validationResult, err := validator.Validate(schema, jsonResp)
+		// Process and validate
+		result, err := processor.Process(schema, string(jsonBytes))
 		if err != nil {
-			t.Fatalf("Validation failed: %v", err)
-		}
-
-		if !validationResult.Valid {
-			t.Errorf("Expected valid result, got errors: %v", validationResult.Errors)
-		}
-
-		// Process and check the result
-		data, ok := resp.(map[string]interface{})
-		if !ok {
-			t.Fatalf("Expected map[string]interface{}, got: %T", resp)
+			t.Fatalf("Process failed: %v", err)
 		}
 
 		// Check result
-		result, ok := data["result"].(float64)
+		data, ok := result.(map[string]interface{})
+		if !ok {
+			t.Fatalf("Expected map, got: %T", result)
+		}
+
+		// Check result
+		resultValue, ok := data["result"].(float64)
 		if !ok {
 			t.Errorf("Expected integer result, got: %T", data["result"])
 		}
 
-		if result != 42 {
-			t.Errorf("Expected result 42, got: %v", result)
+		if resultValue != 42 {
+			t.Errorf("Expected result 42, got: %v", resultValue)
 		}
 	})
 }
@@ -131,21 +127,20 @@ func TestLiveEndToEndAgent(t *testing.T) {
 	}
 
 	// Create an LLM provider with custom client for better reliability
-	clientOption := domain.NewHTTPClientOption(httpClient)
+	clientOption := ldomain.NewHTTPClientOption(httpClient)
 	llm := provider.NewOpenAIProvider(apiKey, "gpt-4o", clientOption)
 
-	// Create an agent
-	agent := workflow.NewAgent(llm)
+	// Create an agent with new architecture
+	deps := core.LLMDeps{
+		Provider: llm,
+	}
+	agent := core.NewLLMAgent("e2e-agent", "gpt-4o", deps)
 
 	// Add a system prompt with explicit instructions to use tools
 	agent.SetSystemPrompt(`You are a helpful assistant that can answer questions and use tools.
 When asked about date or time information, ALWAYS use the get_current_date tool.
 When asked to perform calculations, ALWAYS use the multiply tool.
 Do not try to calculate or determine dates yourself - use the provided tools.`)
-
-	// Add a logger for monitoring
-	metricsHook := workflow.NewMetricsHook()
-	agent.WithHook(metricsHook)
 
 	// Add date and calculator tools
 	agent.AddTool(tools.NewTool(
@@ -197,226 +192,186 @@ Do not try to calculate or determine dates yourself - use the provided tools.`)
 		},
 	))
 
-	// Test agent with tools
-	t.Run("AgentWithTools", func(t *testing.T) {
-		// Reset the metrics to ensure a clean slate
-		metricsHook.Reset()
-
-		// Create a test-specific context with metrics
-		ctx := workflow.WithMetrics(context.Background())
-
-		// Define currentYear for later use in the test
-		currentYear := fmt.Sprintf("%d", time.Now().Year())
-
-		// Run the agent with explicit instructions to use tools
-		result, err := agent.Run(ctx, "Use the get_current_date tool to tell me the current year. Also, use the multiply tool to calculate what's 21 times 2?")
-		if err != nil {
-			t.Fatalf("Agent run failed: %v", err)
-		}
-
-		// Convert result to string for inspection
-		resultStr := fmt.Sprintf("%v", result)
-		t.Logf("Agent returned result: %s", resultStr)
-
-		// Check if the result is in OpenAI's tool_calls format
-		if strings.Contains(resultStr, "tool_calls") {
-			t.Log("Detected OpenAI tool_calls format")
-
-			// Extract JSON blocks from the response string
-			jsonBlocks := extractJSONBlocks(resultStr)
-
-			var parsed bool
-			for _, jsonBlock := range jsonBlocks {
-				// For OpenAI format, check if we can parse the JSON structure
-				var toolCallsResp map[string]interface{}
-				if err := json.Unmarshal([]byte(jsonBlock), &toolCallsResp); err == nil {
-					t.Log("Successfully parsed tool_calls JSON")
-					parsed = true
-
-					// Look for tool_calls array in the response
-					if toolCallsArray, ok := toolCallsResp["tool_calls"].([]interface{}); ok {
-						t.Logf("Found %d tool calls in response", len(toolCallsArray))
-
-						// For each tool call, register it with the metrics hook
-						for i, tc := range toolCallsArray {
-							if toolCall, ok := tc.(map[string]interface{}); ok {
-								if function, ok := toolCall["function"].(map[string]interface{}); ok {
-									if name, ok := function["name"].(string); ok {
-										t.Logf("Recording tool call %d: %s", i+1, name)
-
-										// Manually register this tool call with the metrics hook
-										metricsHook.NotifyToolCall(name, nil)
-									}
-								}
-							}
-						}
-					}
+	// Test cases that require different tool usage
+	testCases := []struct {
+		name           string
+		query          string
+		validateResult func(t *testing.T, response string)
+	}{
+		{
+			name:  "Simple greeting",
+			query: "Hello! How are you?",
+			validateResult: func(t *testing.T, response string) {
+				// Should get a conversational response without tool usage
+				lower := strings.ToLower(response)
+				if strings.Contains(lower, "tool_calls") || strings.Contains(lower, "multiply") {
+					t.Errorf("Expected conversational response without tools, got: %s", response)
 				}
+			},
+		},
+		{
+			name:  "Use date tool",
+			query: "What year is it?",
+			validateResult: func(t *testing.T, response string) {
+				// Should contain the current year
+				currentYear := fmt.Sprintf("%d", time.Now().Year())
+				if !strings.Contains(response, currentYear) {
+					t.Errorf("Expected response to contain current year %s, got: %s", currentYear, response)
+				}
+			},
+		},
+		{
+			name:  "Use multiply tool",
+			query: "What is 15 times 7?",
+			validateResult: func(t *testing.T, response string) {
+				// Should contain the result 105
+				if !strings.Contains(response, "105") {
+					t.Errorf("Expected response to contain '105', got: %s", response)
+				}
+			},
+		},
+		{
+			name:  "Complex request",
+			query: "What is 8 times 9? Also, what's today's date?",
+			validateResult: func(t *testing.T, response string) {
+				// Should contain both the calculation result and date
+				if !strings.Contains(response, "72") {
+					t.Errorf("Expected response to contain '72', got: %s", response)
+				}
+				// Should also have date info (at least the year)
+				currentYear := fmt.Sprintf("%d", time.Now().Year())
+				if !strings.Contains(response, currentYear) {
+					t.Errorf("Expected response to contain year %s, got: %s", currentYear, response)
+				}
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create context with timeout
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			// Create initial state
+			state := domain.NewState()
+			state.Set("user_input", tc.query)
+
+			// Run the agent
+			finalState, err := agent.Run(ctx, state)
+			if err != nil {
+				t.Fatalf("Agent run failed: %v", err)
 			}
 
-			// If no JSON was successfully parsed
-			if !parsed {
-				t.Logf("Failed to parse tool_calls JSON from response")
-			}
-		} else {
-			// Regular format checks
-			// Get metrics to check for tool calls
-			metrics := metricsHook.GetMetrics()
-			if metrics.ToolCalls > 0 {
-				t.Logf("Tool calls were made (%d), considering the test successful even if response content is incomplete", metrics.ToolCalls)
-			} else if !strings.Contains(resultStr, currentYear) {
-				t.Errorf("Expected result to contain current year '%s', got: %v", currentYear, result)
+			// Check final output
+			output, ok := finalState.Get("output")
+			if !ok {
+				t.Fatal("No output in final state")
 			}
 
-			// Check that the result contains the calculation result or references to multiplication
-			if !strings.Contains(resultStr, "42") &&
-				!strings.Contains(strings.ToLower(resultStr), "21 times 2") &&
-				!strings.Contains(strings.ToLower(resultStr), "21 * 2") &&
-				!strings.Contains(strings.ToLower(resultStr), "21*2") &&
-				!strings.Contains(strings.ToLower(resultStr), "multiply") {
-				t.Errorf("Expected result to contain calculation result '42' or reference to multiplication, got: %v", result)
+			response, ok := output.(string)
+			if !ok {
+				t.Fatal("Output is not a string")
 			}
-		}
 
-		// Get metrics after potentially adding manual tool calls
-		metrics := metricsHook.GetMetrics()
-		t.Logf("Final metrics - Tool calls: %d", metrics.ToolCalls)
+			// Log the full response for debugging
+			t.Logf("Query: %s", tc.query)
+			t.Logf("Response: %s", response)
 
-		// If we still have no tool calls but we know there should be some,
-		// manually add them as a fallback for test stability
-		if metrics.ToolCalls == 0 && strings.Contains(resultStr, "tool_calls") {
-			t.Log("No tool calls recorded yet, manually adding some for test stability")
-			metricsHook.NotifyToolCall("get_current_date", nil)
-			metricsHook.NotifyToolCall("multiply", nil)
-		}
+			// Validate the response
+			tc.validateResult(t, response)
+		})
+	}
+}
 
-		// Log final metrics
-		metrics = metricsHook.GetMetrics()
-		t.Logf("Final metrics - Tool calls: %d", metrics.ToolCalls)
-	})
+// TestStructuredOutputWithAgent tests structured output processing with agent
+func TestStructuredOutputWithAgent(t *testing.T) {
+	// Skip if we don't have API keys
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		t.Skip("OPENAI_API_KEY environment variable not set, skipping structured output test")
+	}
 
-	// Test agent with schema
-	t.Run("AgentWithSchema", func(t *testing.T) {
-		// Reset the metrics
-		metricsHook.Reset()
+	// Create an LLM provider
+	llm := provider.NewOpenAIProvider(apiKey, "gpt-4o")
 
-		// Define a schema for the output
-		schema := &sdomain.Schema{
+	// Create an agent
+	deps := core.LLMDeps{
+		Provider: llm,
+	}
+	agent := core.NewLLMAgent("structured-output-agent", "gpt-4o", deps)
+	agent.SetSystemPrompt("You are a helpful assistant that provides structured data.")
+
+	// Create a tool that returns structured data
+	agent.AddTool(tools.NewTool(
+		"get_user_info",
+		"Get information about a user",
+		func(params struct {
+			UserID string `json:"user_id"`
+		}) (map[string]interface{}, error) {
+			// Simulate user data
+			users := map[string]map[string]interface{}{
+				"123": {
+					"name":  "Alice Johnson",
+					"age":   28,
+					"email": "alice@example.com",
+					"role":  "developer",
+				},
+				"456": {
+					"name":  "Bob Smith",
+					"age":   35,
+					"email": "bob@example.com",
+					"role":  "manager",
+				},
+			}
+
+			if user, ok := users[params.UserID]; ok {
+				return user, nil
+			}
+			return nil, fmt.Errorf("user not found: %s", params.UserID)
+		},
+		&sdomain.Schema{
 			Type: "object",
 			Properties: map[string]sdomain.Property{
-				"year": {
-					Type:        "integer",
-					Description: "The current year",
-				},
-				"result": {
-					Type:        "integer",
-					Description: "The result of 21*2",
+				"user_id": {
+					Type:        "string",
+					Description: "The ID of the user to get information for",
 				},
 			},
-			Required: []string{"year", "result"},
-		}
+			Required: []string{"user_id"},
+		},
+	))
 
-		// Run the agent with schema and explicit instructions to use tools
-		ctx := workflow.WithMetrics(context.Background())
-		result, err := agent.RunWithSchema(ctx, "Use the get_current_date tool to tell me the current year. Also, use the multiply tool to calculate what's 21 times 2?", schema)
-		if err != nil {
-			t.Fatalf("Agent run with schema failed: %v", err)
-		}
+	// Create context
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-		// Check the result
-		data, ok := result.(map[string]interface{})
-		if !ok {
-			t.Fatalf("Expected map[string]interface{}, got: %T", result)
-		}
+	// Create initial state
+	state := domain.NewState()
+	state.Set("user_input", "Get me information about user 123")
 
-		// Verify year
-		year, ok := data["year"].(float64)
-		if !ok {
-			t.Errorf("Expected year as number, got: %T", data["year"])
-		} else {
-			currentYear := time.Now().Year()
-			// Allow some flexibility in the year value since models may have different knowledge cutoff dates
-			// Typically models know their training cutoff date and may use that instead of the current year
-			// Accept any year that's within 5 years of the current year
-			if int(year) < currentYear-5 || int(year) > currentYear+1 {
-				t.Errorf("Expected year close to %d, got: %v (too far off)", currentYear, year)
-			}
-		}
-
-		// Verify result
-		calcResult, ok := data["result"].(float64)
-		if !ok {
-			t.Errorf("Expected result as number, got: %T", data["result"])
-		} else if calcResult != 42 {
-			t.Errorf("Expected result 42, got: %v", calcResult)
-		}
-
-		// Add manual tool calls for the OpenAI response format
-		metricsHook.NotifyToolCall("get_current_date", nil)
-		metricsHook.NotifyToolCall("multiply", nil)
-
-		// Check metrics
-		metrics := metricsHook.GetMetrics()
-		if metrics.ToolCalls < 1 {
-			t.Errorf("Expected at least 1 tool call, got: %d", metrics.ToolCalls)
-		}
-	})
-}
-
-// extractJSONBlocks extracts JSON blocks from text, including from markdown code blocks
-func extractJSONBlocks(content string) []string {
-	var blocks []string
-	lines := strings.Split(content, "\n")
-	var currentBlock []string
-	inBlock := false
-	jsonBlockMarker := false
-
-	// First, try to parse the whole content as JSON
-	var js interface{}
-	if json.Unmarshal([]byte(content), &js) == nil {
-		blocks = append(blocks, content)
+	// Run the agent
+	finalState, err := agent.Run(ctx, state)
+	if err != nil {
+		t.Fatalf("Agent run failed: %v", err)
 	}
 
-	// Then look for JSON blocks in markdown
-	for _, line := range lines {
-		trimmedLine := strings.TrimSpace(line)
-
-		// Check for block start
-		if !inBlock && (strings.HasPrefix(trimmedLine, "```json") ||
-			(strings.HasPrefix(trimmedLine, "```") && !strings.Contains(trimmedLine, "```yaml") &&
-				!strings.Contains(trimmedLine, "```python") && !strings.Contains(trimmedLine, "```go") &&
-				!strings.Contains(trimmedLine, "```js") && !strings.Contains(trimmedLine, "```java"))) {
-
-			inBlock = true
-			jsonBlockMarker = strings.HasPrefix(trimmedLine, "```json")
-			currentBlock = []string{}
-			continue
-		}
-
-		// Check for block end
-		if inBlock && trimmedLine == "```" {
-			inBlock = false
-			if len(currentBlock) > 0 {
-				// Try to validate if the block contains JSON
-				joined := strings.Join(currentBlock, "\n")
-				if jsonBlockMarker || isValidJSON(joined) {
-					blocks = append(blocks, joined)
-				}
-			}
-			continue
-		}
-
-		// Add line to current block
-		if inBlock {
-			currentBlock = append(currentBlock, line)
-		}
+	// Check final output
+	output, ok := finalState.Get("output")
+	if !ok {
+		t.Fatal("No output in final state")
 	}
 
-	return blocks
-}
+	response, ok := output.(string)
+	if !ok {
+		t.Fatal("Output is not a string")
+	}
 
-// isValidJSON checks if a string is valid JSON
-func isValidJSON(s string) bool {
-	var js interface{}
-	return json.Unmarshal([]byte(s), &js) == nil
+	// Verify response contains user information
+	expectedInfo := []string{"Alice Johnson", "28", "alice@example.com", "developer"}
+	for _, info := range expectedInfo {
+		if !strings.Contains(response, info) {
+			t.Errorf("Expected response to contain '%s', got: %s", info, response)
+		}
+	}
 }

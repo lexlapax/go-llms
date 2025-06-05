@@ -1,5 +1,3 @@
-//go:build workflow_migration
-
 package benchmarks
 
 // ABOUTME: Benchmarks for built-in tools performance and registry operations
@@ -11,6 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
+
 	// Import built-in tools
 	builtinTools "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
@@ -20,7 +20,10 @@ import (
 
 // BenchmarkBuiltinFileRead benchmarks the built-in file read tool
 func BenchmarkBuiltinFileRead(b *testing.B) {
-	ctx := context.Background()
+	toolCtx := &domain.ToolContext{
+		Context: context.Background(),
+		RunID:   "bench-builtin",
+	}
 
 	// Create a test file
 	tempDir := b.TempDir()
@@ -41,7 +44,7 @@ func BenchmarkBuiltinFileRead(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result, err := tool.Execute(ctx, params)
+		result, err := tool.Execute(toolCtx, params)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -51,7 +54,10 @@ func BenchmarkBuiltinFileRead(b *testing.B) {
 
 // BenchmarkBuiltinFileWrite benchmarks the built-in file write tool
 func BenchmarkBuiltinFileWrite(b *testing.B) {
-	ctx := context.Background()
+	toolCtx := &domain.ToolContext{
+		Context: context.Background(),
+		RunID:   "bench-builtin",
+	}
 	tempDir := b.TempDir()
 	testContent := "This is benchmark test content for write operations."
 
@@ -68,7 +74,7 @@ func BenchmarkBuiltinFileWrite(b *testing.B) {
 			"content": testContent,
 		}
 
-		result, err := tool.Execute(ctx, params)
+		result, err := tool.Execute(toolCtx, params)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -79,7 +85,10 @@ func BenchmarkBuiltinFileWrite(b *testing.B) {
 
 // BenchmarkBuiltinLargeFileHandling benchmarks large file handling
 func BenchmarkBuiltinLargeFileHandling(b *testing.B) {
-	ctx := context.Background()
+	toolCtx := &domain.ToolContext{
+		Context: context.Background(),
+		RunID:   "bench-builtin",
+	}
 
 	// Create a larger test file (1MB)
 	tempDir := b.TempDir()
@@ -108,7 +117,7 @@ func BenchmarkBuiltinLargeFileHandling(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result, err := tool.Execute(ctx, params)
+		result, err := tool.Execute(toolCtx, params)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -118,7 +127,10 @@ func BenchmarkBuiltinLargeFileHandling(b *testing.B) {
 
 // BenchmarkBuiltinExecuteCommand benchmarks the built-in execute command tool
 func BenchmarkBuiltinExecuteCommand(b *testing.B) {
-	ctx := context.Background()
+	toolCtx := &domain.ToolContext{
+		Context: context.Background(),
+		RunID:   "bench-builtin",
+	}
 
 	tool, ok := builtinTools.GetTool("execute_command")
 	if !ok {
@@ -132,7 +144,7 @@ func BenchmarkBuiltinExecuteCommand(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		result, err := tool.Execute(ctx, params)
+		result, err := tool.Execute(toolCtx, params)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -209,7 +221,10 @@ func BenchmarkToolDiscovery(b *testing.B) {
 
 // BenchmarkAtomicFileWrite benchmarks atomic file writing with backups
 func BenchmarkAtomicFileWrite(b *testing.B) {
-	ctx := context.Background()
+	toolCtx := &domain.ToolContext{
+		Context: context.Background(),
+		RunID:   "bench-builtin",
+	}
 	tempDir := b.TempDir()
 
 	tool, ok := builtinTools.GetTool("file_write")
@@ -233,7 +248,7 @@ func BenchmarkAtomicFileWrite(b *testing.B) {
 			"create_backup": true,
 		}
 
-		result, err := tool.Execute(ctx, params)
+		result, err := tool.Execute(toolCtx, params)
 		if err != nil {
 			b.Fatal(err)
 		}

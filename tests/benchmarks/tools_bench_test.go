@@ -1,5 +1,3 @@
-//go:build workflow_migration
-
 package benchmarks
 
 import (
@@ -63,7 +61,10 @@ func BenchmarkToolCreation(b *testing.B) {
 // BenchmarkToolParameterHandling benchmarks tool parameter handling performance
 func BenchmarkToolParameterHandling(b *testing.B) {
 	// Prepare test data
-	ctx := context.Background()
+	toolCtx := &domain.ToolContext{
+		Context: context.Background(),
+		RunID:   "bench-param",
+	}
 	params := map[string]interface{}{
 		"a": 10.5,
 		"b": 20.5,
@@ -103,7 +104,7 @@ func BenchmarkToolParameterHandling(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := tool.Execute(ctx, params)
+		_, err := tool.Execute(toolCtx, params)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -112,7 +113,10 @@ func BenchmarkToolParameterHandling(b *testing.B) {
 
 // BenchmarkToolConversionTypes benchmarks tool type conversion performance
 func BenchmarkToolConversionTypes(b *testing.B) {
-	ctx := context.Background()
+	toolCtx := &domain.ToolContext{
+		Context: context.Background(),
+		RunID:   "bench-convert",
+	}
 
 	// Benchmark conversions with different parameter types
 	testCases := []struct {
@@ -171,7 +175,7 @@ func BenchmarkToolConversionTypes(b *testing.B) {
 		b.Run(tc.name, func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_, err := tool.Execute(ctx, tc.params)
+				_, err := tool.Execute(toolCtx, tc.params)
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -182,7 +186,10 @@ func BenchmarkToolConversionTypes(b *testing.B) {
 
 // BenchmarkCommonTools benchmarks common tool implementations
 func BenchmarkCommonTools(b *testing.B) {
-	ctx := context.Background()
+	toolCtx := &domain.ToolContext{
+		Context: context.Background(),
+		RunID:   "bench-common",
+	}
 
 	// Get built-in tools
 	readFileTool, _ := builtinTools.GetTool("file_read")
@@ -215,7 +222,7 @@ func BenchmarkCommonTools(b *testing.B) {
 		b.Run(tc.name, func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_, err := tc.tool.Execute(ctx, tc.params)
+				_, err := tc.tool.Execute(toolCtx, tc.params)
 				if err != nil {
 					b.Fatal(err)
 				}

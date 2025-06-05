@@ -351,25 +351,27 @@ Custom agents can be seamlessly integrated with workflow agents:
 
 ```go
 // Use custom agent as a step in sequential workflow
-sequential := workflow.NewSequentialAgent("data-processing").
-    AddAgent(customDataExtractor).
-    AddAgent(customDataValidator).
-    AddAgent(customDataProcessor)
+sequential := core.NewSequentialAgent("data-processing", "Sequential data processing agent")
+sequential.AddAgent(customDataExtractor)
+sequential.AddAgent(customDataValidator)
+sequential.AddAgent(customDataProcessor)
 
 // Use custom agent in parallel workflow
-parallel := workflow.NewParallelAgent("analysis").
-    AddAgent(customTextAnalyzer).
-    AddAgent(customImageAnalyzer).
-    AddAgent(customDataAnalyzer)
+parallel := core.NewParallelAgent("analysis", "Parallel analysis agent")
+parallel.AddAgent(customTextAnalyzer)
+parallel.AddAgent(customImageAnalyzer)
+parallel.AddAgent(customDataAnalyzer)
 
 // Use custom agent in conditional workflow
-conditional := workflow.NewConditionalAgent("smart-processor").
-    AddBranch("text", func(state *domain.State) bool {
-        return state.GetString("content_type") == "text"
-    }, customTextProcessor).
-    AddBranch("image", func(state *domain.State) bool {
-        return state.GetString("content_type") == "image"  
-    }, customImageProcessor)
+conditional := core.NewConditionalAgent("smart-processor", "Smart content processor")
+conditional.AddBranch("text", func(state *domain.State) bool {
+    dataType, _ := state.Get("content_type")
+    return dataType == "text"
+}, customTextProcessor)
+conditional.AddBranch("image", func(state *domain.State) bool {
+    dataType, _ := state.Get("content_type")
+    return dataType == "image"  
+}, customImageProcessor)
 ```
 
 ## Custom Hooks for Monitoring

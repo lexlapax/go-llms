@@ -14,7 +14,7 @@ BINARY_DIR=bin
 CMD_DIR=cmd
 PACKAGE_DIR=pkg
 EXAMPLES_DIR=examples
-BENCHMARKS_DIR=benchmarks
+BENCHMARKS_DIR=tests/benchmarks
 TESTS_DIR=tests
 
 # Binary names

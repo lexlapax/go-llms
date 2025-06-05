@@ -1,6 +1,7 @@
-//go:build workflow_migration
-
 package integration
+
+// ABOUTME: End-to-end integration tests for agent with Gemini provider
+// ABOUTME: Tests real LLM interactions with tools using Google Gemini models
 
 import (
 	"context"
@@ -10,8 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lexlapax/go-llms/pkg/agent/core"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
@@ -29,15 +31,14 @@ func TestLiveEndToEndAgentGemini(t *testing.T) {
 	// than the default flash-lite model
 	llm := provider.NewGeminiProvider(apiKey, "gemini-2.0-flash")
 
-	// Create an agent
-	agent := workflow.NewAgent(llm)
+	// Create an agent with new architecture
+	deps := core.LLMDeps{
+		Provider: llm,
+	}
+	agent := core.NewLLMAgent("gemini-e2e-agent", "gemini-2.0-flash", deps)
 
 	// Add a system prompt
 	agent.SetSystemPrompt("You are a helpful assistant that can answer questions and use tools.")
-
-	// Add a logger for monitoring
-	metricsHook := workflow.NewMetricsHook()
-	agent.WithHook(metricsHook)
 
 	// Add date and calculator tools
 	agent.AddTool(tools.NewTool(
@@ -57,34 +58,45 @@ func TestLiveEndToEndAgentGemini(t *testing.T) {
 		},
 	))
 
-	// Add a calculator tool for multiply
 	agent.AddTool(tools.NewTool(
-		"multiply",
-		"Multiply two numbers",
+		"calculator",
+		"Perform basic arithmetic calculations",
 		func(params struct {
-			A float64 `json:"a"`
-			B float64 `json:"b"`
+			Operation string  `json:"operation" description:"The operation to perform: add, subtract, multiply, or divide"`
+			A         float64 `json:"a" description:"The first number"`
+			B         float64 `json:"b" description:"The second number"`
 		}) (map[string]interface{}, error) {
-			// For this test, if both values are 0, assume it's a default and use the expected values
-			a, b := params.A, params.B
-			if a == 0 && b == 0 {
-				// Use the values from the prompt: 21 * 2
-				a, b = 21, 2
+			var result float64
+			switch params.Operation {
+			case "add":
+				result = params.A + params.B
+			case "subtract":
+				result = params.A - params.B
+			case "multiply":
+				result = params.A * params.B
+			case "divide":
+				if params.B == 0 {
+					return nil, fmt.Errorf("division by zero")
+				}
+				result = params.A / params.B
+			default:
+				return nil, fmt.Errorf("unknown operation: %s", params.Operation)
 			}
-
-			result := a * b
-
-			// Return a more explicit structure to ensure the LLM gets the result clearly
 			return map[string]interface{}{
-				"result":      result,
-				"calculation": fmt.Sprintf("%g * %g = %g", a, b, result),
-				"a":           a,
-				"b":           b,
+				"result":    result,
+				"operation": params.Operation,
+				"a":         params.A,
+				"b":         params.B,
 			}, nil
 		},
 		&sdomain.Schema{
 			Type: "object",
 			Properties: map[string]sdomain.Property{
+				"operation": {
+					Type:        "string",
+					Description: "The operation to perform",
+					Enum:        []string{"add", "subtract", "multiply", "divide"},
+				},
 				"a": {
 					Type:        "number",
 					Description: "The first number",
@@ -94,148 +106,343 @@ func TestLiveEndToEndAgentGemini(t *testing.T) {
 					Description: "The second number",
 				},
 			},
+			Required: []string{"operation", "a", "b"},
+		},
+	))
+
+	// Test cases
+	testCases := []struct {
+		name     string
+		query    string
+		validate func(t *testing.T, response string)
+	}{
+		{
+			name:  "Simple greeting",
+			query: "Hello! How are you today?",
+			validate: func(t *testing.T, response string) {
+				// Should contain a greeting response
+				lower := strings.ToLower(response)
+				if !strings.Contains(lower, "hello") && !strings.Contains(lower, "hi") && !strings.Contains(lower, "good") && !strings.Contains(lower, "well") {
+					t.Errorf("Expected greeting response, got: %s", response)
+				}
+			},
+		},
+		{
+			name:  "Use date tool",
+			query: "What's today's date?",
+			validate: func(t *testing.T, response string) {
+				// Should contain today's date
+				today := time.Now().Format("2006-01-02")
+				// Check for at least the year, as formatting might vary
+				if !strings.Contains(response, today[:4]) {
+					t.Errorf("Expected response to contain current year, got: %s", response)
+				}
+			},
+		},
+		{
+			name:  "Use calculator tool",
+			query: "What is 25 times 12?",
+			validate: func(t *testing.T, response string) {
+				// Should contain the result 300
+				if !strings.Contains(response, "300") {
+					t.Errorf("Expected response to contain '300', got: %s", response)
+				}
+			},
+		},
+		{
+			name:  "Division calculation",
+			query: "Can you divide 144 by 12 for me?",
+			validate: func(t *testing.T, response string) {
+				// Should contain the result 12
+				if !strings.Contains(response, "12") {
+					t.Errorf("Expected response to contain '12', got: %s", response)
+				}
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create context with timeout
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			// Create initial state
+			state := domain.NewState()
+			state.Set("user_input", tc.query)
+
+			// Run the agent
+			finalState, err := agent.Run(ctx, state)
+			if err != nil {
+				t.Fatalf("Agent run failed: %v", err)
+			}
+
+			// Check final output
+			output, ok := finalState.Get("output")
+			if !ok {
+				t.Fatal("No output in final state")
+			}
+
+			response, ok := output.(string)
+			if !ok {
+				t.Fatal("Output is not a string")
+			}
+
+			// Log the response for debugging
+			t.Logf("Query: %s", tc.query)
+			t.Logf("Response: %s", response)
+
+			// Validate the response
+			tc.validate(t, response)
+		})
+	}
+}
+
+// TestLiveGeminiComplexWorkflow tests more complex agent workflows with Gemini
+func TestLiveGeminiComplexWorkflow(t *testing.T) {
+	// Skip if we don't have API keys
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		t.Skip("GEMINI_API_KEY environment variable not set, skipping live Gemini complex workflow test")
+	}
+
+	// Create a Gemini provider
+	llm := provider.NewGeminiProvider(apiKey, "gemini-2.0-flash")
+
+	// Create an agent
+	deps := core.LLMDeps{
+		Provider: llm,
+	}
+	agent := core.NewLLMAgent("gemini-complex-agent", "gemini-2.0-flash", deps)
+	agent.SetSystemPrompt("You are a helpful assistant that can perform complex tasks using multiple tools.")
+
+	// Add a weather tool (simulated)
+	agent.AddTool(tools.NewTool(
+		"get_weather",
+		"Get the current weather for a location",
+		func(params struct {
+			Location string `json:"location"`
+		}) (map[string]interface{}, error) {
+			// Simulate weather data
+			weatherData := map[string]map[string]interface{}{
+				"new york": {
+					"temperature": 72,
+					"condition":   "partly cloudy",
+					"humidity":    65,
+					"wind":        "10 mph",
+				},
+				"london": {
+					"temperature": 64,
+					"condition":   "rainy",
+					"humidity":    85,
+					"wind":        "15 mph",
+				},
+				"tokyo": {
+					"temperature": 78,
+					"condition":   "sunny",
+					"humidity":    55,
+					"wind":        "5 mph",
+				},
+			}
+
+			location := strings.ToLower(params.Location)
+			if data, ok := weatherData[location]; ok {
+				data["location"] = params.Location
+				return data, nil
+			}
+
+			// Default weather for unknown locations
+			return map[string]interface{}{
+				"location":    params.Location,
+				"temperature": 70,
+				"condition":   "clear",
+				"humidity":    60,
+				"wind":        "8 mph",
+			}, nil
+		},
+		&sdomain.Schema{
+			Type: "object",
+			Properties: map[string]sdomain.Property{
+				"location": {
+					Type:        "string",
+					Description: "The location to get weather for",
+				},
+			},
+			Required: []string{"location"},
+		},
+	))
+
+	// Add a temperature converter tool
+	agent.AddTool(tools.NewTool(
+		"convert_temperature",
+		"Convert temperature between Celsius and Fahrenheit",
+		func(params struct {
+			Value float64 `json:"value"`
+			From  string  `json:"from"`
+			To    string  `json:"to"`
+		}) (map[string]interface{}, error) {
+			var result float64
+			if strings.ToLower(params.From) == "fahrenheit" && strings.ToLower(params.To) == "celsius" {
+				result = (params.Value - 32) * 5 / 9
+			} else if strings.ToLower(params.From) == "celsius" && strings.ToLower(params.To) == "fahrenheit" {
+				result = (params.Value * 9 / 5) + 32
+			} else {
+				return nil, fmt.Errorf("invalid conversion: %s to %s", params.From, params.To)
+			}
+			return map[string]interface{}{
+				"original_value": params.Value,
+				"original_unit":  params.From,
+				"converted_value": result,
+				"converted_unit":  params.To,
+			}, nil
+		},
+		&sdomain.Schema{
+			Type: "object",
+			Properties: map[string]sdomain.Property{
+				"value": {
+					Type:        "number",
+					Description: "The temperature value to convert",
+				},
+				"from": {
+					Type:        "string",
+					Description: "The unit to convert from (Celsius or Fahrenheit)",
+				},
+				"to": {
+					Type:        "string",
+					Description: "The unit to convert to (Celsius or Fahrenheit)",
+				},
+			},
+			Required: []string{"value", "from", "to"},
+		},
+	))
+
+	// Test complex workflow
+	t.Run("WeatherAndConversion", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		// Create initial state
+		state := domain.NewState()
+		state.Set("user_input", "What's the weather in New York? Also convert the temperature to Celsius.")
+
+		// Run the agent
+		finalState, err := agent.Run(ctx, state)
+		if err != nil {
+			t.Fatalf("Agent run failed: %v", err)
+		}
+
+		// Check final output
+		output, ok := finalState.Get("output")
+		if !ok {
+			t.Fatal("No output in final state")
+		}
+
+		response, ok := output.(string)
+		if !ok {
+			t.Fatal("Output is not a string")
+		}
+
+		t.Logf("Complex workflow response: %s", response)
+
+		// Verify the response contains weather info and conversion
+		lower := strings.ToLower(response)
+		if !strings.Contains(lower, "new york") {
+			t.Error("Expected response to mention New York")
+		}
+		if !strings.Contains(lower, "celsius") || !strings.Contains(lower, "°c") {
+			t.Error("Expected response to contain Celsius conversion")
+		}
+		// Should contain weather conditions
+		if !strings.Contains(lower, "cloudy") && !strings.Contains(lower, "weather") {
+			t.Error("Expected response to contain weather information")
+		}
+	})
+}
+
+// TestLiveGeminiErrorRecovery tests error handling and recovery with Gemini
+func TestLiveGeminiErrorRecovery(t *testing.T) {
+	// Skip if we don't have API keys
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		t.Skip("GEMINI_API_KEY environment variable not set, skipping live Gemini error recovery test")
+	}
+
+	// Create a Gemini provider
+	llm := provider.NewGeminiProvider(apiKey, "gemini-2.0-flash")
+
+	// Create an agent
+	deps := core.LLMDeps{
+		Provider: llm,
+	}
+	agent := core.NewLLMAgent("gemini-error-agent", "gemini-2.0-flash", deps)
+	agent.SetSystemPrompt("You are a helpful assistant. When tools fail, explain the error gracefully.")
+
+	// Add a calculator tool that can fail
+	agent.AddTool(tools.NewTool(
+		"safe_divide",
+		"Safely divide two numbers",
+		func(params struct {
+			A float64 `json:"a"`
+			B float64 `json:"b"`
+		}) (map[string]interface{}, error) {
+			if params.B == 0 {
+				return nil, fmt.Errorf("cannot divide by zero")
+			}
+			result := params.A / params.B
+			return map[string]interface{}{
+				"result": result,
+				"a":      params.A,
+				"b":      params.B,
+			}, nil
+		},
+		&sdomain.Schema{
+			Type: "object",
+			Properties: map[string]sdomain.Property{
+				"a": {
+					Type:        "number",
+					Description: "The dividend",
+				},
+				"b": {
+					Type:        "number",
+					Description: "The divisor",
+				},
+			},
 			Required: []string{"a", "b"},
 		},
 	))
 
-	// Test agent with tools
-	t.Run("GeminiAgentWithTools", func(t *testing.T) {
-		// Reset the metrics to ensure a clean slate
-		metricsHook.Reset()
+	// Test error handling
+	t.Run("DivisionByZero", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
 
-		// Create a test-specific context with metrics
-		ctx := workflow.WithMetrics(context.Background())
+		// Create initial state
+		state := domain.NewState()
+		state.Set("user_input", "Please divide 100 by 0")
 
 		// Run the agent
-		result, err := agent.Run(ctx, "What's the current year? Also, what's 21 times 2?")
+		finalState, err := agent.Run(ctx, state)
 		if err != nil {
-			t.Fatalf("Gemini agent run failed: %v", err)
+			t.Fatalf("Agent run failed: %v", err)
 		}
 
-		// Convert result to string for inspection
-		resultStr := fmt.Sprintf("%v", result)
-		t.Logf("Gemini agent returned result: %s", resultStr)
-
-		// Check the content of the result
-		// Check that the result contains the year
-		currentYear := fmt.Sprintf("%d", time.Now().Year())
-		if !strings.Contains(resultStr, currentYear) {
-			// Allow for the model to have a different knowledge cutoff date
-			t.Logf("Note: Result doesn't contain current year '%s'. This might be due to the model's knowledge cutoff date.", currentYear)
-		}
-
-		// In testing context we'll just log this but not fail the test
-		// Different API versions might respond differently
-		if !strings.Contains(resultStr, "42") {
-			t.Logf("Note: Result doesn't contain calculation result '42': %v", result)
-
-			// Instead, let's manually verify if the agent engaged with the tools
-			// This test might be flaky because different Gemini model versions or API behavior could change
-			// For CI environments, we'll skip the strict check
-			if os.Getenv("CI") == "" &&
-				!strings.Contains(resultStr, "multiply") &&
-				!strings.Contains(resultStr, "21") &&
-				!strings.Contains(resultStr, "times 2") &&
-				!strings.Contains(resultStr, "calculation") {
-				t.Logf("Warning: Agent result doesn't seem to reference the multiplication task")
-				// Don't fail the test, as this might be due to API response changes
-			}
-		}
-
-		// Get metrics after potentially adding manual tool calls
-		metrics := metricsHook.GetMetrics()
-		t.Logf("Final metrics - Tool calls: %d", metrics.ToolCalls)
-
-		// Gemini might format responses differently, so manually check for tool call descriptions
-		if metrics.ToolCalls == 0 && (strings.Contains(resultStr, "get_current_date") || strings.Contains(resultStr, "multiply")) {
-			t.Log("No tool calls recorded yet, manually adding some for test stability")
-			if strings.Contains(resultStr, "get_current_date") {
-				metricsHook.NotifyToolCall("get_current_date", nil)
-			}
-			if strings.Contains(resultStr, "multiply") || strings.Contains(resultStr, "21 * 2") || strings.Contains(resultStr, "21 times 2") {
-				metricsHook.NotifyToolCall("multiply", nil)
-			}
-		}
-
-		// Final check of metrics
-		metrics = metricsHook.GetMetrics()
-		if metrics.ToolCalls < 1 {
-			t.Errorf("Expected at least 1 tool call, got: %d", metrics.ToolCalls)
-		}
-	})
-
-	// Test agent with schema
-	t.Run("GeminiAgentWithSchema", func(t *testing.T) {
-		// Reset the metrics
-		metricsHook.Reset()
-
-		// Define a schema for the output
-		schema := &sdomain.Schema{
-			Type: "object",
-			Properties: map[string]sdomain.Property{
-				"year": {
-					Type:        "integer",
-					Description: "The current year",
-				},
-				"result": {
-					Type:        "integer",
-					Description: "The result of 21*2",
-				},
-			},
-			Required: []string{"year", "result"},
-		}
-
-		// Run the agent with schema
-		ctx := workflow.WithMetrics(context.Background())
-		result, err := agent.RunWithSchema(ctx, "What's the current year? Also, what's 21 times 2?", schema)
-		if err != nil {
-			t.Fatalf("Gemini agent run with schema failed: %v", err)
-		}
-
-		// Check the result
-		data, ok := result.(map[string]interface{})
+		// Check final output
+		output, ok := finalState.Get("output")
 		if !ok {
-			t.Fatalf("Expected map[string]interface{}, got: %T", result)
+			t.Fatal("No output in final state")
 		}
 
-		// Verify year
-		year, ok := data["year"].(float64)
+		response, ok := output.(string)
 		if !ok {
-			t.Errorf("Expected year as number, got: %T", data["year"])
-		} else {
-			currentYear := time.Now().Year()
-			// Allow some flexibility in the year value since models may have different knowledge cutoff dates
-			// Typically models know their training cutoff date and may use that instead of the current year
-			// Accept any year that's within 5 years of the current year
-			if int(year) < currentYear-5 || int(year) > currentYear+1 {
-				t.Logf("Note: Returned year %d is outside the expected range of %d±5", int(year), currentYear)
-			}
+			t.Fatal("Output is not a string")
 		}
 
-		// Verify result
-		calcResult, ok := data["result"].(float64)
-		if !ok {
-			t.Errorf("Expected result as number, got: %T", data["result"])
-		} else if calcResult != 42 {
-			// Don't fail the test in CI environments as models might change behavior
-			if os.Getenv("CI") == "" {
-				t.Logf("Warning: Expected result 42, got: %v", calcResult)
-			} else {
-				t.Errorf("Expected result 42, got: %v", calcResult)
-			}
-		}
+		t.Logf("Error handling response: %s", response)
 
-		// Add manual tool calls for Gemini response format if needed
-		if metrics := metricsHook.GetMetrics(); metrics.ToolCalls == 0 {
-			metricsHook.NotifyToolCall("get_current_date", nil)
-			metricsHook.NotifyToolCall("multiply", nil)
-			t.Log("Manually added tool calls for Gemini integration test")
-		}
-
-		// Check metrics
-		metrics := metricsHook.GetMetrics()
-		if metrics.ToolCalls < 1 {
-			t.Errorf("Expected at least 1 tool call, got: %d", metrics.ToolCalls)
+		// Verify the response handles the error gracefully
+		lower := strings.ToLower(response)
+		if !strings.Contains(lower, "zero") || !strings.Contains(lower, "cannot") || !strings.Contains(lower, "divide") {
+			t.Error("Expected response to explain division by zero error")
 		}
 	})
 }

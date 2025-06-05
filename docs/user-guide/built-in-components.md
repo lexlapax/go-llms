@@ -322,7 +322,8 @@ Built-in tools integrate seamlessly with the agent system:
 
 ```go
 import (
-    "github.com/lexlapax/go-llms/pkg/agent/workflow"
+    "github.com/lexlapax/go-llms/pkg/agent/core"
+    "github.com/lexlapax/go-llms/pkg/agent/domain"
     "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
     _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
     _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
@@ -330,20 +331,22 @@ import (
 )
 
 // Create an agent with built-in tools
-agent := workflow.NewAgent(
-    "research-agent",
-    provider,
-    workflow.WithTools(
-        tools.MustGetTool("web_search"),
-        tools.MustGetTool("web_fetch"),
-        tools.MustGetTool("file_write"),
-    ),
-)
+deps := core.LLMDeps{
+    Provider: provider,
+}
+agent := core.NewLLMAgent("research-agent", "gpt-4o", deps)
+agent.SetSystemPrompt("You are a research assistant with access to tools.")
+
+// Add built-in tools
+agent.AddTool(tools.MustGetTool("web_search"))
+agent.AddTool(tools.MustGetTool("web_fetch"))
+agent.AddTool(tools.MustGetTool("file_write"))
 
 // The agent can now use these tools in its workflow
-response, err := agent.Run(ctx, workflow.UserMessage(
-    "Search for information about Go generics and save it to a file",
-))
+state := domain.NewState()
+state.Set("user_input", "Search for information about Go generics and save it to a file")
+
+resultState, err := agent.Run(ctx, state)
 ```
 
 ## Agent-Tool Conversion

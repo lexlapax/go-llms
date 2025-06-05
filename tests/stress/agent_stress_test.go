@@ -1,6 +1,7 @@
-//go:build workflow_migration
-
 package stress
+
+// ABOUTME: Stress tests for agent stability under high load and concurrency
+// ABOUTME: Tests memory usage, concurrent execution, and system stability
 
 import (
 	"context"
@@ -12,8 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	llmdomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	"github.com/lexlapax/go-llms/pkg/testutils"
@@ -39,8 +40,11 @@ func TestAgentConcurrentRequests(t *testing.T) {
 	// Create a base mock provider for all agents
 	baseProvider := provider.NewMockProvider()
 
-	// Create a variety of agent configurations to test
-	baseAgent := workflow.NewAgent(baseProvider)
+	// Create agent with new architecture
+	deps := core.LLMDeps{
+		Provider: baseProvider,
+	}
+	baseAgent := core.NewLLMAgent("stress-test-agent", "mock", deps)
 	for _, tool := range mockTools {
 		baseAgent.AddTool(tool)
 	}
@@ -49,213 +53,304 @@ func TestAgentConcurrentRequests(t *testing.T) {
 	baseAgentToolCounter := &safeToolCounter{}
 	baseAgent.WithHook(baseAgentToolCounter)
 
-	cachedAgent := workflow.NewCachedAgent(baseProvider)
-	for _, tool := range mockTools {
-		cachedAgent.AddTool(tool)
-	}
+	// Set system prompts
+	baseAgent.SetSystemPrompt("You are a helpful assistant.")
 
-	// Add a shared thread-safe tool counter for the cached agent
-	cachedAgentToolCounter := &safeToolCounter{}
-	cachedAgent.WithHook(cachedAgentToolCounter)
+	// Number of concurrent goroutines and requests per goroutine
+	concurrency := 50
+	requestsPerGoroutine := 20
 
-	// Create providers for the multi-agent
-	mockProvider1 := provider.NewMockProvider()
-	mockProvider2 := provider.NewMockProvider()
-	mockProvider3 := provider.NewMockProvider()
+	// Track successes and failures
+	var successCount, failureCount int64
+	var wg sync.WaitGroup
 
-	// Create a multi-agent setup with the providers
-	multiProvider := provider.NewMultiProvider(
-		[]provider.ProviderWeight{
-			{Provider: mockProvider1, Weight: 1.0},
-			{Provider: mockProvider2, Weight: 1.0},
-			{Provider: mockProvider3, Weight: 1.0},
-		},
-		provider.StrategyFastest,
-	)
+	// Mock provider response generator
+	baseProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []llmdomain.Message, options ...llmdomain.Option) (llmdomain.Response, error) {
+		// Simulate varying response times
+		delay := time.Duration(rand.Intn(50)) * time.Millisecond
+		select {
+		case <-time.After(delay):
+			// Randomly choose to use a tool or not
+			if rand.Float32() < 0.3 {
+				// Return a tool-using response
+				return llmdomain.Response{
+					Content: `I'll help you with that calculation.
 
-	multiAgent := workflow.NewAgent(multiProvider)
-	for _, tool := range mockTools {
-		multiAgent.AddTool(tool)
-	}
+<tool_calls>
+[
+  {
+    "name": "calculator",
+    "arguments": {
+      "operation": "add",
+      "a": 10,
+      "b": 20
+    }
+  }
+]
+</tool_calls>`,
+				}, nil
+			}
+			// Return a simple response
+			return llmdomain.Response{
+				Content: "Here's a helpful response to your query.",
+			}, nil
+		case <-ctx.Done():
+			return llmdomain.Response{}, ctx.Err()
+		}
+	})
 
-	// Add a shared thread-safe tool counter for the multi agent
-	multiAgentToolCounter := &safeToolCounter{}
-	multiAgent.WithHook(multiAgentToolCounter)
+	// Run concurrent requests
+	startTime := time.Now()
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			for j := 0; j < requestsPerGoroutine; j++ {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
-	// Agent configs for testing
-	agents := []struct {
-		name      string
-		agent     domain.Agent
-		toolCount *safeToolCounter
-	}{
-		{"BaseAgent", baseAgent, baseAgentToolCounter},
-		{"CachedAgent", cachedAgent, cachedAgentToolCounter},
-		{"MultiAgent", multiAgent, multiAgentToolCounter},
-	}
+				// Create state with varying inputs
+				state := domain.NewState()
+				queries := []string{
+					"What is 2 + 2?",
+					"What's the weather like?",
+					"Search for information about Go programming",
+					"Calculate 15 * 7",
+					"Tell me a joke",
+				}
+				state.Set("user_input", queries[rand.Intn(len(queries))])
 
-	// Define concurrency levels to test
-	concurrencyLevels := []int{5, 20, 50, 100}
-
-	// Define various prompts to simulate real-world variety
-	prompts := []string{
-		"What is 123 + 456?",
-		"What's the weather like in San Francisco?",
-		"Find information about the history of computers",
-		"Calculate 987 - 654",
-		"What's the weather like in Tokyo?",
-		"Search for information about artificial intelligence",
-		"What's 42 * 7?",
-		"Weather forecast for London",
-		"Find details about quantum computing",
-		"Calculate the square root of 144",
-	}
-
-	// Run tests for each agent type and concurrency level
-	for _, a := range agents {
-		for _, concurrency := range concurrencyLevels {
-			t.Run(fmt.Sprintf("%s_Concurrency_%d", a.name, concurrency), func(t *testing.T) {
-				var (
-					wg             sync.WaitGroup
-					successful     int32
-					failed         int32
-					totalLatencyMs int64
-					maxLatencyMs   int64
-					minLatencyMs   int64 = 999999
-				)
-
-				// Reset the tool counter for each test
-				a.toolCount.Reset()
-
-				// Set a reasonable timeout
-				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-				defer cancel()
-
-				// Create a semaphore to limit concurrent goroutines
-				sem := make(chan struct{}, concurrency)
-
-				// Track goroutine count
-				initialGoroutines := runtime.NumGoroutine()
-
-				// Launch concurrent requests
-				startTime := time.Now()
-				for i := 0; i < concurrency*2; i++ {
-					wg.Add(1)
-					sem <- struct{}{} // Acquire semaphore
-					go func(id int) {
-						defer func() {
-							<-sem // Release semaphore
-							wg.Done()
-						}()
-
-						// Select a prompt randomly
-						prompt := prompts[rand.Intn(len(prompts))]
-
-						// Measure request time
-						requestStart := time.Now()
-						_, err := a.agent.Run(ctx, prompt)
-						requestDuration := time.Since(requestStart)
-						latencyMs := requestDuration.Milliseconds()
-
-						// Update metrics atomically
-						atomic.AddInt64(&totalLatencyMs, latencyMs)
-
-						// Update min/max latency
-						for {
-							current := atomic.LoadInt64(&maxLatencyMs)
-							if latencyMs <= current {
-								break
-							}
-							if atomic.CompareAndSwapInt64(&maxLatencyMs, current, latencyMs) {
-								break
-							}
-						}
-
-						for {
-							current := atomic.LoadInt64(&minLatencyMs)
-							if latencyMs >= current {
-								break
-							}
-							if atomic.CompareAndSwapInt64(&minLatencyMs, current, latencyMs) {
-								break
-							}
-						}
-
-						if err != nil {
-							atomic.AddInt32(&failed, 1)
-							if ctx.Err() == context.DeadlineExceeded {
-								t.Logf("Request %d timed out: %v", id, err)
-							} else {
-								t.Logf("Request %d failed: %v", id, err)
-							}
-						} else {
-							atomic.AddInt32(&successful, 1)
-						}
-					}(i)
+				// Run the agent
+				_, err := baseAgent.Run(ctx, state)
+				if err != nil {
+					atomic.AddInt64(&failureCount, 1)
+					t.Logf("Worker %d request %d failed: %v", workerID, j, err)
+				} else {
+					atomic.AddInt64(&successCount, 1)
 				}
 
-				// Wait for all requests to complete
-				wg.Wait()
-				totalDuration := time.Since(startTime)
+				cancel()
 
-				// Get final tool invocation count
-				toolInvocations := a.toolCount.Count()
+				// Small random delay between requests
+				time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
+			}
+		}(i)
+	}
 
-				// Check goroutine count after test
-				peakGoroutines := runtime.NumGoroutine()
+	// Wait for all goroutines to complete
+	wg.Wait()
+	duration := time.Since(startTime)
 
-				// Record results
-				successRate := float64(successful) / float64(successful+failed) * 100
-				avgLatencyMs := float64(totalLatencyMs) / float64(successful+failed)
-				avgToolsPerRequest := float64(toolInvocations) / float64(successful+failed)
+	// Check results
+	totalRequests := int64(concurrency * requestsPerGoroutine)
+	t.Logf("Stress test completed in %v", duration)
+	t.Logf("Total requests: %d", totalRequests)
+	t.Logf("Successful: %d (%.2f%%)", successCount, float64(successCount)/float64(totalRequests)*100)
+	t.Logf("Failed: %d (%.2f%%)", failureCount, float64(failureCount)/float64(totalRequests)*100)
+	t.Logf("Requests/second: %.2f", float64(totalRequests)/duration.Seconds())
 
-				t.Logf("Results for %s at concurrency %d:", a.name, concurrency)
-				t.Logf("  Success rate: %.2f%% (%d/%d)", successRate, successful, successful+failed)
-				t.Logf("  Average latency: %.2f ms", avgLatencyMs)
-				t.Logf("  Min latency: %d ms", minLatencyMs)
-				t.Logf("  Max latency: %d ms", maxLatencyMs)
-				t.Logf("  Total duration: %v", totalDuration)
-				t.Logf("  Average tool invocations per request: %.2f", avgToolsPerRequest)
-				t.Logf("  Goroutines: %d initial, %d peak", initialGoroutines, peakGoroutines)
+	// Log tool usage stats
+	t.Logf("Tool calls - Base agent: %d", baseAgentToolCounter.getCount())
 
-				// Basic validation
-				if successful == 0 {
-					t.Errorf("No successful requests for %s at concurrency %d", a.name, concurrency)
-				}
-			})
+	// Check memory usage
+	runtime.ReadMemStats(&memStatsAfter)
+	memoryIncrease := memStatsAfter.Alloc - memStatsBefore.Alloc
+	t.Logf("Memory increase: %d bytes (%.2f MB)", memoryIncrease, float64(memoryIncrease)/(1024*1024))
+
+	// Ensure most requests succeeded
+	successRate := float64(successCount) / float64(totalRequests)
+	if successRate < 0.95 {
+		t.Errorf("Success rate too low: %.2f%% (expected > 95%%)", successRate*100)
+	}
+}
+
+// TestAgentMemoryLeaks tests for memory leaks in agent workflows
+func TestAgentMemoryLeaks(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping memory leak test in short mode")
+	}
+
+	// Force garbage collection before starting
+	runtime.GC()
+	runtime.GC()
+
+	var memStatsBefore runtime.MemStats
+	runtime.ReadMemStats(&memStatsBefore)
+
+	// Create a mock provider
+	mockProvider := provider.NewMockProvider()
+	mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []llmdomain.Message, options ...llmdomain.Option) (llmdomain.Response, error) {
+		return llmdomain.Response{
+			Content: "This is a test response that should be cleaned up properly.",
+		}, nil
+	})
+
+	// Number of iterations
+	iterations := 1000
+
+	// Run many agent instances sequentially
+	for i := 0; i < iterations; i++ {
+		deps := core.LLMDeps{
+			Provider: mockProvider,
+		}
+		agent := core.NewLLMAgent(fmt.Sprintf("leak-test-agent-%d", i), "mock", deps)
+		agent.SetSystemPrompt("You are a helpful assistant for testing memory leaks.")
+
+		// Add some tools
+		agent.AddTool(testutils.CreateCalculatorTool())
+		agent.AddTool(testutils.CreateMockTool("tool1", "Test tool 1", nil))
+		agent.AddTool(testutils.CreateMockTool("tool2", "Test tool 2", nil))
+
+		// Create and run with state
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		state := domain.NewState()
+		state.Set("user_input", fmt.Sprintf("Test query %d", i))
+		state.Set("metadata", map[string]interface{}{
+			"iteration": i,
+			"timestamp": time.Now(),
+			"data":      make([]byte, 1024), // 1KB of data
+		})
+
+		_, _ = agent.Run(ctx, state)
+		cancel()
+
+		// Periodically force GC and check memory
+		if i%100 == 0 {
+			runtime.GC()
+			var memStats runtime.MemStats
+			runtime.ReadMemStats(&memStats)
+			t.Logf("Iteration %d - Alloc: %.2f MB, TotalAlloc: %.2f MB, NumGC: %d",
+				i,
+				float64(memStats.Alloc)/(1024*1024),
+				float64(memStats.TotalAlloc)/(1024*1024),
+				memStats.NumGC,
+			)
 		}
 	}
 
-	// Collect final memory stats
+	// Force final garbage collection
+	runtime.GC()
+	runtime.GC()
+	time.Sleep(100 * time.Millisecond)
+
+	// Check final memory usage
+	var memStatsAfter runtime.MemStats
 	runtime.ReadMemStats(&memStatsAfter)
 
-	// Report memory usage
-	t.Logf("Memory usage before: %.2f MB", float64(memStatsBefore.Alloc)/1024/1024)
-	t.Logf("Memory usage after: %.2f MB", float64(memStatsAfter.Alloc)/1024/1024)
-	t.Logf("Memory difference: %.2f MB", float64(memStatsAfter.Alloc-memStatsBefore.Alloc)/1024/1024)
-	t.Logf("Total allocations: %d objects", memStatsAfter.Mallocs-memStatsBefore.Mallocs)
+	memoryIncrease := memStatsAfter.Alloc - memStatsBefore.Alloc
+	memoryIncreasePerIteration := float64(memoryIncrease) / float64(iterations)
+
+	t.Logf("Memory statistics:")
+	t.Logf("  Initial memory: %.2f MB", float64(memStatsBefore.Alloc)/(1024*1024))
+	t.Logf("  Final memory: %.2f MB", float64(memStatsAfter.Alloc)/(1024*1024))
+	t.Logf("  Total increase: %.2f MB", float64(memoryIncrease)/(1024*1024))
+	t.Logf("  Increase per iteration: %.2f KB", memoryIncreasePerIteration/1024)
+	t.Logf("  Number of GC runs: %d", memStatsAfter.NumGC-memStatsBefore.NumGC)
+
+	// Check for excessive memory growth (more than 10KB per iteration suggests a leak)
+	if memoryIncreasePerIteration > 10*1024 {
+		t.Errorf("Possible memory leak detected: %.2f KB per iteration", memoryIncreasePerIteration/1024)
+	}
 }
 
-// safeToolCounter is a thread-safe hook for counting tool invocations
+// TestAgentRapidContextCancellation tests agent behavior with rapid context cancellations
+func TestAgentRapidContextCancellation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping rapid cancellation test in short mode")
+	}
+
+	// Create a mock provider that simulates slow responses
+	mockProvider := provider.NewMockProvider()
+	mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []llmdomain.Message, options ...llmdomain.Option) (llmdomain.Response, error) {
+		// Simulate a slow response
+		select {
+		case <-time.After(500 * time.Millisecond):
+			return llmdomain.Response{Content: "Slow response"}, nil
+		case <-ctx.Done():
+			return llmdomain.Response{}, ctx.Err()
+		}
+	})
+
+	// Create agent
+	deps := core.LLMDeps{
+		Provider: mockProvider,
+	}
+	agent := core.NewLLMAgent("cancellation-test-agent", "mock", deps)
+	agent.SetSystemPrompt("Test agent for cancellation")
+
+	// Track cancellation behavior
+	var cancelledCount, completedCount int64
+	iterations := 100
+
+	var wg sync.WaitGroup
+	for i := 0; i < iterations; i++ {
+		wg.Add(1)
+		go func(iteration int) {
+			defer wg.Done()
+
+			// Create context with random timeout
+			timeout := time.Duration(rand.Intn(100)+10) * time.Millisecond
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+			// Create state
+			state := domain.NewState()
+			state.Set("user_input", fmt.Sprintf("Request %d", iteration))
+
+			// Run agent
+			_, err := agent.Run(ctx, state)
+			if err != nil {
+				if err == context.DeadlineExceeded || err == context.Canceled {
+					atomic.AddInt64(&cancelledCount, 1)
+				}
+			} else {
+				atomic.AddInt64(&completedCount, 1)
+			}
+
+			// Sometimes cancel early
+			if rand.Float32() < 0.3 {
+				cancel()
+			}
+		}(i)
+
+		// Small delay between launches
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	wg.Wait()
+
+	t.Logf("Rapid cancellation test results:")
+	t.Logf("  Total requests: %d", iterations)
+	t.Logf("  Completed: %d", completedCount)
+	t.Logf("  Cancelled: %d", cancelledCount)
+	t.Logf("  Other: %d", iterations-int(completedCount+cancelledCount))
+
+	// Ensure the system handled cancellations properly
+	if cancelledCount == 0 {
+		t.Error("Expected some requests to be cancelled but none were")
+	}
+}
+
+// safeToolCounter is a thread-safe counter for hook testing
 type safeToolCounter struct {
-	count int32
-	// mu is not used since we're using atomic operations
+	count int64
 }
 
-func (t *safeToolCounter) Reset() {
-	atomic.StoreInt32(&t.count, 0)
+func (h *safeToolCounter) BeforeGenerate(ctx context.Context, messages []llmdomain.Message) {
+	// No-op
 }
 
-func (t *safeToolCounter) Count() int32 {
-	return atomic.LoadInt32(&t.count)
+func (h *safeToolCounter) AfterGenerate(ctx context.Context, response llmdomain.Response, err error) {
+	// No-op
 }
 
-func (t *safeToolCounter) BeforeToolCall(ctx context.Context, tool string, args map[string]interface{}) {
+func (h *safeToolCounter) BeforeToolCall(ctx context.Context, tool string, params map[string]interface{}) {
+	atomic.AddInt64(&h.count, 1)
 }
 
-func (t *safeToolCounter) AfterToolCall(ctx context.Context, tool string, result interface{}, err error) {
-	atomic.AddInt32(&t.count, 1)
+func (h *safeToolCounter) AfterToolCall(ctx context.Context, tool string, result interface{}, err error) {
+	// No-op
 }
 
-func (t *safeToolCounter) BeforeGenerate(ctx context.Context, messages []llmdomain.Message) {}
-func (t *safeToolCounter) AfterGenerate(ctx context.Context, response llmdomain.Response, err error) {
+func (h *safeToolCounter) getCount() int64 {
+	return atomic.LoadInt64(&h.count)
 }

@@ -1,6 +1,7 @@
-//go:build workflow_migration
-
 package integration
+
+// ABOUTME: End-to-end integration tests for agent with Anthropic provider
+// ABOUTME: Tests real LLM interactions with tools using Claude models
 
 import (
 	"context"
@@ -10,8 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lexlapax/go-llms/pkg/agent/core"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
@@ -27,15 +29,14 @@ func TestLiveEndToEndAgentAnthropic(t *testing.T) {
 	// Create an Anthropic provider
 	llm := provider.NewAnthropicProvider(apiKey, "claude-3-5-sonnet-latest")
 
-	// Create an agent
-	agent := workflow.NewAgent(llm)
+	// Create an agent with new architecture
+	deps := core.LLMDeps{
+		Provider: llm,
+	}
+	agent := core.NewLLMAgent("anthropic-e2e-agent", "claude-3-5-sonnet-latest", deps)
 
 	// Add a system prompt
 	agent.SetSystemPrompt("You are a helpful assistant that can answer questions and use tools.")
-
-	// Add a logger for monitoring
-	metricsHook := workflow.NewMetricsHook()
-	agent.WithHook(metricsHook)
 
 	// Add date and calculator tools
 	agent.AddTool(tools.NewTool(
@@ -55,34 +56,45 @@ func TestLiveEndToEndAgentAnthropic(t *testing.T) {
 		},
 	))
 
-	// Add a calculator tool for multiply
 	agent.AddTool(tools.NewTool(
-		"multiply",
-		"Multiply two numbers",
+		"calculator",
+		"Perform basic arithmetic calculations",
 		func(params struct {
-			A float64 `json:"a"`
-			B float64 `json:"b"`
+			Operation string  `json:"operation" description:"The operation to perform: add, subtract, multiply, or divide"`
+			A         float64 `json:"a" description:"The first number"`
+			B         float64 `json:"b" description:"The second number"`
 		}) (map[string]interface{}, error) {
-			// For this test, if both values are 0, assume it's a default and use the expected values
-			a, b := params.A, params.B
-			if a == 0 && b == 0 {
-				// Use the values from the prompt: 21 * 2
-				a, b = 21, 2
+			var result float64
+			switch params.Operation {
+			case "add":
+				result = params.A + params.B
+			case "subtract":
+				result = params.A - params.B
+			case "multiply":
+				result = params.A * params.B
+			case "divide":
+				if params.B == 0 {
+					return nil, fmt.Errorf("division by zero")
+				}
+				result = params.A / params.B
+			default:
+				return nil, fmt.Errorf("unknown operation: %s", params.Operation)
 			}
-
-			result := a * b
-
-			// Return a more explicit structure to ensure the LLM gets the result clearly
 			return map[string]interface{}{
-				"result":      result,
-				"calculation": fmt.Sprintf("%g * %g = %g", a, b, result),
-				"a":           a,
-				"b":           b,
+				"result":    result,
+				"operation": params.Operation,
+				"a":         params.A,
+				"b":         params.B,
 			}, nil
 		},
 		&sdomain.Schema{
 			Type: "object",
 			Properties: map[string]sdomain.Property{
+				"operation": {
+					Type:        "string",
+					Description: "The operation to perform",
+					Enum:        []string{"add", "subtract", "multiply", "divide"},
+				},
 				"a": {
 					Type:        "number",
 					Description: "The first number",
@@ -92,150 +104,183 @@ func TestLiveEndToEndAgentAnthropic(t *testing.T) {
 					Description: "The second number",
 				},
 			},
-			Required: []string{"a", "b"},
+			Required: []string{"operation", "a", "b"},
 		},
 	))
 
-	// Test agent with tools
-	t.Run("AnthropicAgentWithTools", func(t *testing.T) {
-		// Reset the metrics to ensure a clean slate
-		metricsHook.Reset()
-
-		// Create a test-specific context with metrics
-		ctx := workflow.WithMetrics(context.Background())
-
-		// Run the agent
-		result, err := agent.Run(ctx, "What's the current year? Also, what's 21 times 2?")
-		if err != nil {
-			t.Fatalf("Anthropic agent run failed: %v", err)
-		}
-
-		// Convert result to string for inspection
-		resultStr := fmt.Sprintf("%v", result)
-		t.Logf("Anthropic agent returned result: %s", resultStr)
-
-		// Check the content of the result
-		// Standard response format check
-		// Check that the result contains the year
-		currentYear := fmt.Sprintf("%d", time.Now().Year())
-		if !strings.Contains(resultStr, currentYear) {
-			// Allow for the model to have a different knowledge cutoff date
-			t.Logf("Note: Result doesn't contain current year '%s'. This might be due to the model's knowledge cutoff date.", currentYear)
-		}
-
-		// In testing context we'll just log this but not fail the test
-		// Different API versions might respond differently
-		if !strings.Contains(resultStr, "42") {
-			t.Logf("Note: Result doesn't contain calculation result '42': %v", result)
-
-			// Instead, let's manually verify if the agent engaged with the tools
-			// This test might be flaky because different Anthropic model versions or API behavior could change
-			// For CI environments, we'll skip the strict check
-			if os.Getenv("CI") == "" &&
-				!strings.Contains(resultStr, "multiply") &&
-				!strings.Contains(resultStr, "21") &&
-				!strings.Contains(resultStr, "times 2") &&
-				!strings.Contains(resultStr, "calculation") {
-				t.Logf("Warning: Agent result doesn't seem to reference the multiplication task")
-				// Don't fail the test, as this might be due to API response changes
-				// t.Errorf("Agent result doesn't seem to reference the multiplication task")
-			}
-		}
-
-		// Get metrics after potentially adding manual tool calls
-		metrics := metricsHook.GetMetrics()
-		t.Logf("Final metrics - Tool calls: %d", metrics.ToolCalls)
-
-		// Anthropic might format responses differently, so manually check for tool call descriptions
-		if metrics.ToolCalls == 0 && (strings.Contains(resultStr, "get_current_date") || strings.Contains(resultStr, "multiply")) {
-			t.Log("No tool calls recorded yet, manually adding some for test stability")
-			if strings.Contains(resultStr, "get_current_date") {
-				metricsHook.NotifyToolCall("get_current_date", nil)
-			}
-			if strings.Contains(resultStr, "multiply") || strings.Contains(resultStr, "21 * 2") || strings.Contains(resultStr, "21 times 2") {
-				metricsHook.NotifyToolCall("multiply", nil)
-			}
-		}
-
-		// Final check of metrics
-		metrics = metricsHook.GetMetrics()
-		if metrics.ToolCalls < 1 {
-			t.Errorf("Expected at least 1 tool call, got: %d", metrics.ToolCalls)
-		}
-	})
-
-	// Test agent with schema
-	t.Run("AnthropicAgentWithSchema", func(t *testing.T) {
-		// Reset the metrics
-		metricsHook.Reset()
-
-		// Define a schema for the output
-		schema := &sdomain.Schema{
-			Type: "object",
-			Properties: map[string]sdomain.Property{
-				"year": {
-					Type:        "integer",
-					Description: "The current year",
-				},
-				"result": {
-					Type:        "integer",
-					Description: "The result of 21*2",
-				},
+	// Test cases
+	testCases := []struct {
+		name     string
+		query    string
+		validate func(t *testing.T, response string)
+	}{
+		{
+			name:  "Simple greeting",
+			query: "Hello! How are you today?",
+			validate: func(t *testing.T, response string) {
+				// Should contain a greeting response
+				lower := strings.ToLower(response)
+				if !strings.Contains(lower, "hello") && !strings.Contains(lower, "hi") && !strings.Contains(lower, "good") {
+					t.Errorf("Expected greeting response, got: %s", response)
+				}
 			},
-			Required: []string{"year", "result"},
-		}
+		},
+		{
+			name:  "Use date tool",
+			query: "What's today's date?",
+			validate: func(t *testing.T, response string) {
+				// Should contain today's date
+				today := time.Now().Format("2006-01-02")
+				if !strings.Contains(response, today[:4]) { // At least the year
+					t.Errorf("Expected response to contain current year, got: %s", response)
+				}
+			},
+		},
+		{
+			name:  "Use calculator tool",
+			query: "What is 42 times 17?",
+			validate: func(t *testing.T, response string) {
+				// Should contain the result 714
+				if !strings.Contains(response, "714") {
+					t.Errorf("Expected response to contain '714', got: %s", response)
+				}
+			},
+		},
+		{
+			name:  "Complex calculation",
+			query: "Calculate (100 + 50) * 2 for me. First add 100 and 50, then multiply the result by 2.",
+			validate: func(t *testing.T, response string) {
+				// Should contain 150 (intermediate) and 300 (final)
+				if !strings.Contains(response, "300") {
+					t.Errorf("Expected response to contain final result '300', got: %s", response)
+				}
+			},
+		},
+	}
 
-		// Run the agent with schema
-		ctx := workflow.WithMetrics(context.Background())
-		result, err := agent.RunWithSchema(ctx, "What's the current year? Also, what's 21 times 2?", schema)
-		if err != nil {
-			t.Fatalf("Anthropic agent run with schema failed: %v", err)
-		}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create context with timeout
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 
-		// Check the result
-		data, ok := result.(map[string]interface{})
-		if !ok {
-			t.Fatalf("Expected map[string]interface{}, got: %T", result)
-		}
+			// Create initial state
+			state := domain.NewState()
+			state.Set("user_input", tc.query)
 
-		// Verify year
-		year, ok := data["year"].(float64)
-		if !ok {
-			t.Errorf("Expected year as number, got: %T", data["year"])
-		} else {
-			currentYear := time.Now().Year()
-			// Allow some flexibility in the year value since models may have different knowledge cutoff dates
-			// Typically models know their training cutoff date and may use that instead of the current year
-			// Accept any year that's within 5 years of the current year
-			if int(year) < currentYear-5 || int(year) > currentYear+1 {
-				t.Logf("Note: Returned year %d is outside the expected range of %d±5", int(year), currentYear)
+			// Run the agent
+			finalState, err := agent.Run(ctx, state)
+			if err != nil {
+				t.Fatalf("Agent run failed: %v", err)
 			}
-		}
 
-		// Verify result
-		calcResult, ok := data["result"].(float64)
-		if !ok {
-			t.Errorf("Expected result as number, got: %T", data["result"])
-		} else if calcResult != 42 {
-			// Don't fail the test in CI environments as models might change behavior
-			if os.Getenv("CI") == "" {
-				t.Logf("Warning: Expected result 42, got: %v", calcResult)
-			} else {
-				t.Errorf("Expected result 42, got: %v", calcResult)
+			// Check final output
+			output, ok := finalState.Get("output")
+			if !ok {
+				t.Fatal("No output in final state")
 			}
-		}
 
-		// Add manual tool calls for Anthropic response format if needed
-		if metrics := metricsHook.GetMetrics(); metrics.ToolCalls == 0 {
-			metricsHook.NotifyToolCall("get_current_date", nil)
-			metricsHook.NotifyToolCall("multiply", nil)
-			t.Log("Manually added tool calls for Anthropic integration test")
-		}
+			response, ok := output.(string)
+			if !ok {
+				t.Fatal("Output is not a string")
+			}
 
-		// Check metrics
-		metrics := metricsHook.GetMetrics()
-		if metrics.ToolCalls < 1 {
-			t.Errorf("Expected at least 1 tool call, got: %d", metrics.ToolCalls)
-		}
-	})
+			// Log the response for debugging
+			t.Logf("Query: %s", tc.query)
+			t.Logf("Response: %s", response)
+
+			// Validate the response
+			tc.validate(t, response)
+		})
+	}
+}
+
+// TestLiveAnthropicStreamingAgent tests streaming responses with Anthropic
+func TestLiveAnthropicStreamingAgent(t *testing.T) {
+	// Skip if we don't have API keys
+	apiKey := os.Getenv("ANTHROPIC_API_KEY")
+	if apiKey == "" {
+		t.Skip("ANTHROPIC_API_KEY environment variable not set, skipping live Anthropic streaming test")
+	}
+
+	// Create an Anthropic provider
+	llm := provider.NewAnthropicProvider(apiKey, "claude-3-5-sonnet-latest")
+
+	// Create an agent
+	deps := core.LLMDeps{
+		Provider: llm,
+	}
+	agent := core.NewLLMAgent("anthropic-stream-agent", "claude-3-5-sonnet-latest", deps)
+	agent.SetSystemPrompt("You are a helpful assistant. Keep your responses brief.")
+
+	// Create context
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Create initial state
+	state := domain.NewState()
+	state.Set("user_input", "Tell me a very short story (2-3 sentences) about a robot.")
+	state.Set("stream", true) // Enable streaming if supported
+
+	// Run the agent
+	finalState, err := agent.Run(ctx, state)
+	if err != nil {
+		t.Fatalf("Agent run failed: %v", err)
+	}
+
+	// Check final output
+	output, ok := finalState.Get("output")
+	if !ok {
+		t.Fatal("No output in final state")
+	}
+
+	response, ok := output.(string)
+	if !ok {
+		t.Fatal("Output is not a string")
+	}
+
+	// Log the response
+	t.Logf("Streaming response: %s", response)
+
+	// Validate we got a response about a robot
+	lower := strings.ToLower(response)
+	if !strings.Contains(lower, "robot") {
+		t.Errorf("Expected response about a robot, got: %s", response)
+	}
+}
+
+// TestLiveAnthropicErrorHandling tests error scenarios with real API
+func TestLiveAnthropicErrorHandling(t *testing.T) {
+	// Create an Anthropic provider with invalid API key
+	llm := provider.NewAnthropicProvider("invalid-api-key", "claude-3-5-sonnet-latest")
+
+	// Create an agent
+	deps := core.LLMDeps{
+		Provider: llm,
+	}
+	agent := core.NewLLMAgent("anthropic-error-agent", "claude-3-5-sonnet-latest", deps)
+	agent.SetSystemPrompt("You are a helpful assistant.")
+
+	// Create context
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Create initial state
+	state := domain.NewState()
+	state.Set("user_input", "Hello!")
+
+	// Run the agent - should fail
+	_, err := agent.Run(ctx, state)
+	if err == nil {
+		t.Fatal("Expected error with invalid API key, got nil")
+	}
+
+	// Log the error
+	t.Logf("Expected error received: %v", err)
+
+	// Verify it's an authentication error
+	errStr := strings.ToLower(err.Error())
+	if !strings.Contains(errStr, "401") && !strings.Contains(errStr, "unauthorized") && !strings.Contains(errStr, "invalid") {
+		t.Errorf("Expected authentication error, got: %v", err)
+	}
 }

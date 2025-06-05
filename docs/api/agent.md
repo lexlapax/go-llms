@@ -202,9 +202,9 @@ The `ToolExecutor` handles tool execution and parameter validation.
 ### Message Manager
 
 ```go
-// The MessageManager is used internally by the agent
+// The StateManager is used internally by the agent
 // You generally don't need to interact with it directly
-manager := workflow.NewMessageManager()
+stateManager := core.NewStateManager()
 ```
 
 The `MessageManager` manages the conversation history for the agent.
@@ -214,8 +214,10 @@ The `MessageManager` manages the conversation history for the agent.
 ### MultiAgent
 
 ```go
-// Create a multi-agent
-multiAgent := workflow.NewMultiAgent[Deps, Output](providers)
+// Create a multi-agent using workflow agents
+multiAgent := core.NewParallelAgent("multi-agent", "Parallel multi-agent processor")
+multiAgent.AddAgent(agent1)
+multiAgent.AddAgent(agent2)
 ```
 
 The `MultiAgent` allows using multiple agents together, similar to the multi-provider approach.
@@ -223,8 +225,10 @@ The `MultiAgent` allows using multiple agents together, similar to the multi-pro
 ### CachedAgent
 
 ```go
-// Create a cached agent
-cachedAgent := workflow.NewCachedAgent(agent)
+// Create an agent with caching hooks
+agent.WithHook(&CachingHook{
+    cache: make(map[string]interface{}),
+})
 ```
 
 The `CachedAgent` provides caching for agent responses to improve performance.
@@ -241,9 +245,9 @@ import (
     "fmt"
     "log/slog"
     
+    "github.com/lexlapax/go-llms/pkg/agent/core"
     "github.com/lexlapax/go-llms/pkg/agent/domain"
     "github.com/lexlapax/go-llms/pkg/agent/tools"
-    "github.com/lexlapax/go-llms/pkg/agent/workflow"
     "github.com/lexlapax/go-llms/pkg/llm/provider"
 )
 
@@ -264,8 +268,11 @@ func main() {
     llmProvider := provider.NewOpenAIProvider("your-api-key", "gpt-4o")
     
     // Create an agent
-    agent := workflow.NewAgent[ExampleDeps, string](llmProvider).
-        SetSystemPrompt("You are a helpful assistant with access to tools.")
+    deps := core.LLMDeps{
+        Provider: llmProvider,
+    }
+    agent := core.NewLLMAgent("example-agent", "gpt-4o", deps)
+    agent.SetSystemPrompt("You are a helpful assistant with access to tools.")
     
     // Add a search tool
     agent.AddTool(tools.NewTool(
@@ -289,21 +296,27 @@ func main() {
     ))
     
     // Add a logging hook
-    agent.AddHook(workflow.NewLoggingHook(slog.Default(), workflow.LogLevelDetailed))
+    agent.WithHook(&core.LoggingHook{
+        Logger: slog.Default(),
+        Level:  core.LogLevelDetailed,
+    })
     
-    // Create dependencies
-    deps := ExampleDeps{
+    // Create state with dependencies
+    state := domain.NewState()
+    state.Set("user_input", "What can you tell me about Go programming?")
+    state.Set("deps", ExampleDeps{
         APIClient: &APIClient{},
-    }
+    })
     
     // Run the agent
-    result, err := agent.Run(context.Background(), "What can you tell me about Go programming?", deps)
+    resultState, err := agent.Run(context.Background(), state)
     if err != nil {
         fmt.Printf("Error: %v\n", err)
         return
     }
     
-    fmt.Printf("Result: %s\n", result)
+    output, _ := resultState.Get("output")
+    fmt.Printf("Result: %s\n", output)
 }
 ```
 
@@ -316,9 +329,10 @@ import (
     "context"
     "fmt"
     
-    "github.com/lexlapax/go-llms/pkg/agent/workflow"
+    "github.com/lexlapax/go-llms/pkg/agent/core"
+    "github.com/lexlapax/go-llms/pkg/agent/domain"
     "github.com/lexlapax/go-llms/pkg/llm/provider"
-    "github.com/lexlapax/go-llms/pkg/schema/domain"
+    schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
 // Define a structured output type
@@ -334,22 +348,25 @@ func main() {
     llmProvider := provider.NewOpenAIProvider("your-api-key", "gpt-4o")
     
     // Create an agent with structured output
-    agent := workflow.NewAgent[struct{}, RecipeOutput](llmProvider).
-        SetSystemPrompt("You are a helpful cooking assistant.")
+    deps := core.LLMDeps{
+        Provider: llmProvider,
+    }
+    agent := core.NewLLMAgent("recipe-agent", "gpt-4o", deps)
+    agent.SetSystemPrompt("You are a helpful cooking assistant.")
     
     // Define output schema
-    schema := &domain.Schema{
+    schema := &schemaDomain.Schema{
         Type: "object",
-        Properties: map[string]domain.Property{
+        Properties: map[string]schemaDomain.Property{
             "title": {Type: "string", Description: "The recipe title"},
             "ingredients": {
                 Type: "array",
-                Items: &domain.Property{Type: "string"},
+                Items: &schemaDomain.Property{Type: "string"},
                 Description: "List of ingredients",
             },
             "steps": {
                 Type: "array",
-                Items: &domain.Property{Type: "string"},
+                Items: &schemaDomain.Property{Type: "string"},
                 Description: "Preparation steps",
             },
             "prep_time": {Type: "integer", Description: "Preparation time in minutes"},
@@ -358,16 +375,19 @@ func main() {
     }
     
     // Run the agent with schema
-    recipe, err := agent.RunWithSchema(
-        context.Background(),
-        "Give me a simple recipe for chocolate chip cookies.",
-        schema,
-        struct{}{},
-    )
+    state := domain.NewState()
+    state.Set("user_input", "Give me a simple recipe for chocolate chip cookies.")
+    state.Set("output_schema", schema)
+    
+    resultState, err := agent.Run(context.Background(), state)
     if err != nil {
         fmt.Printf("Error: %v\n", err)
         return
     }
+    
+    // Extract the structured output
+    output, _ := resultState.Get("output")
+    recipe := output.(RecipeOutput)
     
     // Use the structured output
     fmt.Printf("Recipe: %s\n\n", recipe.Title)
@@ -395,7 +415,8 @@ import (
     "context"
     "fmt"
     
-    "github.com/lexlapax/go-llms/pkg/agent/workflow"
+    "github.com/lexlapax/go-llms/pkg/agent/core"
+    "github.com/lexlapax/go-llms/pkg/agent/domain"
     "github.com/lexlapax/go-llms/pkg/llm/provider"
 )
 
@@ -404,24 +425,29 @@ func main() {
     llmProvider := provider.NewOpenAIProvider("your-api-key", "gpt-4o")
     
     // Create an agent
-    agent := workflow.NewAgent[struct{}, string](llmProvider).
-        SetSystemPrompt("You are a helpful assistant.")
+    deps := core.LLMDeps{
+        Provider: llmProvider,
+    }
+    agent := core.NewLLMAgent("metrics-agent", "gpt-4o", deps)
+    agent.SetSystemPrompt("You are a helpful assistant.")
     
     // Add a metrics hook
-    metricsHook := workflow.NewMetricsHook()
-    agent.AddHook(metricsHook)
+    metricsHook := &core.MetricsHook{}
+    agent.WithHook(metricsHook)
     
-    // Prepare context with metrics tracking
-    ctx := workflow.WithMetrics(context.Background())
+    // Create state
+    state := domain.NewState()
+    state.Set("user_input", "What is the capital of France?")
     
     // Run the agent
-    result, err := agent.Run(ctx, "What is the capital of France?", struct{}{})
+    resultState, err := agent.Run(context.Background(), state)
     if err != nil {
         fmt.Printf("Error: %v\n", err)
         return
     }
     
-    fmt.Printf("Result: %s\n\n", result)
+    output, _ := resultState.Get("output")
+    fmt.Printf("Result: %s\n\n", output)
     
     // Get metrics
     metrics := metricsHook.GetMetrics()
