@@ -186,7 +186,7 @@ func TestFileDeleteDirectory(t *testing.T) {
 
 	// Create a file in the directory
 	testFile := filepath.Join(tempDir2, "test.txt")
-	err = os.WriteFile(testFile, []byte("content"), 0644)
+	err = os.WriteFile(testFile, []byte("content"), 0600)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -351,7 +351,7 @@ func TestFileDeleteForce(t *testing.T) {
 	// Create some files
 	for i := 0; i < 3; i++ {
 		filename := filepath.Join(tempDir, fmt.Sprintf("file%d.txt", i))
-		if err := os.WriteFile(filename, []byte("content"), 0644); err != nil {
+		if err := os.WriteFile(filename, []byte("content"), 0600); err != nil {
 			t.Fatal(err)
 		}
 	}

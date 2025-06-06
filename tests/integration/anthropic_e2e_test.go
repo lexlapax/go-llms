@@ -284,4 +284,3 @@ func TestLiveAnthropicErrorHandling(t *testing.T) {
 		t.Errorf("Expected authentication error, got: %v", err)
 	}
 }
-

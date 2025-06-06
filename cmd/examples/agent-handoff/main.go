@@ -263,4 +263,3 @@ coordinator, err := core.NewLLMAgentWithSubAgentsFromString(
     seniorSupport,
 )`)
 }
-

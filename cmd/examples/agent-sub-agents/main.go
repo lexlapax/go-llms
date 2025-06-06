@@ -332,4 +332,3 @@ func toFloat64(v interface{}) (float64, error) {
 		return 0, fmt.Errorf("cannot convert %T to float64", v)
 	}
 }
-

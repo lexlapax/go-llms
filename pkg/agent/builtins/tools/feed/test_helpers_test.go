@@ -10,7 +10,7 @@ import (
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// Mock agent for testing
+//nolint:unused // Mock agent for testing that implements BaseAgent interface
 type mockFeedTestAgent struct{}
 
 func (m *mockFeedTestAgent) ID() string                                { return "test-agent" }

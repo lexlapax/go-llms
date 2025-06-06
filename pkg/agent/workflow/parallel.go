@@ -173,9 +173,9 @@ func (p *ParallelAgent) Run(ctx context.Context, input *domain.State) (*domain.S
 			// Execute step
 			result, err := s.Execute(ctx, workflowState)
 
-			// Check if context was cancelled
+			// Check if context was canceled
 			if ctx.Err() != nil {
-				err = fmt.Errorf("workflow cancelled: %w", ctx.Err())
+				err = fmt.Errorf("workflow canceled: %w", ctx.Err())
 			}
 
 			// Store result

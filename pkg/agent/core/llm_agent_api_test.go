@@ -167,6 +167,9 @@ func TestTransferTo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TransferTo with map failed: %v", err)
 	}
+	if result == nil {
+		t.Fatal("Expected result from TransferTo with map input")
+	}
 }
 
 func TestGetSubAgentByName(t *testing.T) {

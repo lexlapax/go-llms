@@ -52,8 +52,8 @@ var (
 	// ErrWorkflowExecution is returned when workflow execution fails
 	ErrWorkflowExecution = errors.New("workflow execution failed")
 
-	// ErrAgentCancelled is returned when agent execution is cancelled
-	ErrAgentCancelled = errors.New("agent execution cancelled")
+	// ErrAgentCancelled is returned when agent execution is canceled
+	ErrAgentCancelled = errors.New("agent execution canceled")
 
 	// ErrStateReadOnly is returned when trying to modify a read-only state
 	ErrStateReadOnly = errors.New("state is read-only")

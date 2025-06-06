@@ -100,9 +100,11 @@ func TestToolContext_ContextMethods(t *testing.T) {
 	assert.NotNil(t, tc.Done())
 
 	// Test Value
-	ctx2 := context.WithValue(ctx, "test-key", "test-value")
+	type contextKey string
+	testKey := contextKey("test-key")
+	ctx2 := context.WithValue(ctx, testKey, "test-value")
 	tc2 := NewToolContext(ctx2, NewStateReader(state), agent, "run-2")
-	assert.Equal(t, "test-value", tc2.Value("test-key"))
+	assert.Equal(t, "test-value", tc2.Value(testKey))
 }
 
 func TestToolContext_ElapsedTime(t *testing.T) {

@@ -37,7 +37,6 @@
 - [x] Phase 2: LLM Agent Migration - COMPLETED (February 3, 2025) - see TODO-DONE.md
 - [x] Phase 3: Workflow Agents - COMPLETED (February 3, 2025) - see TODO-DONE.md
 - [x] Phase 4: Agent-Tool Integration (Week 4) - COMPLETED (February 2025) - see TODO-DONE.md
-
 - [x] Phase 5: Multi-Agent System Enhancement - COMPLETED (June 5, 2025) - see TODO-DONE.md
 
 - [ ] Phase 6: Advanced Features (MOVED TO PHASE 7) (low priority)
@@ -46,104 +45,14 @@
   - [ ] Advanced merge strategies for parallel agents
   - [ ] Streaming support for long-running agents
 
-- [ ] Phase 7: Migration and Testing (RENAMED FROM PHASE 6) - Week 1 COMPLETED (February 5, 2025)
+- [ ] Phase 7: Migration and Testing (RENAMED FROM PHASE 6) - IN PROGRESS
   
-  ## Week 1: Code Cleanup and Examples - COMPLETED (February 5, 2025)
+  ## Week 1: Code Cleanup and Examples - COMPLETED (February 5, 2025) - see TODO-DONE.md
+  ## Week 1-2: Examples Overhaul - COMPLETED (February 5, 2025) - see TODO-DONE.md
   
-  ### Day 1-2: Discovery and Analysis - COMPLETED
-  - [x] Scan entire codebase for deprecated patterns and create removal list
-  - [x] Create inventory document of all changes needed (PHASE6_MIGRATION_INVENTORY.md)
+  ## Week 2: Testing Migration - IN PROGRESS (June 5, 2025)
   
-  ### Day 3-4: Code Removal and Cleanup - COMPLETED
-  - [x] Remove deprecated code
-  - [x] Update build tags and remove migration tags
-  - [x] Migrate test files with workflow_migration tag (10 files)
-  
-  ### Day 5: Documentation Updates - COMPLETED
-  - [x] Update all code documentation to reflect new patterns
-  - [x] Update technical documentation
-  
-  ## Week 1-2: Examples Overhaul - COMPLETED (February 5, 2025)
-  
-  ### Example Analysis and Categorization - COMPLETED
-  - [x] Analyze all examples in cmd/examples/
-  
-  ### Example Updates - COMPLETED
-  - [x] Update basic examples
-    - [x] simple - verified, basic structured output example (no agent updates needed)
-    - [x] agent-simple-llm - updated to use correct state fields (user_input/output)
-    - [x] provider-convenience (renamed from convenience) - removed agent code, focused on provider-level utilities
-  - [x] Update provider examples (verify all use new patterns)
-    - [x] provider-openai - verified, uses direct provider API (correct)
-    - [x] provider-anthropic - verified, uses direct provider API (correct)
-    - [x] provider-gemini - verified, uses direct provider API (correct)
-    - [x] provider-openai-compatible - verified, uses direct provider API (correct)
-    - [x] provider-multimodal - verified, uses direct provider API (correct)
-    - [x] provider-multi (renamed from multi) - kept as provider-level example, added note pointing to workflow-multi-provider
-    - [x] provider-consensus (renamed from consensus) - kept as provider-level example, added note pointing to workflow-multi-provider
-  - [x] Update/verify workflow examples
-    - [x] workflow-sequential - verified, uses new architecture correctly
-    - [x] workflow-parallel - verified, uses new architecture correctly
-    - [x] workflow-conditional - fixed, added workflow.NewAgentStep() public API
-    - [x] workflow-loop - fixed, added workflow.NewAgentStep() public API
-    - [x] workflow-hooks - verified, uses new architecture correctly
-    - [x] agent-workflow-as-tool - already updated
-  - [x] Update advanced examples
-    - [x] agent-structured-output - verified, already updated
-    - [x] agent-custom-calculator - verified, already updated
-    - [x] agent-error-handling - fixed compilation errors, updated for new architecture
-    - [x] agent-state-persistence - fixed compilation errors
-    - [x] agent-guardrails (renamed from guardrails) - renamed for consistency
-  - [x] Rename utility examples for consistency
-    - [x] utils-profiling (renamed from profiling) - utility package example
-    - [x] utils-modelinfo - already correctly named
-  - [x] Create structured output category
-    - [x] structured-schema (renamed from schema) - schema generation and validation
-    - [x] structured-coercion (renamed from coercion) - type coercion in validation
-  
-  ### New Examples Added - COMPLETED
-  - [x] Create state persistence example (created agent-state-persistence/)
-  - [x] Create advanced error handling example (created agent-error-handling/)
-  - [x] Create complex workflow composition example (created workflow-composition/)
-  - [x] Create workflow-multi-provider example (created workflow-multi-provider/)
-  - [x] Create guardrails example (created agent-guardrails/)
-  - [x] Create multi-agent coordination example (created agent-multi-coordination/)
-  - [x] Create agent handoff example (created agent-handoff/)
-  
-  ### Example Cleanup - COMPLETED
-  - [x] Remove obsolete examples (removed 3 empty directories)
-  - [x] Fixed compilation errors in error-handling and state-persistence examples
-  - [x] Added workflow.NewAgentStep() public API to fix workflow examples
-  - [x] Renamed examples for consistent categorization:
-    - agent-* (agent features)
-    - workflow-* (workflow patterns)
-    - provider-* (provider-level features)
-    - builtins-* (built-in tools)
-    - utils-* (utility packages)
-    - structured-* (structured output features)
-  
-  ### Example Documentation - COMPLETED
-  - [x] Ensure all examples have proper README.md
-  - [x] Verify all examples compile and run (most compile, 2 have simplified implementations)
-  - [x] Update cmd/examples/README.md with new categorization and examples
-  
-  ## Week 2: Testing Migration - POSTPONED (Focus on Phase 5 Multi-Agent Enhancement)
-  
-  ### Integration Tests (tests/integration/)
-  - [ ] Analyze current integration tests
-    - [ ] List tests using old patterns
-    - [ ] Identify missing test coverage for new features
-    - [ ] Plan test updates
-  - [ ] Update integration tests
-    - [ ] agent_test.go - migrate to core.LLMAgent
-    - [ ] provider tests - ensure work with new patterns
-    - [ ] multimodal tests - verify updated
-    - [ ] tool integration tests - verify updated
-  - [ ] Add new integration tests
-    - [ ] Workflow agent integration tests
-    - [ ] Agent-tool conversion tests
-    - [ ] State management tests
-    - [ ] Hook integration tests
+  ### Integration Tests (tests/integration/) - COMPLETED (June 5, 2025) - see TODO-DONE.md
   
   ### Stress Tests (tests/stress/)
   - [ ] Update stress tests to new architecture
@@ -178,8 +87,7 @@
   - [ ] Create testing best practices guide
 
 ### Previous Built-in Components Plan
-- [ ] P2: Build useful built-in tools
-  - [x] Phase 2.6: Feed Process Tools (Completed - see TODO-DONE.md)
+- [x] P2: Build useful built-in tools - COMPLETED - see TODO-DONE.md
 
 - [ ] P3: Build useful built-in agents (Phase 3 - POSTPONED until after architecture restructuring)
   - [ ] Text Agents

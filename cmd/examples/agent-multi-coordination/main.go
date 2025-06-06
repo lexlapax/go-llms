@@ -377,4 +377,3 @@ Coordinate these teams to produce comprehensive insights.`)
 	fmt.Println("5. Automatic tool registration for all sub-agents")
 	fmt.Println("6. State sharing across agent hierarchies")
 }
-

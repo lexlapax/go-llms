@@ -27,6 +27,14 @@ The Go-LLMs library implements a comprehensive testing strategy with several lay
 
 This layered approach ensures that the library is robust, performant, and reliable in various usage scenarios. This document focuses specifically on error condition testing and stress testing aspects of the framework.
 
+### Recent Integration Test Additions (June 2025)
+
+As part of Phase 7 of the Agent Architecture Restructuring, we've added comprehensive integration tests for new agent features:
+
+- **Hook Integration Tests** (`tests/integration/hook_integration_test.go`): Tests the hook system across different agent types with 8 comprehensive scenarios including basic hook functionality, tool call hooks, multiple hooks, error handling, metrics/logging hooks, workflow agent hooks, and concurrent hook safety.
+
+- **Multi-Agent Coordination Tests** (`tests/integration/multi_agent_coordination_test.go`): Tests multi-agent patterns with 8 scenarios including basic coordinator-specialist patterns, hierarchical agent systems (3 levels), workflow integration, agent-to-agent communication, error handling, scalability (20+ agents), state sharing, and convenience methods.
+
 ## Error Condition Test Suite
 
 The error condition test suite systematically tests how the library handles various error scenarios, focusing on:

@@ -248,4 +248,3 @@ func (s *SequentialAgent) RunAsync(ctx context.Context, input *domain.State) (<-
 
 	return eventChan, nil
 }
-

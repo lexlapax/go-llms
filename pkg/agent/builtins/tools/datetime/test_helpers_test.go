@@ -12,6 +12,8 @@ import (
 )
 
 // mockAgent implements the BaseAgent interface for testing
+//
+//nolint:unused // Interface methods required for BaseAgent implementation
 type mockAgent struct {
 	id          string
 	name        string
@@ -126,30 +128,6 @@ func createTestToolContext(ctx context.Context) *domain.ToolContext {
 
 	// Create a simple state with an immutable reader
 	state := domain.NewState()
-	stateReader := domain.NewStateReader(state)
-
-	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
-
-	// Create a simple event emitter
-	tc = tc.WithEventEmitter(&testEventEmitter{})
-
-	return tc
-}
-
-// createTestToolContextWithTimezone creates a ToolContext with a default timezone for testing
-func createTestToolContextWithTimezone(ctx context.Context, timezone string) *domain.ToolContext {
-	// Create a simple agent for testing
-	agent := &mockAgent{
-		id:          "test-agent",
-		name:        "Test Agent",
-		description: "Agent for testing",
-		agentType:   domain.AgentTypeLLM,
-		metadata:    make(map[string]interface{}),
-	}
-
-	// Create a simple state with a default timezone
-	state := domain.NewState()
-	state.Set("default_timezone", timezone)
 	stateReader := domain.NewStateReader(state)
 
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
