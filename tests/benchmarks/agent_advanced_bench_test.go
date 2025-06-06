@@ -33,7 +33,7 @@ func BenchmarkAgentCreation(b *testing.B) {
 	b.Run("StringCreation", func(b *testing.B) {
 		// Set up environment variable for mock provider
 		b.Setenv("GO_LLMS_MOCK_API_KEY", "test-key")
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, _ = core.NewAgentFromString("benchmark-agent", "mock")
@@ -43,7 +43,7 @@ func BenchmarkAgentCreation(b *testing.B) {
 	b.Run("WithTools", func(b *testing.B) {
 		tool1 := testutils.CreateMockTool("tool1", "Test tool 1", nil)
 		tool2 := testutils.CreateMockTool("tool2", "Test tool 2", nil)
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			deps := core.LLMDeps{
@@ -57,7 +57,7 @@ func BenchmarkAgentCreation(b *testing.B) {
 
 	b.Run("WithHooks", func(b *testing.B) {
 		hook := core.NewLLMMetricsHook()
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			deps := core.LLMDeps{
@@ -80,7 +80,7 @@ func BenchmarkStateManagement(b *testing.B) {
 
 	b.Run("StateSetGet", func(b *testing.B) {
 		state := domain.NewState()
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			state.Set("key", i)
@@ -98,7 +98,7 @@ func BenchmarkStateManagement(b *testing.B) {
 				},
 			},
 		}
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			state.Set("nested", nestedData)
@@ -119,7 +119,7 @@ func BenchmarkStateManagement(b *testing.B) {
 		state.Set("key1", "value1")
 		state.Set("key2", 42)
 		state.Set("key3", []int{1, 2, 3})
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_ = state.Clone()
@@ -130,7 +130,7 @@ func BenchmarkStateManagement(b *testing.B) {
 		parentState := domain.NewState()
 		parentState.Set("shared_key", "shared_value")
 		sharedContext := domain.NewSharedStateContext(parentState)
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			childState := domain.NewState()
@@ -146,22 +146,22 @@ func BenchmarkStateManagement(b *testing.B) {
 func BenchmarkToolExecution(b *testing.B) {
 	// Create mock provider
 	mockProvider := provider.NewMockProvider()
-	
+
 	// Create tools
 	simpleTool := testutils.CreateMockTool("simple", "Simple tool", nil)
 	complexTool := testutils.CreateMockTool("complex", "Complex tool", nil)
-	
+
 	b.Run("SingleToolCall", func(b *testing.B) {
 		deps := core.LLMDeps{
 			Provider: mockProvider,
 		}
 		agent := core.NewLLMAgent("benchmark-agent", "mock", deps)
 		agent.AddTool(simpleTool)
-		
+
 		ctx := context.Background()
 		state := domain.NewState()
 		state.Set("user_input", "Use the simple tool")
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, _ = agent.Run(ctx, state.Clone())
@@ -175,11 +175,11 @@ func BenchmarkToolExecution(b *testing.B) {
 		agent := core.NewLLMAgent("benchmark-agent", "mock", deps)
 		agent.AddTool(simpleTool)
 		agent.AddTool(complexTool)
-		
+
 		ctx := context.Background()
 		state := domain.NewState()
 		state.Set("user_input", "Use both tools")
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, _ = agent.Run(ctx, state.Clone())
@@ -191,7 +191,7 @@ func BenchmarkToolExecution(b *testing.B) {
 func BenchmarkWorkflowAgents(b *testing.B) {
 	// Create mock provider
 	mockProvider := provider.NewMockProvider()
-	
+
 	// Helper to create agents
 	createAgent := func(name string) domain.BaseAgent {
 		deps := core.LLMDeps{
@@ -199,17 +199,17 @@ func BenchmarkWorkflowAgents(b *testing.B) {
 		}
 		return core.NewLLMAgent(name, "mock", deps)
 	}
-	
+
 	b.Run("SequentialWorkflow", func(b *testing.B) {
 		seq := workflow.NewSequentialAgent("seq-bench")
 		seq.AddAgent(createAgent("step1"))
 		seq.AddAgent(createAgent("step2"))
 		seq.AddAgent(createAgent("step3"))
-		
+
 		ctx := context.Background()
 		state := domain.NewState()
 		state.Set("input", "test data")
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, _ = seq.Run(ctx, state.Clone())
@@ -221,11 +221,11 @@ func BenchmarkWorkflowAgents(b *testing.B) {
 		par.AddAgent(createAgent("parallel1"))
 		par.AddAgent(createAgent("parallel2"))
 		par.AddAgent(createAgent("parallel3"))
-		
+
 		ctx := context.Background()
 		state := domain.NewState()
 		state.Set("input", "test data")
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, _ = par.Run(ctx, state.Clone())
@@ -256,11 +256,11 @@ func BenchmarkWorkflowAgents(b *testing.B) {
 			},
 			createAgent("high-branch"),
 		)
-		
+
 		ctx := context.Background()
 		state := domain.NewState()
 		state.Set("value", 75)
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, _ = cond.Run(ctx, state.Clone())
@@ -271,11 +271,11 @@ func BenchmarkWorkflowAgents(b *testing.B) {
 		loop := workflow.NewLoopAgent("loop-bench").
 			WithMaxIterations(3)
 		loop.SetLoopAgent(createAgent("loop-body"))
-		
+
 		ctx := context.Background()
 		state := domain.NewState()
 		state.Set("counter", 0)
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, _ = loop.Run(ctx, state.Clone())
@@ -287,17 +287,17 @@ func BenchmarkWorkflowAgents(b *testing.B) {
 func BenchmarkHookExecution(b *testing.B) {
 	// Create mock provider
 	mockProvider := provider.NewMockProvider()
-	
+
 	b.Run("NoHooks", func(b *testing.B) {
 		deps := core.LLMDeps{
 			Provider: mockProvider,
 		}
 		agent := core.NewLLMAgent("benchmark-agent", "mock", deps)
-		
+
 		ctx := context.Background()
 		state := domain.NewState()
 		state.Set("user_input", "test")
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, _ = agent.Run(ctx, state.Clone())
@@ -310,11 +310,11 @@ func BenchmarkHookExecution(b *testing.B) {
 		}
 		agent := core.NewLLMAgent("benchmark-agent", "mock", deps)
 		agent.WithHook(core.NewLoggingHook(nil, core.LogLevelBasic))
-		
+
 		ctx := context.Background()
 		state := domain.NewState()
 		state.Set("user_input", "test")
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, _ = agent.Run(ctx, state.Clone())
@@ -328,11 +328,11 @@ func BenchmarkHookExecution(b *testing.B) {
 		agent := core.NewLLMAgent("benchmark-agent", "mock", deps)
 		agent.WithHook(core.NewLoggingHook(nil, core.LogLevelBasic))
 		agent.WithHook(core.NewLLMMetricsHook())
-		
+
 		ctx := context.Background()
 		state := domain.NewState()
 		state.Set("user_input", "test")
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_, _ = agent.Run(ctx, state.Clone())
@@ -361,12 +361,12 @@ func BenchmarkEventStream(b *testing.B) {
 				"index": i,
 			})
 		}
-		
+
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			ctx := context.Background()
 			ch := make(chan domain.Event, len(events))
-			
+
 			// Send events to channel
 			go func() {
 				for _, e := range events {
@@ -374,14 +374,14 @@ func BenchmarkEventStream(b *testing.B) {
 				}
 				close(ch)
 			}()
-			
+
 			stream := domain.NewFunctionalEventStream(ctx, ch)
-			
+
 			// Chain operations
 			filtered := stream.Filter(func(e domain.Event) bool {
 				return e.Type == domain.EventToolCall
 			})
-			
+
 			mapped := filtered.Map(func(e domain.Event) domain.Event {
 				// Type assert Data to map before modifying
 				if data, ok := e.Data.(map[string]interface{}); ok {
@@ -389,7 +389,7 @@ func BenchmarkEventStream(b *testing.B) {
 				}
 				return e
 			})
-			
+
 			// Force evaluation
 			_, _ = mapped.Collect()
 		}

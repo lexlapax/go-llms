@@ -36,7 +36,7 @@ func SaveInventory(inventory *domain.CachedModelInventory, cachePath string) err
 	}
 
 	// Write the JSON data to the file specified by cachePath.
-	if err := os.WriteFile(cachePath, data, 0644); err != nil {
+	if err := os.WriteFile(cachePath, data, 0600); err != nil {
 		return err // Return error from os.WriteFile
 	}
 

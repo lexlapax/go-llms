@@ -57,9 +57,9 @@ func TestWorkflowAgentsConcurrentExecution(t *testing.T) {
 	// Test configurations
 	concurrencyLevels := []int{10, 50, 100}
 	workflowTypes := []struct {
-		name        string
-		createFunc  func() domain.BaseAgent
-		complexity  string
+		name       string
+		createFunc func() domain.BaseAgent
+		complexity string
 	}{
 		{
 			name: "Sequential",
@@ -136,11 +136,11 @@ func TestWorkflowAgentsConcurrentExecution(t *testing.T) {
 				innerSeq := workflow.NewSequentialAgent("inner-seq")
 				innerSeq.AddAgent(createAgent("inner1"))
 				innerSeq.AddAgent(createAgent("inner2"))
-				
+
 				innerPar := workflow.NewParallelAgent("inner-par")
 				innerPar.AddAgent(createAgent("par1"))
 				innerPar.AddAgent(createAgent("par2"))
-				
+
 				nested := workflow.NewSequentialAgent("nested-workflow")
 				nested.AddAgent(createAgent("start"))
 				nested.AddAgent(innerSeq)
@@ -242,7 +242,7 @@ func TestWorkflowStateManagementStress(t *testing.T) {
 	// Create an agent that heavily uses state
 	deps := core.LLMDeps{Provider: mockProvider}
 	stateAgent := core.NewLLMAgent("state-test", "mock", deps)
-	
+
 	// Add a tool that modifies state
 	stateAgent.AddTool(testutils.CreateMockTool("state-modifier", "Modifies state", nil))
 
@@ -262,11 +262,11 @@ func TestWorkflowStateManagementStress(t *testing.T) {
 			for j := 0; j < operations; j++ {
 				// Create local state
 				state := domain.NewState()
-				
+
 				// Set multiple values
 				state.Set(fmt.Sprintf("worker_%d_key_%d", workerID, j), rand.Intn(1000))
 				state.Set("shared_counter", workerID*operations+j)
-				
+
 				// Create nested structures
 				state.Set("nested", map[string]interface{}{
 					"level1": map[string]interface{}{
@@ -351,14 +351,14 @@ func TestWorkflowMemoryLeakDetection(t *testing.T) {
 		seq.AddAgent(agent1)
 		seq.AddAgent(agent2)
 		seq.AddAgent(agent3)
-		
+
 		par := workflow.NewParallelAgent(fmt.Sprintf("par-%d", i))
 		par.AddAgent(agent1)
 		par.AddAgent(agent2)
-		
+
 		loop := workflow.NewLoopAgent(fmt.Sprintf("loop-%d", i)).WithMaxIterations(3)
 		loop.SetLoopAgent(agent1)
-		
+
 		workflows := []domain.BaseAgent{seq, par, loop}
 
 		// Execute each workflow
@@ -367,7 +367,7 @@ func TestWorkflowMemoryLeakDetection(t *testing.T) {
 			state := domain.NewState()
 			state.Set("iteration", i)
 			state.Set("large_data", make([]byte, 10*1024)) // 10KB of data
-			
+
 			_, _ = wf.Run(ctx, state)
 			cancel()
 		}
@@ -393,7 +393,13 @@ func TestWorkflowMemoryLeakDetection(t *testing.T) {
 	var memStatsAfter runtime.MemStats
 	runtime.ReadMemStats(&memStatsAfter)
 
-	memoryIncrease := int64(memStatsAfter.Alloc) - int64(memStatsBefore.Alloc)
+	// Safe conversion avoiding potential overflow
+	var memoryIncrease int64
+	if memStatsAfter.Alloc >= memStatsBefore.Alloc {
+		memoryIncrease = int64(memStatsAfter.Alloc - memStatsBefore.Alloc)
+	} else {
+		memoryIncrease = -int64(memStatsBefore.Alloc - memStatsAfter.Alloc)
+	}
 	memoryIncreasePerIteration := float64(memoryIncrease) / float64(iterations)
 
 	t.Logf("Workflow memory leak detection results:")

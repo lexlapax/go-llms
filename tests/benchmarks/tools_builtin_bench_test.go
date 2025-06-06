@@ -29,7 +29,7 @@ func BenchmarkBuiltinFileRead(b *testing.B) {
 	tempDir := b.TempDir()
 	testFile := filepath.Join(tempDir, "benchmark_test.txt")
 	testContent := "This is a benchmark test file.\nIt contains multiple lines.\nFor testing file read performance."
-	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(testContent), 0600); err != nil {
 		b.Fatal(err)
 	}
 
@@ -101,7 +101,7 @@ func BenchmarkBuiltinLargeFileHandling(b *testing.B) {
 		content = append(content, line...)
 	}
 
-	if err := os.WriteFile(testFile, content, 0644); err != nil {
+	if err := os.WriteFile(testFile, content, 0600); err != nil {
 		b.Fatal(err)
 	}
 
@@ -235,7 +235,7 @@ func BenchmarkAtomicFileWrite(b *testing.B) {
 	// Create initial file
 	testFile := filepath.Join(tempDir, "atomic_test.txt")
 	initialContent := "Initial content"
-	if err := os.WriteFile(testFile, []byte(initialContent), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte(initialContent), 0600); err != nil {
 		b.Fatal(err)
 	}
 

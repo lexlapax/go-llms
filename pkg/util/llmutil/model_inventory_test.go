@@ -90,7 +90,7 @@ func TestGetAvailableModels_CacheMiss_ThenHit(t *testing.T) {
 	}
 
 	testFile := filepath.Join(testDir, "test_file.txt")
-	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0600); err != nil {
 		t.Fatalf("Failed to write test file %s: %v", testFile, err)
 	}
 	t.Logf("Successfully wrote test file to %s", testFile)

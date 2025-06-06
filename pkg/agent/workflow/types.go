@@ -25,8 +25,8 @@ const (
 	WorkflowStateCompleted WorkflowStateType = "completed"
 	// WorkflowStateFailed indicates the workflow failed
 	WorkflowStateFailed WorkflowStateType = "failed"
-	// WorkflowStateCancelled indicates the workflow was cancelled
-	WorkflowStateCancelled WorkflowStateType = "cancelled"
+	// WorkflowStateCanceled indicates the workflow was canceled
+	WorkflowStateCanceled WorkflowStateType = "canceled"
 )
 
 // StepStateType represents the state of a workflow step

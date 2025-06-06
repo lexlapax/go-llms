@@ -28,20 +28,20 @@ const (
 	EnvOpenAIOrganization = "OPENAI_ORGANIZATION" // Organization ID for OpenAI
 	EnvOpenAIModel        = "OPENAI_MODEL"        // Model to use for OpenAI
 	EnvOpenAIBaseURL      = "OPENAI_BASE_URL"     // Base URL for OpenAI API
-	EnvOpenAIAPIKey       = "OPENAI_API_KEY"      // API key for OpenAI
+	EnvOpenAIAPIKey       = "OPENAI_API_KEY"      // API key for OpenAI //nolint:gosec // This is just the env var name, not a credential
 
 	// Anthropic options
 	EnvAnthropicSystemPrompt = "ANTHROPIC_SYSTEM_PROMPT" // System prompt for Anthropic
 	EnvAnthropicModel        = "ANTHROPIC_MODEL"         // Model to use for Anthropic
 	EnvAnthropicBaseURL      = "ANTHROPIC_BASE_URL"      // Base URL for Anthropic API
-	EnvAnthropicAPIKey       = "ANTHROPIC_API_KEY"       // API key for Anthropic
+	EnvAnthropicAPIKey       = "ANTHROPIC_API_KEY"       // API key for Anthropic //nolint:gosec // This is just the env var name, not a credential
 
 	// Gemini options
 	EnvGeminiGenerationConfig = "GEMINI_GENERATION_CONFIG" // JSON string with generation config for Gemini
 	EnvGeminiSafetySettings   = "GEMINI_SAFETY_SETTINGS"   // JSON string with safety settings for Gemini
 	EnvGeminiModel            = "GEMINI_MODEL"             // Model to use for Gemini
 	EnvGeminiBaseURL          = "GEMINI_BASE_URL"          // Base URL for Gemini API
-	EnvGeminiAPIKey           = "GEMINI_API_KEY"           // API key for Gemini
+	EnvGeminiAPIKey           = "GEMINI_API_KEY"           // API key for Gemini //nolint:gosec // This is just the env var name, not a credential
 )
 
 // GetCommonOptionsFromEnv retrieves common provider options from environment variables.

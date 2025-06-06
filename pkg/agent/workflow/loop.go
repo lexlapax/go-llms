@@ -195,7 +195,7 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 		// Check context cancellation
 		select {
 		case <-ctx.Done():
-			l.updateStatus(WorkflowStateCancelled, "", ctx.Err())
+			l.updateStatus(WorkflowStateCanceled, "", ctx.Err())
 			return currentState.State, ctx.Err()
 		default:
 		}
@@ -333,7 +333,7 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 			select {
 			case <-time.After(l.iterationDelay):
 			case <-ctx.Done():
-				l.updateStatus(WorkflowStateCancelled, "", ctx.Err())
+				l.updateStatus(WorkflowStateCanceled, "", ctx.Err())
 				return currentState.State, ctx.Err()
 			}
 		}

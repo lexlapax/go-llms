@@ -304,7 +304,7 @@ func TestHTTPRequestAuthentication(t *testing.T) {
 	t.Run("APIKeyInQuery", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			apiKey := r.URL.Query().Get("api_key")
-			if apiKey == "query-key-456" {
+			if apiKey == "query-key-456" { //nolint:gosec // Test credential
 				_, _ = w.Write([]byte("Query Key Valid"))
 				return
 			}

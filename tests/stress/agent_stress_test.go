@@ -68,11 +68,11 @@ func TestAgentConcurrentRequests(t *testing.T) {
 	// Mock provider response generator
 	baseProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []llmdomain.Message, options ...llmdomain.Option) (llmdomain.Response, error) {
 		// Simulate varying response times
-		delay := time.Duration(rand.Intn(50)) * time.Millisecond
+		delay := time.Duration(rand.Intn(50)) * time.Millisecond //nolint:gosec // Non-crypto random is fine for test delays
 		select {
 		case <-time.After(delay):
 			// Randomly choose to use a tool or not
-			if rand.Float32() < 0.3 {
+			if rand.Float32() < 0.3 { //nolint:gosec // Non-crypto random is fine for test scenarios
 				// Return a tool-using response
 				return llmdomain.Response{
 					Content: `I'll help you with that calculation.
@@ -118,7 +118,7 @@ func TestAgentConcurrentRequests(t *testing.T) {
 					"Calculate 15 * 7",
 					"Tell me a joke",
 				}
-				state.Set("user_input", queries[rand.Intn(len(queries))])
+				state.Set("user_input", queries[rand.Intn(len(queries))]) //nolint:gosec // Non-crypto random is fine for test input selection
 
 				// Run the agent
 				_, err := baseAgent.Run(ctx, state)
@@ -238,7 +238,13 @@ func TestAgentMemoryLeaks(t *testing.T) {
 	runtime.ReadMemStats(&memStatsAfter)
 
 	// Use signed integers to handle cases where memory decreases after GC
-	memoryIncrease := int64(memStatsAfter.Alloc) - int64(memStatsBefore.Alloc)
+	// Safe conversion avoiding potential overflow
+	var memoryIncrease int64
+	if memStatsAfter.Alloc >= memStatsBefore.Alloc {
+		memoryIncrease = int64(memStatsAfter.Alloc - memStatsBefore.Alloc)
+	} else {
+		memoryIncrease = -int64(memStatsBefore.Alloc - memStatsAfter.Alloc)
+	}
 	memoryIncreasePerIteration := float64(memoryIncrease) / float64(iterations)
 
 	t.Logf("Memory statistics:")
@@ -329,7 +335,7 @@ func TestAgentRapidContextCancellation(t *testing.T) {
 
 	// Ensure the system handled cancellations properly
 	if cancelledCount == 0 {
-		t.Error("Expected some requests to be cancelled but none were")
+		t.Error("Expected some requests to be canceled but none were")
 	}
 }
 

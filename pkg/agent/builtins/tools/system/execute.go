@@ -266,7 +266,7 @@ func ExecuteCommand() domain.Tool {
 				if len(parts) == 0 {
 					return nil, fmt.Errorf("empty command")
 				}
-				cmd = exec.CommandContext(cmdCtx, parts[0], parts[1:]...)
+				cmd = exec.CommandContext(cmdCtx, parts[0], parts[1:]...) //nolint:gosec // Command execution is the purpose of this tool
 			} else {
 				// Execute via shell
 				shell := params.Shell

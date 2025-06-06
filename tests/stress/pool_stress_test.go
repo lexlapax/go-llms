@@ -454,7 +454,9 @@ func TestChannelPoolStress(t *testing.T) {
 								}
 							case <-timeout:
 								// Consumer timed out waiting for messages
-								atomic.AddInt32(&messageDropCount, int32(messageCount-receivedCount))
+								if messageCount > receivedCount {
+									atomic.AddInt32(&messageDropCount, int32(messageCount-receivedCount))
+								}
 								break ConsumerLoop
 							}
 						}

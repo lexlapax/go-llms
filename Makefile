@@ -285,7 +285,6 @@ vet:
 lint:
 	@if command -v golangci-lint >/dev/null 2>&1; then \
 		echo "$(GREEN)Running golangci-lint...$(NC)"; \
-		echo "$(YELLOW)Note: Skipping tests/integration, tests/stress, and benchmarks due to pending workflow migration$(NC)"; \
 		golangci-lint run ./...; \
 	else \
 		echo "$(YELLOW)golangci-lint not installed. Install with:$(NC)"; \

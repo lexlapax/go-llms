@@ -4,7 +4,7 @@
 package feed
 
 import (
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec // MD5 used for deduplication, not security
 	"fmt"
 	"sort"
 	"strings"
@@ -310,7 +310,7 @@ func getItemKey(item FeedItem) string {
 	// If no URL, use content hash
 	content := item.Title + item.Description + item.Content
 	if content != "" {
-		hash := md5.Sum([]byte(content))
+		hash := md5.Sum([]byte(content)) //nolint:gosec // MD5 used for deduplication, not security
 		return fmt.Sprintf("%x", hash)
 	}
 

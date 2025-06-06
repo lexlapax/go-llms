@@ -129,7 +129,7 @@ func TestLoadInventory_InvalidJSON(t *testing.T) {
 	cachePath := filepath.Join(tempDir, "invalid_json.json")
 
 	invalidJSONContent := []byte(`{"inventory": {"_metadata": {"version": "1.0"}, "models": [{"name": "bad-model"}]}, "fetched_at": "not-a-time"`) // Invalid FetchedAt
-	err := os.WriteFile(cachePath, invalidJSONContent, 0644)
+	err := os.WriteFile(cachePath, invalidJSONContent, 0600)
 	if err != nil {
 		t.Fatalf("Failed to write invalid JSON file for test setup: %v", err)
 	}

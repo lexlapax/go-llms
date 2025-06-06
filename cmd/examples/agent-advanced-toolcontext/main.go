@@ -73,7 +73,7 @@ func createProvider() (ldomain.Provider, error) {
 	if os.Getenv("OPENAI_API_KEY") != "" {
 		return provider.NewOpenAIProvider(
 			os.Getenv("OPENAI_API_KEY"),
-			"gpt-4-turbo-preview",
+			"gpt-4o",
 		), nil
 	}
 
@@ -105,12 +105,7 @@ func runProgressExample(ctx context.Context, llmProvider ldomain.Provider, custo
 	fmt.Println("=== Progress Reporting Example ===")
 
 	// Create a tool that reports progress
-	progressFunc := func(ctx context.Context, params interface{}) (interface{}, error) {
-		// Extract ToolContext
-		toolCtx, ok := ctx.(*domain.ToolContext)
-		if !ok {
-			return nil, fmt.Errorf("context is not a ToolContext")
-		}
+	progressFunc := func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 
 		// Parse parameters
 		paramMap, ok := params.(map[string]interface{})
@@ -128,13 +123,13 @@ func runProgressExample(ctx context.Context, llmProvider ldomain.Provider, custo
 		// Process data with progress reporting
 		for i := 0; i < dataSize; i++ {
 			// Emit progress events
-			if toolCtx.Events != nil {
+			if ctx.Events != nil {
 				progress := (i + 1) * 100 / dataSize
-				toolCtx.Events.EmitProgress(i+1, dataSize, fmt.Sprintf("Processing item %d of %d", i+1, dataSize))
+				ctx.Events.EmitProgress(i+1, dataSize, fmt.Sprintf("Processing item %d of %d", i+1, dataSize))
 
 				// Emit milestone events
 				if progress%25 == 0 {
-					toolCtx.Events.EmitMessage(fmt.Sprintf("Reached %d%% completion", progress))
+					ctx.Events.EmitMessage(fmt.Sprintf("Reached %d%% completion", progress))
 				}
 			}
 
@@ -144,8 +139,8 @@ func runProgressExample(ctx context.Context, llmProvider ldomain.Provider, custo
 		}
 
 		// Emit completion event
-		if toolCtx.Events != nil {
-			toolCtx.Events.EmitMessage("Processing complete!")
+		if ctx.Events != nil {
+			ctx.Events.EmitMessage("Processing complete!")
 		}
 
 		return map[string]interface{}{
@@ -185,24 +180,20 @@ func runEventsExample(ctx context.Context, llmProvider ldomain.Provider, customP
 	fmt.Println("=== Event Emission Example ===")
 
 	// Create a tool that emits various events
-	eventFunc := func(ctx context.Context, params interface{}) (interface{}, error) {
-		toolCtx, ok := ctx.(*domain.ToolContext)
-		if !ok {
-			return nil, fmt.Errorf("context is not a ToolContext")
-		}
+	eventFunc := func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 
-		if toolCtx.Events != nil {
+		if ctx.Events != nil {
 			// Emit different types of events
-			toolCtx.Events.EmitMessage("Starting event generation...")
+			ctx.Events.EmitMessage("Starting event generation...")
 
-			toolCtx.Events.EmitCustom("debug", "Debug: Initializing event generator")
+			ctx.Events.EmitCustom("debug", "Debug: Initializing event generator")
 
-			toolCtx.Events.EmitCustom("warning", "Warning: This is a test warning")
+			ctx.Events.EmitCustom("warning", "Warning: This is a test warning")
 
-			toolCtx.Events.EmitCustom("info", "Info: Processing events")
+			ctx.Events.EmitCustom("info", "Info: Processing events")
 
 			// Custom event
-			toolCtx.Events.EmitCustom("metrics", map[string]interface{}{
+			ctx.Events.EmitCustom("metrics", map[string]interface{}{
 				"cpu_usage": 45.2,
 				"memory_mb": 128,
 				"requests":  1000,
@@ -210,11 +201,11 @@ func runEventsExample(ctx context.Context, llmProvider ldomain.Provider, customP
 
 			// Nested events with progress
 			for i := 0; i < 5; i++ {
-				toolCtx.Events.EmitProgress(i+1, 5, "Generating event batch")
+				ctx.Events.EmitProgress(i+1, 5, "Generating event batch")
 				time.Sleep(200 * time.Millisecond)
 			}
 
-			toolCtx.Events.EmitMessage("Event generation complete!")
+			ctx.Events.EmitMessage("Event generation complete!")
 		}
 
 		return map[string]interface{}{
@@ -252,18 +243,14 @@ func runRetryExample(ctx context.Context, llmProvider ldomain.Provider, customPr
 	fmt.Println("=== Retry Handling Example ===")
 
 	// Create a tool that sometimes fails and uses retry info
-	retryFunc := func(ctx context.Context, params interface{}) (interface{}, error) {
-		toolCtx, ok := ctx.(*domain.ToolContext)
-		if !ok {
-			return nil, fmt.Errorf("context is not a ToolContext")
-		}
+	retryFunc := func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 
 		// Check retry count
 		retryCount := 0
-		if toolCtx.Retry > 0 {
-			retryCount = toolCtx.Retry
-			if toolCtx.Events != nil {
-				toolCtx.Events.EmitCustom("info", fmt.Sprintf("Retry attempt #%d", retryCount))
+		if ctx.Retry > 0 {
+			retryCount = ctx.Retry
+			if ctx.Events != nil {
+				ctx.Events.EmitCustom("info", fmt.Sprintf("Retry attempt #%d", retryCount))
 			}
 		}
 
@@ -274,15 +261,15 @@ func runRetryExample(ctx context.Context, llmProvider ldomain.Provider, customPr
 		// Higher chance of success with more retries
 		successChance := 0.3 + float32(retryCount)*0.2
 		if r.Float32() > successChance {
-			if toolCtx.Events != nil {
-				toolCtx.Events.EmitError(fmt.Errorf("service temporarily unavailable"))
+			if ctx.Events != nil {
+				ctx.Events.EmitError(fmt.Errorf("service temporarily unavailable"))
 			}
 			return nil, fmt.Errorf("service temporarily unavailable (retry %d)", retryCount)
 		}
 
 		// Success!
-		if toolCtx.Events != nil {
-			toolCtx.Events.EmitMessage(fmt.Sprintf("Success after %d retries!", retryCount))
+		if ctx.Events != nil {
+			ctx.Events.EmitMessage(fmt.Sprintf("Success after %d retries!", retryCount))
 		}
 
 		return map[string]interface{}{
@@ -325,32 +312,28 @@ func runStateAccessExample(ctx context.Context, llmProvider ldomain.Provider, cu
 	fmt.Println("=== State Access Example ===")
 
 	// Create a tool that accesses agent state
-	stateFunc := func(ctx context.Context, params interface{}) (interface{}, error) {
-		toolCtx, ok := ctx.(*domain.ToolContext)
-		if !ok {
-			return nil, fmt.Errorf("context is not a ToolContext")
-		}
+	stateFunc := func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 
 		result := map[string]interface{}{
 			"agent_info": map[string]interface{}{
-				"name": toolCtx.Agent.Name,
-				"id":   toolCtx.Agent.ID,
-				"type": toolCtx.Agent.Type,
+				"name": ctx.Agent.Name,
+				"id":   ctx.Agent.ID,
+				"type": ctx.Agent.Type,
 			},
-			"run_id": toolCtx.RunID,
+			"run_id": ctx.RunID,
 		}
 
 		// Access state through StateReader
-		if toolCtx.State != nil {
+		if ctx.State != nil {
 			// Read various state values
-			if userName, exists := toolCtx.State.Get("user_name"); exists {
+			if userName, exists := ctx.State.Get("user_name"); exists {
 				result["user_name"] = userName
-				if toolCtx.Events != nil {
-					toolCtx.Events.EmitMessage(fmt.Sprintf("Found user: %v", userName))
+				if ctx.Events != nil {
+					ctx.Events.EmitMessage(fmt.Sprintf("Found user: %v", userName))
 				}
 			}
 
-			if preferences, exists := toolCtx.State.Get("preferences"); exists {
+			if preferences, exists := ctx.State.Get("preferences"); exists {
 				result["preferences"] = preferences
 			}
 
@@ -359,10 +342,10 @@ func runStateAccessExample(ctx context.Context, llmProvider ldomain.Provider, cu
 			// Check known keys
 			keys := []string{"user_name", "preferences", "context", "prompt", "analysis_type"}
 			for _, key := range keys {
-				if _, exists := toolCtx.State.Get(key); exists {
+				if _, exists := ctx.State.Get(key); exists {
 					stateCount++
-					if toolCtx.Events != nil {
-						toolCtx.Events.EmitCustom("debug", fmt.Sprintf("State key '%s' found", key))
+					if ctx.Events != nil {
+						ctx.Events.EmitCustom("debug", fmt.Sprintf("State key '%s' found", key))
 					}
 				}
 			}
@@ -407,7 +390,7 @@ When asked about context or state, use this tool to show what information is ava
 }
 
 // processAnalysisStep handles the step-specific logic for the analysis tool
-func processAnalysisStep(step string, results map[string]interface{}, toolCtx *domain.ToolContext) {
+func processAnalysisStep(step string, results map[string]interface{}, ctx *domain.ToolContext) {
 	switch step {
 	case "Data Collection":
 		results["data_points"] = 1000
@@ -416,8 +399,8 @@ func processAnalysisStep(step string, results map[string]interface{}, toolCtx *d
 	case "Analysis":
 		results["patterns_found"] = 5
 		// Emit custom metrics
-		if toolCtx.Events != nil {
-			toolCtx.Events.EmitCustom("analysis_metrics", map[string]interface{}{
+		if ctx.Events != nil {
+			ctx.Events.EmitCustom("analysis_metrics", map[string]interface{}{
 				"accuracy":           0.95,
 				"confidence":         0.87,
 				"processing_time_ms": 1500,
@@ -433,32 +416,28 @@ func runAllFeaturesExample(ctx context.Context, llmProvider ldomain.Provider, cu
 	fmt.Println("=== All Features Example ===")
 
 	// Create a comprehensive tool that uses all features
-	advancedFunc := func(ctx context.Context, params interface{}) (interface{}, error) {
-		toolCtx, ok := ctx.(*domain.ToolContext)
-		if !ok {
-			return nil, fmt.Errorf("context is not a ToolContext")
-		}
+	advancedFunc := func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 
 		// 1. Check retry status
-		if toolCtx.Retry > 0 && toolCtx.Events != nil {
-			toolCtx.Events.EmitCustom("warning", fmt.Sprintf("Running retry attempt #%d", toolCtx.Retry))
+		if ctx.Retry > 0 && ctx.Events != nil {
+			ctx.Events.EmitCustom("warning", fmt.Sprintf("Running retry attempt #%d", ctx.Retry))
 		}
 
 		// 2. Access state
 		analysisType := "default"
-		if toolCtx.State != nil {
-			if aType, exists := toolCtx.State.Get("analysis_type"); exists {
+		if ctx.State != nil {
+			if aType, exists := ctx.State.Get("analysis_type"); exists {
 				analysisType = fmt.Sprintf("%v", aType)
-				if toolCtx.Events != nil {
-					toolCtx.Events.EmitCustom("info", fmt.Sprintf("Using analysis type: %s", analysisType))
+				if ctx.Events != nil {
+					ctx.Events.EmitCustom("info", fmt.Sprintf("Using analysis type: %s", analysisType))
 				}
 			}
 		}
 
 		// 3. Emit various events
-		if toolCtx.Events != nil {
-			toolCtx.Events.EmitMessage("Starting comprehensive analysis...")
-			toolCtx.Events.EmitCustom("debug", fmt.Sprintf("Agent: %s, RunID: %s", toolCtx.Agent.Name, toolCtx.RunID))
+		if ctx.Events != nil {
+			ctx.Events.EmitMessage("Starting comprehensive analysis...")
+			ctx.Events.EmitCustom("debug", fmt.Sprintf("Agent: %s, RunID: %s", ctx.Agent.Name, ctx.RunID))
 		}
 
 		// 4. Progress reporting for multi-step analysis
@@ -466,24 +445,24 @@ func runAllFeaturesExample(ctx context.Context, llmProvider ldomain.Provider, cu
 		results := make(map[string]interface{})
 
 		for i, step := range steps {
-			if toolCtx.Events != nil {
-				toolCtx.Events.EmitProgress(i+1, len(steps), step)
+			if ctx.Events != nil {
+				ctx.Events.EmitProgress(i+1, len(steps), step)
 			}
 
 			// Simulate work
 			time.Sleep(500 * time.Millisecond)
 
 			// Add step results
-			processAnalysisStep(step, results, toolCtx)
+			processAnalysisStep(step, results, ctx)
 		}
 
 		// 5. Final results with state info
 		results["analysis_type"] = analysisType
-		results["agent_id"] = toolCtx.Agent.ID
+		results["agent_id"] = ctx.Agent.ID
 		results["completed_at"] = time.Now().Format(time.RFC3339)
 
-		if toolCtx.Events != nil {
-			toolCtx.Events.EmitMessage("Analysis complete!")
+		if ctx.Events != nil {
+			ctx.Events.EmitMessage("Analysis complete!")
 		}
 
 		return results, nil

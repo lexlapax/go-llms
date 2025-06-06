@@ -135,29 +135,3 @@ func createTestToolContext(ctx context.Context) *domain.ToolContext {
 
 	return tc
 }
-
-// createTestToolContextWithState creates a ToolContext with predefined state values
-func createTestToolContextWithState(ctx context.Context, values map[string]interface{}) *domain.ToolContext {
-	// Create a simple agent for testing
-	agent := &mockAgent{
-		id:          "test-agent",
-		name:        "Test Agent",
-		description: "Agent for testing",
-		agentType:   domain.AgentTypeLLM,
-		metadata:    make(map[string]interface{}),
-	}
-
-	// Create a state with the provided values
-	state := domain.NewState()
-	for k, v := range values {
-		state.Set(k, v)
-	}
-	stateReader := domain.NewStateReader(state)
-
-	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
-
-	// Create a simple event emitter
-	tc = tc.WithEventEmitter(&testEventEmitter{})
-
-	return tc
-}
