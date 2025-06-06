@@ -544,6 +544,7 @@ Go-LLMs provides comprehensive documentation for users and contributors:
 - [Concurrency Patterns](docs/technical/concurrency.md) - Thread safety and concurrent execution
 - [Dependency Reduction Journey](docs/technical/dependency_reduction.md) - Chronicle of dependency reduction from viper/cobra to stdlib
 - [Logging](docs/technical/logging.md) - Logging patterns and best practices
+- [Phase 5 Migration Guide](docs/MIGRATION_GUIDE_PHASE5.md) - Migration guide for Phase 5 multi-agent enhancement
 
 ### CLI Documentation
 
@@ -637,7 +638,7 @@ The core functionality is fairly complete and working. However, APIs are subject
 
 #### Changelog
 
-**v0.3.0** (February 2025)
+**v0.3.0** (June 2025)
 - 🎉 **Built-in Tools System** - Complete implementation of comprehensive built-in tools
   - **Registry Infrastructure**: Thread-safe tool registry with search and discovery capabilities
   - **Web Tools** (4 tools):
@@ -719,6 +720,28 @@ The core functionality is fairly complete and working. However, APIs are subject
     - All workflow agents have comprehensive tests, examples, and documentation
     - Production-ready features: Error handling, timeout support, hook integration, metadata collection
   - Created comprehensive architecture documentation: docs/technical/agents.md
+- 🎉 **Phase 5: Multi-Agent System Enhancement Completed** (June 5, 2025):
+  - Inspired by Google's Agent Development Kit (ADK), added advanced multi-agent capabilities
+  - **Core Features**:
+    - Automatic sub-agent to tool conversion - sub-agents automatically available as tools
+    - Dynamic agent delegation - LLM can choose which sub-agent to delegate to
+    - Shared state context - state automatically shared between parent and child agents
+    - Simplified API - much easier multi-agent creation with builder patterns
+  - **Implementation Details**:
+    - Phase 5.1: Core handoff execution with global registry access
+    - Phase 5.2: Auto-tool registration for sub-agents
+    - Phase 5.3: SharedStateContext for parent-child state sharing
+    - Phase 5.4: Simplified constructors (NewLLMAgentWithSubAgents, etc.)
+    - Phase 5.5: Examples and documentation including migration guide
+  - **New API Features**:
+    - `NewLLMAgentWithSubAgents()` and `NewLLMAgentWithSubAgentsFromString()`
+    - `agent.WithSubAgents()` builder method
+    - `agent.TransferTo()` convenience method
+    - `agent.GetSubAgentByName()` for sub-agent access
+  - **Examples Created**:
+    - agent-sub-agents: Demonstrates automatic tool registration
+    - Updated agent-handoff and agent-multi-coordination examples
+  - Migration guide available at docs/MIGRATION_GUIDE_PHASE5.md
 
 **v0.2.7**
 - ✅ **Built-in Components Implementation (Phases 1-2.6)**

@@ -8,8 +8,8 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 
 **Current Version**: v0.3.0 (Released February 2025)
 
-**Recent Updates** (February 5, 2025):
-- **Agent Architecture Restructuring Phases 1-4 COMPLETED, Phase 6 IN PROGRESS**
+**Recent Updates** (June 5, 2025):
+- **Agent Architecture Restructuring Phases 1-5 COMPLETED, Phase 7 IN PROGRESS**
   - Phase 1: Core Infrastructure (COMPLETED)
     - Created domain interfaces: BaseAgent, State, Event system, Artifacts, Errors, Config
     - Implemented core functionality: BaseAgentImpl, StateManager, EventDispatcher, AgentRegistry
@@ -49,7 +49,14 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
     - Created agent-workflow-as-tool example demonstrating multi-stage research pipeline
     - Fixed all test failures in agent/tools package
     - Full integration between agents and tools with event forwarding and state sharing
-  - Phase 6: Migration and Testing (IN PROGRESS - February 5, 2025)
+  - Phase 5: Multi-Agent System Enhancement (COMPLETED - June 5, 2025)
+    - Implemented automatic sub-agent to tool conversion
+    - Created SharedStateContext for parent-child state sharing
+    - Added simplified constructors (NewLLMAgentWithSubAgents, etc.)
+    - Implemented TransferTo() and GetSubAgentByName() convenience methods
+    - Updated examples and created comprehensive migration guide
+    - Feature parity with Google ADK's multi-agent approach achieved
+  - Phase 7: Migration and Testing (RENAMED FROM PHASE 6, IN PROGRESS - June 5, 2025)
     - Day 1-2: Discovery and Analysis - COMPLETED
     - Day 3-4: Code Removal and Cleanup - COMPLETED
       - Removed deprecated code and legacy comments
@@ -387,7 +394,7 @@ Debug logging is implemented using build tags, so there's no performance impact 
 
 Based on the TODO.md file, these are the current development priorities:
 
-1. **Phase 6: Migration and Testing** (HIGH PRIORITY - Currently Active):
+1. **Phase 7: Migration and Testing** (RENAMED FROM PHASE 6, HIGH PRIORITY - Currently Active):
    - Week 1: Code Cleanup and Examples (IN PROGRESS)
      - Day 1-2: Discovery and Analysis - COMPLETED
      - Day 3-4: Code Removal and Cleanup - COMPLETED
@@ -400,7 +407,7 @@ Based on the TODO.md file, these are the current development priorities:
        - Need to update advanced examples (multi, consensus, etc.)
      - New Examples to Add - IN PROGRESS
        - Created: state-persistence, error-handling, guardrails
-       - Still needed: workflow composition, multi-agent coordination, agent handoff
+       - Completed ALL planned examples including: workflow composition, multi-agent coordination, agent handoff
      - Example Cleanup - IN PROGRESS
        - Removed 3 empty directories
        - Need to ensure all examples have README.md files
@@ -414,7 +421,7 @@ Based on the TODO.md file, these are the current development priorities:
    - Add Model Context Protocol Client support for Agents
    - Add Model Context Protocol Server support for Workflows or Agents
    
-3. **Phase 5: Advanced Features** (LOW PRIORITY):
+3. **Phase 6: Advanced Features** (MOVED TO PHASE 7) (LOW PRIORITY):
    - State persistence and serialization
    - Agent discovery and registry
    - Advanced merge strategies for parallel agents
@@ -441,7 +448,7 @@ Based on the TODO.md file, these are the current development priorities:
    
 ## Completed Development Items
 
-1. **Agent Architecture Restructuring Phases 1-4 (Completed February 4, 2025)**:
+1. **Agent Architecture Restructuring Phases 1-5 (Completed June 5, 2025)**:
    - Phase 1: Core Infrastructure
      - Created comprehensive domain interfaces and core implementations
      - All components have thorough test coverage and pass linting
@@ -468,6 +475,14 @@ Based on the TODO.md file, these are the current development priorities:
      - Updated all built-in tools to use new ToolContext interface
      - Created agent-workflow-as-tool example demonstrating multi-stage research pipeline
      - Fixed all test failures in agent/tools package
+   - Phase 5: Multi-Agent System Enhancement
+     - Implemented automatic sub-agent to tool conversion
+     - Created SharedStateContext for parent-child state sharing
+     - Added simplified API with builder patterns (NewLLMAgentWithSubAgents, WithSubAgents)
+     - Implemented convenience methods (TransferTo, GetSubAgentByName)
+     - Created new examples: agent-sub-agents, updated agent-handoff and agent-multi-coordination
+     - Created comprehensive migration guide at docs/MIGRATION_GUIDE_PHASE5.md
+     - Achieved feature parity with Google ADK's multi-agent approach
    
 2. **Built-in Components Implementation (Completed Phases 1-2.6, February 2, 2025)**:
    - Phase 1: Implemented comprehensive registry system with search and discovery

@@ -505,3 +505,68 @@
     - [x] Add comprehensive example with real research scenario
     - [x] Document the architecture and usage patterns
     - [x] Fixed all test failures in agent/tools package
+
+## Phase 5: Multi-Agent System Enhancement (Completed - June 5, 2025)
+
+### Background
+After analyzing Google's Agent Development Kit (ADK), we identified key features that would significantly improve our multi-agent capabilities:
+- Automatic sub-agent to tool conversion
+- Dynamic agent delegation via LLM
+- Shared state between parent and child agents
+- Simplified API for multi-agent creation
+
+### Phase 5.1: Core Handoff Implementation (Completed - February 5, 2025)
+- [x] Complete handoff execution in pkg/agent/domain/handoff.go
+  - [x] Implement Execute() method using agent registry
+  - [x] Add global registry access pattern (GetGlobalRegistry())
+  - [x] Handle state transformation and result merging
+  - [x] Add error handling for missing target agents
+  - [x] Test handoff execution flow with unit tests
+
+### Phase 5.2: Auto-Tool Registration (Completed - February 6, 2025)
+- [x] Modify BaseAgentImpl.AddSubAgent to auto-register sub-agents as tools
+  - [x] Create AgentTool wrapper automatically (created inline subAgentTool to avoid circular deps)
+  - [x] Add tool to parent if parent is LLMAgent
+  - [x] Ensure tool names don't conflict (tools named after sub-agents)
+- [x] Add built-in "transfer_to_agent" tool to LLMAgent
+  - [x] Tool searches sub-agents by name
+  - [x] Executes handoff to selected sub-agent
+  - [x] Returns sub-agent execution result
+- [x] Update tool discovery to include sub-agent tools (automatic via AddTool)
+
+### Phase 5.3: Shared State Context (Completed - June 5, 2025)
+- [x] Implement SharedStateContext for parent-child state sharing
+  - [x] Create SharedStateContext struct with parent and local state
+  - [x] Implement Get() with fallback to parent state
+  - [x] Add Set() that only affects local state
+  - [x] Add MergeToParent() for explicit parent updates (returns error for read-only parent)
+- [x] Update RunContext to support shared state
+- [x] Modify agent execution to use shared state when available
+- [x] Add configuration option for state inheritance behavior
+
+### Phase 5.4: API Simplification (Completed - June 5, 2025)
+- [x] Create simplified constructors matching Google ADK patterns
+  - [x] NewLLMAgentWithSubAgents(name, provider, subAgents)
+  - [x] NewLLMAgentWithSubAgentsFromString(name, providerModel, subAgents)
+  - [x] Builder pattern: agent.WithSubAgents(agents...)
+- [x] Add convenience methods
+  - [x] agent.TransferTo(agentName, reason, input) 
+  - [x] agent.GetSubAgentByName(name)
+- [x] Update agent creation to be more declarative
+
+### Phase 5.5: Examples and Documentation (Completed - June 5, 2025)
+- [x] Create new example: agent-sub-agents
+  - [x] Show automatic tool registration
+  - [x] Demonstrate transfer_to_agent usage
+  - [x] Show shared state in action
+- [x] Update the agent-handoff example to use the new API
+- [x] Update the agent-multi-coordination example to use the new API
+- [x] Create migration guide for existing code
+- [x] Document new patterns in technical docs
+
+### Expected Outcomes (Achieved)
+- Sub-agents automatically available as tools to parent agents
+- LLM can dynamically choose which sub-agent to delegate to
+- State automatically shared between parent and children
+- Much simpler API for creating multi-agent systems
+- Feature parity with Google ADK's multi-agent approach
