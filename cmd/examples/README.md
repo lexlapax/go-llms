@@ -463,91 +463,167 @@ cd provider-convenience && go run main.go
 
 ### Built-in Tools Examples
 
+The built-in tools system provides pre-made, optimized tools that follow standardized interfaces. All tools are discoverable through the registry system and offer enhanced capabilities over custom implementations.
+
+#### Using Built-in Tools
+
+All built-in tools follow the same pattern:
+
+1. **Import the category** to trigger registration:
+   ```go
+   import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
+   import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
+   import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/system"
+   import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
+   import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/datetime"
+   import _ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/feed"
+   ```
+
+2. **Discover available tools**:
+   ```go
+   tools.Tools.List()                    // All tools
+   tools.Tools.ListByCategory("file")    // By category
+   tools.Tools.Search("read")            // By search term
+   ```
+
+3. **Use the tools**:
+   ```go
+   tool, _ := tools.GetTool("file_read")
+   result, err := tool.Execute(ctx, params)
+   ```
+
+#### Benefits Over Custom Tools
+
+- **Consistency**: Standardized interfaces across all projects
+- **Features**: Enhanced capabilities (streaming, timeouts, metadata)
+- **Discovery**: Easy to find and understand available tools
+- **Maintenance**: Updates and fixes handled centrally
+- **Performance**: Optimized implementations with pooling
+
 #### [**Built-ins Discovery**](builtins-discovery/README.md)
-Introduction to the built-in tools registry system.
+**Focus**: Registry discovery and basic usage
 
 **Features:**
-- Tool discovery and search
-- Registry categories and tags
-- Basic agent integration
+- How to discover available built-in tools
+- Search and filter tools by category/tags
+- Basic tool usage with agents
+- Migration from custom tools to built-ins
+
+**When to use**: Start here to understand the registry system and available tools.
 
 ```bash
 cd builtins-discovery && go run main.go
 ```
 
 #### [**Built-ins File Tools**](builtins-file-tools/README.md)
-Enhanced file operation tools.
+**Focus**: Deep dive into file tool capabilities
 
 **Features:**
-- Streaming large files
-- Atomic writes with backups
+- Enhanced file reading (streaming, metadata, line ranges)
+- Atomic file writing with backups
 - Binary file detection
-- File metadata
+- Large file handling
+- Agent integration for file operations
+
+**When to use**: When you need to understand the full capabilities of file tools.
 
 ```bash
 cd builtins-file-tools && go run main.go
 ```
 
 #### [**Built-ins Web Tools**](builtins-web-tools/README.md)
-Web interaction tools.
+**Focus**: Web interaction and HTTP operations
 
 **Features:**
-- Web page fetching
-- DuckDuckGo search
-- Web scraping
-- HTTP requests
+- Web fetching with timeouts and headers
+- Web search using DuckDuckGo, Brave, Tavily, Serpapi, and Serper.dev
+- Web scraping with CSS selectors
+- Advanced HTTP requests (all methods, auth, custom headers)
+- Response metadata and timing information
+
+**When to use**: When you need to interact with web services, APIs, or scrape web content.
 
 ```bash
 cd builtins-web-tools && go run main.go
 ```
 
-#### [**Built-ins System Tools**](builtins-system-tools/README.md)
-System information and command execution.
+#### [**Built-ins Web Search Parallel**](builtins-web-search-parallel/README.md)
+**Focus**: Production web search with explicit API key management
 
 **Features:**
-- Safe command execution
-- Environment variables
-- System information
-- Process listing
+- Parallel searches across multiple engines
+- Explicit API key injection (no environment variables)
+- Performance comparison between engines
+- Multi-tenant and A/B testing patterns
+- Error handling and fallback strategies
+
+**When to use**: When you need production-grade web search with secure API key management.
+
+```bash
+cd builtins-web-search-parallel && go run main.go
+```
+
+#### [**Built-ins System Tools**](builtins-system-tools/README.md)
+**Focus**: System interaction and management
+
+**Features:**
+- Command execution with safety controls and timeouts
+- Environment variable access with pattern matching
+- Comprehensive system information gathering
+- Process listing and filtering
+- Cross-platform compatibility
+
+**When to use**: When you need to interact with the operating system, run commands, or gather system information.
 
 ```bash
 cd builtins-system-tools && go run main.go
 ```
 
 #### [**Built-ins Data Tools**](builtins-data-tools/README.md)
-Data processing and transformation.
+**Focus**: Structured data processing
 
 **Features:**
-- JSON processing
-- CSV parsing
-- XML conversion
-- Data transformations
+- JSON processing with JSONPath queries
+- CSV parsing, filtering, and statistics
+- XML parsing with XPath and JSON conversion
+- Common data transformations (filter, map, reduce, sort, group)
+- Type conversions and aggregations
+
+**When to use**: When you need to process, transform, or analyze structured data in various formats.
 
 ```bash
 cd builtins-data-tools && go run main.go
 ```
 
 #### [**Built-ins DateTime Tools**](builtins-datetime-tools/README.md)
-Date and time manipulation.
+**Focus**: Comprehensive date/time operations
 
 **Features:**
-- Timezone handling
-- Date arithmetic
-- Parsing and formatting
-- Business days
+- Current time in various formats and timezones
+- Date parsing with auto-detection and relative dates
+- Date arithmetic and business day calculations
+- Formatting with localization support
+- Timezone conversions with DST handling
+- Date comparisons and sorting
+
+**When to use**: When you need to work with dates, times, and timezones in your applications.
 
 ```bash
 cd builtins-datetime-tools && go run main.go
 ```
 
 #### [**Built-ins Feed Tools**](builtins-feed-tools/README.md)
-RSS, Atom, and JSON Feed processing.
+**Focus**: Feed processing and syndication
 
 **Features:**
-- Feed parsing
-- Auto-discovery
-- Filtering
-- Format conversion
+- Fetching RSS, Atom, and JSON Feed formats
+- Auto-discovering feeds from websites
+- Filtering feed items by keywords, dates, and categories
+- Aggregating multiple feeds into one
+- Converting between feed formats
+- Extracting specific data for analysis
+
+**When to use**: When you need to work with RSS/Atom feeds, aggregate news sources, or build feed-based applications.
 
 ```bash
 cd builtins-feed-tools && go run main.go

@@ -9,14 +9,22 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 **Current Version**: v0.3.0 (Released February 2025)
 
 **Recent Updates** (June 6, 2025):
-- **Web Search Tool Enhancement (IDENTIFIED ISSUE)**
-  - Current Status: The web_search built-in tool only supports DuckDuckGo Instant Answer API which returns 0 results for general searches
-  - Root Cause: DuckDuckGo API is for instant answers only, not web search results
-  - Available API Keys: SEARCH_API_KEY (Brave Search) and TAVILY_API_KEY are available but not supported
-  - Plan: Add Brave Search and Tavily Search support using TDD approach
-  - Impact: agent-custom-research example returns 0 sources and cannot perform research
-
-**Recent Updates** (June 6, 2025):
+- **Web Search Tool Enhancement (COMPLETED)**
+  - Implemented Brave Search API support (uses SEARCH_API_KEY environment variable)
+  - Implemented Tavily Search API support (uses TAVILY_API_KEY environment variable)
+  - Implemented Serper Search API support (uses SERPER_API_KEY environment variable)
+  - Added automatic engine selection logic (Tavily > Serper > Brave > DuckDuckGo)
+  - Created comprehensive tests using TDD approach
+  - Updated tool version to 2.0.0 with new examples
+  - Created user guide documentation at docs/user-guide/web-search-tool.md
+  - Fixed agent-custom-research example - now successfully fetches and processes web sources
+  - Tavily is preferred for LLM applications as it provides AI-optimized results with summaries
+  - **Added EngineAPIKey Parameter** - Production-ready API key management:
+    - Added optional `engine_api_key` parameter for explicit API key injection
+    - Explicit keys override environment variables for better security
+    - Enables parallel searches with different API keys
+    - Supports multi-tenant and A/B testing scenarios
+    - Comprehensive tests validate precedence and security
 - **New Examples Created**:
   - Renamed agent-custom-calculator to agent-calculator (focuses on built-in calculator tool usage)
   - Created agent-custom-research example demonstrating:
@@ -142,7 +150,7 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
   - Created builtins-web-tools example
   - Created builtins-system-tools example  
   - Created builtins-data-tools example
-  - Updated BUILTINS_EXAMPLES.md documentation
+  - Updated examples documentation
 - **Completed All Phases of Logging Strategy Implementation** (January 30, 2025)
   - Phase 1: Documentation - Created comprehensive logging documentation at `docs/technical/logging.md`
   - Phase 2: Standardized Examples - Converted all examples to use consistent logging patterns

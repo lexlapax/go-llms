@@ -6,6 +6,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 
 - [Getting Started](/docs/user-guide/getting-started.md) - Introduction and basic usage examples
 - [Built-in Components](/docs/user-guide/built-in-components.md) - Using built-in tools, agents, and workflows
+- [Web Search Tool](/docs/user-guide/web-search-tool.md) - Comprehensive web search with multiple engines
 - [Provider Options](/docs/user-guide/provider-options.md) - Using the provider option system for configuration
 - [Multi-Provider Guide](/docs/user-guide/multi-provider.md) - Working with multiple LLM providers
 - [Multimodal Content](/docs/user-guide/multimodal-content.md) - Working with text, images, files, videos, and audio
@@ -53,10 +54,10 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Provider OpenAI Compatible](/cmd/examples/provider-openai-compatible/README.md) - Using OpenRouter and Ollama
 
 ### Built-in Tools Examples
-- [Built-in Components Examples Guide](/cmd/examples/BUILTINS_EXAMPLES.md) - Complete guide to using built-in components
 - [Built-in Tools Discovery](/cmd/examples/builtins-discovery/README.md) - Discover and use built-in tools
 - [Built-in File Tools](/cmd/examples/builtins-file-tools/README.md) - Enhanced file operations with built-in tools
 - [Built-in Web Tools](/cmd/examples/builtins-web-tools/README.md) - Web operations (fetch, search, scrape, HTTP requests)
+- [Built-ins Web Search Parallel](/cmd/examples/builtins-web-search-parallel/README.md) - Production API key management with parallel web searches
 - [Built-in System Tools](/cmd/examples/builtins-system-tools/README.md) - System operations (execute commands, environment variables, process list)
 - [Built-in Data Tools](/cmd/examples/builtins-data-tools/README.md) - Data processing (JSON, CSV, XML, transformations)
 - [Built-in DateTime Tools](/cmd/examples/builtins-datetime-tools/README.md) - Date and time operations (parse, format, calculate, compare)

@@ -563,6 +563,7 @@ The library includes comprehensive example applications that demonstrate key fea
 - [Built-in Tools Discovery](cmd/examples/builtins-discovery/README.md) - Discover and use built-in tools
 - [Built-in File Tools](cmd/examples/builtins-file-tools/README.md) - Enhanced file operations
 - [Built-in Web Tools](cmd/examples/builtins-web-tools/README.md) - Web fetching, search, and scraping
+- [Built-ins Web Search Parallel](cmd/examples/builtins-web-search-parallel/README.md) - **NEW** - Production API key management with parallel searches
 - [Built-in System Tools](cmd/examples/builtins-system-tools/README.md) - System information and command execution
 - [Built-in Data Tools](cmd/examples/builtins-data-tools/README.md) - JSON, CSV, XML processing
 - [Built-in DateTime Tools](cmd/examples/builtins-datetime-tools/README.md) - Date and time operations

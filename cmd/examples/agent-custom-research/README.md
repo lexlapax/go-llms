@@ -1,11 +1,11 @@
 # Custom Research Assistant Agent Example
 
-This example demonstrates how to create a sophisticated custom agent that extends `BaseAgent` and showcases advanced agent features.
+This example demonstrates how to create a sophisticated custom agent that extends `LLMAgent` and showcases advanced agent features.
 
 ## Features Demonstrated
 
 1. **Custom Agent Implementation**
-   - Extends `BaseAgentImpl` 
+   - Extends `LLMAgent` through composition
    - Implements custom `Run` method with complex logic
    - Manages state throughout multi-phase process
 
@@ -45,19 +45,31 @@ ResearchAssistant (Custom Agent)
     └── Internal logic
 ```
 
+## Web Search Configuration
+
+This example uses the enhanced `web_search` tool which automatically selects the best available search engine:
+
+- **Tavily Search** (preferred) - Set `TAVILY_API_KEY` for AI-optimized results
+- **Brave Search** - Set `SEARCH_API_KEY` for comprehensive web search
+- **DuckDuckGo** (fallback) - Always available but limited to instant answers
+
 ## Running the Example
 
 ```bash
 # Basic usage (will use mock agents if no API keys)
 go run cmd/examples/agent-custom-research/main.go
 
-# With web search API (e.g., Brave Search)
+# With Tavily Search API (recommended for best results)
+export TAVILY_API_KEY="your-tavily-api-key"
+go run cmd/examples/agent-custom-research/main.go
+
+# With Brave Search API
 export SEARCH_API_KEY="your-brave-search-api-key"
 go run cmd/examples/agent-custom-research/main.go
 
 # With full LLM support for summarization and fact-checking
 export OPENAI_API_KEY="your-api-key"  # or ANTHROPIC_API_KEY, GEMINI_API_KEY
-export SEARCH_API_KEY="your-search-api-key"
+export TAVILY_API_KEY="your-tavily-api-key"  # or SEARCH_API_KEY
 go run cmd/examples/agent-custom-research/main.go
 ```
 

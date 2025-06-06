@@ -80,9 +80,16 @@ fmt.Printf("File content: %s\n", readResult.Content)
    - Supports custom timeouts and headers
    - Captures response metadata
 
-2. **web_search** - Search the web using DuckDuckGo
-   - Configurable result limits
-   - Safe search filtering
+2. **web_search** - Search the web using multiple engines
+   - Automatic engine selection based on API keys (Tavily > Serperdev > Serpapi > Brave > DuckDuckGo)
+   - Supports DuckDuckGo (free, instant answers only)
+   - Supports Brave Search (comprehensive results, requires BRAVE_API_KEY)
+   - Supports Tavily Search (LLM-optimized, requires TAVILY_API_KEY)
+   - Supports Serper.dev (fast Google results, requires SERPERDEV_API_KEY)
+   - Supports Serpapi Search (Google results, requires SERPAPI_API_KEY)
+   - Configurable result limits and safe search filtering
+   - Explicit API key support for production environments (engine_api_key parameter)
+   - See [Web Search Tool Guide](/docs/user-guide/web-search-tool.md) for details
 
 3. **web_scrape** - Extract structured data from HTML
    - CSS-like selectors

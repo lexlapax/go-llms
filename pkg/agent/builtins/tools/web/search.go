@@ -4,12 +4,14 @@
 package web
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -27,11 +29,12 @@ const searchAPIKeyContext contextKey = "search_api_key"
 
 // WebSearchParams defines parameters for the WebSearch tool
 type WebSearchParams struct {
-	Query       string `json:"query"`
-	Engine      string `json:"engine,omitempty"`      // Search engine to use (default: "duckduckgo")
-	MaxResults  int    `json:"max_results,omitempty"` // Maximum number of results (default: 10)
-	SafeSearch  bool   `json:"safe_search,omitempty"` // Enable safe search (default: true)
-	TimeoutSecs int    `json:"timeout,omitempty"`     // Timeout in seconds (default: 30)
+	Query        string `json:"query"`
+	Engine       string `json:"engine,omitempty"`         // Search engine to use (default: "duckduckgo")
+	EngineAPIKey string `json:"engine_api_key,omitempty"` // Optional API key for the search engine
+	MaxResults   int    `json:"max_results,omitempty"`    // Maximum number of results (default: 10)
+	SafeSearch   bool   `json:"safe_search,omitempty"`    // Enable safe search (default: true)
+	TimeoutSecs  int    `json:"timeout,omitempty"`        // Timeout in seconds (default: 30)
 }
 
 // SearchResult defines a single search result
@@ -61,7 +64,11 @@ var webSearchParamSchema = &sdomain.Schema{
 		},
 		"engine": {
 			Type:        "string",
-			Description: "Search engine to use (duckduckgo, searx, or custom)",
+			Description: "Search engine to use (duckduckgo, brave, tavily, serpapi, serperdev, searx, or custom)",
+		},
+		"engine_api_key": {
+			Type:        "string",
+			Description: "Optional API key for the search engine (overrides environment variables)",
 		},
 		"max_results": {
 			Type:        "number",
@@ -96,15 +103,90 @@ type DuckDuckGoResponse struct {
 	RelatedTopics  []interface{}      `json:"RelatedTopics"`
 }
 
+// BraveSearchResponse represents the response from Brave Search API
+type BraveSearchResponse struct {
+	Query   interface{} `json:"query"` // Can be string or object
+	Results struct {
+		News   []BraveResult `json:"news"`
+		Web    []BraveResult `json:"web"`
+		Videos []BraveResult `json:"videos"`
+	} `json:"results"`
+}
+
+// BraveResult represents a single result from Brave Search
+type BraveResult struct {
+	Title       string `json:"title"`
+	URL         string `json:"url"`
+	Description string `json:"description"`
+	PageAge     string `json:"page_age,omitempty"`
+}
+
+// TavilySearchRequest represents the request to Tavily API
+type TavilySearchRequest struct {
+	APIKey        string `json:"api_key"`
+	Query         string `json:"query"`
+	MaxResults    int    `json:"max_results,omitempty"`
+	IncludeAnswer bool   `json:"include_answer,omitempty"`
+}
+
+// TavilySearchResponse represents the response from Tavily API
+type TavilySearchResponse struct {
+	Query   string         `json:"query"`
+	Answer  string         `json:"answer,omitempty"`
+	Results []TavilyResult `json:"results"`
+}
+
+// TavilyResult represents a single result from Tavily
+type TavilyResult struct {
+	Title   string  `json:"title"`
+	URL     string  `json:"url"`
+	Content string  `json:"content"`
+	Score   float64 `json:"score"`
+}
+
+// SerpapiSearchResponse represents the response from Serpapi API
+type SerpapiSearchResponse struct {
+	OrganicResults []SerpapiResult `json:"organic_results"`
+	SearchMetadata struct {
+		TotalResults string `json:"total_results,omitempty"`
+	} `json:"search_metadata"`
+}
+
+// SerpapiResult represents a single result from Serpapi
+type SerpapiResult struct {
+	Title   string `json:"title"`
+	Link    string `json:"link"`
+	Snippet string `json:"snippet"`
+}
+
+// SerperDevSearchRequest represents the request to Serper.dev API
+type SerperDevSearchRequest struct {
+	Q          string `json:"q"`
+	Num        int    `json:"num,omitempty"`
+	SafeSearch string `json:"safe,omitempty"` // "off" or "active"
+}
+
+// SerperDevSearchResponse represents the response from Serper.dev API
+type SerperDevSearchResponse struct {
+	Organic []SerperDevResult `json:"organic"`
+}
+
+// SerperDevResult represents a single result from Serper.dev
+type SerperDevResult struct {
+	Title   string `json:"title"`
+	Link    string `json:"link"`
+	Snippet string `json:"snippet"`
+}
+
 // init automatically registers the tool on package import
 func init() {
 	tools.MustRegisterTool("web_search", WebSearch(), tools.ToolMetadata{
 		Metadata: builtins.Metadata{
 			Name:        "web_search",
 			Category:    "web",
-			Tags:        []string{"search", "web", "query", "internet", "network"},
-			Description: "Performs web searches using various search engines",
-			Version:     "1.0.0",
+			Tags:        []string{"search", "web", "query", "internet", "network", "brave", "tavily", "duckduckgo", "serpapi", "serperdev", "google"},
+			Description: "Performs web searches using various search engines (DuckDuckGo, Brave, Tavily, Serpapi, Serper.dev)",
+			Version:     "2.0.0",
 			Examples: []builtins.Example{
 				{
 					Name:        "Basic search",
@@ -115,6 +197,26 @@ func init() {
 					Name:        "Limited results",
 					Description: "Search with limited results",
 					Code:        `WebSearch().Execute(ctx, WebSearchParams{Query: "machine learning", MaxResults: 5})`,
+				},
+				{
+					Name:        "Brave search",
+					Description: "Use Brave Search API (requires BRAVE_API_KEY)",
+					Code:        `WebSearch().Execute(ctx, WebSearchParams{Query: "AI news", Engine: "brave"})`,
+				},
+				{
+					Name:        "Tavily search",
+					Description: "Use Tavily Search API optimized for LLMs (requires TAVILY_API_KEY)",
+					Code:        `WebSearch().Execute(ctx, WebSearchParams{Query: "quantum computing", Engine: "tavily"})`,
+				},
+				{
+					Name:        "Serpapi search",
+					Description: "Use Serpapi Search API for Google results (requires SERPAPI_API_KEY)",
+					Code:        `WebSearch().Execute(ctx, WebSearchParams{Query: "latest technology trends", Engine: "serpapi"})`,
+				},
+				{
+					Name:        "Serper.dev search",
+					Description: "Use Serper.dev Search API for Google results (requires SERPERDEV_API_KEY)",
+					Code:        `WebSearch().Execute(ctx, WebSearchParams{Query: "AI research papers", Engine: "serperdev"})`,
 				},
 			},
 		},
@@ -130,14 +232,21 @@ func init() {
 
 // WebSearch creates a tool for performing web searches
 // This is a built-in tool optimized for:
-// - Multiple search engine support
+// - Multiple search engine support (DuckDuckGo, Brave, Tavily, Serpapi, Serper.dev)
+// - Automatic engine selection based on available API keys
 // - Context-aware cancellation
 // - Safe search filtering
 // - Result limit control
+//
+// Environment variables:
+// - BRAVE_API_KEY: Brave Search API key
+// - TAVILY_API_KEY: Tavily Search API key
+// - SERPAPI_API_KEY: Serpapi Search API key (Google search results)
+// - SERPERDEV_API_KEY: Serper.dev Search API key (Google search results)
 func WebSearch() domain.Tool {
 	return atools.NewTool(
 		"web_search",
-		"Performs web searches using various search engines",
+		"Performs web searches using various search engines with automatic API key detection",
 		func(ctx *domain.ToolContext, params WebSearchParams) (*WebSearchResults, error) {
 			startTime := time.Now()
 
@@ -148,7 +257,7 @@ func WebSearch() domain.Tool {
 
 			// Set defaults
 			if params.Engine == "" {
-				params.Engine = "duckduckgo"
+				params.Engine = selectDefaultEngine()
 			}
 			if params.MaxResults == 0 {
 				params.MaxResults = 10
@@ -195,6 +304,14 @@ func WebSearch() domain.Tool {
 			switch params.Engine {
 			case "duckduckgo":
 				results, err = searchDuckDuckGo(ctx, client, params.Query, params.MaxResults, safeSearch)
+			case "brave":
+				results, err = searchBrave(ctx, client, params.Query, params.MaxResults, safeSearch, params.EngineAPIKey)
+			case "tavily":
+				results, err = searchTavily(ctx, client, params.Query, params.MaxResults, safeSearch, params.EngineAPIKey)
+			case "serpapi":
+				results, err = searchSerpapi(ctx, client, params.Query, params.MaxResults, safeSearch, params.EngineAPIKey)
+			case "serperdev":
+				results, err = searchSerperDev(ctx, client, params.Query, params.MaxResults, safeSearch, params.EngineAPIKey)
 			case "searx":
 				results, err = searchSearx(ctx, client, params.Query, params.MaxResults, safeSearch)
 			default:
@@ -384,6 +501,392 @@ func extractTitle(text string) string {
 		return text[:50] + "..."
 	}
 	return text
+}
+
+// getSearchAPIKeys checks for search API keys from environment
+func getSearchAPIKeys() (braveKey, tavilyKey, serpapiKey, serperdevKey string) {
+	braveKey = os.Getenv("BRAVE_API_KEY")
+	tavilyKey = os.Getenv("TAVILY_API_KEY")
+	serpapiKey = os.Getenv("SERPAPI_API_KEY")
+	serperdevKey = os.Getenv("SERPERDEV_API_KEY")
+	return
+}
+
+// selectDefaultEngine auto-selects the best engine based on available API keys
+func selectDefaultEngine() string {
+	braveKey, tavilyKey, serpapiKey, serperdevKey := getSearchAPIKeys()
+
+	if tavilyKey != "" {
+		return "tavily" // Best for LLM use cases
+	}
+	if serperdevKey != "" {
+		return "serperdev" // Fast Google search results
+	}
+	if serpapiKey != "" {
+		return "serpapi" // Comprehensive Google search results
+	}
+	if braveKey != "" {
+		return "brave" // Good general web search
+	}
+	return "duckduckgo" // Limited but no API key required
+}
+
+// searchBrave performs a search using Brave Search API
+func searchBrave(ctx *domain.ToolContext, client *http.Client, query string, maxResults int, safeSearch bool, apiKey string) ([]SearchResult, error) {
+	// Use provided API key first, fallback to environment
+	braveKey := apiKey
+	if braveKey == "" {
+		braveKey, _, _, _ = getSearchAPIKeys()
+	}
+	if braveKey == "" {
+		return nil, fmt.Errorf("Brave Search API key required - set BRAVE_API_KEY environment variable")
+	}
+
+	// Emit progress
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(2, 4, "Querying Brave Search")
+	}
+
+	// Build URL with query parameters
+	params := url.Values{}
+	params.Set("q", query)
+	params.Set("count", fmt.Sprintf("%d", maxResults))
+	if safeSearch {
+		params.Set("safesearch", "strict")
+	} else {
+		params.Set("safesearch", "off")
+	}
+
+	apiURL := "https://api.search.brave.com/res/v1/web/search?" + params.Encode()
+
+	// Create request
+	req, err := http.NewRequestWithContext(ctx.Context, "GET", apiURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	// Set headers
+	req.Header.Set("X-Subscription-Token", braveKey)
+	req.Header.Set("Accept", "application/json")
+
+	// Execute request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error executing request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check status
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("Brave Search API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Emit progress
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(3, 4, "Processing results")
+	}
+
+	// Parse response
+	var braveResp BraveSearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&braveResp); err != nil {
+		return nil, fmt.Errorf("error parsing response: %w", err)
+	}
+
+	// Convert to our format
+	var results []SearchResult
+
+	// Add web results
+	for i, r := range braveResp.Results.Web {
+		if i >= maxResults {
+			break
+		}
+		results = append(results, SearchResult{
+			Title:       r.Title,
+			URL:         r.URL,
+			Description: r.Description,
+			Snippet:     r.Description,
+		})
+	}
+
+	// Add news results if space allows
+	remaining := maxResults - len(results)
+	for i, r := range braveResp.Results.News {
+		if i >= remaining {
+			break
+		}
+		results = append(results, SearchResult{
+			Title:       r.Title,
+			URL:         r.URL,
+			Description: r.Description,
+			Snippet:     r.Description,
+		})
+	}
+
+	return results, nil
+}
+
+// searchTavily performs a search using Tavily API
+func searchTavily(ctx *domain.ToolContext, client *http.Client, query string, maxResults int, safeSearch bool, apiKey string) ([]SearchResult, error) {
+	// Use provided API key first, fallback to environment
+	tavilyKey := apiKey
+	if tavilyKey == "" {
+		_, tavilyKey, _, _ = getSearchAPIKeys()
+	}
+	if tavilyKey == "" {
+		return nil, fmt.Errorf("Tavily API key required - set TAVILY_API_KEY environment variable")
+	}
+
+	// Emit progress
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(2, 4, "Querying Tavily Search")
+	}
+
+	// Build request
+	tavilyReq := TavilySearchRequest{
+		APIKey:        tavilyKey,
+		Query:         query,
+		MaxResults:    maxResults,
+		IncludeAnswer: true,
+	}
+
+	reqBody, err := json.Marshal(tavilyReq)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling request: %w", err)
+	}
+
+	// Create request
+	req, err := http.NewRequestWithContext(ctx.Context, "POST", "https://api.tavily.com/search", bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+
+	// Execute request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error executing request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check status
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("Tavily API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Emit progress
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(3, 4, "Processing results")
+	}
+
+	// Parse response
+	var tavilyResp TavilySearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tavilyResp); err != nil {
+		return nil, fmt.Errorf("error parsing response: %w", err)
+	}
+
+	// Convert to our format
+	var results []SearchResult
+
+	// Add answer as first result if available
+	if tavilyResp.Answer != "" {
+		results = append(results, SearchResult{
+			Title:       "AI Summary",
+			URL:         fmt.Sprintf("tavily:answer:%s", query),
+			Description: tavilyResp.Answer,
+			Snippet:     tavilyResp.Answer,
+		})
+	}
+
+	// Add search results
+	for i, r := range tavilyResp.Results {
+		if len(results) >= maxResults {
+			break
+		}
+		// Skip if we already have too many
+		if i >= maxResults {
+			break
+		}
+
+		// Truncate content if too long
+		snippet := r.Content
+		if len(snippet) > 200 {
+			snippet = snippet[:200] + "..."
+		}
+
+		results = append(results, SearchResult{
+			Title:       r.Title,
+			URL:         r.URL,
+			Description: snippet,
+			Snippet:     snippet,
+		})
+	}
+
+	return results, nil
+}
+
+// searchSerpapi performs a search using Serpapi API
+func searchSerpapi(ctx *domain.ToolContext, client *http.Client, query string, maxResults int, safeSearch bool, apiKey string) ([]SearchResult, error) {
+	// Use provided API key first, fallback to environment
+	serpapiKey := apiKey
+	if serpapiKey == "" {
+		_, _, serpapiKey, _ = getSearchAPIKeys()
+	}
+	if serpapiKey == "" {
+		return nil, fmt.Errorf("Serpapi API key required - set SERPAPI_API_KEY environment variable")
+	}
+
+	// Emit progress
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(2, 4, "Querying Serpapi Search")
+	}
+
+	// Create request
+	// Serpapi uses GET requests with query parameters
+	params := url.Values{}
+	params.Set("q", query)
+	params.Set("api_key", serpapiKey)
+	params.Set("engine", "google")
+	params.Set("num", fmt.Sprintf("%d", maxResults))
+	if safeSearch {
+		params.Set("safe", "active")
+	}
+
+	apiURL := "https://serpapi.com/search?" + params.Encode()
+	req, err := http.NewRequestWithContext(ctx.Context, "GET", apiURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	// Set headers
+	req.Header.Set("Accept", "application/json")
+
+	// Execute request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error executing request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check status
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("Serpapi API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Emit progress
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(3, 4, "Processing results")
+	}
+
+	// Parse response
+	var serpapiResp SerpapiSearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&serpapiResp); err != nil {
+		return nil, fmt.Errorf("error parsing response: %w", err)
+	}
+
+	// Convert to our format
+	var results []SearchResult
+	for i, r := range serpapiResp.OrganicResults {
+		if i >= maxResults {
+			break
+		}
+		results = append(results, SearchResult{
+			Title:       r.Title,
+			URL:         r.Link,
+			Description: r.Snippet,
+			Snippet:     r.Snippet,
+		})
+	}
+
+	return results, nil
+}
+
+// searchSerperDev performs a search using Serper.dev API
+func searchSerperDev(ctx *domain.ToolContext, client *http.Client, query string, maxResults int, safeSearch bool, apiKey string) ([]SearchResult, error) {
+	// Use provided API key first, fallback to environment
+	serperdevKey := apiKey
+	if serperdevKey == "" {
+		_, _, _, serperdevKey = getSearchAPIKeys()
+	}
+	if serperdevKey == "" {
+		return nil, fmt.Errorf("Serper.dev API key required - set SERPERDEV_API_KEY environment variable")
+	}
+
+	// Emit progress
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(2, 4, "Querying Serper.dev Search")
+	}
+
+	// Build request
+	serperdevReq := SerperDevSearchRequest{
+		Q:   query,
+		Num: maxResults,
+	}
+
+	if safeSearch {
+		serperdevReq.SafeSearch = "active"
+	} else {
+		serperdevReq.SafeSearch = "off"
+	}
+
+	reqBody, err := json.Marshal(serperdevReq)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling request: %w", err)
+	}
+
+	// Create request
+	req, err := http.NewRequestWithContext(ctx.Context, "POST", "https://google.serper.dev/search", bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	// Set headers
+	req.Header.Set("X-API-KEY", serperdevKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Execute request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error executing request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check status
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("Serper.dev API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Emit progress
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(3, 4, "Processing results")
+	}
+
+	// Parse response
+	var serperdevResp SerperDevSearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&serperdevResp); err != nil {
+		return nil, fmt.Errorf("error parsing response: %w", err)
+	}
+
+	// Convert to our format
+	var results []SearchResult
+	for i, r := range serperdevResp.Organic {
+		if i >= maxResults {
+			break
+		}
+		results = append(results, SearchResult{
+			Title:       r.Title,
+			URL:         r.Link,
+			Description: r.Snippet,
+			Snippet:     r.Snippet,
+		})
+	}
+
+	return results, nil
 }
 
 // MustGetWebSearch retrieves the registered WebSearch tool or panics

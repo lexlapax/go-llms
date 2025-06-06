@@ -263,7 +263,7 @@
     - [x] Created builtins-web-tools example
     - [x] Created builtins-system-tools example
     - [x] Created builtins-data-tools example
-    - [x] Updated BUILTINS_EXAMPLES.md to reflect completed examples
+    - [x] Updated examples documentation to reflect completed examples
   - [x] Phase 2: Standardize Examples (completed)
     - [x] Convert fmt-only examples to use `log` package:
       - [x] gemini/main.go (completed)

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	builtintools "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
-	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
+	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
@@ -66,7 +66,7 @@ func NewResearchAssistant(name string) (*ResearchAssistant, error) {
 		webSearcher: webSearcher,
 		summarizer:  summarizer,
 		factChecker: factChecker,
-		maxSources:  3,
+		maxSources:  5,
 	}
 
 	// Register tools
@@ -178,18 +178,29 @@ func (r *ResearchAssistant) performWebSearch(ctx *domain.RunContext[any], topic 
 		"query": topic + " comprehensive guide overview",
 	}
 	log.Printf("Executing web_search with params: %+v", searchParams)
-	
+
 	result, err := searchTool.Execute(toolCtx, searchParams)
 	if err != nil {
 		log.Printf("Web search failed: %v", err)
 		return nil, err
 	}
-	
+
 	log.Printf("Web search result type: %T, value: %+v", result, result)
 
 	// Extract URLs from results
 	urls := []string{}
-	if searchResult, ok := result.(map[string]interface{}); ok {
+	if searchResults, ok := result.(*web.WebSearchResults); ok {
+		for i, res := range searchResults.Results {
+			if i >= r.maxSources {
+				break
+			}
+			// Skip the AI summary from Tavily
+			if strings.HasPrefix(res.URL, "tavily:answer:") {
+				continue
+			}
+			urls = append(urls, res.URL)
+		}
+	} else if searchResult, ok := result.(map[string]interface{}); ok {
 		if results, ok := searchResult["results"].([]interface{}); ok {
 			for i, result := range results {
 				if i >= r.maxSources {
