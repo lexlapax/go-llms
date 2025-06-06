@@ -31,13 +31,12 @@
 
 ## Architecture & Built-in Components for next release
 
-### Agent Architecture Restructuring (NEW - HIGH PRIORITY)
-
-- [x] Phase 1 & 1.5: Core Infrastructure - COMPLETED (February 3, 2025) - see TODO-DONE.md
-- [x] Phase 2: LLM Agent Migration - COMPLETED (February 3, 2025) - see TODO-DONE.md
-- [x] Phase 3: Workflow Agents - COMPLETED (February 3, 2025) - see TODO-DONE.md
-- [x] Phase 4: Agent-Tool Integration (Week 4) - COMPLETED (February 2025) - see TODO-DONE.md
-- [x] Phase 5: Multi-Agent System Enhancement - COMPLETED (June 5, 2025) - see TODO-DONE.md
+### Agent Architecture Restructuring
+- [x] Phase 1 & 1.5: Core Infrastructure - COMPLETED - see TODO-DONE.md
+- [x] Phase 2: LLM Agent Migration - COMPLETED - see TODO-DONE.md
+- [x] Phase 3: Workflow Agents - COMPLETED - see TODO-DONE.md
+- [x] Phase 4: Agent-Tool Integration - COMPLETED - see TODO-DONE.md
+- [x] Phase 5: Multi-Agent System Enhancement - COMPLETED - see TODO-DONE.md
 
 - [ ] Phase 6: Advanced Features (MOVED TO PHASE 7) (low priority)
   - [ ] State persistence and serialization, present plan before implementation
@@ -45,46 +44,7 @@
   - [ ] Advanced merge strategies for parallel agents
   - [ ] Streaming support for long-running agents
 
-- [ ] Phase 7: Migration and Testing (RENAMED FROM PHASE 6) - IN PROGRESS
-  
-  ## Week 1: Code Cleanup and Examples - COMPLETED (February 5, 2025) - see TODO-DONE.md
-  ## Week 1-2: Examples Overhaul - COMPLETED (February 5, 2025) - see TODO-DONE.md
-  
-  ## Week 2: Testing Migration - IN PROGRESS (June 5, 2025)
-  
-  ### Integration Tests (tests/integration/) - COMPLETED (June 5, 2025) - see TODO-DONE.md
-  
-  ### Stress Tests (tests/stress/)
-  - [ ] Update stress tests to new architecture
-    - [ ] agent_stress_test.go - use core.LLMAgent
-    - [ ] provider_stress_test.go - verify updated
-    - [ ] pool_stress_test.go - verify updated
-    - [ ] structured_stress_test.go - verify updated
-  - [ ] Add new stress tests
-    - [ ] Workflow agent stress tests
-    - [ ] Concurrent agent execution tests
-    - [ ] Memory leak detection tests
-    - [ ] State management stress tests
-  
-  ### Benchmark Updates
-  - [x] Move benchmarks/ directory to tests/benchmarks/ - COMPLETED
-  - [x] Update all benchmarks to new architecture (done during migration)
-  - [ ] Verify and update specific benchmarks
-    - [ ] agent_bench_test.go - use core.LLMAgent
-    - [ ] provider_bench_test.go - verify updated
-    - [ ] tools benchmarks - verify updated
-    - [ ] consensus benchmarks - update if needed
-  - [ ] Add new benchmarks
-    - [ ] Agent creation performance
-    - [ ] State management overhead
-    - [ ] Tool execution performance
-    - [ ] Workflow agent performance
-    - [ ] Hook execution overhead
-  
-  ### Test Documentation
-  - [ ] Update testing documentation
-  - [ ] Document new test patterns
-  - [ ] Create testing best practices guide
+- [x] Phase 7: Migration and Testing - COMPLETED - see TODO-DONE.md
 
 ### Previous Built-in Components Plan
 - [x] P2: Build useful built-in tools - COMPLETED - see TODO-DONE.md

@@ -27,13 +27,20 @@ The Go-LLMs library implements a comprehensive testing strategy with several lay
 
 This layered approach ensures that the library is robust, performant, and reliable in various usage scenarios. This document focuses specifically on error condition testing and stress testing aspects of the framework.
 
-### Recent Integration Test Additions (June 2025)
+### Recent Test Additions (June 2025)
 
-As part of Phase 7 of the Agent Architecture Restructuring, we've added comprehensive integration tests for new agent features:
+As part of Phase 7 of the Agent Architecture Restructuring, we've added comprehensive tests for new agent features:
 
+#### Integration Tests
 - **Hook Integration Tests** (`tests/integration/hook_integration_test.go`): Tests the hook system across different agent types with 8 comprehensive scenarios including basic hook functionality, tool call hooks, multiple hooks, error handling, metrics/logging hooks, workflow agent hooks, and concurrent hook safety.
 
 - **Multi-Agent Coordination Tests** (`tests/integration/multi_agent_coordination_test.go`): Tests multi-agent patterns with 8 scenarios including basic coordinator-specialist patterns, hierarchical agent systems (3 levels), workflow integration, agent-to-agent communication, error handling, scalability (20+ agents), state sharing, and convenience methods.
+
+#### Stress Tests
+- **Workflow Agent Stress Tests** (`tests/stress/workflow_stress_test.go`): Comprehensive stress tests for all workflow agent types (Sequential, Parallel, Conditional, Loop, Nested) under high concurrency, including state management stress tests, memory leak detection, and error handling under load.
+
+#### Benchmarks
+- **Advanced Agent Benchmarks** (`tests/benchmarks/agent_advanced_bench_test.go`): New performance benchmarks covering agent creation methods, state management operations, tool execution performance, workflow agent performance, hook execution overhead, and event stream operations.
 
 ## Error Condition Test Suite
 
@@ -673,6 +680,82 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 }
 ```
 
+### Workflow Agent Stress Tests (New in June 2025)
+
+As part of Phase 7 of the Agent Architecture Restructuring, comprehensive workflow agent stress tests have been added in `tests/stress/workflow_stress_test.go`:
+
+```go
+func TestWorkflowAgentsConcurrentExecution(t *testing.T) {
+    // Tests different workflow types under concurrent load
+    workflowTypes := []struct {
+        name        string
+        createFunc  func() domain.BaseAgent
+        complexity  string
+    }{
+        {"Sequential", createSequentialWorkflow, "low"},
+        {"Parallel", createParallelWorkflow, "medium"},
+        {"Conditional", createConditionalWorkflow, "medium"},
+        {"Loop", createLoopWorkflow, "high"},
+        {"Nested", createNestedWorkflow, "high"},
+    }
+    
+    // Run with different concurrency levels
+    concurrencyLevels := []int{10, 50, 100}
+    
+    // Metrics tracked:
+    // - Success rate
+    // - Average latency
+    // - Throughput (requests/sec)
+    // - Memory usage
+}
+```
+
+Additional workflow stress tests include:
+
+1. **State Management Stress Test**: Tests concurrent state operations with shared contexts
+2. **Memory Leak Detection**: Monitors memory usage across hundreds of workflow executions
+3. **Error Handling Under Load**: Tests workflow behavior when agents fail under high concurrency
+
+### Advanced Agent Benchmarks (New in June 2025)
+
+New comprehensive benchmarks have been added in `tests/benchmarks/agent_advanced_bench_test.go`:
+
+```go
+// Agent creation benchmarks
+BenchmarkAgentCreation/DirectCreation     // Direct instantiation
+BenchmarkAgentCreation/StringCreation     // From provider string
+BenchmarkAgentCreation/WithTools          // With tool addition
+BenchmarkAgentCreation/WithHooks          // With hook addition
+
+// State management benchmarks
+BenchmarkStateManagement/StateCreation    // New state creation
+BenchmarkStateManagement/StateSetGet      // Set/Get operations
+BenchmarkStateManagement/StateNestedData  // Nested data handling
+BenchmarkStateManagement/StateClone       // State cloning
+BenchmarkStateManagement/SharedStateContext // Shared state access
+
+// Tool execution benchmarks
+BenchmarkToolExecution/SingleToolCall     // Single tool invocation
+BenchmarkToolExecution/MultipleToolCalls  // Multiple tools
+
+// Workflow agent benchmarks
+BenchmarkWorkflowAgents/SequentialWorkflow
+BenchmarkWorkflowAgents/ParallelWorkflow
+BenchmarkWorkflowAgents/ConditionalWorkflow
+BenchmarkWorkflowAgents/LoopWorkflow
+
+// Hook execution benchmarks
+BenchmarkHookExecution/NoHooks            // Baseline without hooks
+BenchmarkHookExecution/SingleHook         // Single hook overhead
+BenchmarkHookExecution/MultipleHooks      // Multiple hooks overhead
+
+// Event stream benchmarks
+BenchmarkEventStream/EventCreation
+BenchmarkEventStream/EventStreamOperations
+```
+
+These benchmarks help identify performance bottlenecks and ensure the new agent architecture maintains high performance under various workloads.
+
 ## Running Tests
 
 The Go-LLMs library provides comprehensive Makefile targets for running different test suites:
@@ -694,6 +777,19 @@ make test-stress-provider      # Run provider stress tests
 make test-stress-agent         # Run agent workflow stress tests
 make test-stress-structured    # Run structured output processor stress tests
 make test-stress-pool          # Run memory pool stress tests
+
+# Run new workflow stress tests (June 2025)
+go test -v ./tests/stress/workflow_stress_test.go -run TestWorkflow
+
+# Run benchmarks
+make benchmark                 # Run all benchmarks
+make benchmark-pkg PKG=agent   # Run benchmarks for specific package
+make benchmark-specific BENCH=BenchmarkAgentCreation  # Run specific benchmark
+
+# Run new advanced benchmarks (June 2025)
+go test -bench=BenchmarkAgentCreation ./tests/benchmarks/agent_advanced_bench_test.go
+go test -bench=BenchmarkStateManagement ./tests/benchmarks/agent_advanced_bench_test.go
+go test -bench=BenchmarkWorkflowAgents ./tests/benchmarks/agent_advanced_bench_test.go
 ```
 
 ### Test Skip Control
