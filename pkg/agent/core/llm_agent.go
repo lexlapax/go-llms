@@ -796,6 +796,49 @@ func (a *LLMAgent) extractSimpleToolCall(content string) (string, any, bool) {
 		}
 	}
 
+	// Try finding JSON object in plain text
+	if startIdx := strings.Index(content, `{"tool"`); startIdx != -1 {
+		// Find the matching closing brace
+		braceCount := 0
+		inString := false
+		escapeNext := false
+
+		for i := startIdx; i < len(content); i++ {
+			char := content[i]
+
+			if escapeNext {
+				escapeNext = false
+				continue
+			}
+
+			if char == '\\' {
+				escapeNext = true
+				continue
+			}
+
+			if char == '"' && !escapeNext {
+				inString = !inString
+				continue
+			}
+
+			if !inString {
+				if char == '{' {
+					braceCount++
+				} else if char == '}' {
+					braceCount--
+					if braceCount == 0 {
+						// Found the complete JSON object
+						jsonStr := content[startIdx : i+1]
+						if err := json.Unmarshal([]byte(jsonStr), &toolCall); err == nil && toolCall.Tool != "" {
+							return toolCall.Tool, toolCall.Params, true
+						}
+						break
+					}
+				}
+			}
+		}
+	}
+
 	return "", nil, false
 }
 

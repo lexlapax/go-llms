@@ -75,17 +75,33 @@ export OPENAI_API_KEY="your-key"
 cd agent-structured-output && go run main.go
 ```
 
-#### [**Agent Custom Calculator**](agent-custom-calculator/README.md)
-Pure computational logic without LLM dependencies.
+#### [**Agent Calculator**](agent-calculator/README.md)
+Calculator tool usage with LLM agents.
 
 **Features:**
-- Stateless computation patterns
-- Input validation and error handling
-- Simple custom agent implementation
-- Integration with workflow agents
+- Built-in calculator tool integration
+- Mathematical constant handling
+- LLM tool calling patterns
+- Debugging with conditional logging
 
 ```bash
-cd agent-custom-calculator && go run main.go
+cd agent-calculator && go run main.go
+```
+
+#### [**Agent Custom Research**](agent-custom-research/README.md)
+Advanced custom agent extending LLMAgent with sub-agent coordination.
+
+**Features:**
+- Custom agent extending LLMAgent
+- Multi-phase research pipeline
+- Sub-agent coordination (searcher, summarizer, fact-checker)
+- Tool usage (web search, web fetch)
+- Complex state management
+- Research report synthesis
+
+```bash
+export OPENAI_API_KEY="your-key"  # Optional for real LLM sub-agents
+cd agent-custom-research && go run main.go
 ```
 
 #### [**Agent LLM Built-in Tools**](agent-llm-builtin-tools/README.md)

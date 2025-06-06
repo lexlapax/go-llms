@@ -88,47 +88,46 @@ type MyCustomAgent struct {
 
 ### 1. Basic Custom Agent
 
+**Note**: For a complete example of calculator functionality, see the [agent-calculator example](/cmd/examples/agent-calculator/README.md) which demonstrates using the built-in calculator tool with LLM agents.
+
 ```go
 package main
 
 import (
     "context"
     "fmt"
+    "strings"
+    "time"
     
     "github.com/lexlapax/go-llms/pkg/agent/core"
     "github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-type CalculatorAgent struct {
+// Example of a simple custom agent for data processing
+type DataProcessorAgent struct {
     *core.BaseAgentImpl
 }
 
-func NewCalculatorAgent(name string) *CalculatorAgent {
-    return &CalculatorAgent{
-        BaseAgentImpl: core.NewBaseAgent(name, "Calculator agent", domain.AgentTypeCustom),
+func NewDataProcessorAgent(name string) *DataProcessorAgent {
+    return &DataProcessorAgent{
+        BaseAgentImpl: core.NewBaseAgent(name, "Data processor agent", domain.AgentTypeCustom),
     }
 }
 
-func (c *CalculatorAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
-    // Extract operation and operands from state
-    operation, _ := input.Get("operation")
-    operand1, _ := input.Get("operand1")
-    operand2, _ := input.Get("operand2")
-    
-    // Perform calculation
-    var result float64
-    switch operation.(string) {
-    case "add":
-        result = operand1.(float64) + operand2.(float64)
-    case "multiply":
-        result = operand1.(float64) * operand2.(float64)
-    default:
-        return nil, fmt.Errorf("unsupported operation: %s", operation)
+func (d *DataProcessorAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
+    // Extract data from state
+    data, ok := input.Get("data")
+    if !ok {
+        return nil, fmt.Errorf("no data provided")
     }
+    
+    // Process data (example: convert to uppercase)
+    processed := strings.ToUpper(fmt.Sprintf("%v", data))
     
     // Create result state
     resultState := input.Clone()
-    resultState.Set("result", result)
+    resultState.Set("processed_data", processed)
+    resultState.Set("processed_at", time.Now())
     
     return resultState, nil
 }
@@ -597,5 +596,18 @@ mainAgent, _ := core.NewLLMAgentWithSubAgents(
     workflowAgent,      // Workflow agent
 )
 ```
+
+## Complete Examples
+
+For complete working examples of custom agents:
+
+- [agent-custom-research](/cmd/examples/agent-custom-research/README.md) - Advanced custom agent that extends LLMAgent with:
+  - Multi-phase research pipeline
+  - Sub-agent coordination (web searcher, summarizer, fact-checker)
+  - Tool usage (web search, web fetch)
+  - Complex state management throughout the research process
+  - Research report synthesis
+
+- [agent-calculator](/cmd/examples/agent-calculator/README.md) - Demonstrates using the built-in calculator tool with LLM agents
 
 Custom agents provide the ultimate flexibility for implementing sophisticated agent workflows while maintaining compatibility with the broader Go-LLMs agent ecosystem.

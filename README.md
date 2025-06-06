@@ -577,6 +577,8 @@ The library includes comprehensive example applications that demonstrate key fea
 **Advanced Features:**
 - [Agent Simple LLM](cmd/examples/agent-simple-llm/README.md) - Ultra-simple agent creation
 - [Agent Structured Output](cmd/examples/agent-structured-output/README.md) - Structured output with schemas
+- [Agent Calculator](cmd/examples/agent-calculator/README.md) - Built-in calculator tool with LLM agents
+- [Agent Custom Research](cmd/examples/agent-custom-research/README.md) - Custom agent with sub-agent coordination
 - [Multi-Provider Example](cmd/examples/multi/README.md) - Multiple provider strategies
 - [Consensus Example](cmd/examples/consensus/README.md) - Consensus and voting mechanisms
 - [Provider Multimodal Example](cmd/examples/provider-multimodal/README.md) - Multimodal capabilities across providers

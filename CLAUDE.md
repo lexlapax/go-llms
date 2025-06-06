@@ -8,6 +8,26 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 
 **Current Version**: v0.3.0 (Released February 2025)
 
+**Recent Updates** (June 6, 2025):
+- **Web Search Tool Enhancement (IDENTIFIED ISSUE)**
+  - Current Status: The web_search built-in tool only supports DuckDuckGo Instant Answer API which returns 0 results for general searches
+  - Root Cause: DuckDuckGo API is for instant answers only, not web search results
+  - Available API Keys: SEARCH_API_KEY (Brave Search) and TAVILY_API_KEY are available but not supported
+  - Plan: Add Brave Search and Tavily Search support using TDD approach
+  - Impact: agent-custom-research example returns 0 sources and cannot perform research
+
+**Recent Updates** (June 6, 2025):
+- **New Examples Created**:
+  - Renamed agent-custom-calculator to agent-calculator (focuses on built-in calculator tool usage)
+  - Created agent-custom-research example demonstrating:
+    - Custom agent extending LLMAgent
+    - Multi-phase research pipeline
+    - Sub-agent coordination (web searcher, summarizer, fact-checker)
+    - Tool usage (web search, web fetch)
+    - Complex state management
+    - Research report synthesis
+  - Updated all documentation (README.md, REFERENCE.md, docs/user-guide/custom-agents.md)
+
 **Recent Updates** (June 5, 2025):
 - **Agent Architecture Restructuring Phases 1-5 and Phase 7 COMPLETED**
   - Phase 1: Core Infrastructure (COMPLETED)
