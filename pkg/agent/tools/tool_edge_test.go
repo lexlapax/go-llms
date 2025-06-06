@@ -16,7 +16,7 @@ func createEdgeTestContext() *domain.ToolContext {
 	mockAgent := NewTestAgentToolBuilder("test-agent").
 		WithDescription("Test agent for edge cases").
 		BuildAgent()
-	
+
 	return domain.NewToolContext(
 		context.Background(),
 		domain.NewStateReader(domain.NewState()),

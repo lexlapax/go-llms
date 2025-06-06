@@ -704,12 +704,122 @@ The next phase will focus on:
 - **Tool Context System**: Enhanced context management for tool execution
 - **Built-in Tool Integration**: Ensure all built-in tools work seamlessly with agents
 
-### Phase 5-6: Advanced Features
+### Phase 5: Multi-Agent System Enhancement (Completed)
+
+Phase 5 introduces powerful multi-agent capabilities inspired by Google's Agent Development Kit (ADK):
+
+#### Automatic Sub-Agent Tools
+
+Sub-agents are automatically registered as tools when added to a parent agent:
+
+```go
+// Sub-agents become tools automatically
+mainAgent, err := core.NewLLMAgentWithSubAgents(
+    "assistant",
+    provider,
+    calculatorAgent,
+    researcherAgent,
+    summarizerAgent,
+)
+
+// The LLM can now use these agents as tools
+// Tools available: calculator, researcher, summarizer, transfer_to_agent
+```
+
+#### Simplified API
+
+Create multi-agent systems with provider strings:
+
+```go
+// One-line multi-agent creation
+coordinator, err := core.NewLLMAgentWithSubAgentsFromString(
+    "coordinator",
+    "openai/gpt-4",  // or "anthropic/claude-3", "gemini/pro"
+    techSupport,
+    billingSupport,
+    seniorSupport,
+)
+
+// Builder pattern
+agent.WithSubAgents(agent1, agent2, agent3)
+```
+
+#### Direct Agent Transfer
+
+Transfer control between agents with a simple API:
+
+```go
+// Transfer to a sub-agent with reason and input
+result, err := coordinator.TransferTo(
+    ctx,
+    "techSupport",
+    "Customer needs technical help",
+    map[string]interface{}{
+        "issue": "Internet connectivity",
+        "customer_id": "CUST-12345",
+    },
+)
+```
+
+#### Shared State Context
+
+Enable state sharing between parent and child agents:
+
+```go
+// Enable shared state
+mainAgent.EnableSharedState(true)
+mainAgent.ConfigureStateInheritance(
+    true,  // inherit messages
+    true,  // inherit artifacts
+    false, // inherit metadata (optional)
+)
+
+// Child agents automatically see parent state
+// Useful for maintaining context across handoffs
+```
+
+#### Built-in Transfer Tool
+
+Every LLM agent with sub-agents gets a `transfer_to_agent` tool:
+
+```go
+// The LLM can dynamically choose which sub-agent to delegate to
+mainAgent.SetSystemPrompt(`You have access to:
+- calculator: For math operations
+- researcher: For web research
+- summarizer: For text summarization
+
+Use transfer_to_agent to delegate tasks.`)
+```
+
+#### Hierarchical Agent Structures
+
+Build multi-level agent hierarchies:
+
+```go
+// Team leads with their teams
+researchLead, _ := core.NewLLMAgentWithSubAgentsFromString(
+    "researchLead", "claude-3-haiku",
+    webResearcher, academicResearcher,
+)
+
+analysisLead, _ := core.NewLLMAgentWithSubAgentsFromString(
+    "analysisLead", "gpt-4",
+    dataAnalyst, trendAnalyst,
+)
+
+// Top coordinator managing team leads
+topCoordinator, _ := core.NewLLMAgentWithSubAgentsFromString(
+    "topCoordinator", "gpt-4o",
+    researchLead, analysisLead, reportWriter,
+)
+```
+
+### Phase 6: Advanced Features (Future)
 
 - **State Persistence**: Checkpoint and resume capabilities
 - **Advanced Patterns**: Circuit breakers, retries, timeouts
-- **Multi-Agent Coordination**: Complex workflow patterns
-- **Agent Discovery**: Registry and service discovery
+- **Agent Discovery**: Enhanced registry and service discovery
 
 ## Future Use Cases
 

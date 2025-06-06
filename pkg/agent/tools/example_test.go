@@ -29,7 +29,7 @@ func ExampleAgentTool() {
 
 	// Create a mock agent for the tool context
 	mockAgent := core.NewBaseAgent("example-agent", "Example agent", domain.AgentTypeCustom)
-	
+
 	// Use the tool
 	ctx := domain.NewToolContext(
 		context.Background(),

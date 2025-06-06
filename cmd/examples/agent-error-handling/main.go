@@ -48,12 +48,12 @@ func (h *ErrorHandlingHook) BeforeRun(ctx context.Context, agent domain.BaseAgen
 	if state == nil {
 		return ctx, ErrInvalidInput
 	}
-	
+
 	// Check for required fields
 	if _, exists := state.Get("user_input"); !exists {
 		return ctx, fmt.Errorf("%w: missing user_input", ErrInvalidInput)
 	}
-	
+
 	return ctx, nil
 }
 
@@ -61,7 +61,7 @@ func (h *ErrorHandlingHook) AfterRun(ctx context.Context, agent domain.BaseAgent
 	if err != nil {
 		h.errors = append(h.errors, err)
 		log.Printf("[%s] Error tracked: %v", agent.Name(), err)
-		
+
 		// Attempt recovery for certain errors
 		if errors.Is(err, ErrRateLimited) {
 			h.recoveries++
@@ -75,7 +75,7 @@ func (h *ErrorHandlingHook) Summary() {
 	fmt.Printf("\nError Summary:\n")
 	fmt.Printf("Total errors: %d\n", len(h.errors))
 	fmt.Printf("Recovery attempts: %d\n", h.recoveries)
-	
+
 	if len(h.errors) > 0 {
 		fmt.Println("\nError details:")
 		for i, err := range h.errors {
@@ -91,14 +91,14 @@ func RunWithRetry(ctx context.Context, agent domain.BaseAgent, state *domain.Sta
 
 	for attempt := 1; attempt <= config.MaxAttempts; attempt++ {
 		fmt.Printf("Attempt %d/%d...\n", attempt, config.MaxAttempts)
-		
+
 		result, err := agent.Run(ctx, state)
 		if err == nil {
 			return result, nil
 		}
 
 		lastErr = err
-		
+
 		// Check if error is retryable
 		if !isRetryable(err) {
 			return nil, fmt.Errorf("non-retryable error: %w", err)
@@ -112,7 +112,7 @@ func RunWithRetry(ctx context.Context, agent domain.BaseAgent, state *domain.Sta
 			case <-ctx.Done():
 				return nil, ctx.Err()
 			}
-			
+
 			// Exponential backoff
 			delay = time.Duration(float64(delay) * config.BackoffFactor)
 			if delay > config.MaxDelay {
@@ -130,12 +130,12 @@ func isRetryable(err error) bool {
 	if errors.Is(err, ErrNetworkTimeout) || errors.Is(err, ErrRateLimited) {
 		return true
 	}
-	
+
 	// Context errors are not retryable
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return false
 	}
-	
+
 	// Check for specific error messages
 	errStr := err.Error()
 	retryablePatterns := []string{
@@ -144,13 +144,13 @@ func isRetryable(err error) bool {
 		"temporary failure",
 		"connection refused",
 	}
-	
+
 	for _, pattern := range retryablePatterns {
 		if strings.Contains(strings.ToLower(errStr), pattern) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -170,7 +170,7 @@ func NewFlakyAgent(name string, failureRate float64) *FlakyAgent {
 
 func (f *FlakyAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
 	f.attempts++
-	
+
 	// Simulate different types of failures
 	if f.attempts == 1 {
 		return nil, ErrNetworkTimeout
@@ -178,12 +178,12 @@ func (f *FlakyAgent) Run(ctx context.Context, state *domain.State) (*domain.Stat
 	if f.attempts == 2 {
 		return nil, ErrRateLimited
 	}
-	
+
 	// Success on third attempt
 	result := state.Clone()
 	result.Set("output", fmt.Sprintf("Success after %d attempts!", f.attempts))
 	result.Set("attempts", f.attempts)
-	
+
 	return result, nil
 }
 
@@ -204,11 +204,11 @@ func (v *ValidatingAgent) Run(ctx context.Context, state *domain.State) (*domain
 	if !exists {
 		return nil, fmt.Errorf("%w: user_input is required", ErrInvalidInput)
 	}
-	
+
 	if str, ok := userInput.(string); ok && len(str) == 0 {
 		return nil, fmt.Errorf("%w: user_input cannot be empty", ErrInvalidInput)
 	}
-	
+
 	// Check for max_tokens if provided
 	if maxTokens, exists := state.Get("max_tokens"); exists {
 		if tokens, ok := maxTokens.(int); ok {
@@ -217,11 +217,11 @@ func (v *ValidatingAgent) Run(ctx context.Context, state *domain.State) (*domain
 			}
 		}
 	}
-	
+
 	result := state.Clone()
 	result.Set("output", "Input validated successfully")
 	result.Set("validated", true)
-	
+
 	return result, nil
 }
 
@@ -259,57 +259,57 @@ func (c *CircuitBreakerAgent) Run(ctx context.Context, state *domain.State) (*do
 		} else {
 			return nil, fmt.Errorf("circuit breaker is open, service unavailable")
 		}
-		
+
 	case "half-open":
 		// In half-open state, we're testing if the service is back
 		fmt.Println("Circuit breaker: testing service...")
 	}
-	
+
 	// Simulate service call (50% failure rate for demo)
 	if time.Now().Unix()%2 == 0 {
 		// Failure
 		c.failureCount++
 		c.successCount = 0
 		c.lastFailureTime = time.Now()
-		
+
 		if c.failureCount >= c.failureThreshold {
 			c.state = "open"
 			fmt.Printf("Circuit breaker: OPEN (failures: %d)\n", c.failureCount)
 		}
-		
+
 		return nil, fmt.Errorf("service temporarily unavailable")
 	}
-	
+
 	// Success
 	c.successCount++
-	
+
 	if c.state == "half-open" && c.successCount >= c.successThreshold {
 		c.state = "closed"
 		c.failureCount = 0
 		fmt.Println("Circuit breaker: CLOSED (service recovered)")
 	}
-	
+
 	result := state.Clone()
 	result.Set("output", "Service call successful")
 	result.Set("circuit_state", c.state)
-	
+
 	return result, nil
 }
 
 func main() {
 	ctx := context.Background()
-	
+
 	fmt.Println("=== Error Handling Examples ===")
-	
+
 	// Example 1: Basic retry with exponential backoff
 	retryExample(ctx)
-	
+
 	// Example 2: Input validation
 	validationExample(ctx)
-	
+
 	// Example 3: Error tracking with hooks
 	errorTrackingExample(ctx)
-	
+
 	// Example 4: Circuit breaker pattern
 	circuitBreakerExample(ctx)
 }
@@ -318,10 +318,10 @@ func retryExample(ctx context.Context) {
 	fmt.Println(strings.Repeat("-", 40))
 	fmt.Println("Example 1: Retry with Exponential Backoff")
 	fmt.Println(strings.Repeat("-", 40))
-	
+
 	// Create a flaky agent that fails initially
 	agent := NewFlakyAgent("flaky-service", 0.7)
-	
+
 	// Configure retry behavior
 	retryConfig := RetryConfig{
 		MaxAttempts:   3,
@@ -329,15 +329,15 @@ func retryExample(ctx context.Context) {
 		MaxDelay:      2 * time.Second,
 		BackoffFactor: 2.0,
 	}
-	
+
 	// Create initial state
 	state := domain.NewState()
 	state.Set("user_input", "Process this request")
-	
+
 	// Run with retry
 	fmt.Println("\nRunning agent with retry logic...")
 	result, err := RunWithRetry(ctx, agent, state, retryConfig)
-	
+
 	if err != nil {
 		fmt.Printf("Failed after retries: %v\n", err)
 	} else {
@@ -348,7 +348,7 @@ func retryExample(ctx context.Context) {
 			fmt.Printf("Total attempts: %v\n", attempts)
 		}
 	}
-	
+
 	fmt.Println()
 }
 
@@ -356,9 +356,9 @@ func validationExample(ctx context.Context) {
 	fmt.Println(strings.Repeat("-", 40))
 	fmt.Println("Example 2: Input Validation")
 	fmt.Println(strings.Repeat("-", 40))
-	
+
 	agent := NewValidatingAgent("input-validator")
-	
+
 	// Test with invalid input (missing required field)
 	fmt.Println("\nTest 1: Missing required field")
 	state1 := domain.NewState()
@@ -366,7 +366,7 @@ func validationExample(ctx context.Context) {
 	if err != nil {
 		fmt.Printf("Validation error (expected): %v\n", err)
 	}
-	
+
 	// Test with empty input
 	fmt.Println("\nTest 2: Empty input")
 	state2 := domain.NewState()
@@ -375,7 +375,7 @@ func validationExample(ctx context.Context) {
 	if err != nil {
 		fmt.Printf("Validation error (expected): %v\n", err)
 	}
-	
+
 	// Test with invalid max_tokens
 	fmt.Println("\nTest 3: Invalid max_tokens")
 	state3 := domain.NewState()
@@ -385,7 +385,7 @@ func validationExample(ctx context.Context) {
 	if err != nil {
 		fmt.Printf("Validation error (expected): %v\n", err)
 	}
-	
+
 	// Test with valid input
 	fmt.Println("\nTest 4: Valid input")
 	state4 := domain.NewState()
@@ -399,7 +399,7 @@ func validationExample(ctx context.Context) {
 			fmt.Printf("Success: %v\n", output)
 		}
 	}
-	
+
 	fmt.Println()
 }
 
@@ -407,13 +407,13 @@ func errorTrackingExample(ctx context.Context) {
 	fmt.Println(strings.Repeat("-", 40))
 	fmt.Println("Example 3: Error Tracking with Hooks")
 	fmt.Println(strings.Repeat("-", 40))
-	
+
 	// Create error handling hook
 	errorHook := NewErrorHandlingHook()
-	
+
 	// Create agent with hook
 	agent := NewFlakyAgent("tracked-agent", 0.5)
-	
+
 	// Create a simple wrapper to apply hooks
 	// In real usage, you would use agent.WithHook() if available
 	hookedRun := func(ctx context.Context, state *domain.State) (*domain.State, error) {
@@ -421,31 +421,31 @@ func errorTrackingExample(ctx context.Context) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		result, runErr := agent.Run(ctx, state)
 		_ = errorHook.AfterRun(ctx, agent, state, result, runErr)
-		
+
 		return result, runErr
 	}
-	
+
 	// Run multiple times to accumulate errors
 	fmt.Println("\nRunning agent multiple times...")
 	for i := 1; i <= 3; i++ {
 		fmt.Printf("\nRun %d:\n", i)
 		state := domain.NewState()
 		state.Set("user_input", fmt.Sprintf("Request %d", i))
-		
+
 		result, err := hookedRun(ctx, state)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 		} else if output, exists := result.Get("output"); exists {
 			fmt.Printf("Success: %v\n", output)
 		}
-		
+
 		// Reset agent attempts for demo
 		agent.attempts = 0
 	}
-	
+
 	// Show error summary
 	errorHook.Summary()
 	fmt.Println()
@@ -455,18 +455,18 @@ func circuitBreakerExample(ctx context.Context) {
 	fmt.Println(strings.Repeat("-", 40))
 	fmt.Println("Example 4: Circuit Breaker Pattern")
 	fmt.Println(strings.Repeat("-", 40))
-	
+
 	agent := NewCircuitBreakerAgent("protected-service")
-	
+
 	fmt.Println("\nTesting circuit breaker with multiple calls...")
-	
+
 	// Make multiple calls to demonstrate circuit breaker behavior
 	for i := 1; i <= 10; i++ {
 		fmt.Printf("\nCall %d: ", i)
-		
+
 		state := domain.NewState()
 		state.Set("user_input", fmt.Sprintf("Request %d", i))
-		
+
 		result, err := agent.Run(ctx, state)
 		if err != nil {
 			fmt.Printf("Failed: %v", err)
@@ -476,10 +476,10 @@ func circuitBreakerExample(ctx context.Context) {
 				fmt.Printf(" (circuit: %v)", circuitState)
 			}
 		}
-		
+
 		// Small delay between calls
 		time.Sleep(500 * time.Millisecond)
 	}
-	
+
 	fmt.Println()
 }

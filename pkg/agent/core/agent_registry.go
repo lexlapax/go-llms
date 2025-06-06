@@ -10,6 +10,12 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
+// init sets up the global registry in the domain package
+func init() {
+	// Set the global registry in the domain package to enable handoffs
+	domain.SetGlobalAgentRegistry(globalRegistry)
+}
+
 // AgentRegistry manages registered agents
 type AgentRegistry struct {
 	mu     sync.RWMutex
@@ -22,6 +28,11 @@ type AgentRegistry struct {
 
 // globalRegistry is the default global registry
 var globalRegistry = NewAgentRegistry()
+
+// GetGlobalRegistry returns the global agent registry
+func GetGlobalRegistry() *AgentRegistry {
+	return globalRegistry
+}
 
 // NewAgentRegistry creates a new agent registry
 func NewAgentRegistry() *AgentRegistry {

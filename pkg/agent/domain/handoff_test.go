@@ -8,6 +8,58 @@ import (
 	"testing"
 )
 
+// Mock types for testing
+
+type mockAgentRegistry struct {
+	agents map[string]BaseAgent
+}
+
+func (m *mockAgentRegistry) Register(agent BaseAgent) error {
+	m.agents[agent.Name()] = agent
+	return nil
+}
+
+func (m *mockAgentRegistry) Get(agentID string) (BaseAgent, error) {
+	agent, ok := m.agents[agentID]
+	if !ok {
+		return nil, ErrAgentNotFound
+	}
+	return agent, nil
+}
+
+func (m *mockAgentRegistry) GetByName(name string) (BaseAgent, error) {
+	agent, ok := m.agents[name]
+	if !ok {
+		return nil, ErrAgentNotFound
+	}
+	return agent, nil
+}
+
+func (m *mockAgentRegistry) List() []BaseAgent {
+	agents := make([]BaseAgent, 0, len(m.agents))
+	for _, agent := range m.agents {
+		agents = append(agents, agent)
+	}
+	return agents
+}
+
+type mockHandoffAgent struct {
+	BaseAgent
+	name    string
+	runFunc func(context.Context, *State) (*State, error)
+}
+
+func (m *mockHandoffAgent) Name() string {
+	return m.name
+}
+
+func (m *mockHandoffAgent) Run(ctx context.Context, state *State) (*State, error) {
+	if m.runFunc != nil {
+		return m.runFunc(ctx, state)
+	}
+	return state, nil
+}
+
 func TestHandoff_BasicOperations(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -169,16 +221,67 @@ func TestHandoff_LastNMessages(t *testing.T) {
 func TestHandoff_Execute(t *testing.T) {
 	ctx := context.Background()
 	state := NewState()
+	state.Set("input", "test input")
 
-	handoff := NewSimpleHandoff("test", "agent-123")
+	handoff := NewSimpleHandoff("test", "target-agent")
 
-	// Execute should return an error since agent registry is not integrated yet
+	// Test when global registry is not set
+	originalRegistry := GetGlobalAgentRegistry()
+	SetGlobalAgentRegistry(nil)
+	defer SetGlobalAgentRegistry(originalRegistry)
+
 	_, err := handoff.Execute(ctx, state)
 	if err == nil {
-		t.Error("Expected error from Execute since agent registry is not integrated")
+		t.Error("Expected error when global registry is nil")
+	}
+	if err.Error() != "global agent registry not available" {
+		t.Errorf("Execute() error = %v, want 'global agent registry not available'", err.Error())
 	}
 
-	expectedErr := "handoff execution not yet implemented - waiting for agent registry integration"
+	// Test when target agent is not found
+	mockRegistry := &mockAgentRegistry{
+		agents: make(map[string]BaseAgent),
+	}
+	SetGlobalAgentRegistry(mockRegistry)
+
+	_, err = handoff.Execute(ctx, state)
+	if err == nil {
+		t.Error("Expected error when target agent not found")
+	}
+	expectedErr := "target agent 'target-agent' not found: agent not found"
+	if err.Error() != expectedErr {
+		t.Errorf("Execute() error = %v, want %v", err.Error(), expectedErr)
+	}
+
+	// Test successful handoff
+	mockTargetAgent := &mockHandoffAgent{
+		name: "target-agent",
+		runFunc: func(ctx context.Context, state *State) (*State, error) {
+			result := NewState()
+			result.Set("output", "processed")
+			return result, nil
+		},
+	}
+	mockRegistry.agents["target-agent"] = mockTargetAgent
+
+	result, err := handoff.Execute(ctx, state)
+	if err != nil {
+		t.Errorf("Execute() unexpected error = %v", err)
+	}
+	if output, ok := result.Get("output"); !ok || output != "processed" {
+		t.Errorf("Execute() result output = %v, want 'processed'", output)
+	}
+
+	// Test when target agent returns error
+	mockTargetAgent.runFunc = func(ctx context.Context, state *State) (*State, error) {
+		return nil, context.DeadlineExceeded
+	}
+
+	_, err = handoff.Execute(ctx, state)
+	if err == nil {
+		t.Error("Expected error when target agent fails")
+	}
+	expectedErr = "handoff to agent 'target-agent' failed: context deadline exceeded"
 	if err.Error() != expectedErr {
 		t.Errorf("Execute() error = %v, want %v", err.Error(), expectedErr)
 	}

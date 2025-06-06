@@ -13,6 +13,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	ldomain "github.com/lexlapax/go-llms/pkg/llm/domain"
+	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 	"github.com/lexlapax/go-llms/pkg/util/llmutil"
 )
 
@@ -71,6 +72,8 @@ func NewLLMAgent(name, description string, deps LLMDeps) *LLMAgent {
 		outputTransforms: make([]StateTransform, 0),
 	}
 
+	// Don't add transfer_to_agent tool by default - it will be added when first sub-agent is added
+
 	return agent
 }
 
@@ -119,6 +122,38 @@ func NewAgentFromStringWithLogger(name, providerModel string, logger *slog.Logge
 	}
 
 	return NewAgentWithLogger(name, provider, logger), nil
+}
+
+// NewLLMAgentWithSubAgents creates an LLM agent with sub-agents in one call
+// This provides a Google ADK-like API for creating multi-agent systems
+func NewLLMAgentWithSubAgents(name string, provider ldomain.Provider, subAgents ...domain.BaseAgent) (*LLMAgent, error) {
+	agent := NewAgent(name, provider)
+
+	// Add each sub-agent
+	for _, subAgent := range subAgents {
+		if err := agent.AddSubAgent(subAgent); err != nil {
+			return nil, fmt.Errorf("failed to add sub-agent %s: %w", subAgent.Name(), err)
+		}
+	}
+
+	return agent, nil
+}
+
+// NewLLMAgentWithSubAgentsFromString creates an LLM agent with sub-agents from a provider string
+func NewLLMAgentWithSubAgentsFromString(name, providerModel string, subAgents ...domain.BaseAgent) (*LLMAgent, error) {
+	agent, err := NewAgentFromString(name, providerModel)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add each sub-agent
+	for _, subAgent := range subAgents {
+		if err := agent.AddSubAgent(subAgent); err != nil {
+			return nil, fmt.Errorf("failed to add sub-agent %s: %w", subAgent.Name(), err)
+		}
+	}
+
+	return agent, nil
 }
 
 // Configuration Methods
@@ -197,6 +232,116 @@ func (a *LLMAgent) ListTools() []string {
 
 	a.cachedToolNames = names
 	return names
+}
+
+// WithSubAgents adds multiple sub-agents at once (builder pattern)
+func (a *LLMAgent) WithSubAgents(subAgents ...domain.BaseAgent) *LLMAgent {
+	for _, subAgent := range subAgents {
+		if err := a.AddSubAgent(subAgent); err != nil {
+			// Log error but continue - builder pattern should not fail
+			if a.deps.Logger != nil {
+				a.deps.Logger.Error("Failed to add sub-agent",
+					"agent", a.name,
+					"sub_agent", subAgent.Name(),
+					"error", err)
+			}
+		}
+	}
+	return a
+}
+
+// AddSubAgent adds a sub-agent and automatically registers it as a tool
+func (a *LLMAgent) AddSubAgent(agent domain.BaseAgent) error {
+	// First, call the parent implementation
+	if err := a.BaseAgentImpl.AddSubAgent(agent); err != nil {
+		return err
+	}
+
+	// Add transfer_to_agent tool if this is the first sub-agent
+	subAgents := a.SubAgents()
+	if len(subAgents) == 1 {
+		_, hasTransferTool := a.GetTool("transfer_to_agent")
+		if !hasTransferTool {
+			a.AddTool(&transferToAgentTool{agent: a})
+		}
+	}
+
+	// Create a tool wrapper for the sub-agent
+	// We can't use tools.AgentTool due to circular dependency, so we create a simple wrapper
+	toolWrapper := &subAgentTool{
+		subAgent: agent,
+	}
+
+	// Add the sub-agent as a tool
+	a.AddTool(toolWrapper)
+
+	return nil
+}
+
+// RemoveSubAgent removes a sub-agent and its corresponding tool
+func (a *LLMAgent) RemoveSubAgent(name string) error {
+	// First, remove the tool
+	a.RemoveTool(name)
+
+	// Then call parent implementation
+	err := a.BaseAgentImpl.RemoveSubAgent(name)
+	if err != nil {
+		return err
+	}
+
+	// Remove transfer_to_agent tool if no more sub-agents
+	if len(a.SubAgents()) == 0 {
+		a.RemoveTool("transfer_to_agent")
+	}
+
+	return nil
+}
+
+// TransferTo transfers control to a sub-agent by name with an optional reason
+// This is a convenience method that internally uses the transfer_to_agent tool
+func (a *LLMAgent) TransferTo(ctx context.Context, agentName string, reason string, input interface{}) (*domain.State, error) {
+	// Check if the sub-agent exists
+	subAgent := a.FindSubAgent(agentName)
+	if subAgent == nil {
+		return nil, fmt.Errorf("sub-agent '%s' not found", agentName)
+	}
+
+	// Create a handoff
+	handoff := domain.NewSimpleHandoff("transfer", agentName)
+
+	// Create state for the transfer
+	state := domain.NewState()
+
+	// Add the reason if provided
+	if reason != "" {
+		state.SetMetadata("transfer_reason", reason)
+	}
+
+	// Handle input based on type
+	switch v := input.(type) {
+	case *domain.State:
+		// If input is already a state, merge it
+		for key, value := range v.Values() {
+			state.Set(key, value)
+		}
+	case string:
+		state.Set("input", v)
+	case map[string]interface{}:
+		for key, value := range v {
+			state.Set(key, value)
+		}
+	default:
+		state.Set("input", input)
+	}
+
+	// Execute the handoff
+	return handoff.Execute(ctx, state)
+}
+
+// GetSubAgentByName retrieves a sub-agent by name
+// This is an alias for FindSubAgent for Google ADK compatibility
+func (a *LLMAgent) GetSubAgentByName(name string) domain.BaseAgent {
+	return a.FindSubAgent(name)
 }
 
 // Enhanced Components Integration
@@ -701,43 +846,43 @@ func (a *LLMAgent) extractXMLToolCalls(content string) ([]string, []any, bool) {
 	// Look for <tool_calls> tags
 	startTag := "<tool_calls>"
 	endTag := "</tool_calls>"
-	
+
 	startIdx := strings.Index(content, startTag)
 	if startIdx == -1 {
 		return nil, nil, false
 	}
-	
+
 	endIdx := strings.Index(content[startIdx:], endTag)
 	if endIdx == -1 {
 		return nil, nil, false
 	}
-	
+
 	// Extract the content between tags
 	toolCallsContent := content[startIdx+len(startTag) : startIdx+endIdx]
 	toolCallsContent = strings.TrimSpace(toolCallsContent)
-	
+
 	// Parse as JSON array
 	var toolCalls []struct {
 		Name      string                 `json:"name"`
 		Arguments map[string]interface{} `json:"arguments"`
 	}
-	
+
 	if err := json.Unmarshal([]byte(toolCallsContent), &toolCalls); err != nil {
 		return nil, nil, false
 	}
-	
+
 	if len(toolCalls) == 0 {
 		return nil, nil, false
 	}
-	
+
 	names := make([]string, len(toolCalls))
 	params := make([]any, len(toolCalls))
-	
+
 	for i, call := range toolCalls {
 		names[i] = call.Name
 		params[i] = call.Arguments
 	}
-	
+
 	return names, params, true
 }
 
@@ -882,5 +1027,185 @@ func (a *LLMAgent) notifyAfterToolCall(ctx context.Context, tool string, result 
 
 	for _, hook := range hooks {
 		hook.AfterToolCall(ctx, tool, result, err)
+	}
+}
+
+// subAgentTool wraps a sub-agent as a tool
+type subAgentTool struct {
+	subAgent domain.BaseAgent
+}
+
+// Name returns the tool name (agent name)
+func (sat *subAgentTool) Name() string {
+	return sat.subAgent.Name()
+}
+
+// Description returns the tool description (agent description)
+func (sat *subAgentTool) Description() string {
+	return sat.subAgent.Description()
+}
+
+// Execute runs the sub-agent with the provided parameters
+func (sat *subAgentTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+	var state *domain.State
+
+	// Check if we should use shared state
+	if ctx.State != nil {
+		// Create shared state context with parent state
+		sharedCtx := domain.NewSharedStateContext(ctx.State)
+		state = sharedCtx.LocalState()
+
+		// TODO: When the sub-agent supports RunContext with shared state,
+		// we should pass the shared context through
+	} else {
+		// No parent state, create fresh state
+		state = domain.NewState()
+	}
+
+	// Handle different parameter types
+	switch p := params.(type) {
+	case map[string]interface{}:
+		for k, v := range p {
+			state.Set(k, v)
+		}
+	case string:
+		state.Set("input", p)
+	default:
+		state.Set("input", params)
+	}
+
+	// Execute the sub-agent
+	result, err := sat.subAgent.Run(ctx.Context, state)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract the result
+	if output, ok := result.Get("output"); ok {
+		return output, nil
+	}
+	if output, ok := result.Get("result"); ok {
+		return output, nil
+	}
+
+	// Return the entire state if no specific output
+	return result.Values(), nil
+}
+
+// ParameterSchema returns the schema for tool parameters
+func (sat *subAgentTool) ParameterSchema() *sdomain.Schema {
+	// For now, return a simple schema that accepts any object
+	// In the future, we could introspect the agent to determine its expected inputs
+	return &sdomain.Schema{
+		Type:        "object",
+		Description: fmt.Sprintf("Parameters for %s agent", sat.subAgent.Name()),
+		Properties: map[string]sdomain.Property{
+			"input": {
+				Type:        "string",
+				Description: "Input for the agent",
+			},
+		},
+	}
+}
+
+// transferToAgentTool is a built-in tool that allows dynamic delegation to sub-agents
+type transferToAgentTool struct {
+	agent *LLMAgent
+}
+
+// Name returns the tool name
+func (t *transferToAgentTool) Name() string {
+	return "transfer_to_agent"
+}
+
+// Description returns the tool description
+func (t *transferToAgentTool) Description() string {
+	return "Transfer control to a sub-agent by name. The sub-agent will handle the task and return the result."
+}
+
+// Execute transfers control to the specified sub-agent
+func (t *transferToAgentTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+	// Extract agent name and optional reason from params
+	paramMap, ok := params.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("transfer_to_agent requires a map with 'agent_name' and optional 'reason'")
+	}
+
+	agentName, ok := paramMap["agent_name"].(string)
+	if !ok || agentName == "" {
+		return nil, fmt.Errorf("transfer_to_agent requires 'agent_name' parameter")
+	}
+
+	// Find the sub-agent
+	subAgent := t.agent.FindSubAgent(agentName)
+	if subAgent == nil {
+		// List available sub-agents for better error message
+		var available []string
+		for _, sub := range t.agent.SubAgents() {
+			available = append(available, sub.Name())
+		}
+		return nil, fmt.Errorf("sub-agent '%s' not found. Available agents: %v", agentName, available)
+	}
+
+	// Create a simple handoff
+	handoff := domain.NewSimpleHandoff("transfer", agentName)
+
+	// Create a state for the handoff, using shared state if available
+	var state *domain.State
+	if ctx.State != nil {
+		// Create shared state context with parent state
+		sharedCtx := domain.NewSharedStateContext(ctx.State)
+		state = sharedCtx.LocalState()
+
+		// Copy relevant values from the context state
+		for key, value := range ctx.State.Values() {
+			state.Set(key, value)
+		}
+	} else {
+		state = domain.NewState()
+	}
+
+	// Add any input parameters
+	if input, ok := paramMap["input"]; ok {
+		state.Set("input", input)
+	}
+
+	result, err := handoff.Execute(ctx.Context, state)
+	if err != nil {
+		return nil, fmt.Errorf("transfer to agent '%s' failed: %w", agentName, err)
+	}
+
+	// Extract the result
+	if output, ok := result.Get("output"); ok {
+		return output, nil
+	}
+	if output, ok := result.Get("result"); ok {
+		return output, nil
+	}
+
+	// Return the state values if no specific output
+	return result.Values(), nil
+}
+
+// ParameterSchema returns the schema for the transfer_to_agent tool
+func (t *transferToAgentTool) ParameterSchema() *sdomain.Schema {
+	return &sdomain.Schema{
+		Type:        "object",
+		Description: "Parameters for transferring control to a sub-agent",
+		Properties: map[string]sdomain.Property{
+			"agent_name": {
+				Type:        "string",
+				Description: "Name of the sub-agent to transfer control to",
+			},
+			"reason": {
+				Type:        "string",
+				Description: "Reason for transferring to this agent (optional)",
+			},
+			"input": {
+				Type:        "string",
+				Description: "Optional input to pass to the sub-agent",
+			},
+		},
+		Required: []string{"agent_name"},
 	}
 }

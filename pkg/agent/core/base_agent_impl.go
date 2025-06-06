@@ -1,5 +1,5 @@
-// ABOUTME: Provides base implementation for agents with common functionality
-// ABOUTME: Implements hierarchy management, configuration, and lifecycle methods
+// ABOUTME: Base implementation for all agent types providing common functionality
+// ABOUTME: including hierarchy management, event handling, and configuration
 
 package core
 
@@ -33,6 +33,12 @@ type BaseAgentImpl struct {
 	inputSchema  *sdomain.Schema
 	outputSchema *sdomain.Schema
 
+	// State inheritance configuration
+	enableSharedState bool
+	inheritMessages   bool
+	inheritArtifacts  bool
+	inheritMetadata   bool
+
 	// Metadata
 	metadata map[string]interface{}
 
@@ -58,6 +64,11 @@ func NewBaseAgent(name, description string, agentType domain.AgentType) *BaseAge
 			RetryDelay: time.Second,
 			Custom:     make(map[string]interface{}),
 		},
+		// Default state inheritance configuration
+		enableSharedState: true,
+		inheritMessages:   true,
+		inheritArtifacts:  true,
+		inheritMetadata:   true,
 	}
 }
 
@@ -83,7 +94,7 @@ func (a *BaseAgentImpl) Type() domain.AgentType {
 	return a.agentType
 }
 
-// Hierarchy management
+// Hierarchy methods
 
 // Parent returns the parent agent
 func (a *BaseAgentImpl) Parent() domain.BaseAgent {
@@ -94,14 +105,12 @@ func (a *BaseAgentImpl) Parent() domain.BaseAgent {
 
 // SetParent sets the parent agent
 func (a *BaseAgentImpl) SetParent(parent domain.BaseAgent) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	// Check for circular dependencies
 	if parent != nil && a.hasCircularDependency(parent) {
-		return domain.ErrCircularDependency
+		return fmt.Errorf("circular dependency detected")
 	}
 
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	a.parent = parent
 	return nil
 }
@@ -119,22 +128,26 @@ func (a *BaseAgentImpl) AddSubAgent(agent domain.BaseAgent) error {
 		return fmt.Errorf("agent cannot be nil")
 	}
 
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	// Check if agent already exists
+	// Check if agent already exists (with lock)
+	a.mu.RLock()
 	for _, existing := range a.subAgents {
 		if existing.ID() == agent.ID() {
+			a.mu.RUnlock()
 			return fmt.Errorf("agent with ID %s already exists", agent.ID())
 		}
 	}
+	a.mu.RUnlock()
 
-	// Set parent
+	// Set parent (without lock to avoid deadlock)
 	if err := agent.SetParent(a); err != nil {
 		return fmt.Errorf("failed to set parent: %w", err)
 	}
 
+	// Add to subAgents (with lock)
+	a.mu.Lock()
 	a.subAgents = append(a.subAgents, agent)
+	a.mu.Unlock()
+
 	return nil
 }
 
@@ -196,7 +209,26 @@ func (a *BaseAgentImpl) Run(ctx context.Context, input *domain.State) (*domain.S
 
 // RunAsync executes the agent asynchronously
 func (a *BaseAgentImpl) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
-	return nil, fmt.Errorf("RunAsync method must be implemented by concrete agent type")
+	eventChan := make(chan domain.Event, 100)
+
+	go func() {
+		defer close(eventChan)
+
+		// Emit start event
+		eventChan <- domain.NewEvent(domain.EventAgentStart, a.id, a.name, nil)
+
+		result, err := a.Run(ctx, input)
+		if err != nil {
+			// Emit error event
+			eventChan <- domain.NewEvent(domain.EventAgentError, a.id, a.name, err)
+			return
+		}
+
+		// Emit completion event with result
+		eventChan <- domain.NewEvent(domain.EventAgentComplete, a.id, a.name, result)
+	}()
+
+	return eventChan, nil
 }
 
 // Lifecycle methods
@@ -454,4 +486,36 @@ func (a *BaseAgentImpl) ExecuteWithTimeout(ctx context.Context, fn func(context.
 	case <-timeoutCtx.Done():
 		return domain.NewAgentError(a.id, a.name, "execution", domain.ErrExecutionTimeout)
 	}
+}
+
+// State inheritance configuration methods
+
+// EnableSharedState enables or disables shared state for sub-agents
+func (a *BaseAgentImpl) EnableSharedState(enable bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.enableSharedState = enable
+}
+
+// ConfigureStateInheritance configures what sub-agents inherit from parent state
+func (a *BaseAgentImpl) ConfigureStateInheritance(messages, artifacts, metadata bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.inheritMessages = messages
+	a.inheritArtifacts = artifacts
+	a.inheritMetadata = metadata
+}
+
+// IsSharedStateEnabled returns whether shared state is enabled
+func (a *BaseAgentImpl) IsSharedStateEnabled() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.enableSharedState
+}
+
+// GetStateInheritanceConfig returns the current state inheritance configuration
+func (a *BaseAgentImpl) GetStateInheritanceConfig() (messages, artifacts, metadata bool) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.inheritMessages, a.inheritArtifacts, a.inheritMetadata
 }

@@ -52,7 +52,7 @@ func main() {
 	// Example 2: Using batch generation
 	fmt.Println("\nExample 2: Batch Generation")
 	fmt.Println("---------------------------")
-	
+
 	prompts := []string{
 		"What is the capital of France? Answer in one word.",
 		"What is 2+2? Answer with just the number.",
@@ -73,7 +73,7 @@ func main() {
 	// Example 3: Generation with retry
 	fmt.Println("\nExample 3: Generation with Retry")
 	fmt.Println("--------------------------------")
-	
+
 	result, err := llmutil.GenerateWithRetry(
 		context.Background(),
 		llmProvider,
@@ -94,12 +94,12 @@ func main() {
 	// Create multiple providers for pooling
 	// In real usage, these might be different models or providers
 	var providers []domain.Provider
-	
+
 	// Add the main provider
 	providers = append(providers, llmProvider)
-	
+
 	// Add mock providers for demonstration
-	providers = append(providers, 
+	providers = append(providers,
 		provider.NewMockProvider(),
 		provider.NewMockProvider(),
 	)
@@ -159,7 +159,7 @@ func main() {
 		Model:     modelName,
 		APIKey:    "", // Will use from environment
 		MaxTokens: 500,
-		Options: []domain.ProviderOption{
+		Options:   []domain.ProviderOption{
 			// Options will be provider-specific
 		},
 	}
@@ -169,13 +169,13 @@ func main() {
 		fmt.Printf("Failed to create custom provider: %v\n", err)
 	} else {
 		fmt.Println("Created provider with custom configuration")
-		
+
 		// Use the custom provider
 		response, err := customProvider.Generate(
 			context.Background(),
 			"Tell me a fun fact about coffee in one sentence.",
 		)
-		
+
 		if err != nil {
 			fmt.Printf("Custom provider error: %v\n", err)
 		} else {

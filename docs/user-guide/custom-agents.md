@@ -493,4 +493,109 @@ func (c *CustomAgent) Validate() error {
 }
 ```
 
+## Multi-Agent Patterns (New in Phase 5)
+
+The Phase 5 multi-agent enhancement provides powerful new patterns for custom agents:
+
+### Automatic Sub-Agent Tools
+
+When creating LLM agents with sub-agents, they automatically become available as tools:
+
+```go
+// Create custom agent with automatic tool registration
+coordinator, err := core.NewLLMAgentWithSubAgentsFromString(
+    "coordinator",
+    "openai/gpt-4",
+    customAgent1,
+    customAgent2,
+    customAgent3,
+)
+
+// All sub-agents are now available as tools to the LLM
+```
+
+### Building Hierarchical Custom Agents
+
+Create multi-level hierarchies of custom agents:
+
+```go
+// Custom research agent
+type ResearchAgent struct {
+    *core.BaseAgentImpl
+}
+
+func (r *ResearchAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
+    // Custom research logic
+    return state, nil
+}
+
+// Team lead managing multiple custom agents
+teamLead, _ := core.NewLLMAgentWithSubAgents(
+    "teamLead",
+    provider,
+    &ResearchAgent{BaseAgentImpl: core.NewBaseAgent("researcher1", "Web researcher", domain.AgentTypeCustom)},
+    &ResearchAgent{BaseAgentImpl: core.NewBaseAgent("researcher2", "Academic researcher", domain.AgentTypeCustom)},
+)
+```
+
+### Shared State with Custom Agents
+
+Enable state sharing between your custom agents:
+
+```go
+// Custom agent that uses shared state
+type StateAwareAgent struct {
+    *core.BaseAgentImpl
+}
+
+func (s *StateAwareAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
+    // Access shared state from parent
+    if sharedValue, ok := state.Get("shared_context"); ok {
+        fmt.Printf("Using shared context: %v\n", sharedValue)
+    }
+    
+    // Process with awareness of parent state
+    result := state.Clone()
+    result.Set("processed_with_context", true)
+    
+    return result, nil
+}
+
+// Enable shared state for sub-agents
+mainAgent.EnableSharedState(true)
+mainAgent.ConfigureStateInheritance(true, true, true)
+```
+
+### Direct Transfer Between Custom Agents
+
+Use the TransferTo method for easy delegation:
+
+```go
+// Transfer control to a custom sub-agent
+result, err := coordinator.TransferTo(
+    ctx,
+    "customProcessor",
+    "Process this data with custom logic",
+    map[string]interface{}{
+        "data": rawData,
+        "options": processingOptions,
+    },
+)
+```
+
+### Custom Agents as Sub-Agents
+
+Any custom agent can be used as a sub-agent:
+
+```go
+// Mix custom agents with standard agents
+mainAgent, _ := core.NewLLMAgentWithSubAgents(
+    "main",
+    provider,
+    myCustomAgent,      // Your custom agent
+    standardLLMAgent,   // Standard LLM agent
+    workflowAgent,      // Workflow agent
+)
+```
+
 Custom agents provide the ultimate flexibility for implementing sophisticated agent workflows while maintaining compatibility with the broader Go-LLMs agent ecosystem.

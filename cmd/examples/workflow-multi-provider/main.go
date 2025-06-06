@@ -95,7 +95,7 @@ func fastestExample(ctx context.Context, openaiKey, anthropicKey, geminiKey stri
 	// Run the workflow
 	fmt.Println("\nSending request to all providers...")
 	start := time.Now()
-	
+
 	result, err := parallelWorkflow.Run(ctx, state)
 	if err != nil {
 		log.Printf("Workflow error: %v", err)
@@ -103,7 +103,7 @@ func fastestExample(ctx context.Context, openaiKey, anthropicKey, geminiKey stri
 	}
 
 	duration := time.Since(start)
-	
+
 	// Display result
 	if output, exists := result.Get("output"); exists {
 		fmt.Printf("\nFirst response received in %v:\n%v\n", duration, output)
@@ -173,7 +173,7 @@ func consensusExample(ctx context.Context, openaiKey, anthropicKey, geminiKey st
 
 			// Create result state
 			resultState := domain.NewState()
-			
+
 			// Find consensus
 			var consensusResponse string
 			maxCount := 0
@@ -186,15 +186,15 @@ func consensusExample(ctx context.Context, openaiKey, anthropicKey, geminiKey st
 
 			// Determine consensus level
 			consensusLevel := float64(maxCount) / float64(len(results))
-			
+
 			if consensusLevel > 0.5 {
 				resultState.Set("consensus", true)
 				resultState.Set("consensus_level", fmt.Sprintf("%.0f%%", consensusLevel*100))
-				resultState.Set("output", fmt.Sprintf("Consensus reached (%.0f%% agreement): %s", 
+				resultState.Set("output", fmt.Sprintf("Consensus reached (%.0f%% agreement): %s",
 					consensusLevel*100, consensusResponse))
 			} else {
 				resultState.Set("consensus", false)
-				resultState.Set("output", fmt.Sprintf("No consensus. Responses varied:\n%s", 
+				resultState.Set("output", fmt.Sprintf("No consensus. Responses varied:\n%s",
 					strings.Join(allResponses, "\n")))
 			}
 
@@ -213,7 +213,7 @@ func consensusExample(ctx context.Context, openaiKey, anthropicKey, geminiKey st
 	state.Set("user_input", "What is 2+2? Answer with just the number.")
 
 	fmt.Printf("Asking %d providers: What is 2+2?\n", len(agents))
-	
+
 	result, err := consensusWorkflow.Run(ctx, state)
 	if err != nil {
 		log.Printf("Workflow error: %v", err)
@@ -245,7 +245,7 @@ func primaryFallbackExample(ctx context.Context, openaiKey, anthropicKey, gemini
 
 	// Add providers in priority order
 	added := 0
-	
+
 	if openaiKey != "" {
 		agent, err := core.NewAgentFromString("primary-openai", "openai/gpt-4o")
 		if err == nil {
@@ -283,7 +283,7 @@ func primaryFallbackExample(ctx context.Context, openaiKey, anthropicKey, gemini
 	state.Set("user_input", "What's the capital of France? Answer in one word.")
 
 	fmt.Println("\nSending request with fallback chain...")
-	
+
 	result, err := sequentialWorkflow.Run(ctx, state)
 	if err != nil {
 		log.Printf("All providers failed: %v", err)
@@ -354,7 +354,7 @@ func runWithMockAgents(ctx context.Context) {
 	}
 
 	result, _ = consensusWorkflow.Run(ctx, state)
-	
+
 	// Count responses
 	responses := make(map[string]int)
 	for i := 0; i < len(consensusAgents); i++ {
@@ -396,6 +396,6 @@ func (m *mockAgent) Run(ctx context.Context, state *domain.State) (*domain.State
 	newState := state.Clone()
 	newState.Set("response", m.response)
 	newState.Set("output", m.response) // Also set output for compatibility
-	
+
 	return newState, nil
 }

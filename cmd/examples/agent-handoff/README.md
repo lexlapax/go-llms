@@ -1,102 +1,100 @@
-# Agent Handoff Example
+# Agent Handoff Example - Customer Support System
 
-**Status: Placeholder - Awaiting Phase 5 Implementation**
+This example demonstrates a complete customer support system using agent handoff patterns, showcasing the multi-agent features from Phase 5.
 
-This example will demonstrate agent-to-agent handoff patterns once Phase 5 of the agent architecture is complete.
+## Overview
 
-## Current Status
+The example implements a customer support system with:
+- **Support Coordinator**: Main agent that routes issues
+- **Tech Support Agent**: Handles technical issues
+- **Billing Support Agent**: Handles billing and payment issues  
+- **Senior Support Agent**: Handles escalated complex issues
 
-The Handoff interface exists but execution is not implemented. The TODO in `handoff.go` states:
-> "TODO: In Phase 2, this will use the agent registry to find and execute the target agent"
+## Key Features Demonstrated
 
-## What's Coming in Phase 5
-
-Phase 5 will implement multi-agent enhancements inspired by Google's Agent Development Kit (ADK):
-
-### 1. Automatic Sub-Agent Registration
+### 1. **Simplified Multi-Agent Creation**
 ```go
-// Simple API for creating agents with sub-agents
-coordinator := core.NewLLMAgentWithSubAgents("coordinator", "gpt-4", 
-    []domain.BaseAgent{
-        techSupport,
-        billingSupport,
-        seniorSupport,
-    })
-
-// Sub-agents automatically become available as tools!
+coordinator, err := core.NewLLMAgentWithSubAgentsFromString(
+    "supportCoordinator",
+    "openai/gpt-4",
+    techSupport,
+    billingSupport,
+    seniorSupport,
+)
 ```
 
-### 2. Dynamic Agent Delegation
-The LLM will be able to transfer control to sub-agents using a built-in tool:
-```json
-{
-  "tool": "transfer_to_agent",
-  "arguments": {
-    "agent_name": "techSupport",
-    "reason": "Customer reporting login errors"
-  }
+### 2. **Automatic Tool Registration**
+Sub-agents are automatically available as tools:
+- `techSupport` - Technical troubleshooting
+- `billingSupport` - Billing and payments
+- `seniorSupport` - Escalated issues
+- `transfer_to_agent` - Built-in delegation tool
+
+### 3. **Direct Handoff with TransferTo()**
+```go
+result, err := coordinator.TransferTo(ctx, "techSupport", 
+    "Customer reporting internet issues", 
+    map[string]interface{}{
+        "issue": "Internet disconnecting",
+        "customer_id": "CUST-12345",
+    })
+```
+
+### 4. **State Preservation**
+Customer context (ID, issue details) is maintained across handoffs.
+
+### 5. **Conditional Escalation**
+Agents can determine when escalation is needed:
+```go
+if needsEscalation, ok := result.Get("needs_escalation"); ok && needsEscalation.(bool) {
+    // Escalate to senior support with context
 }
 ```
-
-### 3. Shared State Context
-- Automatic state sharing between parent and child agents
-- Child agents can access parent state
-- Updates can flow back to parent
-- No manual state passing required
-
-### 4. Simplified Handoff Patterns
-```go
-// Before Phase 5: Manual handoff execution
-handoff := domain.NewHandoff().From("A").To("B").Build()
-// ... manual registry lookup and execution ...
-
-// After Phase 5: Automatic through sub-agents
-// Just attach sub-agents and let the LLM decide!
-```
-
-## Use Cases (After Phase 5)
-
-1. **Customer Service Router**
-   - Main agent analyzes requests
-   - Automatically transfers to tech, billing, or escalation agents
-   - State flows seamlessly between agents
-
-2. **Multi-Stage Processing**
-   - Research agent → Analysis agent → Writer agent
-   - Each stage is a sub-agent with automatic handoff
-
-3. **Expert Consultation**
-   - General agent consults specialist sub-agents
-   - Aggregates responses from multiple experts
 
 ## Running the Example
 
 ```bash
-# Currently shows placeholder information
-go run main.go
-
-# After Phase 5, will demonstrate full handoff capabilities
+go run cmd/examples/agent-handoff/main.go
 ```
 
-## Phase 5 Implementation Timeline
+## Example Scenarios
 
-See TODO.md for detailed implementation plan:
+### Scenario 1: Technical Issue
+- Customer reports internet connectivity problem
+- Routed to tech support
+- Tech support provides troubleshooting steps
 
-1. **Phase 5.1**: Core Handoff Implementation (1-2 days)
-2. **Phase 5.2**: Auto-Tool Registration (1 day)
-3. **Phase 5.3**: Shared State Context (1 day)
-4. **Phase 5.4**: API Simplification (1 day)
-5. **Phase 5.5**: Examples and Documentation (1 day)
+### Scenario 2: Billing Issue  
+- Customer requests refund for double charge
+- Routed to billing support
+- Billing processes refund ($49.99)
 
-## Benefits After Phase 5
+### Scenario 3: Complex Issue with Escalation
+- Customer reports API authentication failure
+- Tech support attempts resolution
+- Determines escalation needed
+- Senior support provides custom solution with service credit ($25)
 
-- **Simpler Code**: No manual handoff execution
-- **Dynamic Routing**: LLM decides which agent to use
-- **Better State Management**: Automatic state sharing
-- **Google ADK Parity**: Similar capabilities and patterns
+## Architecture Benefits
 
-## Related Examples
+1. **Specialization**: Each agent focuses on specific domain expertise
+2. **Scalability**: Easy to add new specialist agents
+3. **Context Preservation**: Customer information flows through handoffs
+4. **Flexible Routing**: Coordinator can intelligently route based on issue type
+5. **Escalation Paths**: Built-in support for tiered support levels
 
-- `agent-multi-coordination` - Will show advanced multi-agent patterns
-- `agent-sub-agents` - New example coming in Phase 5.5
-- `workflow-conditional` - Current alternative for routing logic
+## Real-World Applications
+
+This pattern is ideal for:
+- Customer support systems
+- IT helpdesk implementations
+- Multi-tier technical support
+- Any system requiring specialized handling based on request type
+
+## Next Steps
+
+- Replace mock provider with actual LLM (OpenAI, Anthropic, etc.)
+- Add more sophisticated routing logic in coordinator
+- Implement actual integration with support ticket systems
+- Add metrics and logging for handoff tracking
+- Create more specialized agents (security, network, database, etc.)

@@ -96,6 +96,17 @@ func (s *State) Has(key string) bool {
 	return exists
 }
 
+// Keys returns all keys in the state
+func (s *State) Keys() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	keys := make([]string, 0, len(s.values))
+	for k := range s.values {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // Values returns a copy of all values in the state
 func (s *State) Values() map[string]interface{} {
 	s.mu.RLock()
@@ -163,6 +174,17 @@ func (s *State) GetMetadata(key string) (interface{}, bool) {
 	defer s.mu.RUnlock()
 	val, ok := s.metadata[key]
 	return val, ok
+}
+
+// GetAllMetadata returns a copy of all metadata
+func (s *State) GetAllMetadata() map[string]interface{} {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	result := make(map[string]interface{})
+	for k, v := range s.metadata {
+		result[k] = v
+	}
+	return result
 }
 
 // Version returns the current version number

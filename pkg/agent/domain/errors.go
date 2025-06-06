@@ -54,6 +54,9 @@ var (
 
 	// ErrAgentCancelled is returned when agent execution is cancelled
 	ErrAgentCancelled = errors.New("agent execution cancelled")
+
+	// ErrStateReadOnly is returned when trying to modify a read-only state
+	ErrStateReadOnly = errors.New("state is read-only")
 )
 
 // AgentError represents an error that occurred during agent execution

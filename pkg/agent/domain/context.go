@@ -24,6 +24,9 @@ type RunContext[D any] struct {
 	// State access
 	State *State
 
+	// Shared state context (optional)
+	SharedState *SharedStateContext
+
 	// Event emission
 	EmitEvent func(Event)
 }
@@ -43,6 +46,15 @@ func NewRunContext[D any](ctx context.Context, deps D) *RunContext[D] {
 func NewRunContextWithState[D any](ctx context.Context, deps D, state *State) *RunContext[D] {
 	rc := NewRunContext(ctx, deps)
 	rc.State = state
+	return rc
+}
+
+// NewRunContextWithSharedState creates a new run context with shared state
+func NewRunContextWithSharedState[D any](ctx context.Context, deps D, sharedState *SharedStateContext) *RunContext[D] {
+	rc := NewRunContext(ctx, deps)
+	rc.SharedState = sharedState
+	// Also set the local state from shared state
+	rc.State = sharedState.LocalState()
 	return rc
 }
 
@@ -67,6 +79,14 @@ func (rc *RunContext[D]) WithRetry(retry int) *RunContext[D] {
 func (rc *RunContext[D]) WithState(state *State) *RunContext[D] {
 	newCtx := *rc
 	newCtx.State = state
+	return &newCtx
+}
+
+// WithSharedState creates a new context with shared state
+func (rc *RunContext[D]) WithSharedState(sharedState *SharedStateContext) *RunContext[D] {
+	newCtx := *rc
+	newCtx.SharedState = sharedState
+	newCtx.State = sharedState.LocalState()
 	return &newCtx
 }
 
@@ -165,8 +185,18 @@ type CompositeDeps struct {
 
 // Helper functions for common context operations
 
-// GetFromState safely gets a typed value from state
+// GetFromState safely gets a typed value from state (supports shared state)
 func GetFromState[T any](rc *RunContext[any], key string, defaultVal T) T {
+	// Try shared state first if available
+	if rc.SharedState != nil {
+		if val, ok := rc.SharedState.Get(key); ok {
+			if typed, ok := val.(T); ok {
+				return typed
+			}
+		}
+	}
+
+	// Fall back to regular state
 	if rc.State == nil {
 		return defaultVal
 	}
@@ -184,8 +214,19 @@ func GetFromState[T any](rc *RunContext[any], key string, defaultVal T) T {
 	return typed
 }
 
-// MustGetFromState gets a value from state or panics
+// MustGetFromState gets a value from state or panics (supports shared state)
 func MustGetFromState[T any](rc *RunContext[any], key string) T {
+	// Try shared state first if available
+	if rc.SharedState != nil {
+		if val, ok := rc.SharedState.Get(key); ok {
+			if typed, ok := val.(T); ok {
+				return typed
+			}
+			panic("state value has wrong type for key: " + key)
+		}
+	}
+
+	// Fall back to regular state
 	if rc.State == nil {
 		panic("state is nil")
 	}

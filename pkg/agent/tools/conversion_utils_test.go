@@ -180,7 +180,7 @@ func TestCreateEventForwardingToolContext(t *testing.T) {
 
 	dispatcher := core.NewEventDispatcher(10)
 	defer dispatcher.Close() // Properly close the dispatcher
-	
+
 	ctx := context.Background()
 
 	toolCtx := CreateEventForwardingToolContext(ctx, dispatcher, agent, "run-123")

@@ -8,6 +8,21 @@ import (
 	"fmt"
 )
 
+// globalAgentRegistry holds the global agent registry instance
+// This is set by the core package during initialization
+var globalAgentRegistry AgentRegistry
+
+// SetGlobalAgentRegistry sets the global agent registry
+// This should be called by the core package during initialization
+func SetGlobalAgentRegistry(registry AgentRegistry) {
+	globalAgentRegistry = registry
+}
+
+// GetGlobalAgentRegistry returns the global agent registry
+func GetGlobalAgentRegistry() AgentRegistry {
+	return globalAgentRegistry
+}
+
 // Handoff represents a delegation mechanism between agents
 type Handoff interface {
 	// Core identification
@@ -96,11 +111,35 @@ func (h *handoffImpl) TargetAgent() string {
 // Execute performs the handoff
 func (h *handoffImpl) Execute(ctx context.Context, state *State) (*State, error) {
 	// Transform input state
-	_ = h.TransformInput(state) // Will be used when agent registry is integrated
+	transformedState := h.TransformInput(state)
 
-	// TODO: In Phase 2, this will use the agent registry to find and execute the target agent
-	// For now, we'll return an error indicating the handoff system is not yet connected
-	return nil, fmt.Errorf("handoff execution not yet implemented - waiting for agent registry integration")
+	// Get the global registry to find the target agent
+	registry := GetGlobalAgentRegistry()
+	if registry == nil {
+		return nil, fmt.Errorf("global agent registry not available")
+	}
+
+	// Find the target agent by name
+	targetAgent, err := registry.GetByName(h.targetAgent)
+	if err != nil {
+		return nil, fmt.Errorf("target agent '%s' not found: %w", h.targetAgent, err)
+	}
+
+	// Create a new run context for the target agent
+	// Note: The target agent will create its own RunContext based on its requirements
+	// We just pass the transformed state
+
+	// Execute the target agent
+	resultState, err := targetAgent.Run(ctx, transformedState)
+	if err != nil {
+		return nil, fmt.Errorf("handoff to agent '%s' failed: %w", h.targetAgent, err)
+	}
+
+	// Optionally merge results back to original state structure
+	// For now, we return the result state as-is
+	// Future enhancement: could add result transformation/merging
+
+	return resultState, nil
 }
 
 // TransformInput applies the input filter to the state

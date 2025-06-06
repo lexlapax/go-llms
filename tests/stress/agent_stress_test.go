@@ -5,6 +5,7 @@ package stress
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"runtime"
@@ -236,7 +237,8 @@ func TestAgentMemoryLeaks(t *testing.T) {
 	var memStatsAfter runtime.MemStats
 	runtime.ReadMemStats(&memStatsAfter)
 
-	memoryIncrease := memStatsAfter.Alloc - memStatsBefore.Alloc
+	// Use signed integers to handle cases where memory decreases after GC
+	memoryIncrease := int64(memStatsAfter.Alloc) - int64(memStatsBefore.Alloc)
 	memoryIncreasePerIteration := float64(memoryIncrease) / float64(iterations)
 
 	t.Logf("Memory statistics:")
@@ -247,7 +249,8 @@ func TestAgentMemoryLeaks(t *testing.T) {
 	t.Logf("  Number of GC runs: %d", memStatsAfter.NumGC-memStatsBefore.NumGC)
 
 	// Check for excessive memory growth (more than 10KB per iteration suggests a leak)
-	if memoryIncreasePerIteration > 10*1024 {
+	// Only check if memory actually increased
+	if memoryIncrease > 0 && memoryIncreasePerIteration > 10*1024 {
 		t.Errorf("Possible memory leak detected: %.2f KB per iteration", memoryIncreasePerIteration/1024)
 	}
 }
@@ -299,7 +302,7 @@ func TestAgentRapidContextCancellation(t *testing.T) {
 			// Run agent
 			_, err := agent.Run(ctx, state)
 			if err != nil {
-				if err == context.DeadlineExceeded || err == context.Canceled {
+				if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 					atomic.AddInt64(&cancelledCount, 1)
 				}
 			} else {
@@ -321,7 +324,7 @@ func TestAgentRapidContextCancellation(t *testing.T) {
 	t.Logf("Rapid cancellation test results:")
 	t.Logf("  Total requests: %d", iterations)
 	t.Logf("  Completed: %d", completedCount)
-	t.Logf("  Cancelled: %d", cancelledCount)
+	t.Logf("  Canceled: %d", cancelledCount)
 	t.Logf("  Other: %d", iterations-int(completedCount+cancelledCount))
 
 	// Ensure the system handled cancellations properly

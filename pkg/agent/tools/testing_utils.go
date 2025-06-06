@@ -239,14 +239,14 @@ func statesContainsOriginal(original, roundtrip *domain.State) bool {
 				continue
 			}
 		}
-		
+
 		// Check if the value exists with output_ prefix
 		if roundtripValue, exists := roundtripValues["output_"+key]; exists {
 			if reflect.DeepEqual(originalValue, roundtripValue) {
 				continue
 			}
 		}
-		
+
 		// Value not found or doesn't match
 		return false
 	}

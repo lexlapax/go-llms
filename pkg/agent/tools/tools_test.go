@@ -16,7 +16,7 @@ func createTestContext() *domain.ToolContext {
 	mockAgent := NewTestAgentToolBuilder("test-agent").
 		WithDescription("Test agent for tool tests").
 		BuildAgent()
-		
+
 	return domain.NewToolContext(
 		context.Background(),
 		domain.NewStateReader(domain.NewState()),

@@ -44,3 +44,15 @@ type Agent interface {
 	// WithHook adds a monitoring hook to the agent
 	WithHook(hook Hook) Agent
 }
+
+// AgentRegistry provides agent discovery and management
+type AgentRegistry interface {
+	// Register an agent
+	Register(agent BaseAgent) error
+	// Get agent by ID
+	Get(agentID string) (BaseAgent, error)
+	// Get agent by name
+	GetByName(name string) (BaseAgent, error)
+	// List all agents
+	List() []BaseAgent
+}

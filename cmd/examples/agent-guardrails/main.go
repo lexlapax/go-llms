@@ -54,7 +54,7 @@ func (g *ContentFilterGuardrail) Validate(ctx context.Context, state *domain.Sta
 	// Check user input
 	if input, exists := state.Get("user_input"); exists {
 		content := fmt.Sprintf("%v", input)
-		
+
 		// Check length
 		if g.maxLength > 0 && len(content) > g.maxLength {
 			return fmt.Errorf("content exceeds maximum length of %d characters", g.maxLength)
@@ -81,18 +81,18 @@ func (g *ContentFilterGuardrail) Validate(ctx context.Context, state *domain.Sta
 
 func (g *ContentFilterGuardrail) ValidateAsync(ctx context.Context, state *domain.State, timeout time.Duration) <-chan error {
 	errCh := make(chan error, 1)
-	
+
 	go func() {
 		defer close(errCh)
-		
+
 		timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
-		
+
 		done := make(chan error, 1)
 		go func() {
 			done <- g.Validate(timeoutCtx, state)
 		}()
-		
+
 		select {
 		case err := <-done:
 			errCh <- err
@@ -100,7 +100,7 @@ func (g *ContentFilterGuardrail) ValidateAsync(ctx context.Context, state *domai
 			errCh <- fmt.Errorf("validation timeout after %v", timeout)
 		}
 	}()
-	
+
 	return errCh
 }
 
@@ -132,14 +132,14 @@ func (g *PIIDetectionGuardrail) Validate(ctx context.Context, state *domain.Stat
 	// Check output for PII
 	if output, exists := state.Get("output"); exists {
 		content := fmt.Sprintf("%v", output)
-		
+
 		for piiType, pattern := range g.patterns {
 			if pattern.MatchString(content) {
 				return fmt.Errorf("output may contain PII: %s", piiType)
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -220,10 +220,10 @@ func (r *RateLimitGuardrail) Validate(ctx context.Context, state *domain.State) 
 
 	r.requestCount++
 	if r.requestCount > r.maxRequests {
-		return fmt.Errorf("rate limit exceeded: %d requests in %v (max: %d)", 
+		return fmt.Errorf("rate limit exceeded: %d requests in %v (max: %d)",
 			r.requestCount, r.window, r.maxRequests)
 	}
-	
+
 	return nil
 }
 
@@ -239,9 +239,9 @@ func (r *RateLimitGuardrail) ValidateAsync(ctx context.Context, state *domain.St
 // GuardedAgent wraps an agent with guardrails
 type GuardedAgent struct {
 	*core.BaseAgentImpl
-	innerAgent    domain.BaseAgent
-	inputGuards   domain.GuardrailChain
-	outputGuards  domain.GuardrailChain
+	innerAgent   domain.BaseAgent
+	inputGuards  domain.GuardrailChain
+	outputGuards domain.GuardrailChain
 }
 
 func NewGuardedAgent(name string, inner domain.BaseAgent) *GuardedAgent {
@@ -313,7 +313,7 @@ func main() {
 	// Test valid input
 	state1 := domain.NewState()
 	state1.Set("user_input", "Tell me about programming best practices")
-	
+
 	err = contentFilter.Validate(context.Background(), state1)
 	if err != nil {
 		fmt.Printf("❌ Input rejected: %v\n", err)
@@ -324,7 +324,7 @@ func main() {
 	// Test blocked input
 	state2 := domain.NewState()
 	state2.Set("user_input", "My password is abc123")
-	
+
 	err = contentFilter.Validate(context.Background(), state2)
 	if err != nil {
 		fmt.Printf("❌ Input rejected: %v\n", err)
@@ -338,11 +338,11 @@ func main() {
 
 	// Test required keys guardrail
 	requiredGuard := domain.RequiredKeysGuardrail("required-fields", "user_input", "context")
-	
+
 	state3 := domain.NewState()
 	state3.Set("user_input", "Hello")
 	// Missing "context" key
-	
+
 	err = requiredGuard.Validate(context.Background(), state3)
 	if err != nil {
 		fmt.Printf("❌ Validation failed: %v\n", err)
@@ -365,7 +365,7 @@ func main() {
 
 	state4 := domain.NewState()
 	state4.Set("user_input", "This is a normal message")
-	
+
 	err = chain.Validate(context.Background(), state4)
 	if err != nil {
 		fmt.Printf("❌ Chain validation failed: %v\n", err)
@@ -396,10 +396,10 @@ func main() {
 
 	for i, input := range testInputs {
 		fmt.Printf("\nRequest %d: %s\n", i+1, input)
-		
+
 		state := domain.NewState()
 		state.Set("user_input", input)
-		
+
 		result, err := guardedAgent.Run(context.Background(), state)
 		if err != nil {
 			fmt.Printf("❌ Request failed: %v\n", err)

@@ -290,8 +290,8 @@ func TestLiveGeminiComplexWorkflow(t *testing.T) {
 				return nil, fmt.Errorf("invalid conversion: %s to %s", params.From, params.To)
 			}
 			return map[string]interface{}{
-				"original_value": params.Value,
-				"original_unit":  params.From,
+				"original_value":  params.Value,
+				"original_unit":   params.From,
 				"converted_value": result,
 				"converted_unit":  params.To,
 			}, nil

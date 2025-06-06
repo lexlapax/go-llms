@@ -37,6 +37,10 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Dependency Reduction Journey](/docs/technical/dependency_reduction.md) - Chronicle of dependency reduction from viper/cobra to stdlib
 - [Logging](/docs/technical/logging.md) - Logging patterns and best practices
 
+## Migration Guides
+
+- [Phase 5 Multi-Agent Migration](/docs/MIGRATION_GUIDE_PHASE5.md) - Migrate to the new multi-agent system enhancement features
+
 ## Examples
 
 **[Examples Overview](/cmd/examples/README.md)** - Complete guide to all example applications

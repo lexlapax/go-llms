@@ -138,7 +138,7 @@ func pipelineExample(ctx context.Context) {
 
 	for _, tc := range testCases {
 		fmt.Printf("\nRunning pipeline for: %s\n", tc.name)
-		
+
 		state := domain.NewState()
 		state.Set("research_topic", tc.name)
 		state.Set("data_type", tc.dataType)
@@ -151,7 +151,7 @@ func pipelineExample(ctx context.Context) {
 		}
 
 		duration := time.Since(start)
-		
+
 		if response, exists := result.Get("response"); exists {
 			fmt.Printf("Result: %v (completed in %v)\n", response, duration)
 		}
@@ -167,7 +167,7 @@ func complexOrchestrationExample(ctx context.Context) {
 	// Create a complex document processing system
 
 	// Initial validation loop (retry up to 3 times)
-	validationLoop := workflow.WhileLoop("validation-loop", 
+	validationLoop := workflow.WhileLoop("validation-loop",
 		func(state *domain.State, iteration int) bool {
 			// Continue while not validated and under 3 attempts
 			if valid, exists := state.Get("validated"); exists && valid.(bool) {
@@ -219,7 +219,7 @@ func complexOrchestrationExample(ctx context.Context) {
 
 	// Test the system
 	fmt.Println("Processing a complex document through the system...")
-	
+
 	state := domain.NewState()
 	state.Set("document", "sample_document.pdf")
 	state.Set("doc_type", "pdf")
@@ -289,7 +289,7 @@ func dynamicCompositionExample(ctx context.Context) {
 				parallelWf.WithMaxConcurrency(maxConc)
 			}
 			for _, agentName := range config.Agents {
-				parallelWf.AddAgent(createMockAgent(agentName, 
+				parallelWf.AddAgent(createMockAgent(agentName,
 					fmt.Sprintf("%s processing...", agentName), 100*time.Millisecond))
 			}
 			wf = parallelWf
@@ -319,7 +319,7 @@ func dynamicCompositionExample(ctx context.Context) {
 
 	// Run the dynamically composed workflow
 	fmt.Println("Running dynamically composed workflow...")
-	
+
 	state := domain.NewState()
 	state.Set("input", "Dynamic workflow input data")
 
@@ -336,7 +336,7 @@ func dynamicCompositionExample(ctx context.Context) {
 	// Show what was executed
 	fmt.Println("\nDynamic workflow structure:")
 	for i, config := range workflowConfig {
-		fmt.Printf("%d. %s workflow '%s' with agents: %v\n", 
+		fmt.Printf("%d. %s workflow '%s' with agents: %v\n",
 			i+1, config.Type, config.Name, config.Agents)
 	}
 }
@@ -391,7 +391,7 @@ func (m *mockAgent) Run(ctx context.Context, state *domain.State) (*domain.State
 
 	newState := state.Clone()
 	newState.Set("response", m.response)
-	
+
 	// Add quality score for quality check workflow
 	newState.Set("quality_score", 0.9) // High quality by default
 
@@ -405,9 +405,9 @@ type validationAgent struct {
 
 func (v *validationAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
 	v.attempts++
-	
+
 	newState := state.Clone()
-	
+
 	// Simulate validation - succeeds on 2nd attempt
 	if v.attempts >= 2 {
 		newState.Set("validated", true)

@@ -250,7 +250,7 @@ func TestAgentInvalidState(t *testing.T) {
 	// Test with state missing user_input
 	state := domain.NewState()
 	// Don't set user_input
-	
+
 	// Run may succeed but with no user input
 	finalState, err := agent.Run(ctx, state)
 	if err != nil {

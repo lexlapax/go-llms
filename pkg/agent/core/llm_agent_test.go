@@ -416,6 +416,7 @@ func TestLLMAgent_PromptExtraction(t *testing.T) {
 }
 
 // Test tool call extraction
+
 func TestLLMAgent_ToolCallExtraction(t *testing.T) {
 	agent := NewAgent("test-agent", &mockProvider{})
 
