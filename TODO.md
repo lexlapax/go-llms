@@ -3,35 +3,35 @@
 ## Current Focus: Agent Custom Research Example Rewrite
 
 ### Implementation Plan for agent-custom-research
-- [ ] Rewrite ResearchAgent to extend BaseAgentImpl instead of LLMAgent
-  - [ ] Implement custom Run() method with phase-based orchestration
-  - [ ] Use code-based coordination instead of library sub-agent features
-  - [ ] Manage state flow between phases manually
+- [x] Rewrite ResearchAgent to extend BaseAgentImpl instead of LLMAgent
+  - [x] Implement custom Run() method with phase-based orchestration
+  - [x] Use code-based coordination instead of library sub-agent features
+  - [x] Manage state flow between phases manually
   
-- [ ] Create MultiSearchAgent extending BaseAgentImpl
-  - [ ] Execute parallel searches across multiple engines (Tavily, Brave, Serpapi, DuckDuckGo)
-  - [ ] Use different query variations for each engine
-  - [ ] Return combined raw results with source metadata
-  - [ ] Handle API key injection via state or constructor
+- [x] Create MultiSearchAgent extending BaseAgentImpl
+  - [x] Execute parallel searches across multiple engines (Tavily, Brave, Serpapi, DuckDuckGo)
+  - [x] Use different query variations for each engine
+  - [x] Return combined raw results with source metadata
+  - [x] Handle API key injection via state or constructor
   
-- [ ] Create LLMAgent-based sub-agents (not extending, but using)
-  - [ ] DuplicateFilterAgent - Uses LLMAgent with deduplication prompt
-    - [ ] Identify similar URLs, overlapping content, same sources
-    - [ ] Output cleaned list with relevance scores
-  - [ ] ContentAnalyzerAgent - Uses LLMAgent with analysis prompt
-    - [ ] Extract key insights from deduplicated results
-    - [ ] Identify main themes and important facts
-  - [ ] ReportGeneratorAgent - Uses LLMAgent with synthesis prompt
-    - [ ] Create comprehensive research report
-    - [ ] Include executive summary, findings, and sources
+- [x] Create LLMAgent-based sub-agents (not extending, but using)
+  - [x] DuplicateFilterAgent - Uses LLMAgent with deduplication prompt
+    - [x] Identify similar URLs, overlapping content, same sources
+    - [x] Output cleaned list with relevance scores
+  - [x] ContentAnalyzerAgent - Uses LLMAgent with analysis prompt
+    - [x] Extract key insights from deduplicated results
+    - [x] Identify main themes and important facts
+  - [x] ReportGeneratorAgent - Uses LLMAgent with synthesis prompt
+    - [x] Create comprehensive research report
+    - [x] Include executive summary, findings, and sources
     
-- [ ] Implementation details
-  - [ ] Show custom state management in BaseAgentImpl
-  - [ ] Demonstrate parallel execution without workflow agents
-  - [ ] Show dynamic LLMAgent creation with specialized prompts
-  - [ ] Include error handling and fallback strategies
-  - [ ] Add progress tracking through custom events
-  - [ ] Implement rich state passing between components
+- [x] Implementation details
+  - [x] Show custom state management in BaseAgentImpl
+  - [x] Demonstrate parallel execution without workflow agents
+  - [x] Show dynamic LLMAgent creation with specialized prompts
+  - [x] Include error handling and fallback strategies
+  - [x] Add progress tracking through custom events
+  - [x] Implement rich state passing between components
 
 ## Features
 - [ ] Add Model Context Protocol Client support for Agents

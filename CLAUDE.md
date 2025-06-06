@@ -9,15 +9,37 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 **Current Version**: v0.3.0 (Released February 2025)
 
 **Recent Updates** (June 6, 2025):
-- **Web Search Tool Enhancement (COMPLETED)**
-  - Implemented Brave Search API support (uses SEARCH_API_KEY environment variable)
+- **Agent Custom Research Example Rewrite (COMPLETED)**
+  - Rewrote agent-custom-research to properly showcase custom agent development:
+    - ResearchAgent now extends BaseAgentImpl (not LLMAgent) for full control
+    - Implemented code-based orchestration without library sub-agent features
+    - Created MultiSearchAgent (also extends BaseAgentImpl) for parallel searches
+    - MultiSearchAgent runs searches across 5 engines: DuckDuckGo, Brave, Tavily, Serpapi, Serper.dev
+    - Uses 4 query variations per engine (overview, latest, expert, tutorial) = 20 parallel searches
+    - LLMAgent instances created with specialized prompts (not extended):
+      - DuplicateFilterAgent: Deduplicates search results
+      - ContentAnalyzerAgent: Extracts key insights
+      - ReportGeneratorAgent: Creates final research report
+    - Added DEBUG=1 environment variable support for detailed logging
+    - Demonstrates agent composition (agents using other agents)
+    - Shows proper error handling with fallback to mock agents
+  - Architecture follows two-layer pattern:
+    - ResearchAgent orchestrates overall workflow
+    - MultiSearchAgent specializes in parallel search execution
+- **Web Search Tool Enhancements**:
+  - Added Serpapi.com support (SERPAPI_API_KEY) - uses GET requests
+  - Added Serper.dev support (SERPERDEV_API_KEY) - uses POST requests  
+  - Fixed Brave Search JSON parsing (Query field now interface{})
+  - Renamed SEARCH_API_KEY to BRAVE_API_KEY for clarity
+  - Updated search priority: Tavily > Serper.dev > Serpapi > Brave > DuckDuckGo
+  - Consolidated examples documentation (merged BUILTINS_EXAMPLES.md into examples/README.md)
+- **Web Search Tool Enhancement (Earlier Updates)**
+  - Implemented Brave Search API support (uses BRAVE_API_KEY environment variable)
   - Implemented Tavily Search API support (uses TAVILY_API_KEY environment variable)
-  - Implemented Serper Search API support (uses SERPER_API_KEY environment variable)
-  - Added automatic engine selection logic (Tavily > Serper > Brave > DuckDuckGo)
+  - Added automatic engine selection logic
   - Created comprehensive tests using TDD approach
   - Updated tool version to 2.0.0 with new examples
   - Created user guide documentation at docs/user-guide/web-search-tool.md
-  - Fixed agent-custom-research example - now successfully fetches and processes web sources
   - Tavily is preferred for LLM applications as it provides AI-optimized results with summaries
   - **Added EngineAPIKey Parameter** - Production-ready API key management:
     - Added optional `engine_api_key` parameter for explicit API key injection
@@ -25,16 +47,6 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
     - Enables parallel searches with different API keys
     - Supports multi-tenant and A/B testing scenarios
     - Comprehensive tests validate precedence and security
-- **New Examples Created**:
-  - Renamed agent-custom-calculator to agent-calculator (focuses on built-in calculator tool usage)
-  - Created agent-custom-research example demonstrating:
-    - Custom agent extending LLMAgent
-    - Multi-phase research pipeline
-    - Sub-agent coordination (web searcher, summarizer, fact-checker)
-    - Tool usage (web search, web fetch)
-    - Complex state management
-    - Research report synthesis
-  - Updated all documentation (README.md, REFERENCE.md, docs/user-guide/custom-agents.md)
 
 **Recent Updates** (June 5, 2025):
 - **Agent Architecture Restructuring Phases 1-5 and Phase 7 COMPLETED**

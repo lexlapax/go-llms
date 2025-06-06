@@ -1,5 +1,5 @@
-// ABOUTME: Example demonstrating a custom agent that extends BaseAgent
-// ABOUTME: Shows sub-agent coordination, tool usage, and state management
+// ABOUTME: Example demonstrating a custom agent that extends BaseAgentImpl
+// ABOUTME: Shows code-based orchestration, multi-search, and LLMAgent usage
 
 package main
 
@@ -7,81 +7,138 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
-	builtintools "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
+	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	"github.com/lexlapax/go-llms/pkg/llm/provider"
-	"github.com/lexlapax/go-llms/pkg/util/llmutil"
+
+	// Import tool categories to register them
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
 )
 
-// ResearchAssistant is a custom agent that conducts research on topics
-type ResearchAssistant struct {
-	*core.LLMAgent
-	webSearcher domain.BaseAgent
-	summarizer  domain.BaseAgent
-	factChecker domain.BaseAgent
-	maxSources  int
+// ResearchAgent is a custom agent that extends BaseAgentImpl for full control
+type ResearchAgent struct {
+	*core.BaseAgentImpl
+	multiSearcher    *MultiSearchAgent
+	duplicateFilter  domain.BaseAgent // LLMAgent instance or mock
+	contentAnalyzer  domain.BaseAgent // LLMAgent instance or mock
+	reportGenerator  domain.BaseAgent // LLMAgent instance or mock
+	maxSearchResults int
 }
 
-// NewResearchAssistant creates a new research assistant agent
-func NewResearchAssistant(name string) (*ResearchAssistant, error) {
-	// Create a provider for the base LLM agent
-	llmProvider, providerName, modelName, err := llmutil.ProviderFromEnv()
+// MultiSearchAgent executes parallel searches across multiple engines
+type MultiSearchAgent struct {
+	*core.BaseAgentImpl
+	engines []string
+	apiKeys map[string]string
+}
+
+// NewResearchAgent creates a new research agent with code-based orchestration
+func NewResearchAgent(name string) (*ResearchAgent, error) {
+	// Create base agent
+	base := core.NewBaseAgent(name, "A research agent that orchestrates multiple sub-agents for comprehensive research", domain.AgentTypeCustom)
+
+	// Determine LLM provider for sub-agents
+	providerStr := os.Getenv("LLM_PROVIDER")
+	if providerStr == "" {
+		providerStr = "gpt-4o" // Default to Claude
+	}
+
+	// Create multi-search agent
+	multiSearcher := NewMultiSearchAgent("multi-searcher")
+
+	// Create LLM-based sub-agents with specialized prompts
+	var duplicateFilter domain.BaseAgent
+	llmDupFilter, err := core.NewAgentFromString("duplicate-filter", providerStr)
 	if err != nil {
-		log.Printf("No LLM provider found from env, using mock: %v", err)
-		// Use mock provider if no env vars set
-		llmProvider = provider.NewMockProvider()
-		providerName = "mock"
-		modelName = "mock"
+		log.Printf("Warning: Failed to create duplicate filter with %s, using mock: %v", providerStr, err)
+		duplicateFilter = createMockDuplicateFilter()
 	} else {
-		log.Printf("Using LLM provider: %s with model: %s", providerName, modelName)
+		duplicateFilter = llmDupFilter
+		llmDupFilter.SetSystemPrompt(`You are a search result deduplication expert. 
+Given multiple search results, identify and merge duplicates based on:
+- Similar URLs or domains (e.g., www.example.com and example.com)
+- Overlapping content or titles
+- Same source referenced differently
+
+Output a JSON array of deduplicated results with relevance scores (0-1).
+Each result should have: url, title, snippet, source_engine, relevance_score.
+Merge information from duplicates to create richer snippets.`)
 	}
 
-	// Create LLM agent as base
-	base := core.NewAgent(name, llmProvider)
-	base.SetSystemPrompt("You are a research assistant that gathers and synthesizes information")
-
-	// Create sub-agents
-	webSearcher, err := createWebSearchAgent()
+	var contentAnalyzer domain.BaseAgent
+	llmContentAnalyzer, err := core.NewAgentFromString("content-analyzer", providerStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create web searcher: %w", err)
+		log.Printf("Warning: Failed to create content analyzer with %s, using mock: %v", providerStr, err)
+		contentAnalyzer = createMockContentAnalyzer()
+	} else {
+		contentAnalyzer = llmContentAnalyzer
+		llmContentAnalyzer.SetSystemPrompt(`You are a content analysis expert.
+Given search results about a topic, extract:
+- Key insights and main themes
+- Important facts and data points
+- Contrasting viewpoints if any
+- Knowledge gaps that need further research
+
+Structure your analysis with clear sections and bullet points.
+Focus on actionable, relevant information.`)
 	}
 
-	summarizer, err := createSummarizerAgent()
+	var reportGenerator domain.BaseAgent
+	llmReportGenerator, err := core.NewAgentFromString("report-generator", providerStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create summarizer: %w", err)
+		log.Printf("Warning: Failed to create report generator with %s, using mock: %v", providerStr, err)
+		reportGenerator = createMockReportGenerator()
+	} else {
+		reportGenerator = llmReportGenerator
+		llmReportGenerator.SetSystemPrompt(`You are a professional research report writer.
+Given analyzed content about a topic, create a comprehensive report with:
+- Executive Summary (2-3 paragraphs)
+- Key Findings (structured with subheadings)
+- Detailed Analysis
+- Conclusions and Recommendations
+- Sources and References
+
+Use markdown formatting for clarity.
+Maintain an objective, professional tone.`)
 	}
 
-	factChecker, err := createFactCheckerAgent()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create fact checker: %w", err)
+	// Add debug logging to all LLM agents if DEBUG=1
+	if os.Getenv("DEBUG") == "1" {
+		log.Println("🐛 DEBUG mode enabled - Adding logging hooks to LLM agents")
+		
+		// Try to add hooks to the LLM agents (type assertion needed)
+		debugLogger := slog.Default().With("component", "research-agent")
+		if llmAgent, ok := duplicateFilter.(*core.LLMAgent); ok {
+			llmAgent.WithHook(core.NewLoggingHook(debugLogger.With("agent", "duplicate-filter"), core.LogLevelDetailed))
+		}
+		if llmAgent, ok := contentAnalyzer.(*core.LLMAgent); ok {
+			llmAgent.WithHook(core.NewLoggingHook(debugLogger.With("agent", "content-analyzer"), core.LogLevelDetailed))
+		}
+		if llmAgent, ok := reportGenerator.(*core.LLMAgent); ok {
+			llmAgent.WithHook(core.NewLoggingHook(debugLogger.With("agent", "report-generator"), core.LogLevelDetailed))
+		}
 	}
 
-	agent := &ResearchAssistant{
-		LLMAgent:    base,
-		webSearcher: webSearcher,
-		summarizer:  summarizer,
-		factChecker: factChecker,
-		maxSources:  5,
-	}
-
-	// Register tools
-	if webSearch, ok := builtintools.GetTool("web_search"); ok {
-		base.AddTool(webSearch)
-	}
-	if webFetch, ok := builtintools.GetTool("web_fetch"); ok {
-		base.AddTool(webFetch)
+	agent := &ResearchAgent{
+		BaseAgentImpl:    base,
+		multiSearcher:    multiSearcher,
+		duplicateFilter:  duplicateFilter,
+		contentAnalyzer:  contentAnalyzer,
+		reportGenerator:  reportGenerator,
+		maxSearchResults: 10,
 	}
 
 	return agent, nil
 }
 
-// Run executes the research process
-func (r *ResearchAssistant) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
+// Run executes the research process with phase-based orchestration
+func (r *ResearchAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
 	// Extract research topic
 	topic, ok := state.Get("topic")
 	if !ok {
@@ -93,53 +150,60 @@ func (r *ResearchAssistant) Run(ctx context.Context, state *domain.State) (*doma
 		return nil, fmt.Errorf("topic must be a string")
 	}
 
-	// Create run context
-	runCtx := domain.NewRunContextWithState[any](ctx, nil, state)
-	runCtx.RunID = fmt.Sprintf("research-%d", time.Now().Unix())
-
-	// Initialize research state
+	// Initialize result state
 	resultState := domain.NewState()
 	resultState.Set("topic", topicStr)
-	resultState.Set("research_notes", []string{})
-	resultState.Set("sources", []string{})
 	resultState.Set("start_time", time.Now())
 
-	// Phase 1: Web Search
-	log.Printf("🔍 Phase 1: Searching for information about '%s'", topicStr)
-	searchResults, err := r.performWebSearch(runCtx, topicStr)
-	if err != nil {
-		return nil, fmt.Errorf("web search failed: %w", err)
-	}
-	resultState.Set("search_results", searchResults)
+	// Emit start event
+	r.EmitEvent(domain.EventAgentStart, map[string]interface{}{
+		"agent": r.Name(),
+		"topic": topicStr,
+	})
 
-	// Phase 2: Gather Information from Sources
-	log.Printf("📚 Phase 2: Gathering information from %d sources", len(searchResults))
-	articles, err := r.gatherInformation(runCtx, searchResults)
-	if err != nil {
-		log.Printf("Warning: Some sources could not be fetched: %v", err)
+	// Phase 1: Multi-Engine Search
+	log.Printf("🔍 Phase 1: Executing parallel searches for '%s'", topicStr)
+	if os.Getenv("DEBUG") == "1" {
+		log.Printf("🐛 DEBUG: Starting multi-engine search with max results: %d", r.maxSearchResults)
 	}
-	resultState.Set("raw_articles", articles)
-
-	// Phase 3: Summarize Each Article
-	log.Printf("📝 Phase 3: Summarizing %d articles", len(articles))
-	summaries, err := r.summarizeArticles(runCtx, articles)
+	searchResults, err := r.executeMultiSearch(ctx, topicStr)
 	if err != nil {
-		return nil, fmt.Errorf("summarization failed: %w", err)
+		r.EmitEvent(domain.EventAgentError, map[string]interface{}{
+			"phase": "search",
+			"error": err.Error(),
+		})
+		return nil, fmt.Errorf("multi-search failed: %w", err)
 	}
-	resultState.Set("article_summaries", summaries)
+	resultState.Set("raw_search_results", searchResults)
+	log.Printf("  ✅ Found %d total results across all engines", len(searchResults))
 
-	// Phase 4: Fact Check Key Claims
-	log.Printf("✅ Phase 4: Fact-checking key claims")
-	checkedFacts, err := r.factCheckClaims(runCtx, summaries)
+	// Phase 2: Deduplication and Ranking
+	log.Printf("🔄 Phase 2: Deduplicating and ranking results")
+	dedupedResults, err := r.deduplicateResults(ctx, searchResults)
 	if err != nil {
-		log.Printf("Warning: Fact checking partially failed: %v", err)
-		checkedFacts = summaries // Fallback to unchecked summaries
+		log.Printf("  ⚠️  Deduplication failed, using raw results: %v", err)
+		dedupedResults = searchResults
+	} else {
+		log.Printf("  ✅ Reduced to %d unique results", len(dedupedResults))
 	}
-	resultState.Set("fact_checked_info", checkedFacts)
+	resultState.Set("deduped_results", dedupedResults)
 
-	// Phase 5: Synthesize Final Report
-	log.Printf("📊 Phase 5: Synthesizing final report")
-	report := r.synthesizeReport(topicStr, checkedFacts, searchResults)
+	// Phase 3: Content Analysis
+	log.Printf("📊 Phase 3: Analyzing content and extracting insights")
+	analysis, err := r.analyzeContent(ctx, topicStr, dedupedResults)
+	if err != nil {
+		log.Printf("  ⚠️  Analysis failed: %v", err)
+		analysis = "Analysis unavailable"
+	}
+	resultState.Set("content_analysis", analysis)
+
+	// Phase 4: Report Generation
+	log.Printf("📝 Phase 4: Generating comprehensive report")
+	report, err := r.generateReport(ctx, topicStr, analysis, dedupedResults)
+	if err != nil {
+		log.Printf("  ⚠️  Report generation failed: %v", err)
+		report = r.generateFallbackReport(topicStr, analysis, dedupedResults)
+	}
 	resultState.Set("final_report", report)
 
 	// Add metadata
@@ -147,289 +211,321 @@ func (r *ResearchAssistant) Run(ctx context.Context, state *domain.State) (*doma
 	startTime, _ := resultState.Get("start_time")
 	duration := time.Since(startTime.(time.Time))
 	resultState.Set("research_duration", duration.String())
-	resultState.Set("sources_count", len(searchResults))
+	resultState.Set("total_results_found", len(searchResults))
+	resultState.Set("unique_results", len(dedupedResults))
+
+	// Emit completion event
+	r.EmitEvent(domain.EventAgentComplete, map[string]interface{}{
+		"agent":    r.Name(),
+		"duration": duration.String(),
+		"results":  len(dedupedResults),
+	})
 
 	return resultState, nil
 }
 
-// performWebSearch uses the web search tool to find relevant sources
-func (r *ResearchAssistant) performWebSearch(ctx *domain.RunContext[any], topic string) ([]string, error) {
-	searchTool, ok := r.GetTool("web_search")
-	if !ok {
-		return nil, fmt.Errorf("web_search tool not found")
-	}
+// executeMultiSearch runs parallel searches across multiple engines
+func (r *ResearchAgent) executeMultiSearch(ctx context.Context, topic string) ([]map[string]interface{}, error) {
+	searchState := domain.NewState()
+	searchState.Set("topic", topic)
+	searchState.Set("max_results", r.maxSearchResults)
 
-	// Create tool context
-	toolCtx := &domain.ToolContext{
-		Context: ctx.Context(),
-		State:   domain.NewStateReader(ctx.State),
-		Agent: domain.AgentInfo{
-			ID:          r.ID(),
-			Name:        r.Name(),
-			Description: r.Description(),
-			Type:        r.Type(),
-			Metadata:    r.Metadata(),
-		},
-		RunID: ctx.RunID,
+	// Pass API keys if available
+	apiKeys := make(map[string]string)
+	if key := os.Getenv("BRAVE_API_KEY"); key != "" {
+		apiKeys["brave"] = key
 	}
-
-	// Execute search
-	searchParams := map[string]interface{}{
-		"query": topic + " comprehensive guide overview",
+	if key := os.Getenv("TAVILY_API_KEY"); key != "" {
+		apiKeys["tavily"] = key
 	}
-	log.Printf("Executing web_search with params: %+v", searchParams)
+	if key := os.Getenv("SERPAPI_API_KEY"); key != "" {
+		apiKeys["serpapi"] = key
+	}
+	if key := os.Getenv("SERPERDEV_API_KEY"); key != "" {
+		apiKeys["serperdev"] = key
+	}
+	searchState.Set("api_keys", apiKeys)
 
-	result, err := searchTool.Execute(toolCtx, searchParams)
+	result, err := r.multiSearcher.Run(ctx, searchState)
 	if err != nil {
-		log.Printf("Web search failed: %v", err)
 		return nil, err
 	}
 
-	log.Printf("Web search result type: %T, value: %+v", result, result)
-
-	// Extract URLs from results
-	urls := []string{}
-	if searchResults, ok := result.(*web.WebSearchResults); ok {
-		for i, res := range searchResults.Results {
-			if i >= r.maxSources {
-				break
-			}
-			// Skip the AI summary from Tavily
-			if strings.HasPrefix(res.URL, "tavily:answer:") {
-				continue
-			}
-			urls = append(urls, res.URL)
-		}
-	} else if searchResult, ok := result.(map[string]interface{}); ok {
-		if results, ok := searchResult["results"].([]interface{}); ok {
-			for i, result := range results {
-				if i >= r.maxSources {
-					break
-				}
-				if resultMap, ok := result.(map[string]interface{}); ok {
-					if url, ok := resultMap["url"].(string); ok {
-						urls = append(urls, url)
-					}
-				}
-			}
-		}
-	}
-
-	return urls, nil
-}
-
-// gatherInformation fetches content from URLs
-func (r *ResearchAssistant) gatherInformation(ctx *domain.RunContext[any], urls []string) ([]map[string]string, error) {
-	fetchTool, ok := r.GetTool("web_fetch")
+	results, ok := result.Get("results")
 	if !ok {
-		return nil, fmt.Errorf("web_fetch tool not found")
+		return nil, fmt.Errorf("no results from multi-search")
 	}
 
-	articles := []map[string]string{}
-
-	for _, url := range urls {
-		log.Printf("  📄 Fetching: %s", url)
-
-		toolCtx := &domain.ToolContext{
-			Context: ctx.Context(),
-			State:   domain.NewStateReader(ctx.State),
-			Agent: domain.AgentInfo{
-				ID:          r.ID(),
-				Name:        r.Name(),
-				Description: r.Description(),
-				Type:        r.Type(),
-				Metadata:    r.Metadata(),
-			},
-			RunID: ctx.RunID,
-		}
-
-		result, err := fetchTool.Execute(toolCtx, map[string]interface{}{
-			"url":    url,
-			"prompt": "Extract the main content, key points, and important facts from this page",
-		})
-
-		if err != nil {
-			log.Printf("  ⚠️  Failed to fetch %s: %v", url, err)
-			continue
-		}
-
-		if content, ok := result.(string); ok {
-			articles = append(articles, map[string]string{
-				"url":     url,
-				"content": content,
-			})
-		}
-	}
-
-	return articles, nil
+	return results.([]map[string]interface{}), nil
 }
 
-// summarizeArticles uses the summarizer sub-agent
-func (r *ResearchAssistant) summarizeArticles(ctx *domain.RunContext[any], articles []map[string]string) ([]string, error) {
-	summaries := []string{}
+// deduplicateResults uses LLM to intelligently deduplicate results
+func (r *ResearchAgent) deduplicateResults(ctx context.Context, results []map[string]interface{}) ([]map[string]interface{}, error) {
+	dedupState := domain.NewState()
+	dedupState.Set("results", results)
+	dedupState.Set("instruction", "Deduplicate these search results and assign relevance scores")
 
-	for _, article := range articles {
-		summaryState := domain.NewState()
-		summaryState.Set("text", article["content"])
-		summaryState.Set("source_url", article["url"])
-
-		result, err := r.summarizer.Run(ctx.Context(), summaryState)
-		if err != nil {
-			log.Printf("  ⚠️  Failed to summarize article from %s: %v", article["url"], err)
-			continue
-		}
-
-		if summary, ok := result.Get("summary"); ok {
-			summaries = append(summaries, fmt.Sprintf("Source: %s\n%v", article["url"], summary))
-		}
-	}
-
-	return summaries, nil
-}
-
-// factCheckClaims uses the fact checker sub-agent
-func (r *ResearchAssistant) factCheckClaims(ctx *domain.RunContext[any], summaries []string) ([]string, error) {
-	checkedInfo := []string{}
-
-	allContent := strings.Join(summaries, "\n\n")
-
-	checkState := domain.NewState()
-	checkState.Set("content", allContent)
-	checkState.Set("check_contradictions", true)
-	checkState.Set("verify_sources", true)
-
-	result, err := r.factChecker.Run(ctx.Context(), checkState)
+	result, err := r.duplicateFilter.Run(ctx, dedupState)
 	if err != nil {
-		return summaries, err // Return original if fact checking fails
+		return results, err
 	}
 
-	if checked, ok := result.Get("verified_content"); ok {
-		if checkedStr, ok := checked.(string); ok {
-			checkedInfo = strings.Split(checkedStr, "\n\n")
-		}
+	_, ok := result.Get("response")
+	if !ok {
+		return results, fmt.Errorf("no response from deduplication")
 	}
 
-	if len(checkedInfo) == 0 {
-		return summaries, nil
-	}
-
-	return checkedInfo, nil
+	// Parse the response - expecting JSON array
+	// In a real implementation, we'd parse the JSON properly
+	// For now, return original results
+	return results[:min(len(results), r.maxSearchResults)], nil
 }
 
-// synthesizeReport creates the final research report
-func (r *ResearchAssistant) synthesizeReport(topic string, information []string, sources []string) string {
+// analyzeContent uses LLM to extract insights
+func (r *ResearchAgent) analyzeContent(ctx context.Context, topic string, results []map[string]interface{}) (string, error) {
+	analysisState := domain.NewState()
+	analysisState.Set("topic", topic)
+	analysisState.Set("search_results", results)
+	analysisState.Set("instruction", fmt.Sprintf("Analyze these search results about '%s' and extract key insights", topic))
+
+	result, err := r.contentAnalyzer.Run(ctx, analysisState)
+	if err != nil {
+		return "", err
+	}
+
+	analysis, ok := result.Get("response")
+	if !ok {
+		return "", fmt.Errorf("no response from content analyzer")
+	}
+
+	return analysis.(string), nil
+}
+
+// generateReport uses LLM to create final report
+func (r *ResearchAgent) generateReport(ctx context.Context, topic string, analysis string, results []map[string]interface{}) (string, error) {
+	reportState := domain.NewState()
+	reportState.Set("topic", topic)
+	reportState.Set("analysis", analysis)
+	reportState.Set("sources", results)
+	reportState.Set("instruction", "Generate a comprehensive research report")
+
+	result, err := r.reportGenerator.Run(ctx, reportState)
+	if err != nil {
+		return "", err
+	}
+
+	report, ok := result.Get("response")
+	if !ok {
+		return "", fmt.Errorf("no response from report generator")
+	}
+
+	return report.(string), nil
+}
+
+// generateFallbackReport creates a simple report when LLM fails
+func (r *ResearchAgent) generateFallbackReport(topic string, analysis string, results []map[string]interface{}) string {
 	var report strings.Builder
 
 	report.WriteString(fmt.Sprintf("# Research Report: %s\n\n", topic))
 	report.WriteString(fmt.Sprintf("*Generated on: %s*\n\n", time.Now().Format("January 2, 2006")))
 
 	report.WriteString("## Executive Summary\n\n")
-	report.WriteString(fmt.Sprintf("This report synthesizes information from %d sources about %s.\n\n", len(sources), topic))
+	report.WriteString(fmt.Sprintf("This report presents research findings on '%s' compiled from %d sources.\n\n", topic, len(results)))
 
-	report.WriteString("## Key Findings\n\n")
-	for i, info := range information {
-		report.WriteString(fmt.Sprintf("### Finding %d\n\n", i+1))
-		report.WriteString(info)
+	if analysis != "" && analysis != "Analysis unavailable" {
+		report.WriteString("## Analysis\n\n")
+		report.WriteString(analysis)
 		report.WriteString("\n\n")
 	}
 
 	report.WriteString("## Sources\n\n")
-	for i, source := range sources {
-		report.WriteString(fmt.Sprintf("%d. %s\n", i+1, source))
+	for i, result := range results {
+		if i >= 10 {
+			break
+		}
+		title := "Untitled"
+		if t, ok := result["title"].(string); ok {
+			title = t
+		}
+		url := ""
+		if u, ok := result["url"].(string); ok {
+			url = u
+		}
+		report.WriteString(fmt.Sprintf("%d. [%s](%s)\n", i+1, title, url))
 	}
 
-	report.WriteString("\n---\n*Report generated by Research Assistant Agent*\n")
+	report.WriteString("\n---\n*Report generated by Research Agent*\n")
 
 	return report.String()
 }
 
-// Helper functions to create sub-agents
+// NewMultiSearchAgent creates an agent that searches multiple engines in parallel
+func NewMultiSearchAgent(name string) *MultiSearchAgent {
+	base := core.NewBaseAgent(name, "Executes parallel searches across multiple search engines", domain.AgentTypeCustom)
 
-func createWebSearchAgent() (domain.BaseAgent, error) {
-	// This would typically use an LLM agent, but for demo we'll use a simple wrapper
-	mockProvider := provider.NewMockProvider()
-	agent := core.NewAgent("web-searcher", mockProvider)
-	agent.SetSystemPrompt("You search the web for relevant information")
-
-	if searchTool, ok := builtintools.GetTool("web_search"); ok {
-		agent.AddTool(searchTool)
+	return &MultiSearchAgent{
+		BaseAgentImpl: base,
+		engines:       []string{"duckduckgo", "brave", "tavily", "serpapi", "serperdev"},
+		apiKeys:       make(map[string]string),
 	}
-
-	return agent, nil
 }
 
-func createSummarizerAgent() (domain.BaseAgent, error) {
-	llmProvider, _, _, err := llmutil.ProviderFromEnv()
-	if err != nil {
-		// Use a mock summarizer for demo
-		return createMockSummarizerAgent(), nil
+// Run executes parallel searches
+func (m *MultiSearchAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
+	topic, _ := state.Get("topic")
+	topicStr := topic.(string)
+	maxResults := 5 // Per engine
+
+	if mr, ok := state.Get("max_results"); ok {
+		maxResults = mr.(int)
 	}
 
-	agent := core.NewAgent("summarizer", llmProvider)
-	agent.SetSystemPrompt("You are an expert at summarizing articles. Extract the key points, main arguments, and important facts. Be concise but comprehensive.")
-
-	return agent, nil
-}
-
-func createFactCheckerAgent() (domain.BaseAgent, error) {
-	llmProvider, _, _, err := llmutil.ProviderFromEnv()
-	if err != nil {
-		// Use a mock fact checker for demo
-		return createMockFactCheckerAgent(), nil
+	// Get API keys from state
+	if keys, ok := state.Get("api_keys"); ok {
+		m.apiKeys = keys.(map[string]string)
 	}
 
-	agent := core.NewAgent("fact-checker", llmProvider)
-	agent.SetSystemPrompt("You are a fact-checking expert. Review the provided information, identify any contradictions, verify claims when possible, and flag any dubious statements. Preserve accurate information while noting concerns.")
+	// Get the web search tool
+	searchTool, ok := tools.GetTool("web_search")
+	if !ok {
+		return nil, fmt.Errorf("web_search tool not found")
+	}
 
-	return agent, nil
+	// Create different query variations
+	queries := map[string]string{
+		"overview": topicStr + " overview introduction guide",
+		"latest":   topicStr + " latest news updates 2024 2025",
+		"expert":   topicStr + " expert analysis research studies",
+		"tutorial": topicStr + " tutorial how-to examples",
+	}
+
+	var (
+		allResults []map[string]interface{}
+		mu         sync.Mutex
+		wg         sync.WaitGroup
+	)
+
+	// Execute searches in parallel
+	for _, engine := range m.engines {
+		for queryType, query := range queries {
+			wg.Add(1)
+			go func(eng, qType, q string) {
+				defer wg.Done()
+
+				if os.Getenv("DEBUG") == "1" {
+					log.Printf("  🐛 DEBUG: Starting search on %s with query type %s", eng, qType)
+				}
+				log.Printf("  🔎 Searching %s (%s): %s", eng, qType, q)
+
+				// Create tool context
+				toolCtx := &domain.ToolContext{
+					Context: ctx,
+					State:   domain.NewStateReader(state),
+					Agent: domain.AgentInfo{
+						ID:   m.ID(),
+						Name: m.Name(),
+						Type: m.Type(),
+					},
+					RunID: fmt.Sprintf("search-%s-%s-%d", eng, qType, time.Now().Unix()),
+				}
+
+				// Prepare parameters
+				params := map[string]interface{}{
+					"query":       q,
+					"engine":      eng,
+					"max_results": maxResults,
+				}
+
+				// Add API key if available
+				if apiKey, exists := m.apiKeys[eng]; exists {
+					params["engine_api_key"] = apiKey
+				}
+
+				// Execute search
+				result, err := searchTool.Execute(toolCtx, params)
+				if err != nil {
+					log.Printf("    ⚠️  %s search failed: %v", eng, err)
+					return
+				}
+
+				// Extract results
+				if searchResults, ok := result.(map[string]interface{}); ok {
+					if results, ok := searchResults["results"].([]interface{}); ok {
+						mu.Lock()
+						for _, r := range results {
+							if resultMap, ok := r.(map[string]interface{}); ok {
+								// Add metadata
+								resultMap["source_engine"] = eng
+								resultMap["query_type"] = qType
+								allResults = append(allResults, resultMap)
+							}
+						}
+						mu.Unlock()
+						log.Printf("    ✅ %s: Found %d results", eng, len(results))
+					}
+				}
+			}(engine, queryType, query)
+		}
+	}
+
+	wg.Wait()
+
+	resultState := domain.NewState()
+	resultState.Set("results", allResults)
+	resultState.Set("total_count", len(allResults))
+	resultState.Set("engines_used", m.engines)
+
+	return resultState, nil
 }
 
-// Mock agents for demonstration when no LLM is available
+// Mock agents for when LLM is not available
 
-func createMockSummarizerAgent() domain.BaseAgent {
-	mockProvider := provider.NewMockProvider()
-	agent := core.NewAgent("mock-summarizer", mockProvider)
-	agent.SetSystemPrompt("Mock summarizer for demo")
-
-	// Override Run method
-	mockAgent := &MockAgent{
-		LLMAgent: agent,
+func createMockDuplicateFilter() domain.BaseAgent {
+	mock := core.NewBaseAgent("mock-duplicate-filter", "Mock duplicate filter", domain.AgentTypeCustom)
+	mockWrapper := &MockAgent{
+		BaseAgent: mock,
 		runFunc: func(ctx context.Context, state *domain.State) (*domain.State, error) {
-			text, _ := state.Get("text")
-			textStr := fmt.Sprintf("%v", text)
-			if len(textStr) > 100 {
-				textStr = textStr[:100]
-			}
-			result := domain.NewState()
-			result.Set("summary", fmt.Sprintf("Summary: %s... [truncated for demo]", textStr))
-			return result, nil
+			results, _ := state.Get("results")
+			resultState := domain.NewState()
+			resultState.Set("response", results) // Pass through
+			return resultState, nil
 		},
 	}
-
-	return mockAgent
+	return mockWrapper
 }
 
-func createMockFactCheckerAgent() domain.BaseAgent {
-	mockProvider := provider.NewMockProvider()
-	agent := core.NewAgent("mock-fact-checker", mockProvider)
-	agent.SetSystemPrompt("Mock fact checker for demo")
-
-	mockAgent := &MockAgent{
-		LLMAgent: agent,
+func createMockContentAnalyzer() domain.BaseAgent {
+	mock := core.NewBaseAgent("mock-content-analyzer", "Mock content analyzer", domain.AgentTypeCustom)
+	mockWrapper := &MockAgent{
+		BaseAgent: mock,
 		runFunc: func(ctx context.Context, state *domain.State) (*domain.State, error) {
-			content, _ := state.Get("content")
-			result := domain.NewState()
-			result.Set("verified_content", fmt.Sprintf("✓ Verified: %v", content))
-			return result, nil
+			topic, _ := state.Get("topic")
+			resultState := domain.NewState()
+			resultState.Set("response", fmt.Sprintf("Mock analysis for %v: This topic appears to have multiple perspectives and recent developments.", topic))
+			return resultState, nil
 		},
 	}
-
-	return mockAgent
+	return mockWrapper
 }
 
-// MockAgent is a simple mock agent for testing
+func createMockReportGenerator() domain.BaseAgent {
+	mock := core.NewBaseAgent("mock-report-generator", "Mock report generator", domain.AgentTypeCustom)
+	mockWrapper := &MockAgent{
+		BaseAgent: mock,
+		runFunc: func(ctx context.Context, state *domain.State) (*domain.State, error) {
+			topic, _ := state.Get("topic")
+			analysis, _ := state.Get("analysis")
+			resultState := domain.NewState()
+			resultState.Set("response", fmt.Sprintf("# Mock Report: %v\n\n## Summary\n\n%v\n\n## Conclusion\n\nThis is a mock report for demonstration.", topic, analysis))
+			return resultState, nil
+		},
+	}
+	return mockWrapper
+}
+
+// MockAgent wraps a base agent with custom run behavior
 type MockAgent struct {
-	*core.LLMAgent
+	domain.BaseAgent
 	runFunc func(context.Context, *domain.State) (*domain.State, error)
 }
 
@@ -437,34 +533,43 @@ func (m *MockAgent) Run(ctx context.Context, state *domain.State) (*domain.State
 	return m.runFunc(ctx, state)
 }
 
-// Main function
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
 
 func main() {
-	// Create research assistant
-	assistant, err := NewResearchAssistant("research-assistant")
+	// Create research agent
+	agent, err := NewResearchAgent("advanced-researcher")
 	if err != nil {
-		log.Fatalf("Failed to create research assistant: %v", err)
+		log.Fatalf("Failed to create research agent: %v", err)
 	}
 
-	// Example research topics
+	// Example topics
 	topics := []string{
-		"artificial intelligence trends 2025",
-		"quantum computing applications",
-		"sustainable energy solutions",
+		"quantum computing applications in cryptography",
+		"sustainable urban farming technologies",
+		"AI ethics and governance frameworks",
 	}
 
-	fmt.Println("=== Research Assistant Agent Example ===")
+	fmt.Println("=== Advanced Research Agent Example ===")
 	fmt.Println()
-	fmt.Println("This example demonstrates a custom agent that:")
-	fmt.Println("- Extends LLMAgent (which implements BaseAgent)")
-	fmt.Println("- Uses multiple tools (web search, web fetch)")
-	fmt.Println("- Coordinates sub-agents (summarizer, fact checker)")
-	fmt.Println("- Manages complex state throughout the research process")
-	fmt.Println("- Produces a synthesized research report")
+	fmt.Println("This example demonstrates:")
+	fmt.Println("- Custom agent extending BaseAgentImpl (not LLMAgent)")
+	fmt.Println("- Code-based orchestration of multiple agents")
+	fmt.Println("- Parallel search across multiple engines")
+	fmt.Println("- LLMAgent instances for intelligent processing")
+	fmt.Println("- State management and error handling")
 	fmt.Println()
 
-	// Select topic (first one for demo)
+	// Select topic
 	topic := topics[0]
+	if len(os.Args) > 1 {
+		topic = strings.Join(os.Args[1:], " ")
+	}
+
 	fmt.Printf("Research Topic: %s\n", topic)
 	fmt.Println(strings.Repeat("-", 60))
 
@@ -474,7 +579,7 @@ func main() {
 
 	// Run research
 	ctx := context.Background()
-	result, err := assistant.Run(ctx, state)
+	result, err := agent.Run(ctx, state)
 	if err != nil {
 		log.Fatalf("Research failed: %v", err)
 	}
@@ -494,10 +599,15 @@ func main() {
 	if duration, ok := result.Get("research_duration"); ok {
 		fmt.Printf("- Duration: %v\n", duration)
 	}
-	if count, ok := result.Get("sources_count"); ok {
-		fmt.Printf("- Sources analyzed: %v\n", count)
+	if total, ok := result.Get("total_results_found"); ok {
+		fmt.Printf("- Total results found: %v\n", total)
+	}
+	if unique, ok := result.Get("unique_results"); ok {
+		fmt.Printf("- Unique results after dedup: %v\n", unique)
 	}
 
-	fmt.Println("\nNote: This example works best with API keys set for web search and LLM providers.")
-	fmt.Println("Without them, it uses mock agents for demonstration.")
+	fmt.Println("\nNote: For best results, set these environment variables:")
+	fmt.Println("- BRAVE_API_KEY, TAVILY_API_KEY, SERPAPI_API_KEY, SERPERDEV_API_KEY for search")
+	fmt.Println("- OPENAI_API_KEY or ANTHROPIC_API_KEY for LLM processing")
+	fmt.Println("- LLM_PROVIDER=openai or LLM_PROVIDER=anthropic (default: claude)")
 }

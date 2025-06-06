@@ -1,141 +1,185 @@
-# Custom Research Assistant Agent Example
+# Agent Custom Research Example
 
-This example demonstrates how to create a sophisticated custom agent that extends `LLMAgent` and showcases advanced agent features.
-
-## Features Demonstrated
-
-1. **Custom Agent Implementation**
-   - Extends `LLMAgent` through composition
-   - Implements custom `Run` method with complex logic
-   - Manages state throughout multi-phase process
-
-2. **Sub-Agent Coordination**
-   - Web Searcher Agent - finds relevant sources
-   - Summarizer Agent - extracts key points from articles
-   - Fact Checker Agent - verifies claims and checks contradictions
-
-3. **Tool Integration**
-   - Uses `web_search` tool to find information
-   - Uses `web_fetch` tool to retrieve content
-   - Demonstrates proper tool context creation
-
-4. **State Management**
-   - Tracks research progress through phases
-   - Accumulates findings in state
-   - Preserves metadata (timing, sources)
-
-5. **Error Handling**
-   - Graceful degradation when tools fail
-   - Fallback to mock agents when no LLM available
-   - Continues research even with partial failures
+This example demonstrates how to build a sophisticated custom agent by extending `BaseAgentImpl` and orchestrating multiple specialized agents through code-based coordination.
 
 ## Architecture
 
+The example implements a research pipeline with the following architecture:
+
 ```
-ResearchAssistant (Custom Agent)
-├── Web Search Phase
-│   └── web_search tool
-├── Information Gathering Phase  
-│   └── web_fetch tool (multiple calls)
-├── Summarization Phase
-│   └── Summarizer sub-agent (LLM or mock)
-├── Fact Checking Phase
-│   └── Fact Checker sub-agent (LLM or mock)
-└── Report Synthesis Phase
-    └── Internal logic
+ResearchAgent (extends BaseAgentImpl)
+├── Code-based orchestration of:
+│   ├── MultiSearchAgent (extends BaseAgentImpl)
+│   │   └── Runs parallel searches: Tavily, Brave, Serpapi, Serper.dev, DuckDuckGo
+│   ├── DuplicateFilterAgent (uses LLMAgent with custom prompt)
+│   │   └── Intelligent deduplication and relevance scoring
+│   ├── ContentAnalyzerAgent (uses LLMAgent with custom prompt)  
+│   │   └── Extracts key insights from deduplicated results
+│   └── ReportGeneratorAgent (uses LLMAgent with custom prompt)
+│       └── Synthesizes final research report
 ```
 
-## Web Search Configuration
+## Key Concepts Demonstrated
 
-This example uses the enhanced `web_search` tool which automatically selects the best available search engine:
+### 1. Custom Agent Development
+- **Extending BaseAgentImpl**: Shows how to build agents with full control over execution
+- **Phase-based orchestration**: Implements a 4-phase research pipeline
+- **Custom state management**: Manages complex state flow between phases
+- **Event emission**: Tracks progress and errors through events
 
-- **Tavily Search** (preferred) - Set `TAVILY_API_KEY` for AI-optimized results
-- **Brave Search** - Set `SEARCH_API_KEY` for comprehensive web search
-- **DuckDuckGo** (fallback) - Always available but limited to instant answers
+### 2. Code-Based Orchestration
+- **No library sub-agents**: Uses direct method calls instead of framework features
+- **Explicit control flow**: Clear, debuggable execution path
+- **Error handling**: Graceful degradation when components fail
+- **Progress tracking**: Real-time updates on research phases
+
+### 3. Multi-Engine Search
+- **Parallel execution**: Searches multiple engines simultaneously
+- **Query variations**: Different queries for comprehensive coverage
+- **API key management**: Flexible key injection via environment or state
+- **Result aggregation**: Combines results with source metadata
+
+### 4. LLMAgent Usage Pattern
+Instead of extending LLMAgent, the example shows the correct pattern:
+```go
+// Create specialized LLMAgent instances
+duplicateFilter, _ := core.NewAgentFromString("filter", "claude")
+duplicateFilter.SetSystemPrompt("You are a deduplication expert...")
+
+// Use them as components
+result, _ := duplicateFilter.Run(ctx, state)
+```
 
 ## Running the Example
 
+### Basic Usage
 ```bash
-# Basic usage (will use mock agents if no API keys)
-go run cmd/examples/agent-custom-research/main.go
+# Run with default topic
+go run main.go
 
-# With Tavily Search API (recommended for best results)
-export TAVILY_API_KEY="your-tavily-api-key"
-go run cmd/examples/agent-custom-research/main.go
+# Run with custom topic
+go run main.go "quantum computing applications"
 
-# With Brave Search API
-export SEARCH_API_KEY="your-brave-search-api-key"
-go run cmd/examples/agent-custom-research/main.go
-
-# With full LLM support for summarization and fact-checking
-export OPENAI_API_KEY="your-api-key"  # or ANTHROPIC_API_KEY, GEMINI_API_KEY
-export TAVILY_API_KEY="your-tavily-api-key"  # or SEARCH_API_KEY
-go run cmd/examples/agent-custom-research/main.go
+# Run with debug logging enabled
+DEBUG=1 go run main.go
 ```
 
-## Output
+### Environment Variables
 
-The agent produces a comprehensive research report including:
-- Executive summary
-- Key findings from multiple sources
-- Fact-checked information
-- Source citations
-- Research metadata (duration, source count)
+For web search (at least one recommended):
+- `BRAVE_API_KEY` - Brave Search API key
+- `TAVILY_API_KEY` - Tavily API key (best results)
+- `SERPAPI_API_KEY` - SerpAPI key
+- `SERPERDEV_API_KEY` - Serper.dev API key
 
-## Customization
+For LLM processing (optional, uses mocks if not set):
+- `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` - For LLM sub-agents
+- `LLM_PROVIDER` - Set to "openai" or "anthropic" (default: "claude")
 
-You can customize the research assistant by:
+For debugging:
+- `DEBUG=1` - Enable debug logging with detailed LLM agent activity
 
-1. **Changing the research depth**: Modify `maxSources` to analyze more/fewer sources
-2. **Adding more sub-agents**: Create specialized agents for specific analysis tasks
-3. **Enhancing the synthesis**: Improve the report generation logic
-4. **Adding persistence**: Save research results to files or databases
-5. **Implementing caching**: Cache web fetches to avoid repeated API calls
+### Example Output
+```
+=== Advanced Research Agent Example ===
 
-## Key Concepts
+This example demonstrates:
+- Custom agent extending BaseAgentImpl (not LLMAgent)
+- Code-based orchestration of multiple agents
+- Parallel search across multiple engines
+- LLMAgent instances for intelligent processing
+- State management and error handling
 
-### Custom Agent Pattern
+Research Topic: quantum computing applications in cryptography
+------------------------------------------------------------
+🔍 Phase 1: Executing parallel searches for 'quantum computing applications in cryptography'
+  🔎 Searching duckduckgo (overview): quantum computing...
+  🔎 Searching brave (latest): quantum computing...
+  🔎 Searching tavily (expert): quantum computing...
+  ✅ Found 120 total results across all engines
+🔄 Phase 2: Deduplicating and ranking results
+  ✅ Reduced to 45 unique results
+📊 Phase 3: Analyzing content and extracting insights
+📝 Phase 4: Generating comprehensive report
+
+============================================================
+RESEARCH COMPLETE
+============================================================
+
+# Research Report: Quantum Computing Applications in Cryptography
+
+## Executive Summary
+[Generated report content...]
+```
+
+## Implementation Details
+
+### ResearchAgent
+- Extends `BaseAgentImpl` for full control
+- Implements custom `Run()` method with 4 phases
+- Manages state flow and error handling
+- Emits events for monitoring
+
+### MultiSearchAgent
+- Also extends `BaseAgentImpl`
+- Executes parallel searches with goroutines
+- Uses different query variations per engine
+- Aggregates results with metadata
+
+### LLM Sub-Agents
+- Created as instances, not by extending
+- Each has a specialized system prompt
+- Falls back to mocks when LLM unavailable
+- Processes specific aspects of research
+
+## Benefits of This Architecture
+
+1. **Flexibility**: Full control over execution flow
+2. **Debuggability**: Clear code path without framework magic
+3. **Scalability**: Easy to add new search engines or processing steps
+4. **Reliability**: Graceful degradation with mocks
+5. **Performance**: Parallel search execution
+
+## Extending the Example
+
+To add new capabilities:
+
+1. **Add a new search engine**: Update `MultiSearchAgent.engines`
+2. **Add a new processing phase**: Create new LLMAgent with custom prompt
+3. **Customize search queries**: Modify the `queries` map
+4. **Change report format**: Update the report generator prompt
+
+## Common Patterns
+
+### Creating Specialized LLM Agents
 ```go
-type ResearchAssistant struct {
-    *core.BaseAgentImpl
-    // Custom fields for sub-agents and configuration
-    webSearcher  domain.BaseAgent
-    summarizer   domain.BaseAgent
-    maxSources   int
+agent, _ := core.NewAgentFromString("name", "provider")
+agent.SetSystemPrompt("Specialized instructions...")
+```
+
+### Code-Based Orchestration
+```go
+// Phase 1
+results1, err := r.phase1(ctx, input)
+if err != nil {
+    // Handle error
 }
 
-func (r *ResearchAssistant) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
-    // Multi-phase execution logic
-    // Coordinate sub-agents
-    // Aggregate results
-    // Return synthesized state
-}
+// Phase 2 - uses results from Phase 1
+results2, err := r.phase2(ctx, results1)
 ```
 
-### Sub-Agent Coordination
+### Parallel Execution Without Workflows
 ```go
-// Create sub-agent
-summarizer, err := createSummarizerAgent()
-
-// Use sub-agent in research flow  
-result, err := r.summarizer.Run(ctx, summaryState)
-```
-
-### Tool Usage in Custom Agent
-```go
-// Get tool from agent's tool registry
-searchTool, ok := r.GetTool("web_search")
-
-// Create tool context
-toolCtx := &domain.ToolContext{
-    Context: ctx.Context,
-    State:   domain.NewStateReader(ctx.State),
-    Agent:   ctx.Agent,
-    RunID:   ctx.RunID,
+var wg sync.WaitGroup
+for _, item := range items {
+    wg.Add(1)
+    go func(i Item) {
+        defer wg.Done()
+        // Process item
+    }(item)
 }
-
-// Execute tool
-result, err := searchTool.Execute(toolCtx, params)
+wg.Wait()
 ```
 
-This example shows how to build production-ready custom agents that can handle complex, multi-step tasks with proper error handling and state management.
+This example provides a blueprint for building sophisticated multi-agent systems while maintaining code clarity and control.
