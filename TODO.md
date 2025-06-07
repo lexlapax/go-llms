@@ -46,6 +46,120 @@
 
 - [x] Phase 7: Migration and Testing - COMPLETED - see TODO-DONE.md
 
+### Tool System Enhancement with LLM Guidance (HIGHEST PRIORITY - IN PROGRESS)
+- [ ] Phase 1: Core Infrastructure (Week 1)
+  - [ ] Day 1: Create new Tool interface with comprehensive LLM guidance (TDD)
+    - [ ] Write tests for new Tool interface in pkg/agent/domain/tool_test.go
+    - [ ] Implement Tool interface in pkg/agent/domain/tool.go
+    - [ ] Add ToolExample and MCPToolDefinition types
+    - [ ] Run fmt, lint, test
+  - [ ] Day 2: Create BaseToolV2 implementation
+    - [ ] Write tests for BaseToolV2 and builder pattern
+    - [ ] Implement BaseToolV2 in pkg/agent/tools/base_tool_v2.go
+    - [ ] Create ToolBuilder for easy construction
+    - [ ] Add validation methods
+    - [ ] Run fmt, lint, test
+  - [ ] Day 3: Update Tool Registry
+    - [ ] Write tests for enhanced registry methods
+    - [ ] Update ToolMetadata to ToolMetadataV2
+    - [ ] Implement ToolRegistryV2 interface
+    - [ ] Add MCP export functionality
+    - [ ] Run fmt, lint, test
+  - [ ] Day 4: Update LLM Agent tool description
+    - [ ] Write tests for enhanced system content generation
+    - [ ] Implement getSystemContentV2() method
+    - [ ] Add formatToolDocumentation() method
+    - [ ] Add schema formatting helpers
+    - [ ] Run fmt, lint, test
+  - [ ] Day 5: Integration testing
+    - [ ] Test new tool with LLM Agent
+    - [ ] Verify MCP export
+    - [ ] Performance benchmarks
+    - [ ] Fix any integration issues
+
+- [ ] Phase 2: Tool Migration Part 1 (Week 2) - 15 tools
+  - [ ] Day 1: Migrate calculator tool (1 tool - template for others)
+    - [ ] Write tests for calculator with new interface
+    - [ ] Implement comprehensive metadata
+    - [ ] Add 5+ examples with scenarios
+    - [ ] Test MCP export
+  - [ ] Day 2: Migrate system tools (4 tools)
+    - [ ] execute_command - Add safety constraints and confirmation
+    - [ ] get_environment_variable - Simple migration
+    - [ ] get_system_info - Add output examples
+    - [ ] process_list - Add filtering guidance
+  - [ ] Day 3: Migrate file tools (6 tools)
+    - [ ] file_read - Add encoding and size guidance
+    - [ ] file_write - Add destructive warnings
+    - [ ] file_list - Complex parameter examples
+    - [ ] file_delete - Add confirmation requirements
+    - [ ] file_move - Add rollback guidance
+    - [ ] file_search - Add regex examples
+  - [ ] Day 4: Migrate web tools (4 tools)
+    - [ ] web_search - Multi-engine examples
+    - [ ] web_fetch - Add timeout guidance
+    - [ ] web_scrape - Selector examples
+    - [ ] http_request - Auth method examples
+  - [ ] Day 5: Testing & fixes
+    - [ ] Run all migrated tool tests
+    - [ ] Fix any issues
+    - [ ] Update integration tests
+
+- [ ] Phase 3: Tool Migration Part 2 (Week 3) - 17 tools + examples
+  - [ ] Day 1: Migrate data tools (4 tools)
+    - [ ] json_process - JSONPath examples
+    - [ ] csv_process - Transform examples
+    - [ ] xml_process - XPath guidance
+    - [ ] data_transform - Operation chains
+  - [ ] Day 2: Migrate datetime tools (7 tools)
+    - [ ] datetime_now - Timezone examples
+    - [ ] datetime_info - Component extraction
+    - [ ] datetime_calculate - Business days
+    - [ ] datetime_parse - Format patterns
+    - [ ] datetime_format - Locale examples
+    - [ ] datetime_convert - Zone handling
+    - [ ] datetime_compare - Comparison logic
+  - [ ] Day 3: Migrate feed tools (6 tools)
+    - [ ] feed_fetch - Format detection
+    - [ ] feed_discover - Auto-discovery
+    - [ ] feed_filter - Complex queries
+    - [ ] feed_aggregate - Deduplication
+    - [ ] feed_convert - Format examples
+    - [ ] feed_extract - Content parsing
+  - [ ] Day 4: Update examples (first 15)
+    - [ ] agent-calculator - Remove manual prompt
+    - [ ] agent-simple-llm - Use auto docs
+    - [ ] agent-llm-builtin-tools - Showcase
+    - [ ] agent-tools-conversion - Update
+    - [ ] builtins-* examples (7) - Update all
+    - [ ] Other agent examples (4)
+  - [ ] Day 5: Update examples (remaining 16)
+    - [ ] Update all remaining examples
+    - [ ] Verify all examples work
+    - [ ] Update example documentation
+
+- [ ] Phase 4: Documentation & Polish (Week 4)
+  - [ ] Day 1-2: Technical documentation
+    - [ ] Create docs/technical/tools.md
+    - [ ] Document new Tool interface
+    - [ ] Add architecture diagrams
+    - [ ] Include best practices
+  - [ ] Day 3-4: User guide updates
+    - [ ] Create docs/user-guide/tool-development.md
+    - [ ] Update docs/user-guide/builtin-tools.md
+    - [ ] Add migration guide
+    - [ ] Create examples gallery
+  - [ ] Day 5: Final testing & release
+    - [ ] Run full test suite
+    - [ ] Performance validation
+    - [ ] Create release notes
+    - [ ] Tag release
+
+### API Client Tool (POSTPONED - After Tool Enhancement)
+- [ ] Implement after new tool system is in place
+- [ ] Will use new Tool interface from the start
+- [ ] Original plan in TOOL_ENHANCEMENT_PLAN.md
+
 ### Previous Built-in Components Plan
 - [x] P2: Build useful built-in tools - COMPLETED - see TODO-DONE.md
 
