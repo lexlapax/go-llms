@@ -140,6 +140,14 @@ func createAPIClientTool() domain.Tool {
 				Type:        "string",
 				Description: "Request timeout (e.g., '30s', '1m'). Default is 30s",
 			},
+			"openapi_spec": {
+				Type:        "string",
+				Description: "URL to OpenAPI/Swagger spec for automatic discovery and validation. When provided, enables operation discovery mode",
+			},
+			"discover_operations": {
+				Type:        "boolean",
+				Description: "If true, returns available operations from the OpenAPI spec instead of making an API call",
+			},
 		},
 		Required: []string{"base_url", "endpoint"},
 	}
@@ -189,8 +197,19 @@ func createAPIClientTool() domain.Tool {
 - Path parameter substitution
 - Helpful error messages and guidance
 - Common HTTP methods (GET, POST, PUT, DELETE, etc.)
+- OpenAPI/Swagger spec discovery and validation
 
-The tool will automatically set appropriate headers and handle responses intelligently.`).
+The tool will automatically set appropriate headers and handle responses intelligently.
+
+OpenAPI Discovery Mode:
+- Set discover_operations=true and provide openapi_spec URL to discover available endpoints
+- The tool will fetch and parse the OpenAPI spec to show all available operations
+- Use this to understand what endpoints are available before making calls
+
+OpenAPI Validation Mode:
+- Provide openapi_spec URL with regular API calls to enable request validation
+- The tool will validate parameters and request body against the spec
+- Helps ensure API calls are correctly formatted before sending`).
 		WithExamples([]domain.ToolExample{
 			{
 				Name:        "Simple GET request",
@@ -263,12 +282,48 @@ The tool will automatically set appropriate headers and handle responses intelli
 				},
 				Explanation: "Substitutes path parameters to create the final URL",
 			},
+			{
+				Name:        "OpenAPI discovery",
+				Description: "Discover available operations from OpenAPI spec",
+				Scenario:    "When you need to explore what endpoints an API offers",
+				Input: map[string]interface{}{
+					"base_url":            "https://api.example.com",
+					"endpoint":            "/not-used-in-discovery",
+					"openapi_spec":        "https://api.example.com/openapi.json",
+					"discover_operations": true,
+				},
+				Output: map[string]interface{}{
+					"success": true,
+					"operations": []map[string]interface{}{
+						{
+							"path":        "/users",
+							"method":      "GET",
+							"summary":     "List users",
+							"operationId": "listUsers",
+						},
+						{
+							"path":        "/users/{id}",
+							"method":      "GET",
+							"summary":     "Get user by ID",
+							"operationId": "getUser",
+						},
+					},
+					"spec_info": map[string]interface{}{
+						"title":   "Example API",
+						"version": "1.0.0",
+					},
+					"total_operations": 2,
+				},
+				Explanation: "Fetches and parses OpenAPI spec to show available endpoints",
+			},
 		}).
 		WithConstraints([]string{
 			"Only JSON request/response bodies are currently supported",
 			"Authentication credentials should be kept secure",
 			"Rate limiting is handled by returning 429 status codes",
 			"Redirects are followed automatically up to 10 times",
+			"OpenAPI specs must be in JSON or YAML format (OpenAPI 3.0/3.1)",
+			"OpenAPI discovery requires valid spec URL accessible via HTTP/HTTPS",
 		}).
 		WithErrorGuidance(map[string]string{
 			"invalid_url":       "Ensure the base_url is a valid HTTP/HTTPS URL",
@@ -317,6 +372,36 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 	paramMap, ok := params.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("parameters must be a map")
+	}
+
+	// Check if we're in discovery mode
+	if discoverOps, ok := paramMap["discover_operations"].(bool); ok && discoverOps {
+		specURL, ok := paramMap["openapi_spec"].(string)
+		if !ok || specURL == "" {
+			return nil, fmt.Errorf("openapi_spec URL is required when discover_operations is true")
+		}
+
+		// Perform operation discovery
+		parser := NewOpenAPIParser()
+		spec, err := parser.FetchSpec(specURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch OpenAPI spec: %w", err)
+		}
+
+		// Discover operations
+		operations := spec.GetOperations()
+
+		// Return discovery results
+		return map[string]interface{}{
+			"success":    true,
+			"operations": operations,
+			"spec_info": map[string]interface{}{
+				"title":       spec.Info.Title,
+				"version":     spec.Info.Version,
+				"description": spec.Info.Description,
+			},
+			"total_operations": len(operations),
+		}, nil
 	}
 
 	// Validate required parameters
@@ -428,6 +513,66 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 	// Create HTTP client
 	client := &http.Client{
 		Timeout: timeout,
+	}
+
+	// If OpenAPI spec is provided, validate the request
+	if specURL, ok := paramMap["openapi_spec"].(string); ok && specURL != "" {
+		parser := NewOpenAPIParser()
+		spec, err := parser.FetchSpec(specURL)
+		if err == nil {
+			// Create operation discovery for validation
+			discovery := NewOperationDiscovery(spec)
+
+			// Find the operation by path and method
+			operations := discovery.EnumerateOperations()
+			var targetOp *EnhancedOperationInfo
+			for _, op := range operations {
+				if op.Path == endpoint && op.Method == method {
+					targetOp = &op
+					break
+				}
+			}
+
+			if targetOp != nil && targetOp.OperationID != "" {
+				// Create validation options
+				validationOpts := &ValidationOptions{
+					SkipRequired:     false,
+					SkipConstraints:  false,
+					SkipTypeChecking: false,
+					AllowCoercion:    true,
+					StrictValidation: false,
+				}
+
+				// Validate the request
+				var requestBody interface{}
+				if bodyParam, exists := paramMap["body"]; exists {
+					requestBody = bodyParam
+				}
+				report, err := discovery.ValidateRequest(targetOp.OperationID, paramMap, requestBody, validationOpts)
+				if err == nil && !report.Valid {
+					// Return validation errors
+					errorMessages := []string{}
+					if report.ParameterErrors != nil {
+						for param, result := range report.ParameterErrors {
+							for _, err := range result.Errors {
+								errorMessages = append(errorMessages, fmt.Sprintf("%s: %s", param, err))
+							}
+						}
+					}
+					if report.RequestBodyError != nil {
+						errorMessages = append(errorMessages, report.RequestBodyError.Errors...)
+					}
+
+					return map[string]interface{}{
+						"success":           false,
+						"error_message":     "Request validation failed",
+						"validation_errors": errorMessages,
+						"error_guidance":    report.Guidance.Summary,
+						"suggestions":       report.Suggestions,
+					}, nil
+				}
+			}
+		}
 	}
 
 	// Execute request

@@ -705,3 +705,27 @@ After analyzing Google's Agent Development Kit (ADK), we identified key features
       - Parameter and output schemas with readable formatting
       - Error guidance and tags
       - Markdown formatting for better LLM comprehension
+
+## API Client Tool Phase 2: OpenAPI Integration (Completed - January 7, 2025)
+- [x] Day 4: Public API Examples and Testing
+  - [x] Add OpenAPI discovery mode to existing tool
+    - [x] Added openapi_spec and discover_operations parameters
+    - [x] Integrated with existing OpenAPIParser and OperationDiscovery
+    - [x] Updated usage instructions and examples
+  - [x] Create examples using GitHub API OpenAPI spec
+    - [x] Created comprehensive builtins-openapi-discovery example
+    - [x] Demonstrates discovery with GitHub's large API spec
+    - [x] Shows real-world usage patterns
+  - [x] Create examples using PetStore API (canonical example)
+    - [x] Included PetStore API examples in main example
+    - [x] Added integration tests for PetStore discovery
+    - [x] Validated against the canonical OpenAPI example
+  - [x] Create examples using JSONPlaceholder API
+    - [x] Included JSONPlaceholder example (no OpenAPI spec)
+    - [x] Shows tool works with and without specs
+  - [x] Write comprehensive integration tests
+    - [x] Created api_client_openapi_test.go
+    - [x] Tests discovery mode with mock specs
+    - [x] Tests validation with detailed schemas
+    - [x] Integration tests with real APIs (PetStore, GitHub)
+    - [x] All tests passing

@@ -547,6 +547,38 @@ cd builtins-file-tools && go run main.go
 cd builtins-web-tools && go run main.go
 ```
 
+#### [**Built-ins Web API Client**](builtins-web-api-client/README.md)
+**Focus**: REST API interaction with authentication
+
+**Features:**
+- All HTTP methods with JSON support
+- Multiple authentication methods (API key, Bearer, Basic)
+- Path parameter substitution
+- Custom headers and timeouts
+- Comprehensive error handling
+
+**When to use**: When you need to interact with REST APIs that require authentication and complex request handling.
+
+```bash
+cd builtins-web-api-client && go run main.go
+```
+
+#### [**Built-ins OpenAPI Discovery**](builtins-openapi-discovery/README.md)
+**Focus**: OpenAPI/Swagger specification discovery and validation
+
+**Features:**
+- OpenAPI 3.0/3.1 spec discovery
+- Operation enumeration and metadata extraction
+- Request validation against OpenAPI schemas
+- LLM-friendly operation guidance
+- Support for GitHub, PetStore, and custom APIs
+
+**When to use**: When you need to discover API endpoints, validate requests, or work with OpenAPI-documented APIs.
+
+```bash
+cd builtins-openapi-discovery && go run main.go
+```
+
 #### [**Built-ins Web Search Parallel**](builtins-web-search-parallel/README.md)
 **Focus**: Production web search with explicit API key management
 

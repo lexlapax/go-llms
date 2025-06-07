@@ -11,8 +11,16 @@ Until we reach close to v1.. *no backward compatibility* do not add extra code f
 
 **Current Version**: v0.3.1 (Active Development - June 2025)
 
-**Recent Updates** (June 8, 2025):
-- **API Client Tool Phase 2: OpenAPI/Swagger Integration (IN PROGRESS)**
+**Recent Updates** (January 7, 2025):
+- **API Client Tool Phase 2: OpenAPI/Swagger Integration (COMPLETED)**
+  - Phase 2, Day 4: Public API Examples and Testing (COMPLETED)
+    - Added OpenAPI discovery mode to api_client tool (openapi_spec + discover_operations params)
+    - Created comprehensive builtins-openapi-discovery example with GitHub, PetStore, JSONPlaceholder
+    - Integrated discovery with existing OpenAPIParser and OperationDiscovery systems
+    - Added request validation against OpenAPI schemas before sending requests
+    - Created api_client_openapi_test.go with mock and real API integration tests
+    - Updated examples/README.md with new OpenAPI discovery example
+    - All tests passing, including real API tests (PetStore, GitHub)
   - Phase 2, Day 3: Request Validation Integration (COMPLETED)
     - Successfully implemented comprehensive request validation system
     - Created ValidationOptions struct for flexible validation control

@@ -75,12 +75,12 @@
         - [x] Implement response schema validation (optional)
         - [x] Add validation error reporting with guidance
         - [x] Create validation bypass options for flexible usage
-      - [ ] Day 4: Public API Examples and Testing
-        - [ ] Create examples using GitHub API OpenAPI spec
-        - [ ] Create examples using PetStore API (canonical example)
-        - [ ] Create examples using JSONPlaceholder API
-        - [ ] Add OpenAPI discovery mode to existing tool
-        - [ ] Write comprehensive integration tests
+      - [x] Day 4: Public API Examples and Testing
+        - [x] Create examples using GitHub API OpenAPI spec
+        - [x] Create examples using PetStore API (canonical example)
+        - [x] Create examples using JSONPlaceholder API
+        - [x] Add OpenAPI discovery mode to existing tool
+        - [x] Write comprehensive integration tests
       - [ ] Day 5: Advanced Features and Documentation
         - [ ] Add automatic endpoint discovery from specs
         - [ ] Implement server URL resolution from specs
