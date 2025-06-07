@@ -12,20 +12,28 @@ Until we reach close to v1.. *no backward compatibility* do not add extra code f
 **Current Version**: v0.3.1 (Active Development - June 2025)
 
 **Recent Updates** (June 8, 2025):
-- **API Client Tool Implementation (COMPLETED)**
-  - Created comprehensive API_CLIENT_TOOL_PLAN.md with phased implementation approach
-  - Successfully implemented Phase 1: Basic REST Client
-    - All HTTP methods (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS)
-    - Authentication: API key, Bearer token, Basic auth
-    - Path parameter substitution and query parameters
-    - Custom headers and JSON request/response handling
-    - Intelligent error guidance for common HTTP errors
-  - Comprehensive test suite with 100% coverage
-  - Created builtins-web-api-client example with GitHub API integration
-  - Verified MCP export functionality with full metadata
-  - Performance benchmarks: 250K req/sec for simple operations, 10KB memory/op
-  - Successfully integrated with LLM Agent for natural language API interactions
-  - Phase 2 (OpenAPI) and Phase 3 (Advanced features) planned for future iterations
+- **API Client Tool Phase 2: OpenAPI/Swagger Integration (IN PROGRESS)**
+  - Phase 2, Day 3: Request Validation Integration (COMPLETED)
+    - Successfully implemented comprehensive request validation system
+    - Created ValidationOptions struct for flexible validation control
+    - Implemented ValidationReport with detailed error reporting and LLM guidance
+    - Added ValidateRequest method for complete request validation (parameters + body)
+    - Enhanced parameter validation with ValidateParametersEnhanced supporting all types
+    - Added request body validation with ValidateRequestBodyEnhanced for POST/PUT
+    - Implemented optional response validation with ValidateResponse
+    - Smart error guidance generation with actionable suggestions
+    - Validation bypass options for flexible usage scenarios
+    - Created comprehensive test suite - all 15 operation discovery tests passing
+  - Phase 2, Day 1-2: OpenAPI Spec Parsing and Operation Discovery (COMPLETED)
+    - Implemented OpenAPI 3.0/3.1 spec parsing with JSON/YAML support
+    - Created operation discovery system with comprehensive metadata extraction
+    - Parameter validation integrated with existing schema validation system
+    - LLM-friendly guidance generation for all operations
+  - Phase 1: Basic REST Client (COMPLETED)
+    - All HTTP methods, authentication, path parameters, custom headers
+    - Comprehensive test suite with 100% coverage
+    - Created builtins-web-api-client example with GitHub API integration
+    - Performance benchmarks: 250K req/sec for simple operations
 
 **Recent Updates** (June 7, 2025):
 - **Tool System Enhancement Phase 1, Day 3 (COMPLETED)**

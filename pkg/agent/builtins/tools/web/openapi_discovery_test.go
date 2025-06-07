@@ -4,6 +4,7 @@
 package web
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -490,7 +491,6 @@ func TestOperationDiscovery_ParameterValidation(t *testing.T) {
 	spec := createTestOpenAPISpec()
 	discovery := NewOperationDiscovery(spec)
 
-
 	// Test valid parameters for GET /users
 	parameters := map[string]interface{}{
 		"limit": 50,
@@ -556,7 +556,7 @@ func TestOperationDiscovery_ParameterCoercion(t *testing.T) {
 	discovery := NewOperationDiscovery(spec)
 
 	operations := discovery.EnumerateOperations()
-	
+
 	// Find GET /users operation
 	var getUsersOp *EnhancedOperationInfo
 	for _, op := range operations {
@@ -573,7 +573,7 @@ func TestOperationDiscovery_ParameterCoercion(t *testing.T) {
 	// Test coercing string to integer for limit parameter
 	if len(getUsersOp.QueryParameters) > 0 {
 		limitParam := getUsersOp.QueryParameters[0]
-		
+
 		// Coerce string "50" to integer
 		coercedValue, err := discovery.CoerceParameterValue(limitParam, "50")
 		if err != nil {
@@ -712,4 +712,212 @@ func createTestOpenAPISpec() *OpenAPISpec {
 			},
 		},
 	}
+}
+
+// TestOperationDiscovery_EnhancedValidation tests the enhanced validation features
+func TestOperationDiscovery_EnhancedValidation(t *testing.T) {
+	spec := createTestOpenAPISpec()
+	discovery := NewOperationDiscovery(spec)
+
+	t.Run("ValidateRequest - successful validation", func(t *testing.T) {
+		parameters := map[string]interface{}{
+			"limit": 50,
+		}
+
+		options := &ValidationOptions{
+			AllowCoercion: true,
+		}
+
+		report, err := discovery.ValidateRequest("getUsers", parameters, nil, options)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if !report.Valid {
+			t.Errorf("Expected valid request, got errors: %+v", report)
+		}
+
+		if report.OperationID != "getUsers" {
+			t.Errorf("Expected operationID \"getUsers\", got \"%s\"", report.OperationID)
+		}
+
+		if !strings.Contains(report.Guidance.Summary, "passed successfully") {
+			t.Errorf("Expected success summary, got \"%s\"", report.Guidance.Summary)
+		}
+	})
+
+	t.Run("ValidateRequest - parameter constraint violation", func(t *testing.T) {
+		parameters := map[string]interface{}{
+			"limit": 200, // Exceeds maximum of 100
+		}
+
+		options := &ValidationOptions{}
+
+		report, err := discovery.ValidateRequest("getUsers", parameters, nil, options)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if report.Valid {
+			t.Error("Expected invalid request but validation passed")
+		}
+
+		if len(report.ParameterErrors) == 0 {
+			t.Error("Expected parameter errors")
+		}
+
+		if limitError, exists := report.ParameterErrors["limit"]; exists {
+			if limitError.Valid {
+				t.Error("Expected invalid limit parameter")
+			}
+			if len(limitError.Errors) == 0 {
+				t.Error("Expected limit parameter errors")
+			}
+		} else {
+			t.Error("Expected limit parameter error")
+		}
+
+		if report.Guidance.Summary == "" {
+			t.Error("Expected validation summary")
+		}
+
+		if len(report.Suggestions) == 0 {
+			t.Error("Expected validation suggestions")
+		}
+	})
+
+	t.Run("ValidateRequest - missing required parameter", func(t *testing.T) {
+		parameters := map[string]interface{}{
+			// Missing required id parameter
+		}
+
+		options := &ValidationOptions{}
+
+		report, err := discovery.ValidateRequest("getUserById", parameters, nil, options)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if report.Valid {
+			t.Error("Expected invalid request due to missing required parameter")
+		}
+
+		if len(report.ParameterErrors) == 0 {
+			t.Error("Expected parameter errors for missing required parameter")
+		}
+
+		if idError, exists := report.ParameterErrors["id"]; exists {
+			if idError.Valid {
+				t.Error("Expected invalid id parameter")
+			}
+		} else {
+			t.Error("Expected id parameter error")
+		}
+	})
+
+	t.Run("ValidateRequest - request body validation", func(t *testing.T) {
+		requestBody := map[string]interface{}{
+			"name":  "John Doe",
+			"email": "john@example.com",
+		}
+
+		options := &ValidationOptions{}
+
+		report, err := discovery.ValidateRequest("createUser", nil, requestBody, options)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if !report.Valid {
+			t.Errorf("Expected valid request body, got errors: %+v", report)
+		}
+	})
+
+	t.Run("ValidateRequest - invalid request body", func(t *testing.T) {
+		requestBody := map[string]interface{}{
+			"name": "John Doe",
+			// Missing required email field
+		}
+
+		options := &ValidationOptions{}
+
+		report, err := discovery.ValidateRequest("createUser", nil, requestBody, options)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if report.Valid {
+			t.Error("Expected invalid request body but validation passed")
+		}
+
+		if report.RequestBodyError == nil {
+			t.Error("Expected request body error")
+		}
+
+		if report.RequestBodyError.Valid {
+			t.Error("Expected invalid request body")
+		}
+
+		if report.Guidance.BodyGuidance == "" {
+			t.Error("Expected body guidance")
+		}
+	})
+
+	t.Run("ValidateRequest - with skip options", func(t *testing.T) {
+		parameters := map[string]interface{}{
+			"limit": 200, // Would normally exceed maximum
+		}
+
+		options := &ValidationOptions{
+			SkipConstraints: true,
+		}
+
+		report, err := discovery.ValidateRequest("getUsers", parameters, nil, options)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if !report.Valid {
+			t.Errorf("Expected valid request with skip constraints, got errors: %+v", report)
+		}
+	})
+
+	t.Run("ValidateResponse - successful validation", func(t *testing.T) {
+		responseBody := map[string]interface{}{
+			"users": []interface{}{
+				map[string]interface{}{
+					"id":   1,
+					"name": "John",
+				},
+			},
+		}
+
+		result, err := discovery.ValidateResponse("getUsers", "200", responseBody)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		// Note: Our test spec does not define detailed response schemas,
+		// so this should pass as valid
+		if !result.Valid {
+			t.Errorf("Expected valid response, got errors: %v", result.Errors)
+		}
+	})
+
+	t.Run("ValidateResponse - invalid status code", func(t *testing.T) {
+		responseBody := map[string]interface{}{"error": "not found"}
+
+		result, err := discovery.ValidateResponse("getUsers", "500", responseBody)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		if result.Valid {
+			t.Error("Expected invalid response for undefined status code")
+		}
+
+		if len(result.Errors) == 0 {
+			t.Error("Expected response validation errors")
+		}
+	})
 }

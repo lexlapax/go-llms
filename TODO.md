@@ -69,12 +69,12 @@
         - [x] Add parameter schema extraction and validation rules
         - [x] Implement path-to-operation mapping
         - [x] Create operation discovery API for LLMs
-      - [ ] Day 3: Request Validation Integration
-        - [ ] Integrate parameter validation against OpenAPI schemas
-        - [ ] Add request body validation for POST/PUT operations
-        - [ ] Implement response schema validation (optional)
-        - [ ] Add validation error reporting with guidance
-        - [ ] Create validation bypass options for flexible usage
+      - [x] Day 3: Request Validation Integration
+        - [x] Integrate parameter validation against OpenAPI schemas
+        - [x] Add request body validation for POST/PUT operations
+        - [x] Implement response schema validation (optional)
+        - [x] Add validation error reporting with guidance
+        - [x] Create validation bypass options for flexible usage
       - [ ] Day 4: Public API Examples and Testing
         - [ ] Create examples using GitHub API OpenAPI spec
         - [ ] Create examples using PetStore API (canonical example)

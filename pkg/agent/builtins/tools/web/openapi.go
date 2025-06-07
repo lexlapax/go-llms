@@ -12,21 +12,21 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
-	
+
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 	"github.com/lexlapax/go-llms/pkg/schema/validation"
 )
 
 // OpenAPISpec represents the root OpenAPI specification document
 type OpenAPISpec struct {
-	OpenAPI    string                 `json:"openapi" yaml:"openapi"`
-	Info       InfoObject             `json:"info" yaml:"info"`
-	Servers    []ServerObject         `json:"servers,omitempty" yaml:"servers,omitempty"`
-	Paths      map[string]PathItem    `json:"paths" yaml:"paths"`
-	Components *ComponentsObject      `json:"components,omitempty" yaml:"components,omitempty"`
-	Security   []SecurityRequirement  `json:"security,omitempty" yaml:"security,omitempty"`
+	OpenAPI    string                `json:"openapi" yaml:"openapi"`
+	Info       InfoObject            `json:"info" yaml:"info"`
+	Servers    []ServerObject        `json:"servers,omitempty" yaml:"servers,omitempty"`
+	Paths      map[string]PathItem   `json:"paths" yaml:"paths"`
+	Components *ComponentsObject     `json:"components,omitempty" yaml:"components,omitempty"`
+	Security   []SecurityRequirement `json:"security,omitempty" yaml:"security,omitempty"`
 	Tags       []TagObject           `json:"tags,omitempty" yaml:"tags,omitempty"`
-	Webhooks   map[string]PathItem    `json:"webhooks,omitempty" yaml:"webhooks,omitempty"` // OpenAPI 3.1+
+	Webhooks   map[string]PathItem   `json:"webhooks,omitempty" yaml:"webhooks,omitempty"` // OpenAPI 3.1+
 }
 
 // InfoObject provides metadata about the API
@@ -68,49 +68,49 @@ type ServerVariable struct {
 
 // PathItem describes operations available on a single path
 type PathItem struct {
-	Ref         string     `json:"$ref,omitempty" yaml:"$ref,omitempty"`
-	Summary     string     `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description string     `json:"description,omitempty" yaml:"description,omitempty"`
-	Get         *Operation `json:"get,omitempty" yaml:"get,omitempty"`
-	Put         *Operation `json:"put,omitempty" yaml:"put,omitempty"`
-	Post        *Operation `json:"post,omitempty" yaml:"post,omitempty"`
-	Delete      *Operation `json:"delete,omitempty" yaml:"delete,omitempty"`
-	Options     *Operation `json:"options,omitempty" yaml:"options,omitempty"`
-	Head        *Operation `json:"head,omitempty" yaml:"head,omitempty"`
-	Patch       *Operation `json:"patch,omitempty" yaml:"patch,omitempty"`
-	Trace       *Operation `json:"trace,omitempty" yaml:"trace,omitempty"`
+	Ref         string         `json:"$ref,omitempty" yaml:"$ref,omitempty"`
+	Summary     string         `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string         `json:"description,omitempty" yaml:"description,omitempty"`
+	Get         *Operation     `json:"get,omitempty" yaml:"get,omitempty"`
+	Put         *Operation     `json:"put,omitempty" yaml:"put,omitempty"`
+	Post        *Operation     `json:"post,omitempty" yaml:"post,omitempty"`
+	Delete      *Operation     `json:"delete,omitempty" yaml:"delete,omitempty"`
+	Options     *Operation     `json:"options,omitempty" yaml:"options,omitempty"`
+	Head        *Operation     `json:"head,omitempty" yaml:"head,omitempty"`
+	Patch       *Operation     `json:"patch,omitempty" yaml:"patch,omitempty"`
+	Trace       *Operation     `json:"trace,omitempty" yaml:"trace,omitempty"`
 	Servers     []ServerObject `json:"servers,omitempty" yaml:"servers,omitempty"`
 	Parameters  []Parameter    `json:"parameters,omitempty" yaml:"parameters,omitempty"`
 }
 
 // Operation describes a single API operation
 type Operation struct {
-	Tags         []string              `json:"tags,omitempty" yaml:"tags,omitempty"`
-	Summary      string                `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description  string                `json:"description,omitempty" yaml:"description,omitempty"`
-	OperationID  string                `json:"operationId,omitempty" yaml:"operationId,omitempty"`
-	Parameters   []Parameter           `json:"parameters,omitempty" yaml:"parameters,omitempty"`
-	RequestBody  *RequestBody          `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
-	Responses    map[string]Response   `json:"responses" yaml:"responses"`
-	Callbacks    map[string]Callback   `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
-	Deprecated   bool                  `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
-	Security     []SecurityRequirement `json:"security,omitempty" yaml:"security,omitempty"`
-	Servers      []ServerObject        `json:"servers,omitempty" yaml:"servers,omitempty"`
+	Tags        []string              `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Summary     string                `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description string                `json:"description,omitempty" yaml:"description,omitempty"`
+	OperationID string                `json:"operationId,omitempty" yaml:"operationId,omitempty"`
+	Parameters  []Parameter           `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	RequestBody *RequestBody          `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
+	Responses   map[string]Response   `json:"responses" yaml:"responses"`
+	Callbacks   map[string]Callback   `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
+	Deprecated  bool                  `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
+	Security    []SecurityRequirement `json:"security,omitempty" yaml:"security,omitempty"`
+	Servers     []ServerObject        `json:"servers,omitempty" yaml:"servers,omitempty"`
 }
 
 // Parameter describes a single operation parameter
 type Parameter struct {
-	Name            string      `json:"name" yaml:"name"`
-	In              string      `json:"in" yaml:"in"` // "query", "header", "path", "cookie"
-	Description     string      `json:"description,omitempty" yaml:"description,omitempty"`
-	Required        bool        `json:"required,omitempty" yaml:"required,omitempty"`
-	Deprecated      bool        `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
-	AllowEmptyValue bool        `json:"allowEmptyValue,omitempty" yaml:"allowEmptyValue,omitempty"`
-	Style           string      `json:"style,omitempty" yaml:"style,omitempty"`
-	Explode         bool        `json:"explode,omitempty" yaml:"explode,omitempty"`
-	AllowReserved   bool        `json:"allowReserved,omitempty" yaml:"allowReserved,omitempty"`
-	Schema          *Schema     `json:"schema,omitempty" yaml:"schema,omitempty"`
-	Example         interface{} `json:"example,omitempty" yaml:"example,omitempty"`
+	Name            string             `json:"name" yaml:"name"`
+	In              string             `json:"in" yaml:"in"` // "query", "header", "path", "cookie"
+	Description     string             `json:"description,omitempty" yaml:"description,omitempty"`
+	Required        bool               `json:"required,omitempty" yaml:"required,omitempty"`
+	Deprecated      bool               `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
+	AllowEmptyValue bool               `json:"allowEmptyValue,omitempty" yaml:"allowEmptyValue,omitempty"`
+	Style           string             `json:"style,omitempty" yaml:"style,omitempty"`
+	Explode         bool               `json:"explode,omitempty" yaml:"explode,omitempty"`
+	AllowReserved   bool               `json:"allowReserved,omitempty" yaml:"allowReserved,omitempty"`
+	Schema          *Schema            `json:"schema,omitempty" yaml:"schema,omitempty"`
+	Example         interface{}        `json:"example,omitempty" yaml:"example,omitempty"`
 	Examples        map[string]Example `json:"examples,omitempty" yaml:"examples,omitempty"`
 }
 
@@ -123,17 +123,17 @@ type RequestBody struct {
 
 // Response describes a single response from an API operation
 type Response struct {
-	Description string                 `json:"description" yaml:"description"`
-	Headers     map[string]Header      `json:"headers,omitempty" yaml:"headers,omitempty"`
-	Content     map[string]MediaType   `json:"content,omitempty" yaml:"content,omitempty"`
-	Links       map[string]Link        `json:"links,omitempty" yaml:"links,omitempty"`
+	Description string               `json:"description" yaml:"description"`
+	Headers     map[string]Header    `json:"headers,omitempty" yaml:"headers,omitempty"`
+	Content     map[string]MediaType `json:"content,omitempty" yaml:"content,omitempty"`
+	Links       map[string]Link      `json:"links,omitempty" yaml:"links,omitempty"`
 }
 
 // MediaType provides schema and examples for a media type
 type MediaType struct {
-	Schema   *Schema            `json:"schema,omitempty" yaml:"schema,omitempty"`
-	Example  interface{}        `json:"example,omitempty" yaml:"example,omitempty"`
-	Examples map[string]Example `json:"examples,omitempty" yaml:"examples,omitempty"`
+	Schema   *Schema             `json:"schema,omitempty" yaml:"schema,omitempty"`
+	Example  interface{}         `json:"example,omitempty" yaml:"example,omitempty"`
+	Examples map[string]Example  `json:"examples,omitempty" yaml:"examples,omitempty"`
 	Encoding map[string]Encoding `json:"encoding,omitempty" yaml:"encoding,omitempty"`
 }
 
@@ -179,27 +179,27 @@ type Schema struct {
 
 // ComponentsObject holds a set of reusable objects for different aspects of the OAS
 type ComponentsObject struct {
-	Schemas         map[string]*Schema         `json:"schemas,omitempty" yaml:"schemas,omitempty"`
-	Responses       map[string]Response        `json:"responses,omitempty" yaml:"responses,omitempty"`
-	Parameters      map[string]Parameter       `json:"parameters,omitempty" yaml:"parameters,omitempty"`
-	Examples        map[string]Example         `json:"examples,omitempty" yaml:"examples,omitempty"`
-	RequestBodies   map[string]RequestBody     `json:"requestBodies,omitempty" yaml:"requestBodies,omitempty"`
-	Headers         map[string]Header          `json:"headers,omitempty" yaml:"headers,omitempty"`
-	SecuritySchemes map[string]SecurityScheme  `json:"securitySchemes,omitempty" yaml:"securitySchemes,omitempty"`
-	Links           map[string]Link            `json:"links,omitempty" yaml:"links,omitempty"`
-	Callbacks       map[string]Callback        `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
+	Schemas         map[string]*Schema        `json:"schemas,omitempty" yaml:"schemas,omitempty"`
+	Responses       map[string]Response       `json:"responses,omitempty" yaml:"responses,omitempty"`
+	Parameters      map[string]Parameter      `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	Examples        map[string]Example        `json:"examples,omitempty" yaml:"examples,omitempty"`
+	RequestBodies   map[string]RequestBody    `json:"requestBodies,omitempty" yaml:"requestBodies,omitempty"`
+	Headers         map[string]Header         `json:"headers,omitempty" yaml:"headers,omitempty"`
+	SecuritySchemes map[string]SecurityScheme `json:"securitySchemes,omitempty" yaml:"securitySchemes,omitempty"`
+	Links           map[string]Link           `json:"links,omitempty" yaml:"links,omitempty"`
+	Callbacks       map[string]Callback       `json:"callbacks,omitempty" yaml:"callbacks,omitempty"`
 }
 
 // SecurityScheme defines a security scheme
 type SecurityScheme struct {
-	Type             string            `json:"type" yaml:"type"`
-	Description      string            `json:"description,omitempty" yaml:"description,omitempty"`
-	Name             string            `json:"name,omitempty" yaml:"name,omitempty"`
-	In               string            `json:"in,omitempty" yaml:"in,omitempty"`
-	Scheme           string            `json:"scheme,omitempty" yaml:"scheme,omitempty"`
-	BearerFormat     string            `json:"bearerFormat,omitempty" yaml:"bearerFormat,omitempty"`
-	Flows            *OAuthFlows       `json:"flows,omitempty" yaml:"flows,omitempty"`
-	OpenIDConnectURL string            `json:"openIdConnectUrl,omitempty" yaml:"openIdConnectUrl,omitempty"`
+	Type             string      `json:"type" yaml:"type"`
+	Description      string      `json:"description,omitempty" yaml:"description,omitempty"`
+	Name             string      `json:"name,omitempty" yaml:"name,omitempty"`
+	In               string      `json:"in,omitempty" yaml:"in,omitempty"`
+	Scheme           string      `json:"scheme,omitempty" yaml:"scheme,omitempty"`
+	BearerFormat     string      `json:"bearerFormat,omitempty" yaml:"bearerFormat,omitempty"`
+	Flows            *OAuthFlows `json:"flows,omitempty" yaml:"flows,omitempty"`
+	OpenIDConnectURL string      `json:"openIdConnectUrl,omitempty" yaml:"openIdConnectUrl,omitempty"`
 }
 
 // SecurityRequirement lists the required security schemes
@@ -220,15 +220,15 @@ type Example struct {
 }
 
 type Header struct {
-	Description     string      `json:"description,omitempty" yaml:"description,omitempty"`
-	Required        bool        `json:"required,omitempty" yaml:"required,omitempty"`
-	Deprecated      bool        `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
-	AllowEmptyValue bool        `json:"allowEmptyValue,omitempty" yaml:"allowEmptyValue,omitempty"`
-	Style           string      `json:"style,omitempty" yaml:"style,omitempty"`
-	Explode         bool        `json:"explode,omitempty" yaml:"explode,omitempty"`
-	AllowReserved   bool        `json:"allowReserved,omitempty" yaml:"allowReserved,omitempty"`
-	Schema          *Schema     `json:"schema,omitempty" yaml:"schema,omitempty"`
-	Example         interface{} `json:"example,omitempty" yaml:"example,omitempty"`
+	Description     string             `json:"description,omitempty" yaml:"description,omitempty"`
+	Required        bool               `json:"required,omitempty" yaml:"required,omitempty"`
+	Deprecated      bool               `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
+	AllowEmptyValue bool               `json:"allowEmptyValue,omitempty" yaml:"allowEmptyValue,omitempty"`
+	Style           string             `json:"style,omitempty" yaml:"style,omitempty"`
+	Explode         bool               `json:"explode,omitempty" yaml:"explode,omitempty"`
+	AllowReserved   bool               `json:"allowReserved,omitempty" yaml:"allowReserved,omitempty"`
+	Schema          *Schema            `json:"schema,omitempty" yaml:"schema,omitempty"`
+	Example         interface{}        `json:"example,omitempty" yaml:"example,omitempty"`
 	Examples        map[string]Example `json:"examples,omitempty" yaml:"examples,omitempty"`
 }
 
@@ -447,7 +447,7 @@ func NewOperationDiscovery(spec *OpenAPISpec) *OperationDiscovery {
 	// Note: Coercion can interfere with constraint validation for numbers/integers
 	// as it may transform values in ways that bypass min/max checks
 	validator := validation.NewValidator()
-	
+
 	return &OperationDiscovery{
 		spec:      spec,
 		validator: validator,
@@ -485,83 +485,83 @@ func (od *OperationDiscovery) EnumerateOperations() []EnhancedOperationInfo {
 // EnhancedOperationInfo provides comprehensive operation metadata for LLM consumption
 type EnhancedOperationInfo struct {
 	// Basic Info
-	Path        string `json:"path"`
-	Method      string `json:"method"`
-	OperationID string `json:"operationId,omitempty"`
-	Summary     string `json:"summary,omitempty"`
-	Description string `json:"description,omitempty"`
+	Path        string   `json:"path"`
+	Method      string   `json:"method"`
+	OperationID string   `json:"operationId,omitempty"`
+	Summary     string   `json:"summary,omitempty"`
+	Description string   `json:"description,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
-	Deprecated  bool   `json:"deprecated,omitempty"`
+	Deprecated  bool     `json:"deprecated,omitempty"`
 
 	// Parameters
 	PathParameters   []ParameterInfo `json:"pathParameters,omitempty"`
 	QueryParameters  []ParameterInfo `json:"queryParameters,omitempty"`
 	HeaderParameters []ParameterInfo `json:"headerParameters,omitempty"`
 	CookieParameters []ParameterInfo `json:"cookieParameters,omitempty"`
-	
+
 	// Request Body
 	RequestBodyInfo *RequestBodyInfo `json:"requestBody,omitempty"`
-	
+
 	// Responses
 	ResponseInfo map[string]ResponseInfo `json:"responses,omitempty"`
-	
+
 	// Security
-	SecurityRequirements []SecurityRequirement `json:"security,omitempty"`
-	AuthenticationMethods []string             `json:"authenticationMethods,omitempty"`
-	
+	SecurityRequirements  []SecurityRequirement `json:"security,omitempty"`
+	AuthenticationMethods []string              `json:"authenticationMethods,omitempty"`
+
 	// Server Info
 	ServerURLs []string `json:"serverUrls,omitempty"`
-	
+
 	// LLM Guidance
 	LLMGuidance OperationGuidance `json:"llmGuidance"`
 }
 
 // ParameterInfo provides detailed parameter information
 type ParameterInfo struct {
-	Name        string      `json:"name"`
-	In          string      `json:"in"`
-	Description string      `json:"description,omitempty"`
-	Required    bool        `json:"required"`
-	Deprecated  bool        `json:"deprecated,omitempty"`
-	Schema      SchemaInfo  `json:"schema,omitempty"`
-	Example     interface{} `json:"example,omitempty"`
+	Name        string                 `json:"name"`
+	In          string                 `json:"in"`
+	Description string                 `json:"description,omitempty"`
+	Required    bool                   `json:"required"`
+	Deprecated  bool                   `json:"deprecated,omitempty"`
+	Schema      SchemaInfo             `json:"schema,omitempty"`
+	Example     interface{}            `json:"example,omitempty"`
 	Examples    map[string]ExampleInfo `json:"examples,omitempty"`
 }
 
 // SchemaInfo provides simplified schema information for LLMs
 type SchemaInfo struct {
-	Type        string                 `json:"type,omitempty"`
-	Format      string                 `json:"format,omitempty"`
-	Description string                 `json:"description,omitempty"`
-	Enum        []interface{}          `json:"enum,omitempty"`
-	Default     interface{}            `json:"default,omitempty"`
-	Example     interface{}            `json:"example,omitempty"`
-	Minimum     *float64               `json:"minimum,omitempty"`
-	Maximum     *float64               `json:"maximum,omitempty"`
-	MinLength   *int                   `json:"minLength,omitempty"`
-	MaxLength   *int                   `json:"maxLength,omitempty"`
-	Pattern     string                 `json:"pattern,omitempty"`
-	Properties  map[string]SchemaInfo  `json:"properties,omitempty"`
-	Items       *SchemaInfo            `json:"items,omitempty"`
-	Required    []string               `json:"required,omitempty"`
+	Type        string                `json:"type,omitempty"`
+	Format      string                `json:"format,omitempty"`
+	Description string                `json:"description,omitempty"`
+	Enum        []interface{}         `json:"enum,omitempty"`
+	Default     interface{}           `json:"default,omitempty"`
+	Example     interface{}           `json:"example,omitempty"`
+	Minimum     *float64              `json:"minimum,omitempty"`
+	Maximum     *float64              `json:"maximum,omitempty"`
+	MinLength   *int                  `json:"minLength,omitempty"`
+	MaxLength   *int                  `json:"maxLength,omitempty"`
+	Pattern     string                `json:"pattern,omitempty"`
+	Properties  map[string]SchemaInfo `json:"properties,omitempty"`
+	Items       *SchemaInfo           `json:"items,omitempty"`
+	Required    []string              `json:"required,omitempty"`
 }
 
 // RequestBodyInfo provides request body metadata
 type RequestBodyInfo struct {
-	Description  string                    `json:"description,omitempty"`
-	Required     bool                      `json:"required"`
-	ContentTypes []string                  `json:"contentTypes"`
-	Schema       SchemaInfo                `json:"schema,omitempty"`
-	Examples     map[string]ExampleInfo    `json:"examples,omitempty"`
+	Description  string                 `json:"description,omitempty"`
+	Required     bool                   `json:"required"`
+	ContentTypes []string               `json:"contentTypes"`
+	Schema       SchemaInfo             `json:"schema,omitempty"`
+	Examples     map[string]ExampleInfo `json:"examples,omitempty"`
 }
 
 // ResponseInfo provides response metadata
 type ResponseInfo struct {
-	Description  string                    `json:"description"`
-	ContentTypes []string                  `json:"contentTypes,omitempty"`
-	Schema       SchemaInfo                `json:"schema,omitempty"`
-	Headers      map[string]ParameterInfo  `json:"headers,omitempty"`
-	Examples     map[string]ExampleInfo    `json:"examples,omitempty"`
+	Description  string                   `json:"description"`
+	ContentTypes []string                 `json:"contentTypes,omitempty"`
+	Schema       SchemaInfo               `json:"schema,omitempty"`
+	Headers      map[string]ParameterInfo `json:"headers,omitempty"`
+	Examples     map[string]ExampleInfo   `json:"examples,omitempty"`
 }
 
 // ExampleInfo provides example metadata
@@ -573,34 +573,34 @@ type ExampleInfo struct {
 
 // OperationGuidance provides LLM-specific guidance for using the operation
 type OperationGuidance struct {
-	UsageInstructions string            `json:"usageInstructions"`
-	ParameterGuidance map[string]string `json:"parameterGuidance,omitempty"`
-	ErrorGuidance     map[string]string `json:"errorGuidance,omitempty"`
+	UsageInstructions string             `json:"usageInstructions"`
+	ParameterGuidance map[string]string  `json:"parameterGuidance,omitempty"`
+	ErrorGuidance     map[string]string  `json:"errorGuidance,omitempty"`
 	Examples          []OperationExample `json:"examples,omitempty"`
-	Constraints       []string          `json:"constraints,omitempty"`
+	Constraints       []string           `json:"constraints,omitempty"`
 }
 
 // OperationExample provides usage examples for LLMs
 type OperationExample struct {
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Parameters  map[string]interface{} `json:"parameters,omitempty"`
-	RequestBody interface{}            `json:"requestBody,omitempty"`
-	ExpectedResponse string            `json:"expectedResponse,omitempty"`
+	Name             string                 `json:"name"`
+	Description      string                 `json:"description"`
+	Parameters       map[string]interface{} `json:"parameters,omitempty"`
+	RequestBody      interface{}            `json:"requestBody,omitempty"`
+	ExpectedResponse string                 `json:"expectedResponse,omitempty"`
 }
 
 // extractOperationMetadata extracts comprehensive metadata from an operation
 func (od *OperationDiscovery) extractOperationMetadata(path, method string, operation *Operation, pathItem PathItem) EnhancedOperationInfo {
 	info := EnhancedOperationInfo{
-		Path:        path,
-		Method:      method,
-		OperationID: operation.OperationID,
-		Summary:     operation.Summary,
-		Description: operation.Description,
-		Tags:        operation.Tags,
-		Deprecated:  operation.Deprecated,
+		Path:                 path,
+		Method:               method,
+		OperationID:          operation.OperationID,
+		Summary:              operation.Summary,
+		Description:          operation.Description,
+		Tags:                 operation.Tags,
+		Deprecated:           operation.Deprecated,
 		SecurityRequirements: operation.Security,
-		ResponseInfo: make(map[string]ResponseInfo),
+		ResponseInfo:         make(map[string]ResponseInfo),
 	}
 
 	// Extract parameters by type
@@ -723,7 +723,7 @@ func (od *OperationDiscovery) convertRequestBody(reqBody RequestBody) *RequestBo
 		if mediaType.Schema != nil {
 			info.Schema = od.convertSchema(*mediaType.Schema)
 		}
-		
+
 		// Extract examples
 		for name, example := range mediaType.Examples {
 			info.Examples[name] = ExampleInfo{
@@ -756,7 +756,7 @@ func (od *OperationDiscovery) convertResponse(response Response) ResponseInfo {
 		if mediaType.Schema != nil {
 			info.Schema = od.convertSchema(*mediaType.Schema)
 		}
-		
+
 		// Extract examples
 		for name, example := range mediaType.Examples {
 			info.Examples[name] = ExampleInfo{
@@ -884,7 +884,7 @@ func (od *OperationDiscovery) generateUsageInstructions(info EnhancedOperationIn
 	var instructions strings.Builder
 
 	instructions.WriteString(fmt.Sprintf("Use this %s operation to %s", info.Method, strings.ToLower(info.Summary)))
-	
+
 	if info.Description != "" {
 		instructions.WriteString(fmt.Sprintf(". %s", info.Description))
 	}
@@ -995,7 +995,7 @@ func (od *OperationDiscovery) generateConstraints(info EnhancedOperationInfo) []
 			requiredParams++
 		}
 	}
-	
+
 	if requiredParams > 0 {
 		constraints = append(constraints, fmt.Sprintf("%d required parameters must be provided", requiredParams))
 	}
@@ -1129,7 +1129,7 @@ func (od *OperationDiscovery) FindOperationByID(operationID string) *EnhancedOpe
 func (od *OperationDiscovery) FindOperationsByTag(tag string) []EnhancedOperationInfo {
 	var results []EnhancedOperationInfo
 	operations := od.EnumerateOperations()
-	
+
 	for _, op := range operations {
 		for _, opTag := range op.Tags {
 			if opTag == tag {
@@ -1138,7 +1138,7 @@ func (od *OperationDiscovery) FindOperationsByTag(tag string) []EnhancedOperatio
 			}
 		}
 	}
-	
+
 	return results
 }
 
@@ -1146,13 +1146,13 @@ func (od *OperationDiscovery) FindOperationsByTag(tag string) []EnhancedOperatio
 func (od *OperationDiscovery) FindOperationsByPath(pathPattern string) []EnhancedOperationInfo {
 	var results []EnhancedOperationInfo
 	operations := od.EnumerateOperations()
-	
+
 	for _, op := range operations {
 		if strings.Contains(op.Path, pathPattern) {
 			results = append(results, op)
 		}
 	}
-	
+
 	return results
 }
 
@@ -1160,12 +1160,12 @@ func (od *OperationDiscovery) FindOperationsByPath(pathPattern string) []Enhance
 func (od *OperationDiscovery) GetPathToOperationMap() map[string]EnhancedOperationInfo {
 	operations := od.EnumerateOperations()
 	mapping := make(map[string]EnhancedOperationInfo)
-	
+
 	for _, op := range operations {
 		key := fmt.Sprintf("%s %s", op.Method, op.Path)
 		mapping[key] = op
 	}
-	
+
 	return mapping
 }
 
@@ -1176,7 +1176,7 @@ func (od *OperationDiscovery) convertToValidationSchema(schema Schema) *sdomain.
 		Description: schema.Description,
 		Title:       schema.Title,
 	}
-	
+
 	// Convert properties
 	if schema.Properties != nil {
 		result.Properties = make(map[string]sdomain.Property)
@@ -1186,10 +1186,10 @@ func (od *OperationDiscovery) convertToValidationSchema(schema Schema) *sdomain.
 			}
 		}
 	}
-	
+
 	// Convert required fields
 	result.Required = schema.Required
-	
+
 	// Convert conditional schemas
 	if schema.AllOf != nil {
 		result.AllOf = make([]*sdomain.Schema, len(schema.AllOf))
@@ -1199,7 +1199,7 @@ func (od *OperationDiscovery) convertToValidationSchema(schema Schema) *sdomain.
 			}
 		}
 	}
-	
+
 	if schema.AnyOf != nil {
 		result.AnyOf = make([]*sdomain.Schema, len(schema.AnyOf))
 		for i, subSchema := range schema.AnyOf {
@@ -1208,7 +1208,7 @@ func (od *OperationDiscovery) convertToValidationSchema(schema Schema) *sdomain.
 			}
 		}
 	}
-	
+
 	if schema.OneOf != nil {
 		result.OneOf = make([]*sdomain.Schema, len(schema.OneOf))
 		for i, subSchema := range schema.OneOf {
@@ -1217,31 +1217,31 @@ func (od *OperationDiscovery) convertToValidationSchema(schema Schema) *sdomain.
 			}
 		}
 	}
-	
+
 	if schema.Not != nil {
 		result.Not = od.convertToValidationSchema(*schema.Not)
 	}
-	
+
 	return result
 }
 
 // convertToValidationProperty converts OpenAPI Schema to schema domain Property for validation
 func (od *OperationDiscovery) convertToValidationProperty(schema Schema) sdomain.Property {
 	prop := sdomain.Property{
-		Type:        schema.Type,
-		Format:      schema.Format,
-		Description: schema.Description,
-		Minimum:     schema.Minimum,
-		Maximum:     schema.Maximum,
+		Type:             schema.Type,
+		Format:           schema.Format,
+		Description:      schema.Description,
+		Minimum:          schema.Minimum,
+		Maximum:          schema.Maximum,
 		ExclusiveMinimum: schema.ExclusiveMinimum,
 		ExclusiveMaximum: schema.ExclusiveMaximum,
-		MinLength:   schema.MinLength,
-		MaxLength:   schema.MaxLength,
-		MinItems:    schema.MinItems,
-		MaxItems:    schema.MaxItems,
-		Pattern:     schema.Pattern,
+		MinLength:        schema.MinLength,
+		MaxLength:        schema.MaxLength,
+		MinItems:         schema.MinItems,
+		MaxItems:         schema.MaxItems,
+		Pattern:          schema.Pattern,
 	}
-	
+
 	// Convert enum values to strings
 	if schema.Enum != nil {
 		prop.Enum = make([]string, len(schema.Enum))
@@ -1249,22 +1249,22 @@ func (od *OperationDiscovery) convertToValidationProperty(schema Schema) sdomain
 			prop.Enum[i] = fmt.Sprintf("%v", enumVal)
 		}
 	}
-	
+
 	// Convert unique items
 	if schema.UniqueItems {
 		uniqueItems := true
 		prop.UniqueItems = &uniqueItems
 	}
-	
+
 	// Convert required fields
 	prop.Required = schema.Required
-	
+
 	// Convert items schema for arrays
 	if schema.Items != nil {
 		itemProp := od.convertToValidationProperty(*schema.Items)
 		prop.Items = &itemProp
 	}
-	
+
 	// Convert nested properties for objects
 	if schema.Properties != nil {
 		prop.Properties = make(map[string]sdomain.Property)
@@ -1274,7 +1274,7 @@ func (od *OperationDiscovery) convertToValidationProperty(schema Schema) sdomain
 			}
 		}
 	}
-	
+
 	// Convert conditional schemas
 	if schema.AnyOf != nil {
 		prop.AnyOf = make([]*sdomain.Schema, len(schema.AnyOf))
@@ -1284,7 +1284,7 @@ func (od *OperationDiscovery) convertToValidationProperty(schema Schema) sdomain
 			}
 		}
 	}
-	
+
 	if schema.OneOf != nil {
 		prop.OneOf = make([]*sdomain.Schema, len(schema.OneOf))
 		for i, subSchema := range schema.OneOf {
@@ -1293,11 +1293,11 @@ func (od *OperationDiscovery) convertToValidationProperty(schema Schema) sdomain
 			}
 		}
 	}
-	
+
 	if schema.Not != nil {
 		prop.Not = od.convertToValidationSchema(*schema.Not)
 	}
-	
+
 	return prop
 }
 
@@ -1308,21 +1308,21 @@ func (od *OperationDiscovery) ValidateRequestBody(operationID string, requestBod
 	if op == nil {
 		return nil, fmt.Errorf("operation with ID '%s' not found", operationID)
 	}
-	
+
 	// Check if operation has a request body
 	if op.RequestBodyInfo == nil {
 		return &sdomain.ValidationResult{Valid: true}, nil
 	}
-	
+
 	// Convert the request body to JSON for validation
 	requestBodyJSON, err := json.Marshal(requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request body: %w", err)
 	}
-	
+
 	// Convert OpenAPI schema to validation schema
 	validationSchema := od.convertSchemaInfoToValidationSchema(op.RequestBodyInfo.Schema)
-	
+
 	// Validate using the schema validator
 	return od.validator.Validate(validationSchema, string(requestBodyJSON))
 }
@@ -1334,15 +1334,15 @@ func (od *OperationDiscovery) ValidateParameters(operationID string, parameters 
 	if op == nil {
 		return nil, fmt.Errorf("operation with ID '%s' not found", operationID)
 	}
-	
+
 	results := make(map[string]*sdomain.ValidationResult)
-	
+
 	// Validate all parameter types
 	allParams := append(append(append(op.PathParameters, op.QueryParameters...), op.HeaderParameters...), op.CookieParameters...)
-	
+
 	for _, param := range allParams {
 		value, exists := parameters[param.Name]
-		
+
 		// Check required parameters
 		if param.Required && !exists {
 			results[param.Name] = &sdomain.ValidationResult{
@@ -1351,19 +1351,19 @@ func (od *OperationDiscovery) ValidateParameters(operationID string, parameters 
 			}
 			continue
 		}
-		
+
 		// Skip validation for optional missing parameters
 		if !exists {
 			results[param.Name] = &sdomain.ValidationResult{Valid: true}
 			continue
 		}
-		
+
 		// For parameter validation, we need to create an object with the parameter as a property
 		// This is because the validator is designed to validate objects with properties
 		parameterObject := map[string]interface{}{
 			param.Name: value,
 		}
-		
+
 		// Convert to JSON for validation
 		objectJSON, err := json.Marshal(parameterObject)
 		if err != nil {
@@ -1373,7 +1373,7 @@ func (od *OperationDiscovery) ValidateParameters(operationID string, parameters 
 			}
 			continue
 		}
-		
+
 		// Create validation schema with the parameter as a property
 		paramProperty := od.convertSchemaInfoToValidationProperty(param.Schema)
 		validationSchema := &sdomain.Schema{
@@ -1382,12 +1382,12 @@ func (od *OperationDiscovery) ValidateParameters(operationID string, parameters 
 				param.Name: paramProperty,
 			},
 		}
-		
+
 		// Add required constraint if parameter is required
 		if param.Required {
 			validationSchema.Required = []string{param.Name}
 		}
-		
+
 		// Validate the parameter object
 		result, err := od.validator.Validate(validationSchema, string(objectJSON))
 		if err != nil {
@@ -1397,10 +1397,10 @@ func (od *OperationDiscovery) ValidateParameters(operationID string, parameters 
 			}
 			continue
 		}
-		
+
 		results[param.Name] = result
 	}
-	
+
 	return results, nil
 }
 
@@ -1411,7 +1411,7 @@ func (od *OperationDiscovery) convertSchemaInfoToValidationSchema(schemaInfo Sch
 		Description: schemaInfo.Description,
 		Required:    schemaInfo.Required,
 	}
-	
+
 	// Convert properties if present
 	if schemaInfo.Properties != nil {
 		result.Properties = make(map[string]sdomain.Property)
@@ -1419,7 +1419,7 @@ func (od *OperationDiscovery) convertSchemaInfoToValidationSchema(schemaInfo Sch
 			result.Properties[name] = od.convertSchemaInfoToValidationProperty(prop)
 		}
 	}
-	
+
 	return result
 }
 
@@ -1436,7 +1436,7 @@ func (od *OperationDiscovery) convertSchemaInfoToValidationProperty(schemaInfo S
 		Pattern:     schemaInfo.Pattern,
 		Required:    schemaInfo.Required,
 	}
-	
+
 	// Convert enum values
 	if schemaInfo.Enum != nil {
 		prop.Enum = make([]string, len(schemaInfo.Enum))
@@ -1444,13 +1444,13 @@ func (od *OperationDiscovery) convertSchemaInfoToValidationProperty(schemaInfo S
 			prop.Enum[i] = fmt.Sprintf("%v", enumVal)
 		}
 	}
-	
+
 	// Convert items for arrays
 	if schemaInfo.Items != nil {
 		itemProp := od.convertSchemaInfoToValidationProperty(*schemaInfo.Items)
 		prop.Items = &itemProp
 	}
-	
+
 	// Convert nested properties for objects
 	if schemaInfo.Properties != nil {
 		prop.Properties = make(map[string]sdomain.Property)
@@ -1458,7 +1458,7 @@ func (od *OperationDiscovery) convertSchemaInfoToValidationProperty(schemaInfo S
 			prop.Properties[name] = od.convertSchemaInfoToValidationProperty(nestedSchema)
 		}
 	}
-	
+
 	return prop
 }
 
@@ -1469,21 +1469,21 @@ func (od *OperationDiscovery) OptimizeSchema(operationID string) error {
 	if op == nil {
 		return fmt.Errorf("operation with ID '%s' not found", operationID)
 	}
-	
+
 	// Apply schema optimizations using coercion and validation
 	// This is a placeholder for more advanced optimizations
-	
+
 	// Optimize request body schema
 	if op.RequestBodyInfo != nil {
 		od.optimizeSchemaInfo(&op.RequestBodyInfo.Schema)
 	}
-	
+
 	// Optimize parameter schemas
 	allParams := append(append(append(op.PathParameters, op.QueryParameters...), op.HeaderParameters...), op.CookieParameters...)
 	for i := range allParams {
 		od.optimizeSchemaInfo(&allParams[i].Schema)
 	}
-	
+
 	return nil
 }
 
@@ -1503,7 +1503,7 @@ func (od *OperationDiscovery) optimizeSchemaInfo(schema *SchemaInfo) {
 			schema.Type = "number"
 		}
 	}
-	
+
 	// Optimize enum constraints
 	if len(schema.Enum) > 0 && schema.Type == "" {
 		// Infer type from enum values
@@ -1518,7 +1518,7 @@ func (od *OperationDiscovery) optimizeSchemaInfo(schema *SchemaInfo) {
 			}
 		}
 	}
-	
+
 	// Recursively optimize nested schemas
 	if schema.Properties != nil {
 		for name := range schema.Properties {
@@ -1527,7 +1527,7 @@ func (od *OperationDiscovery) optimizeSchemaInfo(schema *SchemaInfo) {
 			schema.Properties[name] = prop
 		}
 	}
-	
+
 	if schema.Items != nil {
 		od.optimizeSchemaInfo(schema.Items)
 	}
@@ -1540,6 +1540,529 @@ func (od *OperationDiscovery) CoerceParameterValue(param ParameterInfo, value in
 	if !coerced {
 		return value, fmt.Errorf("failed to coerce value %v to type %s", value, param.Schema.Type)
 	}
-	
+
 	return coercedValue, nil
+}
+
+// ValidationOptions controls validation behavior for requests
+type ValidationOptions struct {
+	SkipRequired      bool `json:"skip_required,omitempty"`       // Skip required field validation
+	SkipConstraints   bool `json:"skip_constraints,omitempty"`   // Skip min/max/pattern constraints
+	SkipTypeChecking  bool `json:"skip_type_checking,omitempty"`  // Skip type validation
+	AllowCoercion     bool `json:"allow_coercion,omitempty"`     // Allow type coercion
+	StrictValidation  bool `json:"strict_validation,omitempty"`  // Strict mode (all validations)
+}
+
+// ValidationReport provides comprehensive validation results with guidance
+type ValidationReport struct {
+	Valid           bool                        `json:"valid"`
+	OperationID     string                      `json:"operation_id"`
+	ParameterErrors map[string]ValidationResult `json:"parameter_errors,omitempty"`
+	RequestBodyError *ValidationResult          `json:"request_body_error,omitempty"`
+	Guidance        ValidationGuidance          `json:"guidance"`
+	Suggestions     []string                    `json:"suggestions,omitempty"`
+}
+
+// ValidationResult provides detailed validation result information
+type ValidationResult struct {
+	Valid       bool     `json:"valid"`
+	Errors      []string `json:"errors,omitempty"`
+	Warnings    []string `json:"warnings,omitempty"`
+	FieldPath   string   `json:"field_path,omitempty"`
+	ExpectedType string  `json:"expected_type,omitempty"`
+	ActualValue  string  `json:"actual_value,omitempty"`
+	Constraints  string  `json:"constraints,omitempty"`
+}
+
+// ValidationGuidance provides actionable guidance for validation errors
+type ValidationGuidance struct {
+	Summary           string            `json:"summary"`
+	ParameterGuidance map[string]string `json:"parameter_guidance,omitempty"`
+	BodyGuidance      string            `json:"body_guidance,omitempty"`
+	Examples          []string          `json:"examples,omitempty"`
+	DocumentationURL  string            `json:"documentation_url,omitempty"`
+}
+
+// ValidateRequest performs comprehensive request validation with detailed reporting
+func (od *OperationDiscovery) ValidateRequest(operationID string, parameters map[string]interface{}, requestBody interface{}, options *ValidationOptions) (*ValidationReport, error) {
+	// Find the operation
+	op := od.FindOperationByID(operationID)
+	if op == nil {
+		return nil, fmt.Errorf("operation with ID '%s' not found", operationID)
+	}
+
+	// Apply defaults to options
+	if options == nil {
+		options = &ValidationOptions{}
+	}
+
+	report := &ValidationReport{
+		Valid:           true,
+		OperationID:     operationID,
+		ParameterErrors: make(map[string]ValidationResult),
+		Guidance: ValidationGuidance{
+			ParameterGuidance: make(map[string]string),
+		},
+	}
+
+	// Validate parameters
+	if !options.SkipRequired || !options.SkipConstraints || !options.SkipTypeChecking {
+		paramResults, err := od.ValidateParametersEnhanced(operationID, parameters, options)
+		if err != nil {
+			return nil, fmt.Errorf("parameter validation error: %w", err)
+		}
+
+		for paramName, result := range paramResults {
+			if !result.Valid {
+				report.Valid = false
+				report.ParameterErrors[paramName] = ValidationResult{
+					Valid:        false,
+					Errors:       result.Errors,
+					FieldPath:    paramName,
+					ExpectedType: od.getParameterType(op, paramName),
+					ActualValue:  fmt.Sprintf("%v", parameters[paramName]),
+					Constraints:  od.getParameterConstraints(op, paramName),
+				}
+				report.Guidance.ParameterGuidance[paramName] = od.generateParameterErrorGuidance(op, paramName, result.Errors)
+			}
+		}
+	}
+
+	// Validate request body
+	if requestBody != nil && !options.SkipTypeChecking {
+		bodyResult, err := od.ValidateRequestBodyEnhanced(operationID, requestBody, options)
+		if err != nil {
+			return nil, fmt.Errorf("request body validation error: %w", err)
+		}
+
+		if !bodyResult.Valid {
+			report.Valid = false
+			report.RequestBodyError = &ValidationResult{
+				Valid:       false,
+				Errors:      bodyResult.Errors,
+				FieldPath:   "requestBody",
+				Constraints: "Must match operation schema",
+			}
+			report.Guidance.BodyGuidance = od.generateRequestBodyErrorGuidance(op, bodyResult.Errors)
+		}
+	}
+
+	// Generate overall guidance
+	report.Guidance.Summary = od.generateValidationSummary(report)
+	report.Suggestions = od.generateValidationSuggestions(report, op)
+
+	return report, nil
+}
+
+// ValidateParametersEnhanced provides enhanced parameter validation with detailed error reporting
+func (od *OperationDiscovery) ValidateParametersEnhanced(operationID string, parameters map[string]interface{}, options *ValidationOptions) (map[string]*sdomain.ValidationResult, error) {
+	// Find the operation
+	op := od.FindOperationByID(operationID)
+	if op == nil {
+		return nil, fmt.Errorf("operation with ID '%s' not found", operationID)
+	}
+
+	results := make(map[string]*sdomain.ValidationResult)
+
+	// Validate all parameter types
+	allParams := append(append(append(op.PathParameters, op.QueryParameters...), op.HeaderParameters...), op.CookieParameters...)
+
+	for _, param := range allParams {
+		value, exists := parameters[param.Name]
+
+		// Check required parameters (unless skipped)
+		if !options.SkipRequired && param.Required && !exists {
+			results[param.Name] = &sdomain.ValidationResult{
+				Valid:  false,
+				Errors: []string{fmt.Sprintf("required parameter '%s' is missing", param.Name)},
+			}
+			continue
+		}
+
+		// Skip validation for optional missing parameters
+		if !exists {
+			results[param.Name] = &sdomain.ValidationResult{Valid: true}
+			continue
+		}
+
+		// Apply coercion if allowed
+		if options.AllowCoercion {
+			if coercedValue, err := od.CoerceParameterValue(param, value); err == nil {
+				value = coercedValue
+				parameters[param.Name] = value // Update the original map
+			}
+		}
+
+		// Skip type checking if requested
+		if options.SkipTypeChecking {
+			results[param.Name] = &sdomain.ValidationResult{Valid: true}
+			continue
+		}
+
+		// Create parameter object for validation
+		parameterObject := map[string]interface{}{
+			param.Name: value,
+		}
+
+		// Convert to JSON for validation
+		objectJSON, err := json.Marshal(parameterObject)
+		if err != nil {
+			results[param.Name] = &sdomain.ValidationResult{
+				Valid:  false,
+				Errors: []string{fmt.Sprintf("failed to marshal parameter object: %v", err)},
+			}
+			continue
+		}
+
+		// Create validation schema with the parameter as a property
+		paramProperty := od.convertSchemaInfoToValidationProperty(param.Schema)
+		
+		// Skip constraints if requested
+		if options.SkipConstraints {
+			paramProperty.Minimum = nil
+			paramProperty.Maximum = nil
+			paramProperty.MinLength = nil
+			paramProperty.MaxLength = nil
+			paramProperty.Pattern = ""
+		}
+
+		validationSchema := &sdomain.Schema{
+			Type: "object",
+			Properties: map[string]sdomain.Property{
+				param.Name: paramProperty,
+			},
+		}
+
+		// Add required constraint if parameter is required and not skipped
+		if !options.SkipRequired && param.Required {
+			validationSchema.Required = []string{param.Name}
+		}
+
+		// Validate the parameter object
+		result, err := od.validator.Validate(validationSchema, string(objectJSON))
+		if err != nil {
+			results[param.Name] = &sdomain.ValidationResult{
+				Valid:  false,
+				Errors: []string{fmt.Sprintf("validation error: %v", err)},
+			}
+			continue
+		}
+
+		results[param.Name] = result
+	}
+
+	return results, nil
+}
+
+// ValidateRequestBodyEnhanced provides enhanced request body validation
+func (od *OperationDiscovery) ValidateRequestBodyEnhanced(operationID string, requestBody interface{}, options *ValidationOptions) (*sdomain.ValidationResult, error) {
+	// Find the operation
+	op := od.FindOperationByID(operationID)
+	if op == nil {
+		return nil, fmt.Errorf("operation with ID '%s' not found", operationID)
+	}
+
+	// Check if operation has a request body
+	if op.RequestBodyInfo == nil {
+		// No request body expected, but one was provided
+		if requestBody != nil {
+			return &sdomain.ValidationResult{
+				Valid:  false,
+				Errors: []string{"operation does not expect a request body"},
+			}, nil
+		}
+		return &sdomain.ValidationResult{Valid: true}, nil
+	}
+
+	// Check if required body is missing
+	if !options.SkipRequired && op.RequestBodyInfo.Required && requestBody == nil {
+		return &sdomain.ValidationResult{
+			Valid:  false,
+			Errors: []string{"required request body is missing"},
+		}, nil
+	}
+
+	// Skip validation if requested
+	if options.SkipTypeChecking || requestBody == nil {
+		return &sdomain.ValidationResult{Valid: true}, nil
+	}
+
+	// Convert the request body to JSON for validation
+	requestBodyJSON, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	// Convert OpenAPI schema to validation schema
+	validationSchema := od.convertSchemaInfoToValidationSchema(op.RequestBodyInfo.Schema)
+
+	// Skip constraints if requested
+	if options.SkipConstraints {
+		od.removeConstraintsFromSchema(validationSchema)
+	}
+
+	// Validate using the schema validator
+	return od.validator.Validate(validationSchema, string(requestBodyJSON))
+}
+
+// ValidateResponse validates operation response against schema (optional feature)
+func (od *OperationDiscovery) ValidateResponse(operationID string, statusCode string, responseBody interface{}) (*sdomain.ValidationResult, error) {
+	// Find the operation
+	op := od.FindOperationByID(operationID)
+	if op == nil {
+		return nil, fmt.Errorf("operation with ID '%s' not found", operationID)
+	}
+
+	// Check if response schema exists
+	responseInfo, exists := op.ResponseInfo[statusCode]
+	if !exists {
+		return &sdomain.ValidationResult{
+			Valid:  false,
+			Errors: []string{fmt.Sprintf("response status code '%s' is not defined for this operation", statusCode)},
+		}, nil
+	}
+
+	// If no schema is defined for the response, consider it valid
+	if responseInfo.Schema.Type == "" {
+		return &sdomain.ValidationResult{Valid: true}, nil
+	}
+
+	// Convert response body to JSON for validation
+	responseJSON, err := json.Marshal(responseBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response body: %w", err)
+	}
+
+	// Convert schema and validate
+	validationSchema := od.convertSchemaInfoToValidationSchema(responseInfo.Schema)
+	return od.validator.Validate(validationSchema, string(responseJSON))
+}
+
+// Helper methods for enhanced validation
+
+// getParameterType returns the expected type for a parameter
+func (od *OperationDiscovery) getParameterType(op *EnhancedOperationInfo, paramName string) string {
+	allParams := append(append(append(op.PathParameters, op.QueryParameters...), op.HeaderParameters...), op.CookieParameters...)
+	for _, param := range allParams {
+		if param.Name == paramName {
+			return param.Schema.Type
+		}
+	}
+	return "unknown"
+}
+
+// getParameterConstraints returns constraint information for a parameter
+func (od *OperationDiscovery) getParameterConstraints(op *EnhancedOperationInfo, paramName string) string {
+	allParams := append(append(append(op.PathParameters, op.QueryParameters...), op.HeaderParameters...), op.CookieParameters...)
+	for _, param := range allParams {
+		if param.Name == paramName {
+			var constraints []string
+			if param.Schema.Minimum != nil {
+				constraints = append(constraints, fmt.Sprintf("min: %.0f", *param.Schema.Minimum))
+			}
+			if param.Schema.Maximum != nil {
+				constraints = append(constraints, fmt.Sprintf("max: %.0f", *param.Schema.Maximum))
+			}
+			if param.Schema.MinLength != nil {
+				constraints = append(constraints, fmt.Sprintf("minLength: %d", *param.Schema.MinLength))
+			}
+			if param.Schema.MaxLength != nil {
+				constraints = append(constraints, fmt.Sprintf("maxLength: %d", *param.Schema.MaxLength))
+			}
+			if param.Schema.Pattern != "" {
+				constraints = append(constraints, fmt.Sprintf("pattern: %s", param.Schema.Pattern))
+			}
+			if len(param.Schema.Enum) > 0 {
+				constraints = append(constraints, fmt.Sprintf("enum: %v", param.Schema.Enum))
+			}
+			if len(constraints) > 0 {
+				return strings.Join(constraints, ", ")
+			}
+		}
+	}
+	return "none"
+}
+
+// generateParameterErrorGuidance creates guidance for parameter validation errors
+func (od *OperationDiscovery) generateParameterErrorGuidance(op *EnhancedOperationInfo, paramName string, errors []string) string {
+	allParams := append(append(append(op.PathParameters, op.QueryParameters...), op.HeaderParameters...), op.CookieParameters...)
+	for _, param := range allParams {
+		if param.Name == paramName {
+			var guidance strings.Builder
+			
+			// Analyze errors and provide specific guidance
+			for _, errMsg := range errors {
+				if strings.Contains(strings.ToLower(errMsg), "required") {
+					guidance.WriteString(fmt.Sprintf("Parameter '%s' is required for this operation. ", paramName))
+				} else if strings.Contains(strings.ToLower(errMsg), "type") {
+					guidance.WriteString(fmt.Sprintf("Parameter '%s' must be of type %s. ", paramName, param.Schema.Type))
+				} else if strings.Contains(strings.ToLower(errMsg), "minimum") || strings.Contains(strings.ToLower(errMsg), "at least") {
+					if param.Schema.Minimum != nil {
+						guidance.WriteString(fmt.Sprintf("Parameter '%s' must be at least %.0f. ", paramName, *param.Schema.Minimum))
+					}
+				} else if strings.Contains(strings.ToLower(errMsg), "maximum") || strings.Contains(strings.ToLower(errMsg), "at most") {
+					if param.Schema.Maximum != nil {
+						guidance.WriteString(fmt.Sprintf("Parameter '%s' must be at most %.0f. ", paramName, *param.Schema.Maximum))
+					}
+				} else if strings.Contains(strings.ToLower(errMsg), "pattern") {
+					if param.Schema.Pattern != "" {
+						guidance.WriteString(fmt.Sprintf("Parameter '%s' must match pattern: %s. ", paramName, param.Schema.Pattern))
+					}
+				} else if strings.Contains(strings.ToLower(errMsg), "length") {
+					if param.Schema.MinLength != nil && param.Schema.MaxLength != nil {
+						guidance.WriteString(fmt.Sprintf("Parameter '%s' must be between %d and %d characters. ", paramName, *param.Schema.MinLength, *param.Schema.MaxLength))
+					} else if param.Schema.MinLength != nil {
+						guidance.WriteString(fmt.Sprintf("Parameter '%s' must be at least %d characters. ", paramName, *param.Schema.MinLength))
+					} else if param.Schema.MaxLength != nil {
+						guidance.WriteString(fmt.Sprintf("Parameter '%s' must be at most %d characters. ", paramName, *param.Schema.MaxLength))
+					}
+				}
+			}
+			
+			// Add example if available
+			if param.Example != nil {
+				guidance.WriteString(fmt.Sprintf("Example: %v", param.Example))
+			} else if param.Schema.Example != nil {
+				guidance.WriteString(fmt.Sprintf("Example: %v", param.Schema.Example))
+			}
+			
+			return guidance.String()
+		}
+	}
+	return fmt.Sprintf("Parameter '%s' validation failed", paramName)
+}
+
+// generateRequestBodyErrorGuidance creates guidance for request body validation errors
+func (od *OperationDiscovery) generateRequestBodyErrorGuidance(op *EnhancedOperationInfo, errors []string) string {
+	var guidance strings.Builder
+	
+	if op.RequestBodyInfo == nil {
+		return "This operation does not expect a request body"
+	}
+	
+	guidance.WriteString("Request body validation failed. ")
+	
+	// Analyze errors and provide guidance
+	for _, errMsg := range errors {
+		if strings.Contains(strings.ToLower(errMsg), "required") {
+			guidance.WriteString("Ensure all required fields are included. ")
+		} else if strings.Contains(strings.ToLower(errMsg), "type") {
+			guidance.WriteString("Check that field types match the expected schema. ")
+		} else if strings.Contains(strings.ToLower(errMsg), "format") {
+			guidance.WriteString("Verify that field formats (email, date, etc.) are correct. ")
+		}
+	}
+	
+	// Add content type guidance
+	if len(op.RequestBodyInfo.ContentTypes) > 0 {
+		guidance.WriteString(fmt.Sprintf("Supported content types: %s. ", strings.Join(op.RequestBodyInfo.ContentTypes, ", ")))
+	}
+	
+	// Add schema type guidance
+	if op.RequestBodyInfo.Schema.Type != "" {
+		guidance.WriteString(fmt.Sprintf("Expected schema type: %s. ", op.RequestBodyInfo.Schema.Type))
+	}
+	
+	return guidance.String()
+}
+
+// generateValidationSummary creates an overall validation summary
+func (od *OperationDiscovery) generateValidationSummary(report *ValidationReport) string {
+	if report.Valid {
+		return "Request validation passed successfully"
+	}
+	
+	errorCount := len(report.ParameterErrors)
+	if report.RequestBodyError != nil {
+		errorCount++
+	}
+	
+	if errorCount == 1 {
+		return "Request validation failed with 1 error"
+	}
+	return fmt.Sprintf("Request validation failed with %d errors", errorCount)
+}
+
+// generateValidationSuggestions creates actionable suggestions for fixing validation errors
+func (od *OperationDiscovery) generateValidationSuggestions(report *ValidationReport, op *EnhancedOperationInfo) []string {
+	var suggestions []string
+	
+	if report.Valid {
+		return suggestions
+	}
+	
+	// Parameter-specific suggestions
+	for paramName, result := range report.ParameterErrors {
+		if !result.Valid {
+			for _, errMsg := range result.Errors {
+				if strings.Contains(strings.ToLower(errMsg), "required") {
+					suggestions = append(suggestions, fmt.Sprintf("Add the required parameter '%s' to your request", paramName))
+				} else if strings.Contains(strings.ToLower(errMsg), "type") {
+					suggestions = append(suggestions, fmt.Sprintf("Convert parameter '%s' to the correct type (%s)", paramName, result.ExpectedType))
+				} else if strings.Contains(strings.ToLower(errMsg), "range") || strings.Contains(strings.ToLower(errMsg), "minimum") || strings.Contains(strings.ToLower(errMsg), "maximum") || strings.Contains(strings.ToLower(errMsg), "at most") || strings.Contains(strings.ToLower(errMsg), "at least") {
+					suggestions = append(suggestions, fmt.Sprintf("Adjust parameter '%s' to meet constraints: %s", paramName, result.Constraints))
+				} else {
+					// Fallback suggestion for any validation error
+					suggestions = append(suggestions, fmt.Sprintf("Fix validation error for parameter '%s': %s", paramName, errMsg))
+				}
+			}
+		}
+	}
+	
+	// Request body suggestions
+	if report.RequestBodyError != nil && !report.RequestBodyError.Valid {
+		suggestions = append(suggestions, "Review request body structure and ensure it matches the expected schema")
+		if op.RequestBodyInfo != nil && len(op.RequestBodyInfo.Examples) > 0 {
+			suggestions = append(suggestions, "Refer to the provided examples for correct request body format")
+		}
+	}
+	
+	// General suggestions
+	if len(suggestions) > 2 {
+		suggestions = append(suggestions, "Consider using request validation tools or API documentation for guidance")
+	}
+	
+	return suggestions
+}
+
+// removeConstraintsFromSchema removes validation constraints from a schema
+func (od *OperationDiscovery) removeConstraintsFromSchema(schema *sdomain.Schema) {
+	if schema == nil {
+		return
+	}
+	
+	// Remove schema-level constraints
+	schema.Required = nil
+	
+	// Remove constraints from properties
+	for name, prop := range schema.Properties {
+		prop.Minimum = nil
+		prop.Maximum = nil
+		prop.ExclusiveMinimum = nil
+		prop.ExclusiveMaximum = nil
+		prop.MinLength = nil
+		prop.MaxLength = nil
+		prop.MinItems = nil
+		prop.MaxItems = nil
+		prop.Pattern = ""
+		prop.Enum = nil
+		prop.UniqueItems = nil
+		schema.Properties[name] = prop
+		
+		// Recursively remove constraints from nested properties
+		for nestedName, nestedProp := range prop.Properties {
+			nestedProp.Minimum = nil
+			nestedProp.Maximum = nil
+			nestedProp.ExclusiveMinimum = nil
+			nestedProp.ExclusiveMaximum = nil
+			nestedProp.MinLength = nil
+			nestedProp.MaxLength = nil
+			nestedProp.MinItems = nil
+			nestedProp.MaxItems = nil
+			nestedProp.Pattern = ""
+			nestedProp.Enum = nil
+			nestedProp.UniqueItems = nil
+			prop.Properties[nestedName] = nestedProp
+		}
+	}
 }
