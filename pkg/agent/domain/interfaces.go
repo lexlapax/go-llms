@@ -9,19 +9,36 @@ import (
 	"github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// Tool represents a capability the LLM can invoke
+// Tool represents an enhanced capability that LLMs can invoke with comprehensive guidance
 type Tool interface {
-	// Name returns the tool's name
-	Name() string
+	// Core functionality
+	Name() string                                                      // Unique identifier for the tool
+	Description() string                                               // Brief description of what the tool does
+	Execute(ctx *ToolContext, params interface{}) (interface{}, error) // Execute the tool with given parameters
 
-	// Description provides information about the tool
-	Description() string
+	// Schema definitions
+	ParameterSchema() *domain.Schema // JSON Schema for input parameters
+	OutputSchema() *domain.Schema    // JSON Schema for output structure
 
-	// Execute runs the tool with parameters and enhanced context
-	Execute(ctx *ToolContext, params interface{}) (interface{}, error)
+	// LLM guidance
+	UsageInstructions() string        // Detailed instructions on when and how to use the tool
+	Examples() []ToolExample          // Concrete examples showing tool usage
+	Constraints() []string            // Limitations and constraints of the tool
+	ErrorGuidance() map[string]string // Map of error types to helpful guidance
 
-	// ParameterSchema returns the schema for the tool parameters
-	ParameterSchema() *domain.Schema
+	// Metadata
+	Category() string // Category for grouping (e.g., "math", "web", "file")
+	Tags() []string   // Tags for discovery and filtering
+	Version() string  // Tool version for compatibility tracking
+
+	// Behavioral hints
+	IsDeterministic() bool      // Same input always produces same output
+	IsDestructive() bool        // Tool modifies state or has side effects
+	RequiresConfirmation() bool // User confirmation needed before execution
+	EstimatedLatency() string   // Expected execution time: "fast", "medium", "slow"
+
+	// MCP compatibility
+	ToMCPDefinition() MCPToolDefinition // Export tool definition in MCP format
 }
 
 // Agent coordinates interactions with LLMs
@@ -55,4 +72,23 @@ type AgentRegistry interface {
 	GetByName(name string) (BaseAgent, error)
 	// List all agents
 	List() []BaseAgent
+}
+
+// ToolExample provides concrete usage examples for LLMs
+type ToolExample struct {
+	Name        string      `json:"name"`        // Short name for the example
+	Description string      `json:"description"` // What this example demonstrates
+	Scenario    string      `json:"scenario"`    // When to use this approach
+	Input       interface{} `json:"input"`       // Example input parameters
+	Output      interface{} `json:"output"`      // Expected output
+	Explanation string      `json:"explanation"` // Why this works and what to learn
+}
+
+// MCPToolDefinition represents a tool in Model Context Protocol format
+type MCPToolDefinition struct {
+	Name         string                 `json:"name"`                   // Tool identifier
+	Description  string                 `json:"description"`            // Tool description
+	InputSchema  interface{}            `json:"inputSchema,omitempty"`  // Parameter schema
+	OutputSchema interface{}            `json:"outputSchema,omitempty"` // Output schema
+	Annotations  map[string]interface{} `json:"annotations,omitempty"`  // Additional metadata
 }

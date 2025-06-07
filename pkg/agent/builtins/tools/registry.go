@@ -5,6 +5,8 @@ package tools
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
@@ -22,6 +24,15 @@ type ToolRegistry interface {
 
 	// ListByResourceUsage returns tools matching resource criteria
 	ListByResourceUsage(criteria ResourceCriteria) []builtins.RegistryEntry[domain.Tool]
+
+	// ExportToMCP exports a single tool to MCP format
+	ExportToMCP(name string) (domain.MCPToolDefinition, error)
+
+	// ExportAllToMCP exports all tools to an MCP catalog
+	ExportAllToMCP() (MCPCatalog, error)
+
+	// GetToolDocumentation returns comprehensive documentation for a tool
+	GetToolDocumentation(name string) (ToolDocumentation, error)
 }
 
 // ToolMetadata extends base metadata for tools
@@ -29,6 +40,16 @@ type ToolMetadata struct {
 	builtins.Metadata
 	RequiredPermissions []string     `json:"required_permissions,omitempty"`
 	ResourceUsage       ResourceInfo `json:"resource_usage,omitempty"`
+
+	// Enhanced metadata from tool interface
+	UsageInstructions    string               `json:"usage_instructions,omitempty"`
+	Examples             []domain.ToolExample `json:"examples,omitempty"`
+	Constraints          []string             `json:"constraints,omitempty"`
+	ErrorGuidance        map[string]string    `json:"error_guidance,omitempty"`
+	IsDeterministic      bool                 `json:"is_deterministic"`
+	IsDestructive        bool                 `json:"is_destructive"`
+	RequiresConfirmation bool                 `json:"requires_confirmation"`
+	EstimatedLatency     string               `json:"estimated_latency,omitempty"`
 }
 
 // ResourceInfo describes resource requirements
@@ -47,15 +68,47 @@ type ResourceCriteria struct {
 	RequiresConcurrent *bool  // Filter by concurrency support (nil = don't care)
 }
 
+// MCPCatalog represents a catalog of tools in MCP format
+type MCPCatalog struct {
+	Version     string                     `json:"version"`
+	Description string                     `json:"description"`
+	Tools       []domain.MCPToolDefinition `json:"tools"`
+	Metadata    map[string]interface{}     `json:"metadata,omitempty"`
+}
+
+// ToolDocumentation provides comprehensive documentation for a tool
+type ToolDocumentation struct {
+	Name                 string               `json:"name"`
+	Description          string               `json:"description"`
+	Category             string               `json:"category"`
+	Tags                 []string             `json:"tags"`
+	Version              string               `json:"version"`
+	UsageInstructions    string               `json:"usage_instructions"`
+	Examples             []domain.ToolExample `json:"examples"`
+	Constraints          []string             `json:"constraints"`
+	ErrorGuidance        map[string]string    `json:"error_guidance"`
+	RequiredPermissions  []string             `json:"required_permissions"`
+	ResourceUsage        ResourceInfo         `json:"resource_usage"`
+	IsDeterministic      bool                 `json:"is_deterministic"`
+	IsDestructive        bool                 `json:"is_destructive"`
+	RequiresConfirmation bool                 `json:"requires_confirmation"`
+	EstimatedLatency     string               `json:"estimated_latency"`
+	ParameterSchema      interface{}          `json:"parameter_schema,omitempty"`
+	OutputSchema         interface{}          `json:"output_schema,omitempty"`
+}
+
 // toolRegistry implements ToolRegistry
 type toolRegistry struct {
 	builtins.Registry[domain.Tool]
-	// Additional tool-specific data could go here
+	// Store enhanced metadata separately for retrieval
+	toolMetadata map[string]ToolMetadata
+	mu           sync.RWMutex
 }
 
 // Tools is the global registry for built-in tools
 var Tools ToolRegistry = &toolRegistry{
-	Registry: builtins.NewRegistry[domain.Tool](),
+	Registry:     builtins.NewRegistry[domain.Tool](),
+	toolMetadata: make(map[string]ToolMetadata),
 }
 
 // RegisterTool registers a tool with tool-specific metadata
@@ -65,11 +118,44 @@ func (r *toolRegistry) RegisterTool(name string, tool domain.Tool, metadata Tool
 		return fmt.Errorf("invalid tool metadata: %w", err)
 	}
 
+	// If metadata doesn't have values from tool interface, populate them
+	if metadata.UsageInstructions == "" && tool.UsageInstructions() != "" {
+		metadata.UsageInstructions = tool.UsageInstructions()
+	}
+	if len(metadata.Examples) == 0 && tool.Examples() != nil {
+		metadata.Examples = tool.Examples()
+	}
+	if len(metadata.Constraints) == 0 && tool.Constraints() != nil {
+		metadata.Constraints = tool.Constraints()
+	}
+	if metadata.ErrorGuidance == nil && tool.ErrorGuidance() != nil {
+		metadata.ErrorGuidance = tool.ErrorGuidance()
+	}
+	if metadata.Category == "" && tool.Category() != "" {
+		metadata.Category = tool.Category()
+	}
+	if len(metadata.Tags) == 0 && tool.Tags() != nil {
+		metadata.Tags = tool.Tags()
+	}
+	if metadata.Version == "" && tool.Version() != "" {
+		metadata.Version = tool.Version()
+	}
+	metadata.IsDeterministic = tool.IsDeterministic()
+	metadata.IsDestructive = tool.IsDestructive()
+	metadata.RequiresConfirmation = tool.RequiresConfirmation()
+	if metadata.EstimatedLatency == "" && tool.EstimatedLatency() != "" {
+		metadata.EstimatedLatency = tool.EstimatedLatency()
+	}
+
+	// Store the enhanced metadata
+	r.mu.Lock()
+	r.toolMetadata[name] = metadata
+	r.mu.Unlock()
+
 	// Convert ToolMetadata to base Metadata for registration
 	baseMetadata := metadata.Metadata
 
-	// Store the full metadata in a way we can retrieve it later
-	// For now, we'll use the base registry and type assert when needed
+	// Register with base registry
 	return r.Registry.Register(name, tool, baseMetadata)
 }
 
@@ -78,13 +164,17 @@ func (r *toolRegistry) ListByPermission(permission string) []builtins.RegistryEn
 	allTools := r.List()
 	var filtered []builtins.RegistryEntry[domain.Tool]
 
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	for _, entry := range allTools {
-		// In a real implementation, we'd store and retrieve the full ToolMetadata
-		// For now, we'll check tags as a proxy
-		for _, tag := range entry.Metadata.Tags {
-			if tag == "perm:"+permission {
-				filtered = append(filtered, entry)
-				break
+		// Check enhanced metadata for permissions
+		if metadata, exists := r.toolMetadata[entry.Metadata.Name]; exists {
+			for _, perm := range metadata.RequiredPermissions {
+				if perm == permission {
+					filtered = append(filtered, entry)
+					break
+				}
 			}
 		}
 	}
@@ -97,11 +187,15 @@ func (r *toolRegistry) ListByResourceUsage(criteria ResourceCriteria) []builtins
 	allTools := r.List()
 	var filtered []builtins.RegistryEntry[domain.Tool]
 
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	for _, entry := range allTools {
-		// In a real implementation, we'd check against stored ResourceInfo
-		// For now, we'll use a simple tag-based approach
-		if matchesResourceCriteria(entry.Metadata.Tags, criteria) {
-			filtered = append(filtered, entry)
+		// Check enhanced metadata for resource usage
+		if metadata, exists := r.toolMetadata[entry.Metadata.Name]; exists {
+			if matchesResourceCriteriaEnhanced(metadata.ResourceUsage, criteria) {
+				filtered = append(filtered, entry)
+			}
 		}
 	}
 
@@ -132,6 +226,37 @@ func validateToolMetadata(name string, tool domain.Tool, metadata ToolMetadata) 
 	}
 
 	return nil
+}
+
+// matchesResourceCriteriaEnhanced checks if resource info matches criteria
+func matchesResourceCriteriaEnhanced(info ResourceInfo, criteria ResourceCriteria) bool {
+	// Check memory constraint
+	if criteria.MaxMemory != "" {
+		memoryLevels := map[string]int{"low": 1, "medium": 2, "high": 3}
+		maxLevel := memoryLevels[criteria.MaxMemory]
+		infoLevel := memoryLevels[info.Memory]
+
+		if infoLevel > maxLevel {
+			return false
+		}
+	}
+
+	// Check network requirement
+	if criteria.RequiresNetwork != nil && *criteria.RequiresNetwork != info.Network {
+		return false
+	}
+
+	// Check file system requirement
+	if criteria.RequiresFileSystem != nil && *criteria.RequiresFileSystem != info.FileSystem {
+		return false
+	}
+
+	// Check concurrency support
+	if criteria.RequiresConcurrent != nil && *criteria.RequiresConcurrent != info.Concurrency {
+		return false
+	}
+
+	return true
 }
 
 // matchesResourceCriteria checks if tags indicate matching resource usage
@@ -197,6 +322,104 @@ func matchesResourceCriteria(tags []string, criteria ResourceCriteria) bool {
 	}
 
 	return true
+}
+
+// ExportToMCP exports a single tool to MCP format
+func (r *toolRegistry) ExportToMCP(name string) (domain.MCPToolDefinition, error) {
+	tool, found := r.Get(name)
+	if !found {
+		return domain.MCPToolDefinition{}, fmt.Errorf("tool '%s' not found", name)
+	}
+
+	// Use the tool's own MCP export method
+	return tool.ToMCPDefinition(), nil
+}
+
+// ExportAllToMCP exports all tools to an MCP catalog
+func (r *toolRegistry) ExportAllToMCP() (MCPCatalog, error) {
+	allTools := r.List()
+
+	catalog := MCPCatalog{
+		Version:     "1.0.0",
+		Description: "Go-LLMs Tool Catalog",
+		Tools:       make([]domain.MCPToolDefinition, 0, len(allTools)),
+		Metadata: map[string]interface{}{
+			"generated_at": time.Now().UTC().Format(time.RFC3339),
+			"tool_count":   len(allTools),
+		},
+	}
+
+	for _, entry := range allTools {
+		mcp := entry.Component.ToMCPDefinition()
+		catalog.Tools = append(catalog.Tools, mcp)
+	}
+
+	return catalog, nil
+}
+
+// GetToolDocumentation returns comprehensive documentation for a tool
+func (r *toolRegistry) GetToolDocumentation(name string) (ToolDocumentation, error) {
+	tool, found := r.Get(name)
+	if !found {
+		return ToolDocumentation{}, fmt.Errorf("tool '%s' not found", name)
+	}
+
+	// Get enhanced metadata
+	r.mu.RLock()
+	metadata, hasMetadata := r.toolMetadata[name]
+	r.mu.RUnlock()
+
+	doc := ToolDocumentation{
+		Name:                 tool.Name(),
+		Description:          tool.Description(),
+		Category:             tool.Category(),
+		Tags:                 tool.Tags(),
+		Version:              tool.Version(),
+		UsageInstructions:    tool.UsageInstructions(),
+		Examples:             tool.Examples(),
+		Constraints:          tool.Constraints(),
+		ErrorGuidance:        tool.ErrorGuidance(),
+		IsDeterministic:      tool.IsDeterministic(),
+		IsDestructive:        tool.IsDestructive(),
+		RequiresConfirmation: tool.RequiresConfirmation(),
+		EstimatedLatency:     tool.EstimatedLatency(),
+	}
+
+	// Add schema information
+	if tool.ParameterSchema() != nil {
+		doc.ParameterSchema = tool.ParameterSchema()
+	}
+	if tool.OutputSchema() != nil {
+		doc.OutputSchema = tool.OutputSchema()
+	}
+
+	// Add metadata if available
+	if hasMetadata {
+		doc.RequiredPermissions = metadata.RequiredPermissions
+		doc.ResourceUsage = metadata.ResourceUsage
+	}
+
+	return doc, nil
+}
+
+// Clear removes all entries (useful for testing)
+func (r *toolRegistry) Clear() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Clear enhanced metadata
+	r.toolMetadata = make(map[string]ToolMetadata)
+
+	// Clear base registry
+	r.Registry.Clear()
+}
+
+// NewTestRegistry creates a new registry instance for testing
+func NewTestRegistry() ToolRegistry {
+	return &toolRegistry{
+		Registry:     builtins.NewRegistry[domain.Tool](),
+		toolMetadata: make(map[string]ToolMetadata),
+	}
 }
 
 // Helper functions for common tool registrations

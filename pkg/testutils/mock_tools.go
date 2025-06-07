@@ -37,6 +37,62 @@ func (t MockTool) ParameterSchema() *sdomain.Schema {
 	return t.Schema
 }
 
+func (t MockTool) OutputSchema() *sdomain.Schema {
+	return nil
+}
+
+func (t MockTool) UsageInstructions() string {
+	return ""
+}
+
+func (t MockTool) Examples() []domain.ToolExample {
+	return nil
+}
+
+func (t MockTool) Constraints() []string {
+	return nil
+}
+
+func (t MockTool) ErrorGuidance() map[string]string {
+	return nil
+}
+
+func (t MockTool) Category() string {
+	return "test"
+}
+
+func (t MockTool) Tags() []string {
+	return []string{"test", "mock"}
+}
+
+func (t MockTool) Version() string {
+	return "1.0.0"
+}
+
+func (t MockTool) IsDeterministic() bool {
+	return true
+}
+
+func (t MockTool) IsDestructive() bool {
+	return false
+}
+
+func (t MockTool) RequiresConfirmation() bool {
+	return false
+}
+
+func (t MockTool) EstimatedLatency() string {
+	return "fast"
+}
+
+func (t MockTool) ToMCPDefinition() domain.MCPToolDefinition {
+	return domain.MCPToolDefinition{
+		Name:        t.ToolName,
+		Description: t.ToolDescription,
+		InputSchema: t.Schema,
+	}
+}
+
 // CreateCalculatorTool is a helper function to create a calculator tool for tests
 func CreateCalculatorTool() domain.Tool {
 	return MockTool{

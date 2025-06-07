@@ -610,26 +610,186 @@ func (a *LLMAgent) getSystemContent() string {
 		content.WriteString(a.systemPrompt)
 	}
 
-	// Add tool descriptions if tools exist
+	// Add enhanced tool documentation if tools exist
 	if len(a.tools) > 0 {
 		if content.Len() > 0 {
 			content.WriteString("\n\n")
 		}
-		content.WriteString("Available tools:\n")
+		content.WriteString("## Available Tools\n\n")
 
+		// Format each tool with full documentation
 		for _, tool := range a.tools {
-			content.WriteString(fmt.Sprintf("- %s: %s\n", tool.Name(), tool.Description()))
+			toolDoc := a.formatToolDocumentation(tool)
+			content.WriteString(toolDoc)
+			content.WriteString("\n---\n\n")
 		}
 
-		content.WriteString("\nTo use a tool, respond with JSON in this format:\n")
+		// Add general tool usage instructions
+		content.WriteString("### Tool Usage Format\n\n")
+		content.WriteString("To use a tool, respond with JSON in one of these formats:\n\n")
+		content.WriteString("**Simple format:**\n")
+		content.WriteString("```json\n")
 		content.WriteString(`{"tool": "tool_name", "params": {...}}`)
-		content.WriteString("\nOr for OpenAI format:\n")
+		content.WriteString("\n```\n\n")
+		content.WriteString("**OpenAI format:**\n")
+		content.WriteString("```json\n")
 		content.WriteString(`{"tool_calls": [{"id": "call_1", "type": "function", "function": {"name": "tool_name", "arguments": "{...}"}}]}`)
+		content.WriteString("\n```\n")
 	}
 
 	// Cache the result
 	a.cachedToolsDescription = content.String()
 	return a.cachedToolsDescription
+}
+
+// formatToolDocumentation creates comprehensive documentation for a single tool
+func (a *LLMAgent) formatToolDocumentation(tool domain.Tool) string {
+	var doc strings.Builder
+
+	// Tool name and description
+	doc.WriteString(fmt.Sprintf("### %s\n\n", tool.Name()))
+	doc.WriteString(fmt.Sprintf("**Description:** %s\n\n", tool.Description()))
+
+	// Version and category
+	if tool.Version() != "" {
+		doc.WriteString(fmt.Sprintf("**Version:** %s", tool.Version()))
+		if tool.Category() != "" {
+			doc.WriteString(fmt.Sprintf(" | **Category:** %s", tool.Category()))
+		}
+		doc.WriteString("\n\n")
+	}
+
+	// Behavioral characteristics
+	doc.WriteString("**Characteristics:**\n")
+	doc.WriteString(fmt.Sprintf("- Deterministic: %v\n", tool.IsDeterministic()))
+	doc.WriteString(fmt.Sprintf("- Destructive: %v\n", tool.IsDestructive()))
+	doc.WriteString(fmt.Sprintf("- Requires Confirmation: %v\n", tool.RequiresConfirmation()))
+	doc.WriteString(fmt.Sprintf("- Estimated Latency: %s\n\n", tool.EstimatedLatency()))
+
+	// Usage instructions
+	if instructions := tool.UsageInstructions(); instructions != "" {
+		doc.WriteString("**Usage Instructions:**\n")
+		doc.WriteString(instructions)
+		doc.WriteString("\n\n")
+	}
+
+	// Parameter schema
+	if schema := tool.ParameterSchema(); schema != nil {
+		doc.WriteString("**Parameters:**\n")
+		doc.WriteString(a.formatSchema(schema, "  "))
+		doc.WriteString("\n")
+	}
+
+	// Output schema
+	if schema := tool.OutputSchema(); schema != nil {
+		doc.WriteString("**Returns:**\n")
+		doc.WriteString(a.formatSchema(schema, "  "))
+		doc.WriteString("\n")
+	}
+
+	// Constraints
+	if constraints := tool.Constraints(); len(constraints) > 0 {
+		doc.WriteString("**Constraints:**\n")
+		for _, constraint := range constraints {
+			doc.WriteString(fmt.Sprintf("- %s\n", constraint))
+		}
+		doc.WriteString("\n")
+	}
+
+	// Examples
+	if examples := tool.Examples(); len(examples) > 0 {
+		doc.WriteString("**Examples:**\n\n")
+		for i, example := range examples {
+			doc.WriteString(fmt.Sprintf("*Example %d: %s*\n", i+1, example.Name))
+			if example.Description != "" {
+				doc.WriteString(fmt.Sprintf("Description: %s\n", example.Description))
+			}
+			if example.Scenario != "" {
+				doc.WriteString(fmt.Sprintf("When to use: %s\n", example.Scenario))
+			}
+			doc.WriteString("\nInput:\n```json\n")
+			inputJSON, _ := json.MarshalIndent(example.Input, "", "  ")
+			doc.WriteString(string(inputJSON))
+			doc.WriteString("\n```\n\nOutput:\n```json\n")
+			outputJSON, _ := json.MarshalIndent(example.Output, "", "  ")
+			doc.WriteString(string(outputJSON))
+			doc.WriteString("\n```\n")
+			if example.Explanation != "" {
+				doc.WriteString(fmt.Sprintf("\nExplanation: %s\n", example.Explanation))
+			}
+			doc.WriteString("\n")
+		}
+	}
+
+	// Error guidance
+	if errorGuidance := tool.ErrorGuidance(); len(errorGuidance) > 0 {
+		doc.WriteString("**Error Handling:**\n")
+		for errorType, guidance := range errorGuidance {
+			doc.WriteString(fmt.Sprintf("- `%s`: %s\n", errorType, guidance))
+		}
+		doc.WriteString("\n")
+	}
+
+	// Tags
+	if tags := tool.Tags(); len(tags) > 0 {
+		doc.WriteString(fmt.Sprintf("**Tags:** %s\n", strings.Join(tags, ", ")))
+	}
+
+	return doc.String()
+}
+
+// formatSchema converts a schema to a readable string format
+func (a *LLMAgent) formatSchema(schema *sdomain.Schema, indent string) string {
+	if schema == nil {
+		return indent + "No schema defined\n"
+	}
+
+	var sb strings.Builder
+
+	// Type and description
+	if schema.Type != "" {
+		sb.WriteString(fmt.Sprintf("%sType: %s\n", indent, schema.Type))
+	}
+	if schema.Description != "" {
+		sb.WriteString(fmt.Sprintf("%sDescription: %s\n", indent, schema.Description))
+	}
+
+	// Properties for object types
+	if schema.Type == "object" && len(schema.Properties) > 0 {
+		sb.WriteString(fmt.Sprintf("%sProperties:\n", indent))
+		for name, prop := range schema.Properties {
+			required := false
+			for _, req := range schema.Required {
+				if req == name {
+					required = true
+					break
+				}
+			}
+			sb.WriteString(fmt.Sprintf("%s  - %s (%s%s)", indent, name, prop.Type,
+				func() string {
+					if required {
+						return ", required"
+					}
+					return ""
+				}()))
+			if prop.Description != "" {
+				sb.WriteString(fmt.Sprintf(": %s", prop.Description))
+			}
+			sb.WriteString("\n")
+
+			// Add enum values if present
+			if len(prop.Enum) > 0 {
+				sb.WriteString(fmt.Sprintf("%s    Allowed values: %s\n", indent, strings.Join(prop.Enum, ", ")))
+			}
+		}
+	}
+
+	// Required fields
+	if len(schema.Required) > 0 && schema.Type == "object" {
+		sb.WriteString(fmt.Sprintf("%sRequired fields: %s\n", indent, strings.Join(schema.Required, ", ")))
+	}
+
+	return sb.String()
 }
 
 // Execute the main agent loop with tool calling
@@ -1151,6 +1311,80 @@ func (sat *subAgentTool) ParameterSchema() *sdomain.Schema {
 	}
 }
 
+// OutputSchema returns the schema for tool output
+func (sat *subAgentTool) OutputSchema() *sdomain.Schema {
+	return nil // Sub-agents can return various types
+}
+
+// UsageInstructions returns usage instructions
+func (sat *subAgentTool) UsageInstructions() string {
+	return fmt.Sprintf("Use this to delegate tasks to the %s agent. %s", sat.subAgent.Name(), sat.subAgent.Description())
+}
+
+// Examples returns usage examples
+func (sat *subAgentTool) Examples() []domain.ToolExample {
+	return nil // Sub-agents may have varied examples
+}
+
+// Constraints returns tool constraints
+func (sat *subAgentTool) Constraints() []string {
+	return nil
+}
+
+// ErrorGuidance returns error guidance
+func (sat *subAgentTool) ErrorGuidance() map[string]string {
+	return nil
+}
+
+// Category returns the tool category
+func (sat *subAgentTool) Category() string {
+	return "agent"
+}
+
+// Tags returns tool tags
+func (sat *subAgentTool) Tags() []string {
+	return []string{"agent", "delegation"}
+}
+
+// Version returns the tool version
+func (sat *subAgentTool) Version() string {
+	return "1.0.0"
+}
+
+// IsDeterministic returns whether the tool is deterministic
+func (sat *subAgentTool) IsDeterministic() bool {
+	return false // Sub-agents may not be deterministic
+}
+
+// IsDestructive returns whether the tool is destructive
+func (sat *subAgentTool) IsDestructive() bool {
+	return false // Delegating to agents is not destructive
+}
+
+// RequiresConfirmation returns whether the tool requires confirmation
+func (sat *subAgentTool) RequiresConfirmation() bool {
+	return false
+}
+
+// EstimatedLatency returns the estimated latency
+func (sat *subAgentTool) EstimatedLatency() string {
+	return "medium" // Sub-agents can vary in execution time
+}
+
+// ToMCPDefinition exports the tool definition in MCP format
+func (sat *subAgentTool) ToMCPDefinition() domain.MCPToolDefinition {
+	return domain.MCPToolDefinition{
+		Name:        sat.Name(),
+		Description: sat.Description(),
+		InputSchema: sat.ParameterSchema(),
+		Annotations: map[string]interface{}{
+			"type":     "agent",
+			"category": "agent",
+			"version":  "1.0.0",
+		},
+	}
+}
+
 // transferToAgentTool is a built-in tool that allows dynamic delegation to sub-agents
 type transferToAgentTool struct {
 	agent *LLMAgent
@@ -1250,5 +1484,100 @@ func (t *transferToAgentTool) ParameterSchema() *sdomain.Schema {
 			},
 		},
 		Required: []string{"agent_name"},
+	}
+}
+
+// OutputSchema returns the schema for tool output
+func (t *transferToAgentTool) OutputSchema() *sdomain.Schema {
+	return nil // Transfer results can vary by agent
+}
+
+// UsageInstructions returns usage instructions
+func (t *transferToAgentTool) UsageInstructions() string {
+	return "Use this tool to transfer control to one of the available sub-agents. Each sub-agent specializes in different tasks."
+}
+
+// Examples returns usage examples
+func (t *transferToAgentTool) Examples() []domain.ToolExample {
+	var examples []domain.ToolExample
+	if t.agent != nil && len(t.agent.SubAgents()) > 0 {
+		firstAgent := t.agent.SubAgents()[0]
+		examples = append(examples, domain.ToolExample{
+			Name:        "Transfer to sub-agent",
+			Description: fmt.Sprintf("Transfer control to the %s agent", firstAgent.Name()),
+			Scenario:    fmt.Sprintf("When you need to %s", firstAgent.Description()),
+			Input: map[string]interface{}{
+				"agent_name": firstAgent.Name(),
+				"input":      "Process this task",
+			},
+			Output:      "Result from sub-agent",
+			Explanation: "The sub-agent will process the input and return its result",
+		})
+	}
+	return examples
+}
+
+// Constraints returns tool constraints
+func (t *transferToAgentTool) Constraints() []string {
+	return []string{
+		"Can only transfer to registered sub-agents",
+		"Sub-agent must exist in the agent hierarchy",
+	}
+}
+
+// ErrorGuidance returns error guidance
+func (t *transferToAgentTool) ErrorGuidance() map[string]string {
+	return map[string]string{
+		"agent_not_found": "The specified agent name does not exist. Check available sub-agents.",
+		"invalid_params":  "Parameters must include 'agent_name' as a string.",
+	}
+}
+
+// Category returns the tool category
+func (t *transferToAgentTool) Category() string {
+	return "control"
+}
+
+// Tags returns tool tags
+func (t *transferToAgentTool) Tags() []string {
+	return []string{"control", "delegation", "transfer"}
+}
+
+// Version returns the tool version
+func (t *transferToAgentTool) Version() string {
+	return "1.0.0"
+}
+
+// IsDeterministic returns whether the tool is deterministic
+func (t *transferToAgentTool) IsDeterministic() bool {
+	return false // Sub-agents may not be deterministic
+}
+
+// IsDestructive returns whether the tool is destructive
+func (t *transferToAgentTool) IsDestructive() bool {
+	return false
+}
+
+// RequiresConfirmation returns whether the tool requires confirmation
+func (t *transferToAgentTool) RequiresConfirmation() bool {
+	return false
+}
+
+// EstimatedLatency returns the estimated latency
+func (t *transferToAgentTool) EstimatedLatency() string {
+	return "medium"
+}
+
+// ToMCPDefinition exports the tool definition in MCP format
+func (t *transferToAgentTool) ToMCPDefinition() domain.MCPToolDefinition {
+	return domain.MCPToolDefinition{
+		Name:        t.Name(),
+		Description: t.Description(),
+		InputSchema: t.ParameterSchema(),
+		Annotations: map[string]interface{}{
+			"type":     "control",
+			"category": "control",
+			"version":  "1.0.0",
+		},
 	}
 }

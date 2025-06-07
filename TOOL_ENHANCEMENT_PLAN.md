@@ -85,18 +85,25 @@ type MCPToolDefinition struct {
 4. Run `golangci-lint run ./pkg/agent/domain/`
 5. Run `go test ./pkg/agent/domain/`
 
-### 1.2 Create Base Tool Implementation
+### 1.2 Update Base Tool Implementation
 
-**Location**: `pkg/agent/tools/base_tool_v2.go`
+**Migration Strategy**: 
+- Update the existing `Tool` struct in `base_tool.go` to implement all new interface methods
+- Add fields for all new metadata (usage instructions, examples, constraints, etc.)
+- Maintain the existing reflection-based execution logic
+- Add builder pattern for easier tool construction with all new fields
 
-Provides default implementations and helpers with builder pattern for easier construction.
+**Location**: `pkg/agent/tools/base_tool.go` (update existing)
+
+Updates the existing Tool struct to implement the complete enhanced Tool interface.
 
 **Implementation steps**:
-1. Write tests for BaseToolV2 and builder
-2. Implement BaseToolV2 with all interface methods
-3. Create builder pattern for easy tool construction
-4. Add validation methods
-5. Run fmt, lint, test
+1. Write tests for updated Tool with all new methods
+2. Add new fields to Tool struct for metadata
+3. Implement all new interface methods
+4. Create builder pattern for easy tool construction
+5. Add validation methods
+6. Run fmt, lint, test
 
 ### 1.3 Update Tool Registry
 

@@ -669,3 +669,39 @@ After analyzing Google's Agent Development Kit (ADK), we identified key features
     - [x] Changed state key from "instruction" to "prompt" for LLMAgent compatibility
     - [x] Changed result key from "response" to "result" to match LLMAgent output
     - [x] Enhanced prompts to include actual search results for proper context
+
+## Tool System Enhancement with LLM Guidance (June 7, 2025)
+- [x] Phase 1: Core Infrastructure Days 1-4 (Completed)
+  - [x] Day 1: Create new Tool interface with comprehensive LLM guidance (TDD)
+    - [x] Write tests for new Tool interface in pkg/agent/domain/tool_test.go
+    - [x] Implement Tool interface in pkg/agent/domain/interfaces.go (updated existing)
+    - [x] Add ToolExample and MCPToolDefinition types
+    - [x] Run fmt, lint, test
+  - [x] Day 2: Update Base Tool implementation
+    - [x] Write tests for updated Tool with all new interface methods
+    - [x] Update Tool struct in pkg/agent/tools/base_tool.go
+    - [x] Add fields for all new metadata to Tool struct
+    - [x] Implement all new interface methods
+    - [x] Create ToolBuilder for easy construction
+    - [x] Add validation methods
+    - [x] Run fmt, lint, test
+  - [x] Day 3: Update Tool Registry
+    - [x] Write tests for enhanced registry methods
+    - [x] Update ToolMetadata inplace for enhancements 
+    - [x] Update ToolRegistry interface inplace for enhancements
+    - [x] Add MCP export functionality
+    - [x] Run fmt, lint, test
+    - [x] Moved testing utilities from pkg/agent/tools to pkg/testutils (better organization)
+    - [x] Updated MockTool in testutils to implement all new Tool interface methods
+  - [x] Day 4: Update LLM Agent tool description (Completed June 8, 2025)
+    - [x] Write tests for enhanced system content generation
+    - [x] Update getSystemContent() method in pkg/agent/core/llm_agent.go for enhanced tool documentation
+    - [x] Add formatToolDocumentation() method to format individual tool metadata
+    - [x] Add formatSchema() helper to format parameter and output schemas
+    - [x] Run fmt, lint, test
+    - [x] Enhanced tool documentation now includes:
+      - Usage instructions, examples, and constraints
+      - Behavioral characteristics (deterministic, destructive, latency)
+      - Parameter and output schemas with readable formatting
+      - Error guidance and tags
+      - Markdown formatting for better LLM comprehension

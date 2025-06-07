@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -52,21 +53,111 @@ func (m *mockProvider) StreamMessage(ctx context.Context, messages []ldomain.Mes
 
 // Mock Tool for testing
 type mockTool struct {
-	name        string
-	description string
-	result      any
-	err         error
+	name              string
+	description       string
+	result            any
+	err               error
+	usageInstructions string
+	examples          []domain.ToolExample
+	constraints       []string
+	errorGuidance     map[string]string
+	category          string
+	tags              []string
+	version           string
+	deterministic     bool
+	destructive       bool
+	requiresConfirm   bool
+	latency           string
+	paramSchema       *sdomain.Schema
+	outputSchema      *sdomain.Schema
 }
 
 func (t *mockTool) Name() string                     { return t.name }
 func (t *mockTool) Description() string              { return t.description }
-func (t *mockTool) ParameterSchema() *sdomain.Schema { return nil }
+func (t *mockTool) ParameterSchema() *sdomain.Schema { return t.paramSchema }
+func (t *mockTool) OutputSchema() *sdomain.Schema    { return t.outputSchema }
 
 func (t *mockTool) Execute(ctx *domain.ToolContext, params any) (any, error) {
 	if t.err != nil {
 		return nil, t.err
 	}
 	return t.result, nil
+}
+
+func (t *mockTool) UsageInstructions() string {
+	if t.usageInstructions != "" {
+		return t.usageInstructions
+	}
+	return "Basic usage instructions for " + t.name
+}
+
+func (t *mockTool) Examples() []domain.ToolExample {
+	if t.examples != nil {
+		return t.examples
+	}
+	return []domain.ToolExample{}
+}
+
+func (t *mockTool) Constraints() []string {
+	if t.constraints != nil {
+		return t.constraints
+	}
+	return []string{}
+}
+
+func (t *mockTool) ErrorGuidance() map[string]string {
+	if t.errorGuidance != nil {
+		return t.errorGuidance
+	}
+	return map[string]string{}
+}
+
+func (t *mockTool) Category() string {
+	if t.category != "" {
+		return t.category
+	}
+	return "test"
+}
+
+func (t *mockTool) Tags() []string {
+	if t.tags != nil {
+		return t.tags
+	}
+	return []string{"test"}
+}
+
+func (t *mockTool) Version() string {
+	if t.version != "" {
+		return t.version
+	}
+	return "1.0.0"
+}
+
+func (t *mockTool) IsDeterministic() bool {
+	return t.deterministic
+}
+
+func (t *mockTool) IsDestructive() bool {
+	return t.destructive
+}
+
+func (t *mockTool) RequiresConfirmation() bool {
+	return t.requiresConfirm
+}
+
+func (t *mockTool) EstimatedLatency() string {
+	if t.latency != "" {
+		return t.latency
+	}
+	return "fast"
+}
+
+func (t *mockTool) ToMCPDefinition() domain.MCPToolDefinition {
+	return domain.MCPToolDefinition{
+		Name:        t.name,
+		Description: t.description,
+		InputSchema: t.paramSchema,
+	}
 }
 
 // Test NewAgent factory function (excellent DX)
@@ -529,4 +620,207 @@ func BenchmarkLLMAgent_RunWithTools(b *testing.B) {
 			b.Fatalf("Run with tools failed: %v", err)
 		}
 	}
+}
+
+// Test enhanced system content generation with full tool metadata
+func TestLLMAgent_EnhancedSystemContent(t *testing.T) {
+	provider := &mockProvider{response: "Response"}
+
+	// Create a tool with full metadata
+	tool := &mockTool{
+		name:              "calculator",
+		description:       "Perform mathematical calculations",
+		usageInstructions: "Use this tool for any mathematical operations. Supports +, -, *, / operations.",
+		examples: []domain.ToolExample{
+			{
+				Name:        "Addition",
+				Description: "Add two numbers together",
+				Scenario:    "When you need to find the sum of numbers",
+				Input:       map[string]any{"operation": "+", "operand1": 5, "operand2": 3},
+				Output:      8,
+				Explanation: "5 + 3 = 8",
+			},
+			{
+				Name:        "Division",
+				Description: "Divide one number by another",
+				Scenario:    "When you need to find the quotient",
+				Input:       map[string]any{"operation": "/", "operand1": 10, "operand2": 2},
+				Output:      5,
+				Explanation: "10 / 2 = 5",
+			},
+		},
+		constraints: []string{
+			"Division by zero is not allowed",
+			"Only numeric operands are supported",
+			"Operations limited to +, -, *, /",
+		},
+		errorGuidance: map[string]string{
+			"division_by_zero":  "Cannot divide by zero. Please ensure operand2 is not 0.",
+			"invalid_operation": "Operation must be one of: +, -, *, /",
+			"invalid_operand":   "Both operands must be numeric values",
+		},
+		category:        "math",
+		tags:            []string{"calculation", "arithmetic"},
+		version:         "2.0.0",
+		deterministic:   true,
+		destructive:     false,
+		requiresConfirm: false,
+		latency:         "fast",
+		paramSchema: &sdomain.Schema{
+			Type: "object",
+			Properties: map[string]sdomain.Property{
+				"operation": {
+					Type:        "string",
+					Enum:        []string{"+", "-", "*", "/"},
+					Description: "The mathematical operation to perform",
+				},
+				"operand1": {
+					Type:        "number",
+					Description: "The first operand",
+				},
+				"operand2": {
+					Type:        "number",
+					Description: "The second operand",
+				},
+			},
+			Required: []string{"operation", "operand1", "operand2"},
+		},
+		outputSchema: &sdomain.Schema{
+			Type:        "number",
+			Description: "The result of the calculation",
+		},
+	}
+
+	agent := NewAgent("test-agent", provider).
+		SetSystemPrompt("You are a helpful math assistant.").
+		AddTool(tool)
+
+	// Get system content
+	systemContent := agent.getSystemContent()
+
+	// Verify basic content is present
+	if !containsString(systemContent, "You are a helpful math assistant.") {
+		t.Error("System prompt not found in system content")
+	}
+
+	if !containsString(systemContent, "calculator") {
+		t.Error("Tool name not found in system content")
+	}
+
+	if !containsString(systemContent, "Perform mathematical calculations") {
+		t.Error("Tool description not found in system content")
+	}
+
+	// Check for enhanced formatting
+	if !containsString(systemContent, "## Available Tools") {
+		t.Error("Enhanced tool section header not found")
+	}
+
+	// Check for enhanced content
+	if !containsString(systemContent, "**Usage Instructions:**") {
+		t.Error("Usage instructions section not found")
+	}
+
+	if !containsString(systemContent, "**Characteristics:**") {
+		t.Error("Characteristics section not found")
+	}
+
+	if !containsString(systemContent, "**Parameters:**") {
+		t.Error("Parameters section not found")
+	}
+
+	if !containsString(systemContent, "**Examples:**") {
+		t.Error("Examples section not found")
+	}
+
+	if !containsString(systemContent, "Division by zero is not allowed") {
+		t.Error("Constraints not found in system content")
+	}
+
+	if !containsString(systemContent, "### Tool Usage Format") {
+		t.Error("Tool usage format section not found")
+	}
+}
+
+// Test system content with multiple tools
+func TestLLMAgent_SystemContentMultipleTools(t *testing.T) {
+	provider := &mockProvider{response: "Response"}
+
+	tool1 := &mockTool{
+		name:        "tool1",
+		description: "First tool for testing",
+		category:    "test",
+		version:     "1.0.0",
+	}
+
+	tool2 := &mockTool{
+		name:        "tool2",
+		description: "Second tool for testing",
+		category:    "test",
+		version:     "1.0.0",
+	}
+
+	agent := NewAgent("test-agent", provider).
+		SetSystemPrompt("Test system prompt").
+		AddTool(tool1).
+		AddTool(tool2)
+
+	systemContent := agent.getSystemContent()
+
+	// Verify both tools are included
+	if !containsString(systemContent, "tool1") {
+		t.Error("First tool not found in system content")
+	}
+
+	if !containsString(systemContent, "tool2") {
+		t.Error("Second tool not found in system content")
+	}
+}
+
+// Test system content caching
+func TestLLMAgent_SystemContentCaching(t *testing.T) {
+	provider := &mockProvider{response: "Response"}
+
+	tool := &mockTool{
+		name:        "test_tool",
+		description: "Test tool",
+	}
+
+	agent := NewAgent("test-agent", provider).
+		SetSystemPrompt("Initial prompt").
+		AddTool(tool)
+
+	// Get system content first time
+	content1 := agent.getSystemContent()
+
+	// Get system content second time (should be cached)
+	content2 := agent.getSystemContent()
+
+	if content1 != content2 {
+		t.Error("System content should be cached and identical")
+	}
+
+	// Modify agent (add another tool) - should invalidate cache
+	tool2 := &mockTool{
+		name:        "another_tool",
+		description: "Another test tool",
+	}
+
+	agent.AddTool(tool2)
+
+	// Get system content again
+	content3 := agent.getSystemContent()
+
+	if content3 == content1 {
+		t.Error("System content should change after adding tool")
+	}
+
+	if !containsString(content3, "another_tool") {
+		t.Error("New tool should be in updated system content")
+	}
+}
+
+// Helper function to check if string contains substring
+func containsString(s, substr string) bool {
+	return len(s) > 0 && len(substr) > 0 && strings.Contains(s, substr)
 }

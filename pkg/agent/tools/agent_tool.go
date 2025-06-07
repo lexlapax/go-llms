@@ -217,3 +217,92 @@ func CreateResultMapper(fields ...string) ResultMapper {
 		return result, nil
 	}
 }
+
+// OutputSchema returns the schema for tool output
+func (at *AgentTool) OutputSchema() *sdomain.Schema {
+	// Try to derive from agent's output schema
+	if at.agent.OutputSchema() != nil {
+		return at.agent.OutputSchema()
+	}
+	return nil
+}
+
+// UsageInstructions returns usage instructions
+func (at *AgentTool) UsageInstructions() string {
+	return fmt.Sprintf("This tool wraps the '%s' agent. %s", at.agent.Name(), at.agent.Description())
+}
+
+// Examples returns usage examples
+func (at *AgentTool) Examples() []domain.ToolExample {
+	// Could potentially derive from agent examples in the future
+	return nil
+}
+
+// Constraints returns tool constraints
+func (at *AgentTool) Constraints() []string {
+	return []string{
+		"Agent must complete its task successfully",
+		"Result format depends on the agent implementation",
+	}
+}
+
+// ErrorGuidance returns error guidance
+func (at *AgentTool) ErrorGuidance() map[string]string {
+	return map[string]string{
+		"agent_error":         "The underlying agent failed to execute. Check the agent logs for details.",
+		"state_mapping_error": "Failed to convert parameters to agent state format.",
+	}
+}
+
+// Category returns the tool category
+func (at *AgentTool) Category() string {
+	return "agent"
+}
+
+// Tags returns tool tags
+func (at *AgentTool) Tags() []string {
+	return []string{"agent", "wrapper"}
+}
+
+// Version returns the tool version
+func (at *AgentTool) Version() string {
+	return "1.0.0"
+}
+
+// IsDeterministic returns whether the tool is deterministic
+func (at *AgentTool) IsDeterministic() bool {
+	// Agents are generally non-deterministic due to LLM usage
+	return false
+}
+
+// IsDestructive returns whether the tool is destructive
+func (at *AgentTool) IsDestructive() bool {
+	// Depends on the wrapped agent's behavior
+	return false
+}
+
+// RequiresConfirmation returns whether the tool requires confirmation
+func (at *AgentTool) RequiresConfirmation() bool {
+	return false
+}
+
+// EstimatedLatency returns the estimated latency
+func (at *AgentTool) EstimatedLatency() string {
+	return "slow" // Agents typically involve LLM calls
+}
+
+// ToMCPDefinition exports the tool definition in MCP format
+func (at *AgentTool) ToMCPDefinition() domain.MCPToolDefinition {
+	return domain.MCPToolDefinition{
+		Name:         at.Name(),
+		Description:  at.Description(),
+		InputSchema:  at.ParameterSchema(),
+		OutputSchema: at.OutputSchema(),
+		Annotations: map[string]interface{}{
+			"type":          "agent_wrapper",
+			"category":      "agent",
+			"version":       "1.0.0",
+			"wrapped_agent": at.agent.Name(),
+		},
+	}
+}

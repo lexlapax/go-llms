@@ -188,6 +188,20 @@ func NewToolError(toolName, phase string, err error) *ToolError {
 	}
 }
 
+// NewToolErrorWithGuidance creates a new tool error with guidance message
+func NewToolErrorWithGuidance(toolName, errorType, message, guidance string) error {
+	// Create a custom error that includes guidance
+	errMsg := message
+	if guidance != "" {
+		errMsg = fmt.Sprintf("%s (Guidance: %s)", message, guidance)
+	}
+	return &ToolError{
+		ToolName: toolName,
+		Phase:    errorType, // Using Phase field to store error type
+		Err:      fmt.Errorf("%s", errMsg),
+	}
+}
+
 // WithInput adds input context to the error
 func (e *ToolError) WithInput(input interface{}) *ToolError {
 	e.Input = input

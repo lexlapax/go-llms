@@ -17,10 +17,28 @@ import (
 
 // Tool provides an optimized implementation of tools with reduced allocations
 type Tool struct {
-	name        string
-	description string
-	fn          interface{}
-	paramSchema *sdomain.Schema
+	name         string
+	description  string
+	fn           interface{}
+	paramSchema  *sdomain.Schema
+	outputSchema *sdomain.Schema
+
+	// LLM guidance fields
+	usageInstructions string
+	examples          []domain.ToolExample
+	constraints       []string
+	errorGuidance     map[string]string
+
+	// Metadata fields
+	category string
+	tags     []string
+	version  string
+
+	// Behavioral fields
+	isDeterministic      bool
+	isDestructive        bool
+	requiresConfirmation bool
+	estimatedLatency     string
 
 	// Pre-computed type information
 	fnType         reflect.Type
@@ -76,6 +94,12 @@ func NewTool(name, description string, fn interface{}, paramSchema *sdomain.Sche
 		hasContext:     hasContext,
 		hasToolContext: hasToolContext,
 		nonContextArg:  nonContextArg,
+		// Set default values for new fields
+		version:              "1.0.0",
+		isDeterministic:      true,
+		isDestructive:        false,
+		requiresConfirmation: false,
+		estimatedLatency:     "medium",
 	}
 
 	// Initialize argument pool with pointer to slice for efficient pooling
@@ -87,6 +111,134 @@ func NewTool(name, description string, fn interface{}, paramSchema *sdomain.Sche
 	}
 
 	return tool
+}
+
+// ToolBuilder provides a fluent interface for building tools with comprehensive metadata
+type ToolBuilder struct {
+	tool *Tool
+}
+
+// NewToolBuilder creates a new tool builder
+func NewToolBuilder(name, description string) *ToolBuilder {
+	return &ToolBuilder{
+		tool: &Tool{
+			name:                 name,
+			description:          description,
+			version:              "1.0.0",
+			isDeterministic:      true,
+			isDestructive:        false,
+			requiresConfirmation: false,
+			estimatedLatency:     "medium",
+		},
+	}
+}
+
+// WithFunction sets the tool function
+func (b *ToolBuilder) WithFunction(fn interface{}) *ToolBuilder {
+	fnValue := reflect.ValueOf(fn)
+	if fnValue.Kind() != reflect.Func {
+		panic("tool function must be a function")
+	}
+
+	b.tool.fn = fn
+	b.tool.fnValue = fnValue
+	b.tool.fnType = fnValue.Type()
+	b.tool.numArgs = b.tool.fnType.NumIn()
+
+	// Determine if the function accepts context as first argument
+	if b.tool.numArgs > 0 {
+		firstArgType := b.tool.fnType.In(0)
+		b.tool.hasContext = firstArgType.Implements(reflect.TypeOf((*context.Context)(nil)).Elem())
+		b.tool.hasToolContext = firstArgType == reflect.TypeOf((*domain.ToolContext)(nil))
+	}
+
+	// Calculate index of the first non-context argument
+	b.tool.nonContextArg = 0
+	if b.tool.hasContext || b.tool.hasToolContext {
+		b.tool.nonContextArg = 1
+	}
+
+	return b
+}
+
+// WithParameterSchema sets the parameter schema
+func (b *ToolBuilder) WithParameterSchema(schema *sdomain.Schema) *ToolBuilder {
+	b.tool.paramSchema = schema
+	return b
+}
+
+// WithOutputSchema sets the output schema
+func (b *ToolBuilder) WithOutputSchema(schema *sdomain.Schema) *ToolBuilder {
+	b.tool.outputSchema = schema
+	return b
+}
+
+// WithUsageInstructions sets the usage instructions
+func (b *ToolBuilder) WithUsageInstructions(instructions string) *ToolBuilder {
+	b.tool.usageInstructions = instructions
+	return b
+}
+
+// WithExamples sets the examples
+func (b *ToolBuilder) WithExamples(examples []domain.ToolExample) *ToolBuilder {
+	b.tool.examples = examples
+	return b
+}
+
+// WithConstraints sets the constraints
+func (b *ToolBuilder) WithConstraints(constraints []string) *ToolBuilder {
+	b.tool.constraints = constraints
+	return b
+}
+
+// WithErrorGuidance sets the error guidance
+func (b *ToolBuilder) WithErrorGuidance(guidance map[string]string) *ToolBuilder {
+	b.tool.errorGuidance = guidance
+	return b
+}
+
+// WithCategory sets the category
+func (b *ToolBuilder) WithCategory(category string) *ToolBuilder {
+	b.tool.category = category
+	return b
+}
+
+// WithTags sets the tags
+func (b *ToolBuilder) WithTags(tags []string) *ToolBuilder {
+	b.tool.tags = tags
+	return b
+}
+
+// WithVersion sets the version
+func (b *ToolBuilder) WithVersion(version string) *ToolBuilder {
+	b.tool.version = version
+	return b
+}
+
+// WithBehavior sets the behavioral metadata
+func (b *ToolBuilder) WithBehavior(deterministic, destructive, requiresConfirmation bool, latency string) *ToolBuilder {
+	b.tool.isDeterministic = deterministic
+	b.tool.isDestructive = destructive
+	b.tool.requiresConfirmation = requiresConfirmation
+	b.tool.estimatedLatency = latency
+	return b
+}
+
+// Build creates the final tool
+func (b *ToolBuilder) Build() domain.Tool {
+	if b.tool.fn == nil {
+		panic("tool function is required")
+	}
+
+	// Initialize argument pool
+	b.tool.argsPool = sync.Pool{
+		New: func() interface{} {
+			slice := make([]reflect.Value, b.tool.numArgs)
+			return &slice
+		},
+	}
+
+	return b.tool
 }
 
 // Name returns the tool's name
@@ -522,4 +674,108 @@ func (t *Tool) callFunction(args []reflect.Value) (interface{}, error) {
 	}
 
 	return result, err
+}
+
+// OutputSchema returns the schema for the tool output
+func (t *Tool) OutputSchema() *sdomain.Schema {
+	return t.outputSchema
+}
+
+// UsageInstructions returns detailed instructions on when and how to use the tool
+func (t *Tool) UsageInstructions() string {
+	return t.usageInstructions
+}
+
+// Examples returns concrete examples showing tool usage
+func (t *Tool) Examples() []domain.ToolExample {
+	return t.examples
+}
+
+// Constraints returns limitations and constraints of the tool
+func (t *Tool) Constraints() []string {
+	return t.constraints
+}
+
+// ErrorGuidance returns a map of error types to helpful guidance
+func (t *Tool) ErrorGuidance() map[string]string {
+	return t.errorGuidance
+}
+
+// Category returns the category for grouping
+func (t *Tool) Category() string {
+	return t.category
+}
+
+// Tags returns tags for discovery and filtering
+func (t *Tool) Tags() []string {
+	return t.tags
+}
+
+// Version returns the tool version for compatibility tracking
+func (t *Tool) Version() string {
+	return t.version
+}
+
+// IsDeterministic returns whether the same input always produces same output
+func (t *Tool) IsDeterministic() bool {
+	return t.isDeterministic
+}
+
+// IsDestructive returns whether the tool modifies state or has side effects
+func (t *Tool) IsDestructive() bool {
+	return t.isDestructive
+}
+
+// RequiresConfirmation returns whether user confirmation is needed before execution
+func (t *Tool) RequiresConfirmation() bool {
+	return t.requiresConfirmation
+}
+
+// EstimatedLatency returns the expected execution time
+func (t *Tool) EstimatedLatency() string {
+	return t.estimatedLatency
+}
+
+// ToMCPDefinition exports the tool definition in MCP format
+func (t *Tool) ToMCPDefinition() domain.MCPToolDefinition {
+	annotations := make(map[string]interface{})
+
+	// Add behavioral metadata
+	annotations["deterministic"] = t.isDeterministic
+	annotations["destructive"] = t.isDestructive
+	annotations["requires_confirmation"] = t.requiresConfirmation
+	annotations["estimated_latency"] = t.estimatedLatency
+
+	// Add metadata
+	if t.category != "" {
+		annotations["category"] = t.category
+	}
+	if len(t.tags) > 0 {
+		annotations["tags"] = t.tags
+	}
+	if t.version != "" {
+		annotations["version"] = t.version
+	}
+
+	// Add guidance if present
+	if t.usageInstructions != "" {
+		annotations["usage_instructions"] = t.usageInstructions
+	}
+	if len(t.examples) > 0 {
+		annotations["examples"] = t.examples
+	}
+	if len(t.constraints) > 0 {
+		annotations["constraints"] = t.constraints
+	}
+	if len(t.errorGuidance) > 0 {
+		annotations["error_guidance"] = t.errorGuidance
+	}
+
+	return domain.MCPToolDefinition{
+		Name:         t.name,
+		Description:  t.description,
+		InputSchema:  t.paramSchema,
+		OutputSchema: t.outputSchema,
+		Annotations:  annotations,
+	}
 }

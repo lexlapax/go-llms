@@ -13,8 +13,19 @@ import (
 
 // mockTool implements domain.Tool for testing
 type mockTool struct {
-	name        string
-	description string
+	name                 string
+	description          string
+	category             string
+	tags                 []string
+	version              string
+	usageInstructions    string
+	examples             []domain.ToolExample
+	constraints          []string
+	errorGuidance        map[string]string
+	isDeterministic      bool
+	isDestructive        bool
+	requiresConfirmation bool
+	estimatedLatency     string
 }
 
 func (m *mockTool) Name() string        { return m.name }
@@ -23,11 +34,61 @@ func (m *mockTool) Execute(ctx *domain.ToolContext, params interface{}) (interfa
 	return "mock result", nil
 }
 func (m *mockTool) ParameterSchema() *sdomain.Schema { return nil }
+func (m *mockTool) OutputSchema() *sdomain.Schema    { return nil }
+func (m *mockTool) UsageInstructions() string {
+	if m.usageInstructions != "" {
+		return m.usageInstructions
+	}
+	return "Default usage instructions"
+}
+func (m *mockTool) Examples() []domain.ToolExample   { return m.examples }
+func (m *mockTool) Constraints() []string            { return m.constraints }
+func (m *mockTool) ErrorGuidance() map[string]string { return m.errorGuidance }
+func (m *mockTool) Category() string {
+	if m.category != "" {
+		return m.category
+	}
+	return "test"
+}
+func (m *mockTool) Tags() []string {
+	if m.tags != nil {
+		return m.tags
+	}
+	return []string{"test"}
+}
+func (m *mockTool) Version() string {
+	if m.version != "" {
+		return m.version
+	}
+	return "1.0.0"
+}
+func (m *mockTool) IsDeterministic() bool      { return m.isDeterministic }
+func (m *mockTool) IsDestructive() bool        { return m.isDestructive }
+func (m *mockTool) RequiresConfirmation() bool { return m.requiresConfirmation }
+func (m *mockTool) EstimatedLatency() string {
+	if m.estimatedLatency != "" {
+		return m.estimatedLatency
+	}
+	return "medium"
+}
+func (m *mockTool) ToMCPDefinition() domain.MCPToolDefinition {
+	return domain.MCPToolDefinition{
+		Name:         m.name,
+		Description:  m.description,
+		InputSchema:  m.ParameterSchema(),
+		OutputSchema: m.OutputSchema(),
+		Annotations: map[string]interface{}{
+			"category": m.Category(),
+			"version":  m.Version(),
+		},
+	}
+}
 
 func TestToolRegistry_RegisterTool(t *testing.T) {
 	// Create a new registry for each test to avoid interference
 	registry := &toolRegistry{
-		Registry: builtins.NewRegistry[domain.Tool](),
+		Registry:     builtins.NewRegistry[domain.Tool](),
+		toolMetadata: make(map[string]ToolMetadata),
 	}
 
 	tests := []struct {
@@ -117,27 +178,43 @@ func TestToolRegistry_RegisterTool(t *testing.T) {
 
 func TestToolRegistry_ListByPermission(t *testing.T) {
 	registry := &toolRegistry{
-		Registry: builtins.NewRegistry[domain.Tool](),
+		Registry:     builtins.NewRegistry[domain.Tool](),
+		toolMetadata: make(map[string]ToolMetadata),
 	}
 
-	// Register tools with different permissions (using tags as proxy)
+	// Register tools with different permissions
 	tool1 := &mockTool{name: "file_reader", description: "Reads files"}
-	if err := registry.Register("file_reader", tool1, builtins.Metadata{
-		Tags: []string{"file", "perm:file:read"},
+	if err := registry.RegisterTool("file_reader", tool1, ToolMetadata{
+		Metadata: builtins.Metadata{
+			Name:        "file_reader",
+			Description: "Reads files",
+			Tags:        []string{"file"},
+		},
+		RequiredPermissions: []string{"file:read"},
 	}); err != nil {
 		t.Fatalf("failed to register file_reader: %v", err)
 	}
 
 	tool2 := &mockTool{name: "file_writer", description: "Writes files"}
-	if err := registry.Register("file_writer", tool2, builtins.Metadata{
-		Tags: []string{"file", "perm:file:write"},
+	if err := registry.RegisterTool("file_writer", tool2, ToolMetadata{
+		Metadata: builtins.Metadata{
+			Name:        "file_writer",
+			Description: "Writes files",
+			Tags:        []string{"file"},
+		},
+		RequiredPermissions: []string{"file:write"},
 	}); err != nil {
 		t.Fatalf("failed to register file_writer: %v", err)
 	}
 
 	tool3 := &mockTool{name: "network_fetch", description: "Fetches from network"}
-	if err := registry.Register("network_fetch", tool3, builtins.Metadata{
-		Tags: []string{"network", "perm:network:access"},
+	if err := registry.RegisterTool("network_fetch", tool3, ToolMetadata{
+		Metadata: builtins.Metadata{
+			Name:        "network_fetch",
+			Description: "Fetches from network",
+			Tags:        []string{"network"},
+		},
+		RequiredPermissions: []string{"network:access"},
 	}); err != nil {
 		t.Fatalf("failed to register network_fetch: %v", err)
 	}
@@ -161,27 +238,50 @@ func TestToolRegistry_ListByPermission(t *testing.T) {
 
 func TestToolRegistry_ListByResourceUsage(t *testing.T) {
 	registry := &toolRegistry{
-		Registry: builtins.NewRegistry[domain.Tool](),
+		Registry:     builtins.NewRegistry[domain.Tool](),
+		toolMetadata: make(map[string]ToolMetadata),
 	}
 
-	// Register tools with different resource characteristics (using tags)
+	// Register tools with different resource characteristics
 	tool1 := &mockTool{name: "low_memory_tool", description: "Uses low memory"}
-	if err := registry.Register("low_memory_tool", tool1, builtins.Metadata{
-		Tags: []string{"memory:low", "concurrent"},
+	if err := registry.RegisterTool("low_memory_tool", tool1, ToolMetadata{
+		Metadata: builtins.Metadata{
+			Name:        "low_memory_tool",
+			Description: "Uses low memory",
+		},
+		ResourceUsage: ResourceInfo{
+			Memory:      "low",
+			Concurrency: true,
+		},
 	}); err != nil {
 		t.Fatalf("failed to register low_memory_tool: %v", err)
 	}
 
 	tool2 := &mockTool{name: "high_memory_network", description: "High memory network tool"}
-	if err := registry.Register("high_memory_network", tool2, builtins.Metadata{
-		Tags: []string{"memory:high", "network", "concurrent"},
+	if err := registry.RegisterTool("high_memory_network", tool2, ToolMetadata{
+		Metadata: builtins.Metadata{
+			Name:        "high_memory_network",
+			Description: "High memory network tool",
+		},
+		ResourceUsage: ResourceInfo{
+			Memory:      "high",
+			Network:     true,
+			Concurrency: true,
+		},
 	}); err != nil {
 		t.Fatalf("failed to register high_memory_network: %v", err)
 	}
 
 	tool3 := &mockTool{name: "file_tool", description: "File system tool"}
-	if err := registry.Register("file_tool", tool3, builtins.Metadata{
-		Tags: []string{"memory:medium", "filesystem"},
+	if err := registry.RegisterTool("file_tool", tool3, ToolMetadata{
+		Metadata: builtins.Metadata{
+			Name:        "file_tool",
+			Description: "File system tool",
+		},
+		ResourceUsage: ResourceInfo{
+			Memory:     "medium",
+			FileSystem: true,
+		},
 	}); err != nil {
 		t.Fatalf("failed to register file_tool: %v", err)
 	}
@@ -253,7 +353,8 @@ func TestToolRegistry_GlobalRegistry(t *testing.T) {
 
 	// Create a fresh registry for testing
 	Tools = &toolRegistry{
-		Registry: builtins.NewRegistry[domain.Tool](),
+		Registry:     builtins.NewRegistry[domain.Tool](),
+		toolMetadata: make(map[string]ToolMetadata),
 	}
 
 	// Test MustRegisterTool
@@ -297,7 +398,8 @@ func TestToolRegistry_GlobalRegistry(t *testing.T) {
 
 func TestToolRegistry_Validation(t *testing.T) {
 	registry := &toolRegistry{
-		Registry: builtins.NewRegistry[domain.Tool](),
+		Registry:     builtins.NewRegistry[domain.Tool](),
+		toolMetadata: make(map[string]ToolMetadata),
 	}
 
 	// Test various validation scenarios
@@ -359,4 +461,396 @@ func TestToolRegistry_Validation(t *testing.T) {
 // Helper function to create bool pointers
 func boolPtr(b bool) *bool {
 	return &b
+}
+
+// Enhanced tests for new registry features
+
+func TestEnhancedToolMetadata(t *testing.T) {
+	// Create a fresh registry for testing
+	registry := NewTestRegistry()
+
+	t.Run("register tool with enhanced metadata", func(t *testing.T) {
+		tool := &mockTool{
+			name:              "test_tool",
+			description:       "A test tool",
+			category:          "test",
+			tags:              []string{"test", "mock"},
+			version:           "1.0.0",
+			usageInstructions: "Use this for testing",
+			isDeterministic:   true,
+			estimatedLatency:  "fast",
+		}
+
+		// Create enhanced metadata that pulls from tool
+		metadata := ToolMetadata{
+			Metadata: builtins.Metadata{
+				Name:        tool.Name(),
+				Category:    tool.Category(),
+				Tags:        tool.Tags(),
+				Description: tool.Description(),
+				Version:     tool.Version(),
+			},
+			RequiredPermissions: []string{"test:read"},
+			ResourceUsage: ResourceInfo{
+				Memory:      "low",
+				Network:     false,
+				FileSystem:  false,
+				Concurrency: true,
+			},
+		}
+
+		err := registry.RegisterTool(tool.Name(), tool, metadata)
+		if err != nil {
+			t.Errorf("Failed to register tool: %v", err)
+		}
+
+		// Verify tool is registered
+		retrieved, found := registry.Get(tool.Name())
+		if !found {
+			t.Error("Tool not found after registration")
+		}
+		if retrieved.Name() != tool.Name() {
+			t.Errorf("Retrieved tool name mismatch: got %s, want %s", retrieved.Name(), tool.Name())
+		}
+	})
+
+	t.Run("enhanced metadata populated from tool interface", func(t *testing.T) {
+		registry.Clear()
+
+		tool := &mockTool{
+			name:              "auto_tool",
+			description:       "Auto metadata tool",
+			category:          "auto",
+			tags:              []string{"auto", "test"},
+			version:           "2.0.0",
+			usageInstructions: "Auto-populated instructions",
+			constraints:       []string{"Must be deterministic"},
+			isDeterministic:   true,
+			estimatedLatency:  "fast",
+		}
+
+		// Register with minimal metadata - should auto-populate from tool
+		metadata := ToolMetadata{
+			Metadata: builtins.Metadata{
+				Name: tool.Name(),
+			},
+		}
+
+		err := registry.RegisterTool(tool.Name(), tool, metadata)
+		if err != nil {
+			t.Errorf("Failed to register tool: %v", err)
+		}
+
+		// Get documentation to verify metadata was populated
+		doc, err := registry.GetToolDocumentation(tool.Name())
+		if err != nil {
+			t.Errorf("Failed to get tool documentation: %v", err)
+		}
+
+		if doc.Category != "auto" {
+			t.Errorf("Category not populated: got %s, want auto", doc.Category)
+		}
+		if doc.Version != "2.0.0" {
+			t.Errorf("Version not populated: got %s, want 2.0.0", doc.Version)
+		}
+		if doc.UsageInstructions != "Auto-populated instructions" {
+			t.Errorf("Usage instructions not populated")
+		}
+	})
+}
+
+func TestMCPExportFunctionality(t *testing.T) {
+	registry := NewTestRegistry()
+	registry.Clear()
+
+	t.Run("export single tool to MCP", func(t *testing.T) {
+		tool := &mockTool{
+			name:        "calculator",
+			description: "Performs calculations",
+			category:    "math",
+			version:     "2.0.0",
+			examples: []domain.ToolExample{
+				{
+					Name:        "Addition",
+					Description: "Add two numbers",
+					Input:       map[string]interface{}{"operation": "add", "a": 5, "b": 3},
+					Output:      8,
+				},
+			},
+			constraints: []string{"Only basic operations"},
+			errorGuidance: map[string]string{
+				"division_by_zero": "Cannot divide by zero",
+			},
+		}
+
+		metadata := ToolMetadata{
+			Metadata: builtins.Metadata{
+				Name:        tool.Name(),
+				Category:    tool.Category(),
+				Description: tool.Description(),
+				Version:     tool.Version(),
+			},
+		}
+
+		// Register the tool
+		if err := registry.RegisterTool(tool.Name(), tool, metadata); err != nil {
+			t.Fatalf("Failed to register tool: %v", err)
+		}
+
+		// Export to MCP
+		mcp, err := registry.ExportToMCP(tool.Name())
+		if err != nil {
+			t.Errorf("Failed to export tool to MCP: %v", err)
+		}
+
+		// Verify MCP structure
+		if mcp.Name != tool.Name() {
+			t.Errorf("MCP name mismatch: got %s, want %s", mcp.Name, tool.Name())
+		}
+		if mcp.Description != tool.Description() {
+			t.Errorf("MCP description mismatch")
+		}
+	})
+
+	t.Run("export all tools to MCP catalog", func(t *testing.T) {
+		// Clear and register multiple tools
+		registry.Clear()
+
+		toolsToRegister := []*mockTool{
+			{
+				name:        "web_search",
+				description: "Search the web",
+				category:    "web",
+				version:     "1.0.0",
+			},
+			{
+				name:        "file_read",
+				description: "Read files",
+				category:    "file",
+				version:     "1.0.0",
+			},
+		}
+
+		for _, tool := range toolsToRegister {
+			metadata := ToolMetadata{
+				Metadata: builtins.Metadata{
+					Name:        tool.Name(),
+					Category:    tool.Category(),
+					Description: tool.Description(),
+					Version:     tool.Version(),
+				},
+			}
+			if err := registry.RegisterTool(tool.Name(), tool, metadata); err != nil {
+				t.Errorf("Failed to register tool %s: %v", tool.Name(), err)
+			}
+		}
+
+		// Export all to MCP catalog
+		catalog, err := registry.ExportAllToMCP()
+		if err != nil {
+			t.Errorf("Failed to export catalog: %v", err)
+		}
+
+		if len(catalog.Tools) != 2 {
+			t.Errorf("Expected 2 tools in catalog, got %d", len(catalog.Tools))
+		}
+
+		// Verify catalog metadata
+		if catalog.Version == "" {
+			t.Error("Catalog should have version")
+		}
+		if catalog.Description == "" {
+			t.Error("Catalog should have description")
+		}
+	})
+}
+
+func TestEnhancedResourceFiltering(t *testing.T) {
+	registry := NewTestRegistry()
+	registry.Clear()
+
+	// Register tools with different resource requirements
+	tools := []struct {
+		tool     *mockTool
+		metadata ToolMetadata
+	}{
+		{
+			tool: &mockTool{
+				name:        "web_tool",
+				description: "Web tool",
+				category:    "web",
+			},
+			metadata: ToolMetadata{
+				Metadata: builtins.Metadata{
+					Name:     "web_tool",
+					Category: "web",
+				},
+				RequiredPermissions: []string{"network:read"},
+				ResourceUsage: ResourceInfo{
+					Memory:  "medium",
+					Network: true,
+				},
+			},
+		},
+		{
+			tool: &mockTool{
+				name:        "file_tool",
+				description: "File tool",
+				category:    "file",
+			},
+			metadata: ToolMetadata{
+				Metadata: builtins.Metadata{
+					Name:     "file_tool",
+					Category: "file",
+				},
+				RequiredPermissions: []string{"file:read", "file:write"},
+				ResourceUsage: ResourceInfo{
+					Memory:     "low",
+					FileSystem: true,
+				},
+			},
+		},
+		{
+			tool: &mockTool{
+				name:        "compute_tool",
+				description: "Compute tool",
+				category:    "compute",
+			},
+			metadata: ToolMetadata{
+				Metadata: builtins.Metadata{
+					Name:     "compute_tool",
+					Category: "compute",
+				},
+				ResourceUsage: ResourceInfo{
+					Memory:      "high",
+					Concurrency: true,
+				},
+			},
+		},
+	}
+
+	// Register all tools
+	for _, tt := range tools {
+		if err := registry.RegisterTool(tt.tool.Name(), tt.tool, tt.metadata); err != nil {
+			t.Errorf("Failed to register tool %s: %v", tt.tool.Name(), err)
+		}
+	}
+
+	t.Run("filter by permission", func(t *testing.T) {
+		networkTools := registry.ListByPermission("network:read")
+		if len(networkTools) != 1 {
+			t.Errorf("Expected 1 network tool, got %d", len(networkTools))
+		}
+
+		fileWriteTools := registry.ListByPermission("file:write")
+		if len(fileWriteTools) != 1 {
+			t.Errorf("Expected 1 file write tool, got %d", len(fileWriteTools))
+		}
+	})
+
+	t.Run("filter by resource usage", func(t *testing.T) {
+		// Tools requiring network
+		networkRequired := true
+		criteria := ResourceCriteria{
+			RequiresNetwork: &networkRequired,
+		}
+		networkTools := registry.ListByResourceUsage(criteria)
+		if len(networkTools) != 1 {
+			t.Errorf("Expected 1 network tool, got %d", len(networkTools))
+		}
+
+		// Tools with memory <= medium
+		criteria = ResourceCriteria{
+			MaxMemory: "medium",
+		}
+		lowMemTools := registry.ListByResourceUsage(criteria)
+		if len(lowMemTools) != 2 { // web_tool (medium) and file_tool (low)
+			t.Errorf("Expected 2 low/medium memory tools, got %d", len(lowMemTools))
+		}
+
+		// Tools supporting concurrency
+		concurrent := true
+		criteria = ResourceCriteria{
+			RequiresConcurrent: &concurrent,
+		}
+		concurrentTools := registry.ListByResourceUsage(criteria)
+		if len(concurrentTools) != 1 {
+			t.Errorf("Expected 1 concurrent tool, got %d", len(concurrentTools))
+		}
+	})
+}
+
+func TestToolDocumentation(t *testing.T) {
+	registry := NewTestRegistry()
+	registry.Clear()
+
+	tool := &mockTool{
+		name:              "doc_tool",
+		description:       "Documentation test tool",
+		category:          "test",
+		tags:              []string{"test", "documentation"},
+		version:           "3.0.0",
+		usageInstructions: "Detailed usage instructions here",
+		examples: []domain.ToolExample{
+			{
+				Name:        "Example 1",
+				Description: "Basic example",
+				Input:       "test input",
+				Output:      "test output",
+			},
+		},
+		constraints: []string{"Constraint 1", "Constraint 2"},
+		errorGuidance: map[string]string{
+			"error1": "How to fix error 1",
+		},
+		isDeterministic:      true,
+		isDestructive:        false,
+		requiresConfirmation: false,
+		estimatedLatency:     "fast",
+	}
+
+	metadata := ToolMetadata{
+		Metadata: builtins.Metadata{
+			Name:        tool.Name(),
+			Category:    tool.Category(),
+			Tags:        tool.Tags(),
+			Description: tool.Description(),
+			Version:     tool.Version(),
+		},
+		RequiredPermissions: []string{"test:read"},
+		ResourceUsage: ResourceInfo{
+			Memory: "low",
+		},
+	}
+
+	// Register the tool
+	if err := registry.RegisterTool(tool.Name(), tool, metadata); err != nil {
+		t.Fatalf("Failed to register tool: %v", err)
+	}
+
+	// Get documentation
+	doc, err := registry.GetToolDocumentation(tool.Name())
+	if err != nil {
+		t.Errorf("Failed to get tool documentation: %v", err)
+	}
+
+	// Verify all fields
+	if doc.Name != tool.Name() {
+		t.Errorf("Doc name mismatch")
+	}
+	if doc.UsageInstructions != tool.UsageInstructions() {
+		t.Errorf("Doc usage instructions mismatch")
+	}
+	if len(doc.Examples) != 1 {
+		t.Errorf("Expected 1 example, got %d", len(doc.Examples))
+	}
+	if len(doc.Constraints) != 2 {
+		t.Errorf("Expected 2 constraints, got %d", len(doc.Constraints))
+	}
+	if len(doc.RequiredPermissions) != 1 {
+		t.Errorf("Expected 1 permission, got %d", len(doc.RequiredPermissions))
+	}
+	if !doc.IsDeterministic {
+		t.Error("Expected deterministic tool")
+	}
 }

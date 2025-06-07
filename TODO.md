@@ -48,34 +48,51 @@
 
 ### Tool System Enhancement with LLM Guidance (HIGHEST PRIORITY - IN PROGRESS)
 - [ ] Phase 1: Core Infrastructure (Week 1)
-  - [ ] Day 1: Create new Tool interface with comprehensive LLM guidance (TDD)
-    - [ ] Write tests for new Tool interface in pkg/agent/domain/tool_test.go
-    - [ ] Implement Tool interface in pkg/agent/domain/tool.go
-    - [ ] Add ToolExample and MCPToolDefinition types
-    - [ ] Run fmt, lint, test
-  - [ ] Day 2: Create BaseToolV2 implementation
-    - [ ] Write tests for BaseToolV2 and builder pattern
-    - [ ] Implement BaseToolV2 in pkg/agent/tools/base_tool_v2.go
-    - [ ] Create ToolBuilder for easy construction
-    - [ ] Add validation methods
-    - [ ] Run fmt, lint, test
-  - [ ] Day 3: Update Tool Registry
-    - [ ] Write tests for enhanced registry methods
-    - [ ] Update ToolMetadata to ToolMetadataV2
-    - [ ] Implement ToolRegistryV2 interface
-    - [ ] Add MCP export functionality
-    - [ ] Run fmt, lint, test
-  - [ ] Day 4: Update LLM Agent tool description
-    - [ ] Write tests for enhanced system content generation
-    - [ ] Implement getSystemContentV2() method
-    - [ ] Add formatToolDocumentation() method
-    - [ ] Add schema formatting helpers
-    - [ ] Run fmt, lint, test
-  - [ ] Day 5: Integration testing
-    - [ ] Test new tool with LLM Agent
-    - [ ] Verify MCP export
-    - [ ] Performance benchmarks
-    - [ ] Fix any integration issues
+  - [x] Day 1-4: COMPLETED - see TODO-DONE.md
+  - [ ] Day 5: API Client Tool & Integration testing
+    - [x] Phase 1: Basic REST Client Implementation
+      - [x] Create API_CLIENT_TOOL_PLAN.md with detailed design
+      - [x] Write tests for basic REST operations (GET, POST, PUT, DELETE)
+      - [x] Implement core API client with JSON handling
+      - [x] Add basic auth support (API key, Bearer token)
+      - [x] Create examples for common API patterns
+    - [ ] Phase 2: OpenAPI/Swagger Integration  
+      - [ ] Add OpenAPI spec parsing capability
+      - [ ] Implement operation discovery from specs
+      - [ ] Add request validation against schemas
+      - [ ] Create examples using public OpenAPI specs
+      - [ ] Add automatic endpoint discovery from specs
+    - [ ] Phase 3: GraphQL Support
+      - [ ] Implement GraphQL query execution
+      - [ ] Add GraphQL mutation support
+      - [ ] Support GraphQL variables and fragments
+      - [ ] Add GraphQL introspection capabilities
+    - [ ] Phase 4: Advanced Authentication
+      - [ ] Add OAuth2 flows (client credentials, authorization code)
+      - [ ] Implement session/cookie management
+      - [ ] Add custom authentication header support
+      - [ ] Support JWT token refresh
+    - [ ] Phase 5: Advanced Capabilities
+      - [ ] Auto-Pagination: Automatically follow pagination links
+      - [ ] Rate Limiting: Respect rate limit headers with intelligent backoff
+      - [ ] Response Caching: Cache responses with configurable TTL
+      - [ ] Request Templates: Store and reuse common request patterns
+      - [ ] Response Transformation: Extract data using JSONPath or JQ-like queries
+      - [ ] Error Recovery: Smart retries with exponential backoff
+      - [ ] Mock Mode: Optional mock responses for testing
+      - [ ] Streaming Responses: Handle large response streaming
+      - [ ] Request/Response Middleware: Plugin system for custom processing
+      - [ ] Multi-tenancy: Support multiple API configurations
+      - [ ] Request Batching: Batch multiple requests for efficiency
+    - [x] Integration Testing
+      - [x] Test tool with LLM Agent
+      - [x] Verify MCP export functionality
+      - [x] Run performance benchmarks
+      - [x] Fix any integration issues
+      - [x] Write an example builtins-web-api-client with demonstrates various aspects of the tool
+      - [ ] Update tools documentation in docs/ with about this tool.
+
+
 
 - [ ] Phase 2: Tool Migration Part 1 (Week 2) - 15 tools
   - [ ] Day 1: Migrate calculator tool (1 tool - template for others)
@@ -155,10 +172,6 @@
     - [ ] Create release notes
     - [ ] Tag release
 
-### API Client Tool (POSTPONED - After Tool Enhancement)
-- [ ] Implement after new tool system is in place
-- [ ] Will use new Tool interface from the start
-- [ ] Original plan in TOOL_ENHANCEMENT_PLAN.md
 
 ### Previous Built-in Components Plan
 - [x] P2: Build useful built-in tools - COMPLETED - see TODO-DONE.md

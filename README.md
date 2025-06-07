@@ -18,6 +18,7 @@ Go-LLMs is a Go library that provides a simplified, unified interface to interac
 - **Type safety**: Leverages Go's type system for better developer experience
 - **Dependency injection**: Enables passing data and services into agents
 - **Tool integration**: Allows LLMs to interact with external systems through function calls
+- **Enhanced Tool System**: Tools now include LLM guidance metadata (usage instructions, examples, constraints, error guidance) and MCP (Model Context Protocol) support
 - **Built-in tools**: Comprehensive set of pre-built tools for web, file, and system operations with registry and discovery
 - **Multiple providers**: Support for OpenAI, Anthropic, Google Gemini, and OpenAI API compatible providers (like OpenRouter and Ollama)
 - **Multimodal content**: Support for text, images, files, videos, and audio in messages
@@ -635,11 +636,36 @@ For more information on testing, see the [Testing Framework documentation](docs/
 
 ## Development Status
 
-### Current Version: v0.3.0 (Active Development)
+### Current Version: v0.3.1 (Active Development)
 
-The core functionality is fairly complete and working. However, APIs are subject to change to accommodate new unforeseen developments in upstream APIs.
+The core functionality is fairly complete and working for basic llm wrappers. However, APIs are rapidly changing above the llm layers to accomodate basic tool usage compatible with llms, and adding basic support for future mcp support,  agents, workflows etc. Be warned. I will try to update the versions accordingly per release.
+
+### Release History
+
+
 
 #### Changelog
+
+**v0.3.1** (June 7, 2025)
+- 🎉 **Tool System Enhancement with LLM Guidance - Phase 1, Days 1-3 Completed**:
+  - **Day 1**: Created comprehensive Tool interface with LLM guidance
+    - Added methods for usage instructions, examples, constraints, error guidance
+    - Added behavioral hints (deterministic, destructive, requires confirmation)
+    - Added MCP (Model Context Protocol) support with ToMCPDefinition()
+    - Full test coverage in pkg/agent/domain/tool_test.go
+  - **Day 2**: Updated Base Tool implementation
+    - Updated Tool struct with all new fields for metadata
+    - Implemented all new interface methods with sensible defaults
+    - Created ToolBuilder with fluent interface for easy construction
+    - Maintained backward compatibility with existing NewTool function
+    - Updated internal tools (subAgentTool, transferToAgentTool, AgentTool)
+  - **Day 3**: Enhanced Tool Registry
+    - Added MCP export functionality (ExportToMCP, ExportAllToMCP)
+    - Added GetToolDocumentation for comprehensive tool documentation
+    - Enhanced ToolMetadata to auto-populate from tool interface
+    - Moved testing utilities to pkg/testutils for better organization
+    - Updated MockTool to implement all new interface methods
+    - All tests passing with 72.8% coverage
 
 **v0.3.0** (June 2025)
 - 🎉 **Built-in Tools System** - Complete implementation of comprehensive built-in tools
