@@ -1,7 +1,7 @@
 // ABOUTME: Performance benchmarks for the API Client Tool
 // ABOUTME: Measures execution speed, memory allocation, and concurrent performance
 
-package web
+package benchmarks
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
@@ -20,14 +21,14 @@ func BenchmarkAPIClientTool_SimpleGET(b *testing.B) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"id":      123,
-			"message": "Hello, World!",
+			"id":        123,
+			"message":   "Hello, World!",
 			"timestamp": time.Now().Unix(),
 		})
 	}))
 	defer server.Close()
 
-	tool := NewAPIClientTool()
+	tool := web.NewAPIClientTool()
 	state := domain.NewState()
 	ctx := &domain.ToolContext{
 		Context:   context.Background(),
@@ -63,7 +64,7 @@ func BenchmarkAPIClientTool_POST(b *testing.B) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]interface{}
 		json.NewDecoder(r.Body).Decode(&body)
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -74,7 +75,7 @@ func BenchmarkAPIClientTool_POST(b *testing.B) {
 	}))
 	defer server.Close()
 
-	tool := NewAPIClientTool()
+	tool := web.NewAPIClientTool()
 	state := domain.NewState()
 	ctx := &domain.ToolContext{
 		Context:   context.Background(),
@@ -119,7 +120,7 @@ func BenchmarkAPIClientTool_PathParams(b *testing.B) {
 	}))
 	defer server.Close()
 
-	tool := NewAPIClientTool()
+	tool := web.NewAPIClientTool()
 	state := domain.NewState()
 	ctx := &domain.ToolContext{
 		Context:   context.Background(),
@@ -179,7 +180,7 @@ func BenchmarkAPIClientTool_LargeResponse(b *testing.B) {
 	}))
 	defer server.Close()
 
-	tool := NewAPIClientTool()
+	tool := web.NewAPIClientTool()
 	state := domain.NewState()
 	ctx := &domain.ToolContext{
 		Context:   context.Background(),
@@ -215,7 +216,7 @@ func BenchmarkAPIClientTool_Concurrent(b *testing.B) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Simulate some processing time
 		time.Sleep(10 * time.Millisecond)
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"id":      r.URL.Query().Get("id"),
@@ -224,7 +225,7 @@ func BenchmarkAPIClientTool_Concurrent(b *testing.B) {
 	}))
 	defer server.Close()
 
-	tool := NewAPIClientTool()
+	tool := web.NewAPIClientTool()
 
 	b.ResetTimer()
 	b.ReportAllocs()

@@ -31,11 +31,11 @@ func main() {
 	deps := core.LLMDeps{
 		Provider: provider,
 	}
-	agent := core.NewLLMAgent("api-demo", 
+	agent := core.NewLLMAgent("api-demo",
 		"I help you interact with REST APIs",
 		deps,
 	)
-	
+
 	// Set system prompt
 	agent.SetSystemPrompt(`You are an API interaction assistant. Use the api_client tool to:
 1. Make REST API calls to various services
@@ -48,7 +48,7 @@ When making API calls, be sure to:
 - Include necessary authentication if required
 - Format request bodies as JSON when needed
 - Handle errors gracefully and suggest fixes`)
-	
+
 	// Add the API client tool
 	agent.AddTool(apiTool)
 
@@ -149,14 +149,14 @@ When making API calls, be sure to:
 func printLastMessage(state *domain.State) {
 	// Try to get the response from various possible keys
 	responseKeys := []string{"response", "output", "result", "answer", "reply"}
-	
+
 	for _, key := range responseKeys {
 		if value, exists := state.Get(key); exists {
 			fmt.Printf("Response: %v\n", value)
 			return
 		}
 	}
-	
+
 	// If no response found, print the whole state for debugging
 	fmt.Printf("State: %+v\n", state.Values())
 }

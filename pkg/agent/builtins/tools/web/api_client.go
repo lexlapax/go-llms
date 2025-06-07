@@ -76,7 +76,7 @@ func createAPIClientTool() domain.Tool {
 				Description: "Base URL of the API (e.g., 'https://api.example.com')",
 			},
 			"endpoint": {
-				Type:        "string", 
+				Type:        "string",
 				Description: "API endpoint path (e.g., '/users/{user_id}'). Use {param} for path parameters",
 			},
 			"method": {
@@ -271,18 +271,18 @@ The tool will automatically set appropriate headers and handle responses intelli
 			"Redirects are followed automatically up to 10 times",
 		}).
 		WithErrorGuidance(map[string]string{
-			"invalid_url":        "Ensure the base_url is a valid HTTP/HTTPS URL",
-			"connection_failed":  "Check if the API server is accessible and the URL is correct",
-			"auth_required":      "This endpoint requires authentication. Add auth configuration",
-			"invalid_json":       "The response was not valid JSON. The API might return a different format",
-			"timeout":            "The request timed out. Try increasing the timeout parameter",
-			"invalid_method":     "Use one of: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS",
+			"invalid_url":       "Ensure the base_url is a valid HTTP/HTTPS URL",
+			"connection_failed": "Check if the API server is accessible and the URL is correct",
+			"auth_required":     "This endpoint requires authentication. Add auth configuration",
+			"invalid_json":      "The response was not valid JSON. The API might return a different format",
+			"timeout":           "The request timed out. Try increasing the timeout parameter",
+			"invalid_method":    "Use one of: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS",
 		}).
 		WithCategory("web").
 		WithTags([]string{"api", "rest", "http", "integration"}).
 		WithVersion("1.0.0").
 		WithBehavior(false, false, false, "medium")
-	
+
 	return builder.Build()
 }
 
@@ -294,7 +294,7 @@ func NewAPIClientTool() domain.Tool {
 // convertToStringMap converts various map types to map[string]string
 func convertToStringMap(input interface{}) map[string]string {
 	result := make(map[string]string)
-	
+
 	switch m := input.(type) {
 	case map[string]string:
 		return m
@@ -307,7 +307,7 @@ func convertToStringMap(input interface{}) map[string]string {
 			result[fmt.Sprintf("%v", k)] = fmt.Sprintf("%v", v)
 		}
 	}
-	
+
 	return result
 }
 
@@ -381,7 +381,7 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 		if method == "GET" || method == "HEAD" || method == "OPTIONS" {
 			return nil, fmt.Errorf("body not allowed for %s requests", method)
 		}
-		
+
 		bodyBytes, err := json.Marshal(body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to encode body as JSON: %w", err)
@@ -473,7 +473,7 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 	// Add error details and guidance for non-success responses
 	if !result["success"].(bool) {
 		result["error_message"] = fmt.Sprintf("API returned status %d", resp.StatusCode)
-		
+
 		// Add error details if response contains error info
 		if errorData, ok := responseData.(map[string]interface{}); ok {
 			result["error_details"] = errorData

@@ -56,12 +56,38 @@
       - [x] Implement core API client with JSON handling
       - [x] Add basic auth support (API key, Bearer token)
       - [x] Create examples for common API patterns
-    - [ ] Phase 2: OpenAPI/Swagger Integration  
-      - [ ] Add OpenAPI spec parsing capability
-      - [ ] Implement operation discovery from specs
-      - [ ] Add request validation against schemas
-      - [ ] Create examples using public OpenAPI specs
-      - [ ] Add automatic endpoint discovery from specs
+    - [ ] Phase 2: OpenAPI/Swagger Integration (Week 2)
+      - [x] Day 1: OpenAPI Spec Parsing Foundation
+        - [x] Research OpenAPI 3.0/3.1 specification structure
+        - [x] Create OpenAPI spec data structures (OpenAPISpec, PathItem, Operation, etc.)
+        - [x] Implement spec fetching from URLs (JSON/YAML support)
+        - [x] Add spec validation (basic structure validation)
+        - [x] Create unit tests for spec parsing
+      - [x] Day 2: Operation Discovery System
+        - [x] Implement operation enumeration from parsed specs
+        - [x] Create operation metadata extraction (summary, description, parameters)
+        - [x] Add parameter schema extraction and validation rules
+        - [x] Implement path-to-operation mapping
+        - [x] Create operation discovery API for LLMs
+      - [ ] Day 3: Request Validation Integration
+        - [ ] Integrate parameter validation against OpenAPI schemas
+        - [ ] Add request body validation for POST/PUT operations
+        - [ ] Implement response schema validation (optional)
+        - [ ] Add validation error reporting with guidance
+        - [ ] Create validation bypass options for flexible usage
+      - [ ] Day 4: Public API Examples and Testing
+        - [ ] Create examples using GitHub API OpenAPI spec
+        - [ ] Create examples using PetStore API (canonical example)
+        - [ ] Create examples using JSONPlaceholder API
+        - [ ] Add OpenAPI discovery mode to existing tool
+        - [ ] Write comprehensive integration tests
+      - [ ] Day 5: Advanced Features and Documentation
+        - [ ] Add automatic endpoint discovery from specs
+        - [ ] Implement server URL resolution from specs
+        - [ ] Add security scheme detection and mapping
+        - [ ] Create OpenAPI-specific error guidance
+        - [ ] Update documentation with OpenAPI examples
+        - [ ] Performance optimization and caching
     - [ ] Phase 3: GraphQL Support
       - [ ] Implement GraphQL query execution
       - [ ] Add GraphQL mutation support
@@ -90,7 +116,7 @@
       - [x] Run performance benchmarks
       - [x] Fix any integration issues
       - [x] Write an example builtins-web-api-client with demonstrates various aspects of the tool
-      - [ ] Update tools documentation in docs/ with about this tool.
+      - [x] Update tools documentation in docs/ with about this tool.
 
 
 

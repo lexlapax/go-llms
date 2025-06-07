@@ -16,7 +16,6 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-
 // TestAPIClientTool_BasicGET tests basic GET request functionality
 func TestAPIClientTool_BasicGET(t *testing.T) {
 	// Create test server
@@ -24,7 +23,7 @@ func TestAPIClientTool_BasicGET(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Errorf("Expected GET, got %s", r.Method)
 		}
-		
+
 		// Return simple JSON response
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -145,7 +144,7 @@ func TestAPIClientTool_POST(t *testing.T) {
 	}
 
 	resultMap := result.(map[string]interface{})
-	
+
 	// Check status code
 	if resultMap["status_code"] != float64(201) {
 		t.Errorf("Expected status code 201, got %v", resultMap["status_code"])
@@ -167,7 +166,7 @@ func TestAPIClientTool_POST(t *testing.T) {
 // TestAPIClientTool_APIKeyAuth tests API key authentication
 func TestAPIClientTool_APIKeyAuth(t *testing.T) {
 	expectedAPIKey := "test-api-key-123"
-	
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check API key in header
 		apiKey := r.Header.Get("X-API-Key")
@@ -221,7 +220,7 @@ func TestAPIClientTool_APIKeyAuth(t *testing.T) {
 
 	resultMap := result.(map[string]interface{})
 	data := resultMap["data"].(map[string]interface{})
-	
+
 	if data["authenticated"] != true {
 		t.Errorf("Expected authenticated=true")
 	}
@@ -246,7 +245,7 @@ func TestAPIClientTool_APIKeyAuth(t *testing.T) {
 // TestAPIClientTool_BearerAuth tests Bearer token authentication
 func TestAPIClientTool_BearerAuth(t *testing.T) {
 	expectedToken := "bearer-token-abc123"
-	
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check Bearer token
 		auth := r.Header.Get("Authorization")
@@ -403,7 +402,7 @@ func TestAPIClientTool_ErrorHandling(t *testing.T) {
 			}
 
 			resultMap := result.(map[string]interface{})
-			
+
 			// Should not be successful
 			if resultMap["success"] != false {
 				t.Errorf("Expected success=false for error response")
@@ -433,7 +432,7 @@ func TestAPIClientTool_MCPExport(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to export api_client to MCP format: %v", err)
 	}
-	
+
 	// Verify we got the tool (to satisfy the compiler about unused variable)
 	_ = tool
 
@@ -531,7 +530,7 @@ func TestAPIClientTool_MCPCatalog(t *testing.T) {
 	for _, tool := range catalog.Tools {
 		if tool.Name == "api_client" {
 			found = true
-			
+
 			// Validate it's in the web category through annotations
 			if tool.Annotations != nil {
 				if category, hasCategory := tool.Annotations["category"].(string); hasCategory {
@@ -549,7 +548,7 @@ func TestAPIClientTool_MCPCatalog(t *testing.T) {
 							tagMap[tagStr] = true
 						}
 					}
-				
+
 					for _, tag := range expectedTags {
 						if !tagMap[tag] {
 							t.Errorf("Expected tag '%s' not found", tag)
@@ -615,7 +614,7 @@ func TestAPIClientTool_PathParameters(t *testing.T) {
 
 	resultMap := result.(map[string]interface{})
 	data := resultMap["data"].(map[string]interface{})
-	
+
 	if data["user_id"] != "alice123" {
 		t.Errorf("Expected user_id 'alice123', got %v", data["user_id"])
 	}
@@ -632,7 +631,7 @@ func TestAPIClientTool_Headers(t *testing.T) {
 				"custom-header": r.Header.Get("X-Custom-Header"),
 			},
 		}
-		
+
 		json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
@@ -656,7 +655,7 @@ func TestAPIClientTool_Headers(t *testing.T) {
 		"endpoint": "/echo",
 		"method":   "GET",
 		"headers": map[string]string{
-			"Accept":         "application/json",
+			"Accept":          "application/json",
 			"X-Custom-Header": "custom-value",
 		},
 	}
@@ -669,7 +668,7 @@ func TestAPIClientTool_Headers(t *testing.T) {
 	resultMap := result.(map[string]interface{})
 	data := resultMap["data"].(map[string]interface{})
 	headers := data["headers"].(map[string]interface{})
-	
+
 	if headers["custom-header"] != "custom-value" {
 		t.Errorf("Expected custom header 'custom-value', got %v", headers["custom-header"])
 	}
