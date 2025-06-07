@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 
@@ -111,7 +112,7 @@ Maintain an objective, professional tone.`)
 	// Add debug logging to all LLM agents if DEBUG=1
 	if os.Getenv("DEBUG") == "1" {
 		log.Println("🐛 DEBUG mode enabled - Adding logging hooks to LLM agents")
-		
+
 		// Try to add hooks to the LLM agents (type assertion needed)
 		debugLogger := slog.Default().With("component", "research-agent")
 		if llmAgent, ok := duplicateFilter.(*core.LLMAgent); ok {
@@ -263,14 +264,14 @@ func (r *ResearchAgent) executeMultiSearch(ctx context.Context, topic string) ([
 func (r *ResearchAgent) deduplicateResults(ctx context.Context, results []map[string]interface{}) ([]map[string]interface{}, error) {
 	dedupState := domain.NewState()
 	dedupState.Set("results", results)
-	dedupState.Set("instruction", "Deduplicate these search results and assign relevance scores")
+	dedupState.Set("prompt", "Deduplicate these search results and assign relevance scores")
 
 	result, err := r.duplicateFilter.Run(ctx, dedupState)
 	if err != nil {
 		return results, err
 	}
 
-	_, ok := result.Get("response")
+	response, ok := result.Get("result")
 	if !ok {
 		return results, fmt.Errorf("no response from deduplication")
 	}
@@ -278,6 +279,7 @@ func (r *ResearchAgent) deduplicateResults(ctx context.Context, results []map[st
 	// Parse the response - expecting JSON array
 	// In a real implementation, we'd parse the JSON properly
 	// For now, return original results
+	_ = response // TODO: Parse and use the deduplication response
 	return results[:min(len(results), r.maxSearchResults)], nil
 }
 
@@ -286,14 +288,37 @@ func (r *ResearchAgent) analyzeContent(ctx context.Context, topic string, result
 	analysisState := domain.NewState()
 	analysisState.Set("topic", topic)
 	analysisState.Set("search_results", results)
-	analysisState.Set("instruction", fmt.Sprintf("Analyze these search results about '%s' and extract key insights", topic))
+	// Create a structured prompt with the search results
+	var promptBuilder strings.Builder
+	promptBuilder.WriteString(fmt.Sprintf("Analyze these search results about '%s' and extract key insights.\n\n", topic))
+	promptBuilder.WriteString("Search Results:\n")
+	for i, result := range results {
+		if i >= 20 { // Limit to first 20 results to avoid token limits
+			break
+		}
+		title := "Untitled"
+		if t, ok := result["title"].(string); ok {
+			title = t
+		}
+		url := ""
+		if u, ok := result["url"].(string); ok {
+			url = u
+		}
+		description := ""
+		if d, ok := result["description"].(string); ok {
+			description = d
+		}
+		promptBuilder.WriteString(fmt.Sprintf("%d. %s\n   URL: %s\n   %s\n\n", i+1, title, url, description))
+	}
+
+	analysisState.Set("prompt", promptBuilder.String())
 
 	result, err := r.contentAnalyzer.Run(ctx, analysisState)
 	if err != nil {
 		return "", err
 	}
 
-	analysis, ok := result.Get("response")
+	analysis, ok := result.Get("result")
 	if !ok {
 		return "", fmt.Errorf("no response from content analyzer")
 	}
@@ -307,14 +332,24 @@ func (r *ResearchAgent) generateReport(ctx context.Context, topic string, analys
 	reportState.Set("topic", topic)
 	reportState.Set("analysis", analysis)
 	reportState.Set("sources", results)
-	reportState.Set("instruction", "Generate a comprehensive research report")
+	// Create a structured prompt with the analysis and sources
+	reportPrompt := fmt.Sprintf(`Generate a comprehensive research report about '%s'.
+
+Analysis:
+%s
+
+Number of sources: %d
+
+Please create a well-structured report following your system prompt guidelines.`, topic, analysis, len(results))
+
+	reportState.Set("prompt", reportPrompt)
 
 	result, err := r.reportGenerator.Run(ctx, reportState)
 	if err != nil {
 		return "", err
 	}
 
-	report, ok := result.Get("response")
+	report, ok := result.Get("result")
 	if !ok {
 		return "", fmt.Errorf("no response from report generator")
 	}
@@ -449,20 +484,23 @@ func (m *MultiSearchAgent) Run(ctx context.Context, state *domain.State) (*domai
 				}
 
 				// Extract results
-				if searchResults, ok := result.(map[string]interface{}); ok {
-					if results, ok := searchResults["results"].([]interface{}); ok {
-						mu.Lock()
-						for _, r := range results {
-							if resultMap, ok := r.(map[string]interface{}); ok {
-								// Add metadata
-								resultMap["source_engine"] = eng
-								resultMap["query_type"] = qType
-								allResults = append(allResults, resultMap)
-							}
+				if searchResults, ok := result.(*web.WebSearchResults); ok {
+					mu.Lock()
+					for _, r := range searchResults.Results {
+						resultMap := map[string]interface{}{
+							"title":         r.Title,
+							"url":           r.URL,
+							"description":   r.Description,
+							"snippet":       r.Snippet,
+							"source_engine": eng,
+							"query_type":    qType,
 						}
-						mu.Unlock()
-						log.Printf("    ✅ %s: Found %d results", eng, len(results))
+						allResults = append(allResults, resultMap)
 					}
+					mu.Unlock()
+					log.Printf("    ✅ %s: Found %d results", eng, len(searchResults.Results))
+				} else {
+					log.Printf("    ⚠️  %s: unexpected result type: %T", eng, result)
 				}
 			}(engine, queryType, query)
 		}
