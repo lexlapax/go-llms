@@ -89,15 +89,15 @@ cd agent-calculator && go run main.go
 ```
 
 #### [**Agent Custom Research**](agent-custom-research/README.md)
-Advanced custom agent extending LLMAgent with sub-agent coordination.
+Advanced custom agent extending BaseAgentImpl with code-based orchestration.
 
 **Features:**
-- Custom agent extending LLMAgent
-- Multi-phase research pipeline
-- Sub-agent coordination (searcher, summarizer, fact-checker)
-- Tool usage (web search, web fetch)
-- Complex state management
-- Research report synthesis
+- Custom agent extending BaseAgentImpl (not LLMAgent)
+- Code-based orchestration without library sub-agent features
+- Multi-engine parallel search (Tavily, Brave, Serpapi, Serper.dev, DuckDuckGo)
+- LLMAgent instances for intelligent processing (dedup, analysis, report)
+- Complex state management between phases
+- Comprehensive research report generation
 
 ```bash
 export OPENAI_API_KEY="your-key"  # Optional for real LLM sub-agents

@@ -10,7 +10,7 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 
 **Recent Updates** (June 6, 2025):
 - **Agent Custom Research Example Rewrite (COMPLETED)**
-  - Rewrote agent-custom-research to properly showcase custom agent development:
+  - Successfully rewrote agent-custom-research to properly showcase custom agent development:
     - ResearchAgent now extends BaseAgentImpl (not LLMAgent) for full control
     - Implemented code-based orchestration without library sub-agent features
     - Created MultiSearchAgent (also extends BaseAgentImpl) for parallel searches
@@ -26,6 +26,12 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
   - Architecture follows two-layer pattern:
     - ResearchAgent orchestrates overall workflow
     - MultiSearchAgent specializes in parallel search execution
+  - **Testing Results**:
+    - Example successfully searches across multiple engines (119 results found)
+    - Parallel search execution working correctly
+    - LLM agents properly process search results
+    - Generates comprehensive research reports on the correct topic
+    - Fixed issues: result type casting, state key naming, prompt context inclusion
 - **Web Search Tool Enhancements**:
   - Added Serpapi.com support (SERPAPI_API_KEY) - uses GET requests
   - Added Serper.dev support (SERPERDEV_API_KEY) - uses POST requests  
