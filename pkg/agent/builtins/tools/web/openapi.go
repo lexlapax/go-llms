@@ -299,8 +299,15 @@ func NewOpenAPIParser() *OpenAPIParser {
 	}
 }
 
-// FetchSpec fetches an OpenAPI specification from a URL
+// FetchSpec fetches an OpenAPI specification from a URL with caching
 func (p *OpenAPIParser) FetchSpec(specURL string) (*OpenAPISpec, error) {
+	// Check cache first
+	cache := GetOpenAPICache()
+	if spec, _, found := cache.Get(specURL); found {
+		return spec, nil
+	}
+
+	// Fetch from network
 	resp, err := p.client.Get(specURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch OpenAPI spec from %s: %w", specURL, err)
@@ -316,7 +323,16 @@ func (p *OpenAPIParser) FetchSpec(specURL string) (*OpenAPISpec, error) {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	return p.ParseSpec(body, specURL)
+	spec, err := p.ParseSpec(body, specURL)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store in cache
+	discovery := NewOperationDiscovery(spec)
+	cache.Set(specURL, spec, discovery)
+
+	return spec, nil
 }
 
 // ParseSpec parses an OpenAPI specification from raw bytes
@@ -437,8 +453,10 @@ func (spec *OpenAPISpec) GetSecuritySchemes() map[string]SecurityScheme {
 
 // OperationDiscovery provides advanced operation discovery and metadata extraction
 type OperationDiscovery struct {
-	spec      *OpenAPISpec
-	validator *validation.Validator
+	spec       *OpenAPISpec
+	validator  *validation.Validator
+	index      *OperationIndex
+	operations []EnhancedOperationInfo // Cache enumerated operations
 }
 
 // NewOperationDiscovery creates a new operation discovery instance
@@ -456,6 +474,11 @@ func NewOperationDiscovery(spec *OpenAPISpec) *OperationDiscovery {
 
 // EnumerateOperations returns all operations with comprehensive metadata
 func (od *OperationDiscovery) EnumerateOperations() []EnhancedOperationInfo {
+	// Return cached operations if already enumerated
+	if od.operations != nil {
+		return od.operations
+	}
+
 	var operations []EnhancedOperationInfo
 
 	for path, pathItem := range od.spec.Paths {
@@ -479,7 +502,31 @@ func (od *OperationDiscovery) EnumerateOperations() []EnhancedOperationInfo {
 		}
 	}
 
+	// Cache operations and build index
+	od.operations = operations
+	od.index = NewOperationIndex(operations)
+
 	return operations
+}
+
+// FindOperation efficiently finds an operation by method and path
+func (od *OperationDiscovery) FindOperation(method, path string) (*EnhancedOperationInfo, bool) {
+	// Ensure operations are enumerated and index is built
+	if od.index == nil {
+		od.EnumerateOperations()
+	}
+
+	return od.index.FindOperation(method, path)
+}
+
+// GetOperationsByTag returns operations grouped by tag
+func (od *OperationDiscovery) GetOperationsByTag(tag string) []*EnhancedOperationInfo {
+	// Ensure operations are enumerated and index is built
+	if od.index == nil {
+		od.EnumerateOperations()
+	}
+
+	return od.index.GetOperationsByTag(tag)
 }
 
 // EnhancedOperationInfo provides comprehensive operation metadata for LLM consumption
@@ -1546,32 +1593,32 @@ func (od *OperationDiscovery) CoerceParameterValue(param ParameterInfo, value in
 
 // ValidationOptions controls validation behavior for requests
 type ValidationOptions struct {
-	SkipRequired      bool `json:"skip_required,omitempty"`       // Skip required field validation
-	SkipConstraints   bool `json:"skip_constraints,omitempty"`   // Skip min/max/pattern constraints
-	SkipTypeChecking  bool `json:"skip_type_checking,omitempty"`  // Skip type validation
-	AllowCoercion     bool `json:"allow_coercion,omitempty"`     // Allow type coercion
-	StrictValidation  bool `json:"strict_validation,omitempty"`  // Strict mode (all validations)
+	SkipRequired     bool `json:"skip_required,omitempty"`      // Skip required field validation
+	SkipConstraints  bool `json:"skip_constraints,omitempty"`   // Skip min/max/pattern constraints
+	SkipTypeChecking bool `json:"skip_type_checking,omitempty"` // Skip type validation
+	AllowCoercion    bool `json:"allow_coercion,omitempty"`     // Allow type coercion
+	StrictValidation bool `json:"strict_validation,omitempty"`  // Strict mode (all validations)
 }
 
 // ValidationReport provides comprehensive validation results with guidance
 type ValidationReport struct {
-	Valid           bool                        `json:"valid"`
-	OperationID     string                      `json:"operation_id"`
-	ParameterErrors map[string]ValidationResult `json:"parameter_errors,omitempty"`
-	RequestBodyError *ValidationResult          `json:"request_body_error,omitempty"`
-	Guidance        ValidationGuidance          `json:"guidance"`
-	Suggestions     []string                    `json:"suggestions,omitempty"`
+	Valid            bool                        `json:"valid"`
+	OperationID      string                      `json:"operation_id"`
+	ParameterErrors  map[string]ValidationResult `json:"parameter_errors,omitempty"`
+	RequestBodyError *ValidationResult           `json:"request_body_error,omitempty"`
+	Guidance         ValidationGuidance          `json:"guidance"`
+	Suggestions      []string                    `json:"suggestions,omitempty"`
 }
 
 // ValidationResult provides detailed validation result information
 type ValidationResult struct {
-	Valid       bool     `json:"valid"`
-	Errors      []string `json:"errors,omitempty"`
-	Warnings    []string `json:"warnings,omitempty"`
-	FieldPath   string   `json:"field_path,omitempty"`
-	ExpectedType string  `json:"expected_type,omitempty"`
-	ActualValue  string  `json:"actual_value,omitempty"`
-	Constraints  string  `json:"constraints,omitempty"`
+	Valid        bool     `json:"valid"`
+	Errors       []string `json:"errors,omitempty"`
+	Warnings     []string `json:"warnings,omitempty"`
+	FieldPath    string   `json:"field_path,omitempty"`
+	ExpectedType string   `json:"expected_type,omitempty"`
+	ActualValue  string   `json:"actual_value,omitempty"`
+	Constraints  string   `json:"constraints,omitempty"`
 }
 
 // ValidationGuidance provides actionable guidance for validation errors
@@ -1716,7 +1763,7 @@ func (od *OperationDiscovery) ValidateParametersEnhanced(operationID string, par
 
 		// Create validation schema with the parameter as a property
 		paramProperty := od.convertSchemaInfoToValidationProperty(param.Schema)
-		
+
 		// Skip constraints if requested
 		if options.SkipConstraints {
 			paramProperty.Minimum = nil
@@ -1889,7 +1936,7 @@ func (od *OperationDiscovery) generateParameterErrorGuidance(op *EnhancedOperati
 	for _, param := range allParams {
 		if param.Name == paramName {
 			var guidance strings.Builder
-			
+
 			// Analyze errors and provide specific guidance
 			for _, errMsg := range errors {
 				if strings.Contains(strings.ToLower(errMsg), "required") {
@@ -1918,14 +1965,14 @@ func (od *OperationDiscovery) generateParameterErrorGuidance(op *EnhancedOperati
 					}
 				}
 			}
-			
+
 			// Add example if available
 			if param.Example != nil {
 				guidance.WriteString(fmt.Sprintf("Example: %v", param.Example))
 			} else if param.Schema.Example != nil {
 				guidance.WriteString(fmt.Sprintf("Example: %v", param.Schema.Example))
 			}
-			
+
 			return guidance.String()
 		}
 	}
@@ -1935,13 +1982,13 @@ func (od *OperationDiscovery) generateParameterErrorGuidance(op *EnhancedOperati
 // generateRequestBodyErrorGuidance creates guidance for request body validation errors
 func (od *OperationDiscovery) generateRequestBodyErrorGuidance(op *EnhancedOperationInfo, errors []string) string {
 	var guidance strings.Builder
-	
+
 	if op.RequestBodyInfo == nil {
 		return "This operation does not expect a request body"
 	}
-	
+
 	guidance.WriteString("Request body validation failed. ")
-	
+
 	// Analyze errors and provide guidance
 	for _, errMsg := range errors {
 		if strings.Contains(strings.ToLower(errMsg), "required") {
@@ -1952,17 +1999,17 @@ func (od *OperationDiscovery) generateRequestBodyErrorGuidance(op *EnhancedOpera
 			guidance.WriteString("Verify that field formats (email, date, etc.) are correct. ")
 		}
 	}
-	
+
 	// Add content type guidance
 	if len(op.RequestBodyInfo.ContentTypes) > 0 {
 		guidance.WriteString(fmt.Sprintf("Supported content types: %s. ", strings.Join(op.RequestBodyInfo.ContentTypes, ", ")))
 	}
-	
+
 	// Add schema type guidance
 	if op.RequestBodyInfo.Schema.Type != "" {
 		guidance.WriteString(fmt.Sprintf("Expected schema type: %s. ", op.RequestBodyInfo.Schema.Type))
 	}
-	
+
 	return guidance.String()
 }
 
@@ -1971,12 +2018,12 @@ func (od *OperationDiscovery) generateValidationSummary(report *ValidationReport
 	if report.Valid {
 		return "Request validation passed successfully"
 	}
-	
+
 	errorCount := len(report.ParameterErrors)
 	if report.RequestBodyError != nil {
 		errorCount++
 	}
-	
+
 	if errorCount == 1 {
 		return "Request validation failed with 1 error"
 	}
@@ -1986,11 +2033,11 @@ func (od *OperationDiscovery) generateValidationSummary(report *ValidationReport
 // generateValidationSuggestions creates actionable suggestions for fixing validation errors
 func (od *OperationDiscovery) generateValidationSuggestions(report *ValidationReport, op *EnhancedOperationInfo) []string {
 	var suggestions []string
-	
+
 	if report.Valid {
 		return suggestions
 	}
-	
+
 	// Parameter-specific suggestions
 	for paramName, result := range report.ParameterErrors {
 		if !result.Valid {
@@ -2008,7 +2055,7 @@ func (od *OperationDiscovery) generateValidationSuggestions(report *ValidationRe
 			}
 		}
 	}
-	
+
 	// Request body suggestions
 	if report.RequestBodyError != nil && !report.RequestBodyError.Valid {
 		suggestions = append(suggestions, "Review request body structure and ensure it matches the expected schema")
@@ -2016,12 +2063,12 @@ func (od *OperationDiscovery) generateValidationSuggestions(report *ValidationRe
 			suggestions = append(suggestions, "Refer to the provided examples for correct request body format")
 		}
 	}
-	
+
 	// General suggestions
 	if len(suggestions) > 2 {
 		suggestions = append(suggestions, "Consider using request validation tools or API documentation for guidance")
 	}
-	
+
 	return suggestions
 }
 
@@ -2030,10 +2077,10 @@ func (od *OperationDiscovery) removeConstraintsFromSchema(schema *sdomain.Schema
 	if schema == nil {
 		return
 	}
-	
+
 	// Remove schema-level constraints
 	schema.Required = nil
-	
+
 	// Remove constraints from properties
 	for name, prop := range schema.Properties {
 		prop.Minimum = nil
@@ -2048,7 +2095,7 @@ func (od *OperationDiscovery) removeConstraintsFromSchema(schema *sdomain.Schema
 		prop.Enum = nil
 		prop.UniqueItems = nil
 		schema.Properties[name] = prop
-		
+
 		// Recursively remove constraints from nested properties
 		for nestedName, nestedProp := range prop.Properties {
 			nestedProp.Minimum = nil

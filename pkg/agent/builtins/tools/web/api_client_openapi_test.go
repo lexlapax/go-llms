@@ -118,15 +118,26 @@ func TestAPIClientTool_OpenAPIDiscovery(t *testing.T) {
 			t.Error("Expected success to be true")
 		}
 
-		// Check operations
-		operations, ok := resultMap["operations"].([]OperationInfo)
-		if !ok {
-			t.Fatalf("Expected operations to be []OperationInfo, got %T", resultMap["operations"])
+		// Check operations - could be []interface{} or []map[string]interface{}
+		var operationsRaw []interface{}
+		switch ops := resultMap["operations"].(type) {
+		case []interface{}:
+			operationsRaw = ops
+		case []map[string]interface{}:
+			// Convert to []interface{}
+			operationsRaw = make([]interface{}, len(ops))
+			for i, op := range ops {
+				operationsRaw[i] = op
+			}
+		default:
+			t.Fatalf("Expected operations to be []interface{} or []map[string]interface{}, got %T", resultMap["operations"])
 		}
 
+		// Verify operations are returned as expected format
+
 		// Should have 3 operations
-		if len(operations) != 3 {
-			t.Errorf("Expected 3 operations, got %d", len(operations))
+		if len(operationsRaw) != 3 {
+			t.Errorf("Expected 3 operations, got %d", len(operationsRaw))
 		}
 
 		// Check spec info
@@ -344,18 +355,34 @@ func TestAPIClientTool_RealAPIs(t *testing.T) {
 			t.Error("Expected success to be true")
 		}
 
-		// Should have operations
-		operations, ok := resultMap["operations"].([]OperationInfo)
-		if !ok || len(operations) == 0 {
-			t.Error("Expected to discover operations from PetStore API")
+		// Should have operations - handle both []interface{} and []map[string]interface{}
+		var operationsRaw []interface{}
+		switch ops := resultMap["operations"].(type) {
+		case []interface{}:
+			operationsRaw = ops
+		case []map[string]interface{}:
+			// Convert to []interface{}
+			operationsRaw = make([]interface{}, len(ops))
+			for i, op := range ops {
+				operationsRaw[i] = op
+			}
+		default:
+			t.Fatalf("Expected operations to be []interface{} or []map[string]interface{}, got %T", resultMap["operations"])
+		}
+
+		if len(operationsRaw) == 0 {
+			t.Errorf("Expected to discover operations from PetStore API, but got %d operations", len(operationsRaw))
+			t.Logf("Result: %+v", resultMap)
 		}
 
 		// Check if we found some expected operations
 		var foundFindPetsByStatus bool
-		for _, op := range operations {
-			if op.OperationID == "findPetsByStatus" {
-				foundFindPetsByStatus = true
-				break
+		for _, opRaw := range operationsRaw {
+			if opMap, ok := opRaw.(map[string]interface{}); ok {
+				if opID, ok := opMap["operationId"].(string); ok && opID == "findPetsByStatus" {
+					foundFindPetsByStatus = true
+					break
+				}
 			}
 		}
 		if !foundFindPetsByStatus {
@@ -388,10 +415,23 @@ func TestAPIClientTool_RealAPIs(t *testing.T) {
 			t.Error("Expected success to be true")
 		}
 
-		// GitHub API should have many operations
-		operations, ok := resultMap["operations"].([]OperationInfo)
-		if !ok || len(operations) < 100 {
-			t.Errorf("Expected many operations from GitHub API, got %d", len(operations))
+		// GitHub API should have many operations - handle both []interface{} and []map[string]interface{}
+		var operationsRaw []interface{}
+		switch ops := resultMap["operations"].(type) {
+		case []interface{}:
+			operationsRaw = ops
+		case []map[string]interface{}:
+			// Convert to []interface{}
+			operationsRaw = make([]interface{}, len(ops))
+			for i, op := range ops {
+				operationsRaw[i] = op
+			}
+		default:
+			t.Fatalf("Expected operations to be []interface{} or []map[string]interface{}, got %T", resultMap["operations"])
+		}
+
+		if len(operationsRaw) < 100 {
+			t.Errorf("Expected many operations from GitHub API, got %d", len(operationsRaw))
 		}
 	})
 }

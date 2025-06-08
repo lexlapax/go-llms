@@ -27,7 +27,7 @@ func init() {
 			Category:    "web",
 			Tags:        []string{"api", "rest", "http", "integration", "client"},
 			Description: "Make REST API calls with automatic error handling and authentication support",
-			Version:     "1.0.0",
+			Version:     "2.0.0",
 			Examples: []builtins.Example{
 				{
 					Name:        "Fetch GitHub User",
@@ -335,7 +335,7 @@ OpenAPI Validation Mode:
 		}).
 		WithCategory("web").
 		WithTags([]string{"api", "rest", "http", "integration"}).
-		WithVersion("1.0.0").
+		WithVersion("2.0.0").
 		WithBehavior(false, false, false, "medium")
 
 	return builder.Build()
@@ -381,33 +381,126 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 			return nil, fmt.Errorf("openapi_spec URL is required when discover_operations is true")
 		}
 
-		// Perform operation discovery
+		// Perform operation discovery with caching
 		parser := NewOpenAPIParser()
-		spec, err := parser.FetchSpec(specURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch OpenAPI spec: %w", err)
+		cache := GetOpenAPICache()
+
+		// Try cache first
+		spec, discovery, found := cache.Get(specURL)
+		if !found {
+			// Fetch and cache
+			var err error
+			spec, err = parser.FetchSpec(specURL)
+			if err != nil {
+				return nil, fmt.Errorf("failed to fetch OpenAPI spec: %w", err)
+			}
+			// Discovery is already cached by FetchSpec
+			_, discovery, _ = cache.Get(specURL)
 		}
 
-		// Discover operations
-		operations := spec.GetOperations()
+		// Get enhanced operations
+		enhancedOps := discovery.EnumerateOperations()
 
-		// Return discovery results
+		// Get server URLs and security schemes
+		serverURLs := []string{}
+		for _, server := range spec.Servers {
+			serverURLs = append(serverURLs, server.URL)
+		}
+
+		securitySchemes := spec.GetSecuritySchemes()
+
+		// Convert enhanced operations to generic format for JSON serialization
+		opsData := make([]map[string]interface{}, len(enhancedOps))
+		for i, op := range enhancedOps {
+			// Convert to map for JSON serialization
+			opMap := map[string]interface{}{
+				"path":        op.Path,
+				"method":      op.Method,
+				"operationId": op.OperationID,
+				"summary":     op.Summary,
+				"description": op.Description,
+				"tags":        op.Tags,
+				"deprecated":  op.Deprecated,
+			}
+
+			// Add parameter counts
+			if len(op.PathParameters) > 0 {
+				opMap["pathParameterCount"] = len(op.PathParameters)
+			}
+			if len(op.QueryParameters) > 0 {
+				opMap["queryParameterCount"] = len(op.QueryParameters)
+			}
+			if len(op.HeaderParameters) > 0 {
+				opMap["headerParameterCount"] = len(op.HeaderParameters)
+			}
+			if op.RequestBodyInfo != nil {
+				opMap["hasRequestBody"] = true
+			}
+
+			opsData[i] = opMap
+		}
+
+		// Return discovery results with enhanced information
 		return map[string]interface{}{
 			"success":    true,
-			"operations": operations,
+			"operations": opsData,
 			"spec_info": map[string]interface{}{
 				"title":       spec.Info.Title,
 				"version":     spec.Info.Version,
 				"description": spec.Info.Description,
 			},
-			"total_operations": len(operations),
+			"servers":          serverURLs,
+			"security_schemes": securitySchemes,
+			"total_operations": len(enhancedOps),
+			"llm_guidance":     generateDiscoveryGuidance(spec, enhancedOps),
 		}, nil
+	}
+
+	// Initialize variables for OpenAPI support
+	var spec *OpenAPISpec
+	var specURL string
+
+	// Check if OpenAPI spec is provided
+	if specURLParam, ok := paramMap["openapi_spec"].(string); ok && specURLParam != "" {
+		specURL = specURLParam
+		// Fetch and parse the spec
+		parser := NewOpenAPIParser()
+		var err error
+		spec, err = parser.FetchSpec(specURL)
+		if err != nil {
+			// Log warning but continue - spec is optional for normal requests
+			if ctx.Events != nil {
+				ctx.Events.EmitCustom("openapi_parse_warning", map[string]interface{}{
+					"error": err.Error(),
+					"url":   specURL,
+				})
+			}
+		}
 	}
 
 	// Validate required parameters
 	baseURL, ok := paramMap["base_url"].(string)
 	if !ok || baseURL == "" {
-		return nil, fmt.Errorf("base_url is required")
+		// Try to get base URL from OpenAPI spec if available
+		if spec != nil && len(spec.Servers) > 0 {
+			baseURL = spec.Servers[0].URL
+			// Handle relative server URLs
+			if strings.HasPrefix(baseURL, "/") {
+				// Extract host from spec URL
+				specParsed, _ := url.Parse(specURL)
+				if specParsed != nil {
+					baseURL = fmt.Sprintf("%s://%s%s", specParsed.Scheme, specParsed.Host, baseURL)
+				}
+			}
+			if ctx.Events != nil {
+				ctx.Events.EmitCustom("auto_base_url", map[string]interface{}{
+					"source": "openapi_spec",
+					"url":    baseURL,
+				})
+			}
+		} else {
+			return nil, fmt.Errorf("base_url is required (no OpenAPI spec or servers found)")
+		}
 	}
 
 	// Parse and validate base URL
@@ -496,9 +589,31 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 	}
 
 	// Handle authentication
+	authApplied := false
 	if auth, ok := paramMap["auth"].(map[string]interface{}); ok {
 		if err := applyAuthentication(req, auth); err != nil {
 			return nil, err
+		}
+		authApplied = true
+	}
+
+	// Auto-apply authentication from OpenAPI spec if not already provided
+	if !authApplied && spec != nil {
+		// Try to auto-detect and apply authentication
+		if authConfig := detectAuthFromSpec(spec, endpoint, method, ctx); authConfig != nil {
+			if err := applyAuthentication(req, authConfig); err != nil {
+				if ctx.Events != nil {
+					ctx.Events.EmitCustom("auto_auth_failed", map[string]interface{}{
+						"error": err.Error(),
+					})
+				}
+			} else {
+				if ctx.Events != nil {
+					ctx.Events.EmitCustom("auto_auth_applied", map[string]interface{}{
+						"type": authConfig["type"],
+					})
+				}
+			}
 		}
 	}
 
@@ -518,22 +633,26 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 	// If OpenAPI spec is provided, validate the request
 	if specURL, ok := paramMap["openapi_spec"].(string); ok && specURL != "" {
 		parser := NewOpenAPIParser()
-		spec, err := parser.FetchSpec(specURL)
-		if err == nil {
-			// Create operation discovery for validation
-			discovery := NewOperationDiscovery(spec)
+		cache := GetOpenAPICache()
 
-			// Find the operation by path and method
-			operations := discovery.EnumerateOperations()
-			var targetOp *EnhancedOperationInfo
-			for _, op := range operations {
-				if op.Path == endpoint && op.Method == method {
-					targetOp = &op
-					break
-				}
+		// Try cache first
+		spec, discovery, found := cache.Get(specURL)
+		if !found {
+			// Fetch and cache
+			spec, err = parser.FetchSpec(specURL)
+			if err != nil {
+				// Continue without validation - spec is optional
+				spec = nil
+			} else {
+				// Get cached discovery instance
+				_, discovery, _ = cache.Get(specURL)
 			}
+		}
 
-			if targetOp != nil && targetOp.OperationID != "" {
+		if spec != nil && discovery != nil {
+			// Find the operation by path and method using optimized index
+			targetOp, found := discovery.FindOperation(method, endpoint)
+			if found && targetOp != nil && targetOp.OperationID != "" {
 				// Create validation options
 				validationOpts := &ValidationOptions{
 					SkipRequired:     false,
@@ -624,8 +743,12 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 			result["error_details"] = errorData
 		}
 
-		// Add helpful guidance based on status code
-		result["error_guidance"] = getErrorGuidance(resp.StatusCode)
+		// Add helpful guidance based on status code and OpenAPI spec
+		if spec != nil {
+			result["error_guidance"] = getOpenAPIErrorGuidance(resp.StatusCode, endpoint, method, spec)
+		} else {
+			result["error_guidance"] = getErrorGuidance(resp.StatusCode)
+		}
 	}
 
 	return result, nil
@@ -724,4 +847,496 @@ func getErrorGuidance(statusCode int) string {
 		}
 		return "Unexpected status code. Check the API documentation."
 	}
+}
+
+// generateDiscoveryGuidance generates LLM-friendly guidance based on discovered operations
+func generateDiscoveryGuidance(spec *OpenAPISpec, operations []EnhancedOperationInfo) string {
+	guidance := fmt.Sprintf("API: %s v%s\n", spec.Info.Title, spec.Info.Version)
+
+	if spec.Info.Description != "" {
+		guidance += fmt.Sprintf("Description: %s\n\n", spec.Info.Description)
+	}
+
+	// Server information
+	if len(spec.Servers) > 0 {
+		guidance += "Available servers:\n"
+		for _, server := range spec.Servers {
+			guidance += fmt.Sprintf("- %s", server.URL)
+			if server.Description != "" {
+				guidance += fmt.Sprintf(" (%s)", server.Description)
+			}
+			guidance += "\n"
+		}
+		guidance += "\n"
+	}
+
+	// Security schemes
+	schemes := spec.GetSecuritySchemes()
+	if len(schemes) > 0 {
+		guidance += "Authentication methods:\n"
+		for name, scheme := range schemes {
+			switch scheme.Type {
+			case "apiKey":
+				guidance += fmt.Sprintf("- %s: API key in %s '%s'\n", name, scheme.In, scheme.Name)
+			case "http":
+				if scheme.Scheme == "bearer" {
+					guidance += fmt.Sprintf("- %s: Bearer token authentication\n", name)
+				} else if scheme.Scheme == "basic" {
+					guidance += fmt.Sprintf("- %s: Basic authentication (username/password)\n", name)
+				} else {
+					guidance += fmt.Sprintf("- %s: HTTP %s authentication\n", name, scheme.Scheme)
+				}
+			case "oauth2":
+				guidance += fmt.Sprintf("- %s: OAuth2 authentication\n", name)
+			case "openIdConnect":
+				guidance += fmt.Sprintf("- %s: OpenID Connect authentication\n", name)
+			}
+		}
+		guidance += "\n"
+	}
+
+	// Operation summary
+	guidance += fmt.Sprintf("Total operations: %d\n\n", len(operations))
+
+	// Group operations by tag
+	taggedOps := make(map[string][]EnhancedOperationInfo)
+	untaggedOps := []EnhancedOperationInfo{}
+
+	for _, op := range operations {
+		if len(op.Tags) > 0 {
+			for _, tag := range op.Tags {
+				taggedOps[tag] = append(taggedOps[tag], op)
+			}
+		} else {
+			untaggedOps = append(untaggedOps, op)
+		}
+	}
+
+	// Display operations by tag
+	if len(taggedOps) > 0 {
+		guidance += "Operations by category:\n"
+		for tag, ops := range taggedOps {
+			guidance += fmt.Sprintf("\n%s:\n", tag)
+			for _, op := range ops {
+				guidance += formatOperationSummary(op)
+			}
+		}
+	}
+
+	// Display untagged operations
+	if len(untaggedOps) > 0 {
+		guidance += "\nOther operations:\n"
+		for _, op := range untaggedOps {
+			guidance += formatOperationSummary(op)
+		}
+	}
+
+	guidance += "\nTo use an operation, provide the endpoint path and method. The tool will guide you on required parameters."
+
+	return guidance
+}
+
+// formatOperationSummary formats a single operation for display
+func formatOperationSummary(op EnhancedOperationInfo) string {
+	summary := fmt.Sprintf("- %s %s", op.Method, op.Path)
+	if op.Summary != "" {
+		summary += fmt.Sprintf(" - %s", op.Summary)
+	}
+	if op.OperationID != "" {
+		summary += fmt.Sprintf(" (ID: %s)", op.OperationID)
+	}
+	if op.Deprecated {
+		summary += " [DEPRECATED]"
+	}
+	summary += "\n"
+
+	// Add parameter information
+	paramCount := len(op.PathParameters) + len(op.QueryParameters) + len(op.HeaderParameters)
+	if paramCount > 0 || op.RequestBodyInfo != nil {
+		summary += "  "
+		parts := []string{}
+		if len(op.PathParameters) > 0 {
+			parts = append(parts, fmt.Sprintf("%d path params", len(op.PathParameters)))
+		}
+		if len(op.QueryParameters) > 0 {
+			parts = append(parts, fmt.Sprintf("%d query params", len(op.QueryParameters)))
+		}
+		if len(op.HeaderParameters) > 0 {
+			parts = append(parts, fmt.Sprintf("%d header params", len(op.HeaderParameters)))
+		}
+		if op.RequestBodyInfo != nil {
+			parts = append(parts, "request body")
+		}
+		summary += fmt.Sprintf("Requires: %s\n", strings.Join(parts, ", "))
+	}
+
+	return summary
+}
+
+// detectAuthFromSpec attempts to detect authentication configuration from OpenAPI spec
+func detectAuthFromSpec(spec *OpenAPISpec, endpoint, method string, ctx *domain.ToolContext) map[string]interface{} {
+	// Find the operation
+	var operation *Operation
+	for path, pathItem := range spec.Paths {
+		if path == endpoint {
+			switch strings.ToLower(method) {
+			case "get":
+				operation = pathItem.Get
+			case "post":
+				operation = pathItem.Post
+			case "put":
+				operation = pathItem.Put
+			case "delete":
+				operation = pathItem.Delete
+			case "patch":
+				operation = pathItem.Patch
+			case "head":
+				operation = pathItem.Head
+			case "options":
+				operation = pathItem.Options
+			}
+			break
+		}
+	}
+
+	if operation == nil {
+		return nil
+	}
+
+	// Get security requirements for this operation (or global if not specified)
+	securityReqs := operation.Security
+	if len(securityReqs) == 0 && len(spec.Security) > 0 {
+		securityReqs = spec.Security
+	}
+
+	if len(securityReqs) == 0 {
+		return nil
+	}
+
+	// Get security schemes
+	schemes := spec.GetSecuritySchemes()
+	if len(schemes) == 0 {
+		return nil
+	}
+
+	// Try to find credentials in agent state for the first matching security requirement
+	for _, req := range securityReqs {
+		for schemeName := range req {
+			if scheme, ok := schemes[schemeName]; ok {
+				// Try to get credentials from state
+				authConfig := getAuthConfigFromState(ctx, schemeName, scheme)
+				if authConfig != nil {
+					return authConfig
+				}
+			}
+		}
+	}
+
+	// If no credentials found, return guidance about required authentication
+	if ctx.Events != nil {
+		ctx.Events.EmitCustom("auth_required", map[string]interface{}{
+			"schemes": getAuthSchemeNames(securityReqs, schemes),
+			"message": "Authentication required but no credentials found in state",
+		})
+	}
+
+	return nil
+}
+
+// getAuthConfigFromState attempts to retrieve authentication configuration from agent state
+func getAuthConfigFromState(ctx *domain.ToolContext, schemeName string, scheme SecurityScheme) map[string]interface{} {
+	state := ctx.State
+
+	switch scheme.Type {
+	case "apiKey":
+		// Look for API key in state with various common names
+		keyNames := []string{
+			fmt.Sprintf("%s_api_key", schemeName),
+			fmt.Sprintf("%s_key", schemeName),
+			"api_key",
+			"apiKey",
+			scheme.Name, // The actual header/query param name
+		}
+
+		for _, keyName := range keyNames {
+			if value, exists := state.Get(keyName); exists {
+				if apiKey, ok := value.(string); ok && apiKey != "" {
+					return map[string]interface{}{
+						"type":         "api_key",
+						"api_key":      apiKey,
+						"key_location": scheme.In,
+						"key_name":     scheme.Name,
+					}
+				}
+			}
+		}
+
+	case "http":
+		if scheme.Scheme == "bearer" {
+			// Look for bearer token
+			tokenNames := []string{
+				fmt.Sprintf("%s_token", schemeName),
+				fmt.Sprintf("%s_bearer", schemeName),
+				"bearer_token",
+				"access_token",
+				"token",
+			}
+
+			for _, tokenName := range tokenNames {
+				if value, exists := state.Get(tokenName); exists {
+					if token, ok := value.(string); ok && token != "" {
+						return map[string]interface{}{
+							"type":  "bearer",
+							"token": token,
+						}
+					}
+				}
+			}
+		} else if scheme.Scheme == "basic" {
+			// Look for basic auth credentials
+			usernameKeys := []string{
+				fmt.Sprintf("%s_username", schemeName),
+				"api_username",
+				"username",
+			}
+			passwordKeys := []string{
+				fmt.Sprintf("%s_password", schemeName),
+				"api_password",
+				"password",
+			}
+
+			var username, password string
+			for _, key := range usernameKeys {
+				if value, exists := state.Get(key); exists {
+					if u, ok := value.(string); ok && u != "" {
+						username = u
+						break
+					}
+				}
+			}
+
+			for _, key := range passwordKeys {
+				if value, exists := state.Get(key); exists {
+					if p, ok := value.(string); ok && p != "" {
+						password = p
+						break
+					}
+				}
+			}
+
+			if username != "" && password != "" {
+				return map[string]interface{}{
+					"type":     "basic",
+					"username": username,
+					"password": password,
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// getAuthSchemeNames extracts human-readable authentication scheme names
+func getAuthSchemeNames(securityReqs []SecurityRequirement, schemes map[string]SecurityScheme) []string {
+	names := []string{}
+	seen := make(map[string]bool)
+
+	for _, req := range securityReqs {
+		for schemeName := range req {
+			if !seen[schemeName] {
+				if scheme, ok := schemes[schemeName]; ok {
+					var desc string
+					switch scheme.Type {
+					case "apiKey":
+						desc = fmt.Sprintf("%s (API key in %s '%s')", schemeName, scheme.In, scheme.Name)
+					case "http":
+						if scheme.Scheme == "bearer" {
+							desc = fmt.Sprintf("%s (Bearer token)", schemeName)
+						} else if scheme.Scheme == "basic" {
+							desc = fmt.Sprintf("%s (Basic auth)", schemeName)
+						} else {
+							desc = fmt.Sprintf("%s (HTTP %s)", schemeName, scheme.Scheme)
+						}
+					case "oauth2":
+						desc = fmt.Sprintf("%s (OAuth2)", schemeName)
+					case "openIdConnect":
+						desc = fmt.Sprintf("%s (OpenID Connect)", schemeName)
+					default:
+						desc = schemeName
+					}
+					names = append(names, desc)
+					seen[schemeName] = true
+				}
+			}
+		}
+	}
+
+	return names
+}
+
+// getOpenAPIErrorGuidance returns enhanced error guidance based on OpenAPI spec
+func getOpenAPIErrorGuidance(statusCode int, endpoint, method string, spec *OpenAPISpec) string {
+	// Start with generic guidance
+	guidance := getErrorGuidance(statusCode)
+
+	// Find the operation in the spec
+	var operation *Operation
+	for path, pathItem := range spec.Paths {
+		if path == endpoint {
+			switch strings.ToLower(method) {
+			case "get":
+				operation = pathItem.Get
+			case "post":
+				operation = pathItem.Post
+			case "put":
+				operation = pathItem.Put
+			case "delete":
+				operation = pathItem.Delete
+			case "patch":
+				operation = pathItem.Patch
+			case "head":
+				operation = pathItem.Head
+			case "options":
+				operation = pathItem.Options
+			}
+			break
+		}
+	}
+
+	if operation == nil {
+		return guidance + "\n\nNote: This endpoint is not documented in the OpenAPI spec."
+	}
+
+	// Add OpenAPI-specific guidance based on status code
+	switch statusCode {
+	case 400:
+		// Provide parameter-specific guidance
+		var paramInfo []string
+
+		// Check path parameters
+		for _, param := range operation.Parameters {
+			if param.Required && param.In == "path" {
+				paramInfo = append(paramInfo, fmt.Sprintf("- %s (path): %s", param.Name, param.Description))
+			}
+		}
+
+		// Check query parameters
+		for _, param := range operation.Parameters {
+			if param.Required && param.In == "query" {
+				paramInfo = append(paramInfo, fmt.Sprintf("- %s (query): %s", param.Name, param.Description))
+			}
+		}
+
+		// Check request body
+		if operation.RequestBody != nil && operation.RequestBody.Required {
+			paramInfo = append(paramInfo, "- Request body is required")
+			if operation.RequestBody.Description != "" {
+				paramInfo = append(paramInfo, fmt.Sprintf("  Description: %s", operation.RequestBody.Description))
+			}
+		}
+
+		if len(paramInfo) > 0 {
+			guidance += "\n\nRequired parameters for this endpoint:\n" + strings.Join(paramInfo, "\n")
+		}
+
+	case 401:
+		// Provide authentication-specific guidance
+		securityReqs := operation.Security
+		if len(securityReqs) == 0 && len(spec.Security) > 0 {
+			securityReqs = spec.Security
+		}
+
+		if len(securityReqs) > 0 {
+			schemes := spec.GetSecuritySchemes()
+			authMethods := getAuthSchemeNames(securityReqs, schemes)
+			if len(authMethods) > 0 {
+				guidance += "\n\nThis endpoint requires one of these authentication methods:\n"
+				for _, method := range authMethods {
+					guidance += fmt.Sprintf("- %s\n", method)
+				}
+				guidance += "\nProvide credentials using the 'auth' parameter or store them in agent state."
+			}
+		}
+
+	case 403:
+		// Check if operation has specific security requirements
+		if operation.Description != "" {
+			guidance += fmt.Sprintf("\n\nEndpoint description: %s", operation.Description)
+		}
+		if len(operation.Security) > 0 {
+			guidance += "\n\nThis endpoint has specific permission requirements. Check your access level."
+		}
+
+	case 404:
+		// Provide path parameter guidance
+		pathParams := []string{}
+		for _, param := range operation.Parameters {
+			if param.In == "path" {
+				desc := param.Name
+				if param.Description != "" {
+					desc += fmt.Sprintf(" (%s)", param.Description)
+				}
+				pathParams = append(pathParams, desc)
+			}
+		}
+
+		if len(pathParams) > 0 {
+			guidance += "\n\nThis endpoint requires these path parameters:\n"
+			for _, param := range pathParams {
+				guidance += fmt.Sprintf("- %s\n", param)
+			}
+			guidance += "\nEnsure all path parameters are correctly substituted in the URL."
+		}
+
+	case 405:
+		// List allowed methods for this path
+		allowedMethods := []string{}
+		for path, pathItem := range spec.Paths {
+			if path == endpoint {
+				if pathItem.Get != nil {
+					allowedMethods = append(allowedMethods, "GET")
+				}
+				if pathItem.Post != nil {
+					allowedMethods = append(allowedMethods, "POST")
+				}
+				if pathItem.Put != nil {
+					allowedMethods = append(allowedMethods, "PUT")
+				}
+				if pathItem.Delete != nil {
+					allowedMethods = append(allowedMethods, "DELETE")
+				}
+				if pathItem.Patch != nil {
+					allowedMethods = append(allowedMethods, "PATCH")
+				}
+				if pathItem.Head != nil {
+					allowedMethods = append(allowedMethods, "HEAD")
+				}
+				if pathItem.Options != nil {
+					allowedMethods = append(allowedMethods, "OPTIONS")
+				}
+				break
+			}
+		}
+
+		if len(allowedMethods) > 0 {
+			guidance += fmt.Sprintf("\n\nAllowed methods for %s: %s", endpoint, strings.Join(allowedMethods, ", "))
+		}
+	}
+
+	// Add operation-specific information if available
+	if operation.Summary != "" {
+		guidance += fmt.Sprintf("\n\nOperation: %s", operation.Summary)
+	}
+
+	// Check if there's a specific response description for this status code
+	if operation.Responses != nil {
+		if response, ok := operation.Responses[fmt.Sprintf("%d", statusCode)]; ok {
+			if response.Description != "" {
+				guidance += fmt.Sprintf("\n\nAPI documentation for %d response: %s", statusCode, response.Description)
+			}
+		}
+	}
+
+	return guidance
 }

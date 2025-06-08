@@ -44,7 +44,7 @@ func main() {
 			Level: slog.LevelDebug,
 		}
 		logger := slog.New(slog.NewTextHandler(os.Stderr, opts))
-		
+
 		// Create logging hook with debug level
 		loggingHook := core.NewLoggingHook(logger, core.LogLevelDebug)
 		agent.WithHook(loggingHook)
