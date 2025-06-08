@@ -11,7 +11,7 @@ Until we reach close to v1.. *no backward compatibility* do not add extra code f
 
 **Current Version**: v0.3.1 (Active Development - June 2025)
 
-**Recent Updates** (January 7, 2025):
+**Recent Updates** (June 8, 2025):
 - **API Client Tool Phase 2: OpenAPI/Swagger Integration (COMPLETED)**
   - Phase 2, Day 4: Public API Examples and Testing (COMPLETED)
     - Added OpenAPI discovery mode to api_client tool (openapi_spec + discover_operations params)
@@ -21,6 +21,19 @@ Until we reach close to v1.. *no backward compatibility* do not add extra code f
     - Created api_client_openapi_test.go with mock and real API integration tests
     - Updated examples/README.md with new OpenAPI discovery example
     - All tests passing, including real API tests (PetStore, GitHub)
+    - Additional improvements (January 7, 2025):
+      - Added DEBUG=1 environment variable support to both examples
+      - Implemented proper LoggingHook configuration with slog
+      - Fixed prompt issues - changed from state.Set("prompt") to state.Set("user_input")
+      - Made all prompts explicit about using api_client tool
+      - Added "IMMEDIATELY" directive for examples that weren't triggering tool use
+      - Updated system prompts to be more directive about tool execution
+    - Updated builtin-tools.md documentation:
+      - Added openapi_spec and discover_operations parameters documentation
+      - Created OpenAPI usage examples (discovery and validated requests)
+      - Enhanced response format documentation with OpenAPI discovery responses
+      - Added OpenAPI validation error examples with LLM guidance
+      - Updated LLM Integration section with OpenAPI-specific capabilities
   - Phase 2, Day 3: Request Validation Integration (COMPLETED)
     - Successfully implemented comprehensive request validation system
     - Created ValidationOptions struct for flexible validation control

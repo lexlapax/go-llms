@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
@@ -36,8 +37,26 @@ func main() {
 		deps,
 	)
 
+	// Add logging hook if DEBUG=1
+	if os.Getenv("DEBUG") == "1" {
+		// Create slog logger that outputs to stderr
+		opts := &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}
+		logger := slog.New(slog.NewTextHandler(os.Stderr, opts))
+		
+		// Create logging hook with debug level
+		loggingHook := core.NewLoggingHook(logger, core.LogLevelDebug)
+		agent.WithHook(loggingHook)
+		log.Println("Debug logging enabled")
+	}
+
 	// Set system prompt
-	agent.SetSystemPrompt(`You are an OpenAPI-aware API interaction assistant. Use the api_client tool to:
+	agent.SetSystemPrompt(`You are an OpenAPI-aware API interaction assistant. You MUST immediately use the api_client tool when requested.
+
+IMPORTANT: When the user says "IMMEDIATELY use the api_client tool", you must respond with a tool call, not a description.
+
+Use the api_client tool to:
 1. Discover available operations from OpenAPI/Swagger specifications
 2. Validate API requests against the spec before sending
 3. Make API calls with proper parameters and authentication
@@ -47,7 +66,9 @@ When working with OpenAPI specs:
 - First use discover_operations=true to explore available endpoints
 - Pay attention to required parameters and authentication requirements
 - Use the spec URL for validation when making actual API calls
-- Help users understand the API structure and capabilities`)
+- Help users understand the API structure and capabilities
+
+DO NOT just describe what you would do - actually make the API calls using the tool.`)
 
 	// Add the API client tool
 	agent.AddTool(apiTool)
@@ -55,7 +76,7 @@ When working with OpenAPI specs:
 	// Example 1: GitHub API Discovery (GitHub provides OpenAPI spec)
 	fmt.Println("=== Example 1: GitHub API OpenAPI Discovery ===")
 	state1 := domain.NewState()
-	state1.Set("prompt", `Discover what endpoints are available in the GitHub API. 
+	state1.Set("user_input", `Use the api_client tool to discover what endpoints are available in the GitHub API. 
 Use their OpenAPI spec at: https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json
 Show me the first 10 operations you find.`)
 
@@ -69,7 +90,7 @@ Show me the first 10 operations you find.`)
 	// Example 2: PetStore API Discovery (Classic OpenAPI example)
 	fmt.Println("\n=== Example 2: PetStore API Discovery ===")
 	state2 := domain.NewState()
-	state2.Set("prompt", `Explore the PetStore API using its OpenAPI spec at:
+	state2.Set("user_input", `Use the api_client tool to explore the PetStore API using its OpenAPI spec at:
 https://petstore3.swagger.io/api/v3/openapi.json
 What operations are available for managing pets?`)
 
@@ -83,9 +104,9 @@ What operations are available for managing pets?`)
 	// Example 3: Making a validated call to PetStore
 	fmt.Println("\n=== Example 3: Validated API Call to PetStore ===")
 	state3 := domain.NewState()
-	state3.Set("prompt", `Now make a GET request to find pets by status in the PetStore API.
-Use the OpenAPI spec for validation: https://petstore3.swagger.io/api/v3/openapi.json
-Look for available pets (status=available).`)
+	state3.Set("user_input", `IMMEDIATELY use the api_client tool to make a GET request to the PetStore API endpoint /pet/findByStatus with query parameter status=available.
+Base URL: https://petstore3.swagger.io/api/v3
+OpenAPI spec for validation: https://petstore3.swagger.io/api/v3/openapi.json`)
 
 	result3, err := agent.Run(ctx, state3)
 	if err != nil {
@@ -97,9 +118,9 @@ Look for available pets (status=available).`)
 	// Example 4: JSONPlaceholder API (No OpenAPI spec, but we can still use the tool)
 	fmt.Println("\n=== Example 4: JSONPlaceholder API ===")
 	state4 := domain.NewState()
-	state4.Set("prompt", `JSONPlaceholder doesn't have an OpenAPI spec, but let's use it anyway.
-Fetch the first 5 posts from https://jsonplaceholder.typicode.com/posts
-Then create a new post with title "Test Post" and body "Created with OpenAPI discovery example".`)
+	state4.Set("user_input", `IMMEDIATELY use the api_client tool to:
+1. First, make a GET request to https://jsonplaceholder.typicode.com/posts?_limit=5 to fetch the first 5 posts
+2. Then, make a POST request to https://jsonplaceholder.typicode.com/posts with body: {"title": "Test Post", "body": "Created with OpenAPI discovery example", "userId": 1}`)
 
 	result4, err := agent.Run(ctx, state4)
 	if err != nil {
@@ -112,7 +133,7 @@ Then create a new post with title "Test Post" and body "Created with OpenAPI dis
 	if apiKey := os.Getenv("GITHUB_TOKEN"); apiKey != "" {
 		fmt.Println("\n=== Example 5: Authenticated GitHub API with OpenAPI ===")
 		state5 := domain.NewState()
-		state5.Set("prompt", fmt.Sprintf(`Use the GitHub OpenAPI spec to understand the authentication requirements.
+		state5.Set("user_input", fmt.Sprintf(`Use the api_client tool with the GitHub OpenAPI spec to understand the authentication requirements.
 Then list my repositories using this token: %s
 Use the spec at: https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json`, apiKey))
 
@@ -127,9 +148,9 @@ Use the spec at: https://raw.githubusercontent.com/github/rest-api-description/m
 	// Example 6: Error handling with OpenAPI validation
 	fmt.Println("\n=== Example 6: OpenAPI Validation Error Handling ===")
 	state6 := domain.NewState()
-	state6.Set("prompt", `Try to make an invalid request to the PetStore API.
-Use the OpenAPI spec for validation: https://petstore3.swagger.io/api/v3/openapi.json
-Try to create a pet but intentionally leave out required fields to see the validation in action.`)
+	state6.Set("user_input", `IMMEDIATELY use the api_client tool to make a POST request to https://petstore3.swagger.io/api/v3/pet with this INVALID body (missing required name field):
+{"id": 999, "status": "available"}
+Include the OpenAPI spec URL for validation: https://petstore3.swagger.io/api/v3/openapi.json`)
 
 	result6, err := agent.Run(ctx, state6)
 	if err != nil {

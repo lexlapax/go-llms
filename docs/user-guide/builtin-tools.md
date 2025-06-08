@@ -14,15 +14,15 @@ This guide provides detailed documentation for all built-in tools in Go-LLMs, wi
 
 ## API Client Tool
 
-The `api_client` tool provides a high-level interface for making REST API calls with intelligent error handling and authentication support. This is Phase 1 implementation focusing on core REST functionality with plans for OpenAPI and GraphQL support in future phases.
+The `api_client` tool provides a high-level interface for making REST API calls with intelligent error handling, authentication support, and OpenAPI specification discovery.
 
 ### Overview
 
 **Tool Name**: `api_client`  
 **Category**: `web`  
-**Version**: `1.0.0`
+**Version**: `2.0.0` (Updated January 7, 2025 with OpenAPI support)
 
-### Current Features (Phase 1)
+### Current Features
 
 1. **REST API Support**
    - Full HTTP method support (GET, POST, PUT, DELETE, PATCH, etc.)
@@ -43,10 +43,19 @@ The `api_client` tool provides a high-level interface for making REST API calls 
    - LLM-friendly error guidance for troubleshooting
    - Status code interpretation and recommendations
 
+4. **OpenAPI/Swagger Support** (Added in Phase 2)
+   - OpenAPI 3.0/3.1 specification parsing
+   - Automatic operation discovery from specs
+   - Request validation against OpenAPI schemas
+   - Parameter and request body validation
+   - LLM-friendly operation guidance
+   - Support for JSON and YAML spec formats
+
 ### Planned Features (Future Phases)
 
-- **Phase 2**: OpenAPI/Swagger specification discovery and validation
-- **Phase 3**: GraphQL query support, rate limiting, response caching, pagination handling
+- **Phase 3**: GraphQL query support
+- **Phase 4**: Advanced authentication (OAuth2, JWT refresh)
+- **Phase 5**: Rate limiting, response caching, pagination handling, streaming responses
 
 ### Parameters
 
@@ -62,6 +71,8 @@ The `api_client` tool provides a high-level interface for making REST API calls 
 - `body` (interface{}): Request body (automatically JSON-encoded)
 - `auth` (object): Authentication configuration
 - `timeout` (integer): Request timeout in seconds (default: 30)
+- `openapi_spec` (string): URL to OpenAPI/Swagger spec for automatic discovery and validation. When provided, enables operation discovery mode
+- `discover_operations` (boolean): If true, returns available operations from the OpenAPI spec instead of making an API call
 
 ### Authentication Configuration
 
@@ -178,10 +189,36 @@ The `auth` parameter supports the following authentication types:
 }
 ```
 
+#### 7. OpenAPI Discovery
+
+```json
+{
+  "base_url": "https://api.github.com",
+  "endpoint": "/",
+  "openapi_spec": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
+  "discover_operations": true
+}
+```
+
+#### 8. OpenAPI-Validated Request
+
+```json
+{
+  "base_url": "https://petstore3.swagger.io/api/v3",
+  "endpoint": "/pet/findByStatus",
+  "method": "GET",
+  "query_params": {
+    "status": "available"
+  },
+  "openapi_spec": "https://petstore3.swagger.io/api/v3/openapi.json"
+}
+```
+
 ### Response Format
 
 The API Client returns a structured response with the following fields:
 
+**Standard API Response:**
 ```json
 {
   "success": true,
@@ -199,10 +236,45 @@ The API Client returns a structured response with the following fields:
 }
 ```
 
+**OpenAPI Discovery Response:**
+```json
+{
+  "success": true,
+  "operations": [
+    {
+      "operationId": "repos/get",
+      "method": "GET",
+      "path": "/repos/{owner}/{repo}",
+      "summary": "Get a repository",
+      "parameters": [
+        {
+          "name": "owner",
+          "in": "path",
+          "required": true,
+          "schema": {"type": "string"}
+        },
+        {
+          "name": "repo",
+          "in": "path",
+          "required": true,
+          "schema": {"type": "string"}
+        }
+      ]
+    }
+  ],
+  "spec_info": {
+    "title": "GitHub v3 REST API",
+    "version": "1.1.4",
+    "description": "GitHub's v3 REST API"
+  }
+}
+```
+
 ### Error Handling
 
 For error responses, the tool provides detailed context:
 
+**Standard Error Response:**
 ```json
 {
   "success": false,
@@ -215,11 +287,32 @@ For error responses, the tool provides detailed context:
 }
 ```
 
+**OpenAPI Validation Error:**
+```json
+{
+  "success": false,
+  "error": "Request validation failed",
+  "validation_report": {
+    "valid": false,
+    "errors": [
+      {
+        "type": "missing_required",
+        "field": "name",
+        "message": "Required field 'name' is missing from request body",
+        "guidance": "Add the 'name' field to your request body. Example: {\"name\": \"Fluffy\", ...}"
+      }
+    ],
+    "llm_guidance": "The request body is missing required fields. Please ensure all required fields are included: name (string, required)"
+  }
+}
+```
+
 **Error Categories:**
 - **4xx Client Errors**: URL, authentication, or request format issues
 - **5xx Server Errors**: API server problems (retry recommended)
 - **Network Errors**: Connection timeouts or DNS resolution failures
-- **Validation Errors**: Invalid parameter values or missing required fields
+- **Validation Errors**: Invalid parameter values or missing required fields (enhanced with OpenAPI)
+- **OpenAPI Errors**: Spec parsing failures or invalid operation references
 
 ### LLM Integration
 
@@ -229,6 +322,9 @@ The API Client is designed to work seamlessly with LLM agents:
 2. **Flexible Parameters**: Accepts both structured and string parameters
 3. **Context Awareness**: Can infer common patterns and suggest fixes
 4. **State Integration**: Stores credentials and base URLs in agent state
+5. **OpenAPI Discovery**: LLMs can explore APIs dynamically using OpenAPI specs
+6. **Smart Validation**: Provides actionable guidance when requests don't match API schemas
+7. **Operation Metadata**: Rich documentation from OpenAPI specs helps LLMs understand APIs
 
 ### Performance
 

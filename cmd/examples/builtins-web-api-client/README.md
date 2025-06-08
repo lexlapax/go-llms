@@ -35,6 +35,17 @@ To run the authenticated examples (creating gists, checking rate limits), provid
 GITHUB_TOKEN="your-github-token" go run cmd/examples/builtins-web-api-client/main.go
 ```
 
+### With Debug Logging
+
+To see detailed logging of agent operations, tool calls, and responses:
+
+```bash
+DEBUG=1 go run cmd/examples/builtins-web-api-client/main.go
+
+# Or with authentication
+DEBUG=1 GITHUB_TOKEN="your-github-token" go run cmd/examples/builtins-web-api-client/main.go
+```
+
 To create a GitHub token:
 1. Go to https://github.com/settings/tokens
 2. Click "Generate new token (classic)"

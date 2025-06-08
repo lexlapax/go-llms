@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
@@ -36,8 +37,24 @@ func main() {
 		deps,
 	)
 
+	// Add logging hook if DEBUG=1
+	if os.Getenv("DEBUG") == "1" {
+		// Create slog logger that outputs to stderr
+		opts := &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}
+		logger := slog.New(slog.NewTextHandler(os.Stderr, opts))
+		
+		// Create logging hook with debug level
+		loggingHook := core.NewLoggingHook(logger, core.LogLevelDebug)
+		agent.WithHook(loggingHook)
+		log.Println("Debug logging enabled")
+	}
+
 	// Set system prompt
-	agent.SetSystemPrompt(`You are an API interaction assistant. Use the api_client tool to:
+	agent.SetSystemPrompt(`You are an API interaction assistant. You MUST use the api_client tool to make actual API calls when requested.
+
+Use the api_client tool to:
 1. Make REST API calls to various services
 2. Handle authentication when needed
 3. Parse and explain API responses
@@ -47,7 +64,9 @@ When making API calls, be sure to:
 - Use the correct HTTP method (GET, POST, PUT, DELETE, etc.)
 - Include necessary authentication if required
 - Format request bodies as JSON when needed
-- Handle errors gracefully and suggest fixes`)
+- Handle errors gracefully and suggest fixes
+
+IMPORTANT: Always make the actual API call using the api_client tool. Do not just describe what you would do - actually do it.`)
 
 	// Add the API client tool
 	agent.AddTool(apiTool)
@@ -55,7 +74,7 @@ When making API calls, be sure to:
 	// Example 1: Simple GET request to GitHub API
 	fmt.Println("=== Example 1: Fetching GitHub User Info ===")
 	state1 := domain.NewState()
-	state1.Set("prompt", "Fetch information about the GitHub user 'octocat' using the GitHub API")
+	state1.Set("user_input", "Use the api_client tool to fetch information about the GitHub user 'octocat' from the GitHub API")
 
 	result1, err := agent.Run(ctx, state1)
 	if err != nil {
@@ -67,7 +86,7 @@ When making API calls, be sure to:
 	// Example 2: Search GitHub repositories
 	fmt.Println("\n=== Example 2: Searching GitHub Repositories ===")
 	state2 := domain.NewState()
-	state2.Set("prompt", "Search for Go repositories related to 'llm' on GitHub. Show me the top 3 most starred ones.")
+	state2.Set("user_input", "Use the api_client tool to search for Go repositories related to 'llm' on GitHub. Make the API call to GitHub's search endpoint with parameters to find repositories with language:go and query 'llm', sorted by stars. Show me the top 3 results.")
 
 	result2, err := agent.Run(ctx, state2)
 	if err != nil {
@@ -80,7 +99,7 @@ When making API calls, be sure to:
 	if apiKey := os.Getenv("GITHUB_TOKEN"); apiKey != "" {
 		fmt.Println("\n=== Example 3: Authenticated API Call ===")
 		state3 := domain.NewState()
-		state3.Set("prompt", fmt.Sprintf("Check my GitHub rate limit status. Use this token for authentication: %s", apiKey))
+		state3.Set("user_input", fmt.Sprintf("Use the api_client tool to check my GitHub rate limit status. Use this token for authentication: %s", apiKey))
 
 		result3, err := agent.Run(ctx, state3)
 		if err != nil {
@@ -94,7 +113,7 @@ When making API calls, be sure to:
 	if apiKey := os.Getenv("GITHUB_TOKEN"); apiKey != "" {
 		fmt.Println("\n=== Example 4: Creating a GitHub Gist ===")
 		state4 := domain.NewState()
-		state4.Set("prompt", fmt.Sprintf(`Create a new GitHub gist with the following:
+		state4.Set("user_input", fmt.Sprintf(`Use the api_client tool to create a new GitHub gist with the following:
 - Description: "API Client Tool Demo"
 - Filename: "hello.go"
 - Content: "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello from API Client Tool!\")\n}"
@@ -112,7 +131,7 @@ When making API calls, be sure to:
 	// Example 5: Error handling demonstration
 	fmt.Println("\n=== Example 5: Error Handling ===")
 	state5 := domain.NewState()
-	state5.Set("prompt", "Try to access a non-existent GitHub user 'this-user-definitely-does-not-exist-12345'")
+	state5.Set("user_input", "Use the api_client tool to try to access a non-existent GitHub user 'this-user-definitely-does-not-exist-12345'")
 
 	result5, err := agent.Run(ctx, state5)
 	if err != nil {
@@ -124,7 +143,7 @@ When making API calls, be sure to:
 	// Example 6: Using path parameters
 	fmt.Println("\n=== Example 6: Path Parameters ===")
 	state6 := domain.NewState()
-	state6.Set("prompt", "Get information about the 'go-llms' repository owned by 'lexlapax' on GitHub")
+	state6.Set("user_input", "Use the api_client tool to get information about the 'go-llms' repository owned by 'lexlapax' on GitHub")
 
 	result6, err := agent.Run(ctx, state6)
 	if err != nil {
@@ -136,7 +155,7 @@ When making API calls, be sure to:
 	// Example 7: Working with a different API (JSONPlaceholder)
 	fmt.Println("\n=== Example 7: JSONPlaceholder API ===")
 	state7 := domain.NewState()
-	state7.Set("prompt", "Fetch the first 5 posts from JSONPlaceholder API (https://jsonplaceholder.typicode.com) and summarize them")
+	state7.Set("user_input", "Use the api_client tool to fetch the first 5 posts from JSONPlaceholder API (https://jsonplaceholder.typicode.com) and summarize them")
 
 	result7, err := agent.Run(ctx, state7)
 	if err != nil {

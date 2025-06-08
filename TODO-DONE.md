@@ -729,3 +729,16 @@ After analyzing Google's Agent Development Kit (ADK), we identified key features
     - [x] Tests validation with detailed schemas
     - [x] Integration tests with real APIs (PetStore, GitHub)
     - [x] All tests passing
+  - [x] Additional improvements (January 7, 2025):
+    - [x] Added DEBUG=1 environment variable support to both examples
+    - [x] Implemented proper LoggingHook configuration with slog
+    - [x] Fixed prompt issues - changed from state.Set("prompt") to state.Set("user_input")
+    - [x] Made all prompts explicit about using api_client tool
+    - [x] Added "IMMEDIATELY" directive for examples that weren't triggering tool use
+    - [x] Updated system prompts to be more directive about tool execution
+  - [x] Documentation updates (June 8, 2025):
+    - [x] Updated builtin-tools.md with OpenAPI parameters
+    - [x] Added OpenAPI discovery and validation examples
+    - [x] Enhanced response format documentation
+    - [x] Added OpenAPI validation error examples
+    - [x] Updated LLM Integration section with OpenAPI capabilities

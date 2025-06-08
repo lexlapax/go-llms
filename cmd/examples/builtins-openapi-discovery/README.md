@@ -22,12 +22,16 @@ go run cmd/examples/builtins-openapi-discovery/main.go
 # Or build and run
 make build-example EXAMPLE=builtins-openapi-discovery
 ./bin/builtins-openapi-discovery
+
+# Enable debug logging to see agent operations
+DEBUG=1 go run cmd/examples/builtins-openapi-discovery/main.go
 ```
 
 ## Environment Variables
 
 - `OPENAI_API_KEY`: Required for the LLM agent
 - `GITHUB_TOKEN`: Optional, enables authenticated GitHub API examples
+- `DEBUG`: Set to "1" to enable detailed logging of agent operations, tool calls, and API interactions
 
 ## APIs Used
 
