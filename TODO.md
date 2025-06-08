@@ -53,10 +53,55 @@
     - [x] Phase 1: Basic REST Client Implementation - COMPLETED January 5, 2025 - see TODO-DONE.md
     - [x] Phase 2: OpenAPI/Swagger Integration - COMPLETED January 8, 2025 - see TODO-DONE.md
     - [ ] Phase 3: GraphQL Support (high Priority)
-      - [ ] Implement GraphQL query execution
-      - [ ] Add GraphQL mutation support
-      - [ ] Support GraphQL variables and fragments
-      - [ ] Add GraphQL introspection capabilities
+      - [ ] Day 1: GraphQL Infrastructure & Schema Discovery
+        - [ ] Create GraphQL client integration with existing api_client
+        - [ ] Implement GraphQL introspection query support
+        - [ ] Create GraphQL schema parser and validator
+        - [ ] Add schema caching with TTL (similar to OpenAPI caching)
+        - [ ] Implement operation discovery (queries, mutations, subscriptions)
+        - [ ] Create type system representation for LLM understanding
+        - [ ] Add graphql_endpoint parameter to api_client tool
+        - [ ] Create GraphQLSchema struct with LLM-friendly methods
+      
+      - [ ] Day 2: Query Building & Execution
+        - [ ] Implement GraphQL query builder with field selection
+        - [ ] Add automatic variable extraction from queries
+        - [ ] Create query validation against schema
+        - [ ] Implement query execution with proper error handling
+        - [ ] Add response type information and validation
+        - [ ] Support nested field selection with depth limits
+        - [ ] Create LLM guidance for query construction
+        - [ ] Add query cost estimation (for APIs that support it)
+      
+      - [ ] Day 3: Mutations & Advanced Features
+        - [ ] Implement GraphQL mutation support
+        - [ ] Add input type validation for mutations
+        - [ ] Support GraphQL fragments (inline and named)
+        - [ ] Implement variable type checking
+        - [ ] Add support for GraphQL aliases
+        - [ ] Create directive handling (@skip, @include)
+        - [ ] Implement subscription support (if feasible)
+        - [ ] Add operation naming best practices
+      
+      - [ ] Day 4: LLM Integration & Examples
+        - [ ] Create discover_graphql parameter for schema exploration
+        - [ ] Implement example query generation from schema
+        - [ ] Add LLM-friendly error messages with fix suggestions
+        - [ ] Create query complexity warnings
+        - [ ] Implement response flattening options
+        - [ ] Add GraphQL-specific authentication guidance
+        - [ ] Create comprehensive GraphQL examples
+        - [ ] Test with popular GraphQL APIs (GitHub, Shopify, etc.)
+      
+      - [ ] Day 5: Documentation & Testing
+        - [ ] Create builtins-graphql-client example
+        - [ ] Add GraphQL section to builtin-tools.md
+        - [ ] Write comprehensive tests for all GraphQL features
+        - [ ] Create performance benchmarks for GraphQL operations
+        - [ ] Document GraphQL best practices for LLM usage
+        - [ ] Add troubleshooting guide for common GraphQL errors
+        - [ ] Integration test with real GraphQL APIs
+        - [ ] Update API client tool version to 3.0.0
     - [ ] Phase 4: Advanced Authentication (high Pritority)
       - [ ] Add OAuth2 flows (client credentials, authorization code)
       - [ ] Implement session/cookie management

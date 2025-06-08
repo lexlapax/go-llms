@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigating Gout: A Visual Guide to Your Diet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+                max-height: 400px;
+            }
+        }
+        .big-stat-number {
+            font-weight: 900;
+            line-height: 1;
+        }
+        .table-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="bg-[#A2DFFF]">
+
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-6xl font-black text-[#004AAD]">Navigating Gout</h1>
+            <p class="text-lg md:text-2xl text-[#0062D5] mt-2">A Visual Guide to Reducing Uric Acid Through Diet</p>
+        </header>
+
+        <main>
+            <section id="intro" class="mb-16">
+                <div class="text-center max-w-4xl mx-auto bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-[#004AAD] mb-3">Understanding the Uric Acid Challenge</h2>
+                    <p class="text-gray-700 text-base md:text-lg">Gout is a painful arthritis caused by high uric acid levels. Our bodies are naturally prone to this, as our kidneys reabsorb most of the uric acid they filter. However, research shows that dietary changes can have a powerful impact, significantly lowering uric acid and reducing the risk of painful flare-ups. This guide visualizes the key dietary strategies to help you take control.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col justify-center items-center text-center">
+                        <div class="big-stat-number text-7xl md:text-8xl text-[#0C8DFF]">~90%</div>
+                        <h3 class="text-xl font-bold text-[#004AAD] mt-2">Uric Acid Reabsorbed</h3>
+                        <p class="text-gray-600 mt-2">A key biological factor is that human kidneys reabsorb about 90% of filtered uric acid, making us less efficient at eliminating it and more susceptible to high levels in the blood.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col justify-center items-center text-center">
+                         <div class="big-stat-number text-7xl md:text-8xl text-[#0C8DFF]">~25%</div>
+                        <h3 class="text-xl font-bold text-[#004AAD] mt-2">Serum Urate Reduction</h3>
+                        <p class="text-gray-600 mt-2">Removing purines from the diet can reduce serum urate levels by approximately 25%, demonstrating the significant impact that food choices can have on managing gout.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="key-strategies" class="mb-16">
+                 <div class="text-center max-w-4xl mx-auto mb-8">
+                    <h2 class="text-3xl font-black text-[#004AAD] mb-3">Core Dietary Strategies</h2>
+                    <p class="text-gray-800 text-lg">Beyond avoiding certain foods, managing gout involves proactive strategies. Proper hydration is your first line of defense, while understanding the true impact of alcohol and hidden sugars is critical for preventing flares.</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col justify-center items-center text-center lg:col-span-1">
+                        <div class="text-6xl text-[#0C8DFF]">💧</div>
+                        <h3 class="text-2xl font-bold text-[#004AAD] mt-2">Hydration is Key</h3>
+                        <p class="text-gray-600 my-4">Drinking at least 8 glasses of water daily helps your kidneys flush uric acid, reducing flare-up frequency by up to:</p>
+                        <div class="big-stat-number text-6xl text-[#0062D5]">46%</div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-xl lg:col-span-2">
+                        <h3 class="text-2xl font-bold text-[#004AAD] text-center mb-4">The Impact of Alcohol on Gout Risk</h3>
+                        <p class="text-gray-600 text-center mb-4">Not all alcoholic drinks are equal. Beer is the most problematic due to its high purine content and alcohol, which both raise uric acid. Spirits also increase risk, while wine in moderation appears to have a lesser effect.</p>
+                        <div class="chart-container">
+                            <canvas id="alcoholImpactChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="diet-chart" class="mb-16">
+                <div class="text-center max-w-4xl mx-auto mb-8">
+                    <h2 class="text-3xl font-black text-[#004AAD] mb-3">The Gout Diet: At a Glance</h2>
+                    <p class="text-gray-800 text-lg">Navigating food choices is central to managing gout. This chart breaks down foods into three simple categories: what to enjoy freely, what to consume in moderation, and what to strictly avoid to minimize uric acid buildup.</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <div class="min-w-[1000px]">
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-green-100 p-4 rounded-xl">
+                                <h3 class="text-2xl font-bold text-green-800 text-center">✅ Foods to Eat Freely</h3>
+                            </div>
+                            <div class="bg-yellow-100 p-4 rounded-xl">
+                                <h3 class="text-2xl font-bold text-yellow-800 text-center">⚠️ Foods to Consume in Moderation</h3>
+                            </div>
+                             <div class="bg-red-100 p-4 rounded-xl">
+                                <h3 class="text-2xl font-bold text-red-800 text-center">🚫 Foods to Strictly Avoid</h3>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4 mt-4">
+                            <!-- Fruits -->
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Fruits</h4>
+                                <p class="text-gray-700">All fresh fruits, especially cherries and those high in Vitamin C like oranges and pineapple.</p>
+                            </div>
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Fruits</h4>
+                                <p class="text-gray-700">100% fruit juices (due to concentrated fructose), dried fruits, and bananas.</p>
+                            </div>
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Fruits</h4>
+                                <p class="text-gray-700">Canned fruits in heavy syrup, fruit-flavored drinks with added sugar or HFCS.</p>
+                            </div>
+
+                            <!-- Vegetables -->
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Vegetables</h4>
+                                <p class="text-gray-700">All vegetables are encouraged, including those with moderate purines like spinach, asparagus, and mushrooms.</p>
+                            </div>
+                             <div class="bg-white/80 p-4 rounded-lg shadow-md table-card"></div>
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Vegetables</h4>
+                                <p class="text-gray-700">Vegetables prepared with high-fat sauces, butter, or cream.</p>
+                            </div>
+                            
+                            <!-- Grains -->
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Grains</h4>
+                                <p class="text-gray-700">Whole grains like oats, brown rice, quinoa, and whole wheat bread.</p>
+                            </div>
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Grains</h4>
+                                <p class="text-gray-700">Refined grains like white bread, white rice, and regular pasta.</p>
+                            </div>
+                             <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Grains</h4>
+                                <p class="text-gray-700">Sugary breakfast cereals, pastries, cakes and cookies.</p>
+                            </div>
+
+                            <!-- Proteins -->
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Proteins</h4>
+                                <p class="text-gray-700">Plant-based proteins (beans, lentils, tofu), nuts, seeds, and eggs.</p>
+                            </div>
+                             <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Proteins</h4>
+                                <p class="text-gray-700">Lean poultry (chicken), some fish (salmon, cod), and some shellfish (shrimp, crab) in limited portions (4-6 oz).</p>
+                            </div>
+                             <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Proteins</h4>
+                                <p class="text-gray-700">Organ meats (liver, kidneys), red meats (beef, pork, lamb), game meats, and high-purine seafood (sardines, anchovies, tuna).</p>
+                            </div>
+
+                             <!-- Dairy -->
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Dairy</h4>
+                                <p class="text-gray-700">Low-fat or non-fat dairy products like skim milk and low-fat yogurt.</p>
+                            </div>
+                             <div class="bg-white/80 p-4 rounded-lg shadow-md table-card"></div>
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Dairy</h4>
+                                <p class="text-gray-700">Full-fat dairy products like whole milk, cream, and full-fat cheese.</p>
+                            </div>
+
+                             <!-- Liquids -->
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Liquids</h4>
+                                <p class="text-gray-700">Water, coffee, tea, and unsweetened tart cherry juice.</p>
+                            </div>
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Liquids</h4>
+                                <p class="text-gray-700">Wine (one 5oz glass per day, if any alcohol is consumed).</p>
+                            </div>
+                            <div class="bg-white/80 p-4 rounded-lg shadow-md table-card">
+                                <h4 class="font-bold text-lg text-[#004AAD]">Liquids</h4>
+                                <p class="text-gray-700">Beer (all types), distilled liquors/spirits, and sugary drinks with HFCS (soda, sweetened teas).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="superfoods" class="mb-16">
+                <div class="text-center max-w-4xl mx-auto mb-8">
+                    <h2 class="text-3xl font-black text-[#004AAD] mb-3">Gout-Fighting Foods</h2>
+                    <p class="text-gray-800 text-lg">Some foods go beyond being just "safe" and may actively help manage gout. Cherries and Vitamin C are known for their anti-inflammatory and uric acid-lowering properties, while coffee and low-fat dairy also show protective benefits.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="bg-white p-6 rounded-2xl shadow-xl">
+                        <h3 class="text-2xl font-bold text-[#004AAD] text-center mb-4">Comparing Protective Effects</h3>
+                        <div class="chart-container">
+                            <canvas id="superfoodsRadarChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-xl">
+                        <h3 class="text-2xl font-bold text-[#004AAD] text-center mb-4">The Sugar & HFCS Problem</h3>
+                         <p class="text-gray-600 text-center mb-4">Added sugars, especially High-Fructose Corn Syrup (HFCS) found in sodas and processed foods, are a major, often hidden, trigger. Fructose metabolism directly drives up uric acid production, making these a key category to avoid.</p>
+                        <div class="chart-container">
+                            <canvas id="sugarDonutChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+             <footer class="text-center mt-16 pt-8 border-t-2 border-[#0062D5]/50">
+                <h2 class="text-2xl font-bold text-[#004AAD] mb-3">Live Well with Gout</h2>
+                <p class="text-gray-700 max-w-3xl mx-auto mb-6">This guide provides evidence-based dietary information but is not a substitute for professional medical advice. Always consult with your doctor and a registered dietitian to create a personalized management plan that is right for you.</p>
+                <p class="text-sm text-gray-500">Infographic based on data from "Navigating Gout: A Dietary Guide".</p>
+            </footer>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const wrapLabel = (label, maxLength = 16) => {
+        if (typeof label !== 'string' || label.length <= maxLength) {
+            return label;
+        }
+        const words = label.split(' ');
+        let lines = [];
+        let currentLine = '';
+        words.forEach(word => {
+            if ((currentLine + word).length > maxLength) {
+                lines.push(currentLine.trim());
+                currentLine = '';
+            }
+            currentLine += word + ' ';
+        });
+        lines.push(currentLine.trim());
+        return lines.filter(line => line.length > 0);
+    };
+
+    const multiLineTooltipTitle = {
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    title: function(tooltipItems) {
+                        const item = tooltipItems[0];
+                        let label = item.chart.data.labels[item.dataIndex];
+                        return Array.isArray(label) ? label.join(' ') : label;
+                    }
+                }
+            },
+            legend: {
+                 labels: {
+                    color: '#004AAD',
+                    font: {
+                        size: 14
+                    }
+                 }
+            }
+        }
+    };
+
+    const baseChartOptions = (showYAxis = true, suggestedMax = null) => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                display: showYAxis,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                },
+                ticks: {
+                    color: '#0062D5',
+                    font: {
+                        size: 12
+                    }
+                },
+                suggestedMax: suggestedMax
+            },
+            x: {
+                 grid: {
+                    display: false
+                },
+                ticks: {
+                    color: '#0062D5',
+                    font: {
+                        size: 12
+                    }
+                }
+            }
+        },
+        ...multiLineTooltipTitle
+    });
+
+    const alcoholCtx = document.getElementById('alcoholImpactChart');
+    if(alcoholCtx) {
+        new Chart(alcoholCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Beer', 'Spirits (Liquor)', 'Wine (in moderation)'],
+                datasets: [{
+                    label: 'Relative Gout Attack Risk',
+                    data: [100, 75, 20],
+                    backgroundColor: ['#CC0000', '#FF8C00', '#0062D5'],
+                    borderColor: ['#990000', '#CC7000', '#004AAD'],
+                    borderWidth: 2
+                }]
+            },
+            options: { ...baseChartOptions(true, 110), plugins: { ...multiLineTooltipTitle.plugins, legend: { display: false } } }
+        });
+    }
+
+    const sugarCtx = document.getElementById('sugarDonutChart');
+    if(sugarCtx) {
+        new Chart(sugarCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Sugary Drinks & HFCS', 'Other Dietary Triggers', 'Safe Foods'],
+                datasets: [{
+                    label: 'Contribution to Gout Flares',
+                    data: [40, 35, 25],
+                    backgroundColor: [
+                        '#CC0000',
+                        '#FF8C00',
+                        '#0062D5'
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: { ...multiLineTooltipTitle.plugins, legend: { position: 'bottom' } }
+            }
+        });
+    }
+    
+    const superfoodsCtx = document.getElementById('superfoodsRadarChart');
+    if(superfoodsCtx) {
+        new Chart(superfoodsCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Uric Acid Lowering', 'Anti-Inflammatory', ['Reduces Attack', 'Frequency'], 'Antioxidant Power'],
+                datasets: [
+                {
+                    label: 'Cherries',
+                    data: [7, 9, 8, 9],
+                    backgroundColor: 'rgba(204, 0, 0, 0.2)',
+                    borderColor: 'rgba(204, 0, 0, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(204, 0, 0, 1)'
+                },
+                {
+                    label: 'Vitamin C',
+                    data: [8, 5, 6, 8],
+                    backgroundColor: 'rgba(255, 140, 0, 0.2)',
+                    borderColor: 'rgba(255, 140, 0, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(255, 140, 0, 1)'
+                },
+                {
+                    label: 'Low-Fat Dairy',
+                    data: [8, 3, 7, 2],
+                    backgroundColor: 'rgba(0, 98, 213, 0.2)',
+                    borderColor: 'rgba(0, 98, 213, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(0, 98, 213, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                 plugins: multiLineTooltipTitle.plugins,
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(0, 74, 173, 0.2)' },
+                        grid: { color: 'rgba(0, 74, 173, 0.2)' },
+                        pointLabels: { 
+                            font: { size: 12 },
+                             color: '#004AAD'
+                        },
+                        ticks: {
+                            color: '#fff',
+                            backdropColor: '#A2DFFF',
+                            stepSize: 2
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 10
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+
+</body>
+</html>
