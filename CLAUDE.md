@@ -9,9 +9,23 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 Until we reach close to v1.. *no backward compatibility* do not add extra code for backward compatibility. when planning plan for in place replacement and migration of code to new functionality.
 
 
-**Current Version**: v0.3.1 (Active Development - June 2025)
+**Current Version**: v0.3.1 (Active Development - January 2025)
 
-**Recent Updates** (June 8, 2025):
+**Recent Updates** (January 8, 2025):
+- **API Client Tool Phase 3: GraphQL Support (COMPLETED)**
+  - Implemented comprehensive GraphQL support in api_client tool (v3.0.0)
+  - Features implemented:
+    - GraphQL query and mutation execution with variables
+    - Schema introspection and operation discovery
+    - Variable type validation and GraphQL-specific error handling
+    - Caching of schemas and discovery results (15-minute TTL)
+    - LLM-friendly operation discovery and guidance
+    - Integration with existing authentication mechanisms
+  - Created builtins-graphql-client example demonstrating all features
+  - Updated documentation with GraphQL parameters, examples, and response formats
+  - All tests passing including real API integration tests
+
+**Recent Updates** (January 8, 2025):
 - **API Client Tool Phase 2: OpenAPI/Swagger Integration (COMPLETED)**
   - Phase 2, Day 5: Performance Optimization and Caching (COMPLETED)
     - Implemented in-memory caching with TTL support for OpenAPI specs

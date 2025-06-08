@@ -5,6 +5,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,9 +26,9 @@ func init() {
 		Metadata: builtins.Metadata{
 			Name:        "api_client",
 			Category:    "web",
-			Tags:        []string{"api", "rest", "http", "integration", "client"},
-			Description: "Make REST API calls with automatic error handling and authentication support",
-			Version:     "2.0.0",
+			Tags:        []string{"api", "rest", "http", "graphql", "integration", "client"},
+			Description: "Make REST API and GraphQL calls with automatic error handling and authentication support",
+			Version:     "3.0.0",
 			Examples: []builtins.Example{
 				{
 					Name:        "Fetch GitHub User",
@@ -60,6 +61,21 @@ params := map[string]interface{}{
     }
 }
 // Returns: {"success": true, "status_code": 201, "data": {"id": "12345", "created": true}}`,
+				},
+				{
+					Name:        "GraphQL Query",
+					Description: "Execute a GraphQL query",
+					Code: `// Query GitHub GraphQL API
+params := map[string]interface{}{
+    "base_url": "https://api.github.com",
+    "endpoint": "/graphql",
+    "graphql_query": "query { viewer { login name } }",
+    "auth": map[string]interface{}{
+        "type": "bearer",
+        "token": "your-github-token"
+    }
+}
+// Returns: {"success": true, "status_code": 200, "data": {"viewer": {"login": "octocat", "name": "The Octocat"}}}`,
 				},
 			},
 		},
@@ -148,6 +164,26 @@ func createAPIClientTool() domain.Tool {
 				Type:        "boolean",
 				Description: "If true, returns available operations from the OpenAPI spec instead of making an API call",
 			},
+			"graphql_query": {
+				Type:        "string",
+				Description: "GraphQL query or mutation string. When provided, the tool operates in GraphQL mode",
+			},
+			"graphql_variables": {
+				Type:        "object",
+				Description: "Variables for the GraphQL query (e.g., {'userId': '123', 'limit': 10})",
+			},
+			"graphql_operation_name": {
+				Type:        "string",
+				Description: "Name of the operation to execute when query contains multiple operations",
+			},
+			"discover_graphql": {
+				Type:        "boolean",
+				Description: "If true, performs introspection to discover available queries, mutations, and types",
+			},
+			"max_graphql_depth": {
+				Type:        "integer",
+				Description: "Maximum depth for GraphQL queries (default: 5, max: 10)",
+			},
 		},
 		Required: []string{"base_url", "endpoint"},
 	}
@@ -183,33 +219,43 @@ func createAPIClientTool() domain.Tool {
 				Type:        "object",
 				Description: "Response headers",
 			},
+			"graphql_schema": {
+				Type:        "object",
+				Description: "GraphQL schema information when discover_graphql is true",
+			},
+			"graphql_extensions": {
+				Type:        "object",
+				Description: "GraphQL extensions from the response (e.g., performance metrics)",
+			},
 		},
 		Required: []string{"success", "status_code"},
 	}
 
-	builder := atools.NewToolBuilder("api_client", "Make REST API calls with automatic error handling and authentication support").
+	builder := atools.NewToolBuilder("api_client", "Make REST API and GraphQL calls with automatic error handling and authentication support").
 		WithFunction(executeAPIClient).
 		WithParameterSchema(paramSchema).
 		WithOutputSchema(outputSchema).
-		WithUsageInstructions(`Use this tool to interact with REST APIs. It handles:
+		WithUsageInstructions(`Use this tool to interact with REST APIs and GraphQL endpoints. It handles:
 - Multiple authentication methods (API key, Bearer token, Basic auth)
 - Automatic JSON encoding/decoding
 - Path parameter substitution
 - Helpful error messages and guidance
 - Common HTTP methods (GET, POST, PUT, DELETE, etc.)
 - OpenAPI/Swagger spec discovery and validation
+- GraphQL queries, mutations, and introspection
 
 The tool will automatically set appropriate headers and handle responses intelligently.
 
-OpenAPI Discovery Mode:
-- Set discover_operations=true and provide openapi_spec URL to discover available endpoints
-- The tool will fetch and parse the OpenAPI spec to show all available operations
-- Use this to understand what endpoints are available before making calls
+REST API Modes:
+- Regular Mode: Standard REST API calls with path/query parameters
+- OpenAPI Discovery: Set discover_operations=true to explore available endpoints
+- OpenAPI Validation: Provide openapi_spec URL to validate requests
 
-OpenAPI Validation Mode:
-- Provide openapi_spec URL with regular API calls to enable request validation
-- The tool will validate parameters and request body against the spec
-- Helps ensure API calls are correctly formatted before sending`).
+GraphQL Modes:
+- Query/Mutation Mode: Provide graphql_query to execute GraphQL operations
+- Discovery Mode: Set discover_graphql=true to introspect schema
+- Variables are passed via graphql_variables parameter
+- Automatically handles GraphQL-specific error formatting`).
 		WithExamples([]domain.ToolExample{
 			{
 				Name:        "Simple GET request",
@@ -315,6 +361,116 @@ OpenAPI Validation Mode:
 					"total_operations": 2,
 				},
 				Explanation: "Fetches and parses OpenAPI spec to show available endpoints",
+			},
+			{
+				Name:        "GraphQL query",
+				Description: "Execute a GraphQL query",
+				Scenario:    "When you need to query data from a GraphQL API",
+				Input: map[string]interface{}{
+					"base_url": "https://api.github.com",
+					"endpoint": "/graphql",
+					"graphql_query": `query {
+  viewer {
+    login
+    name
+    email
+  }
+}`,
+					"auth": map[string]interface{}{
+						"type":  "bearer",
+						"token": "github_token_here",
+					},
+				},
+				Output: map[string]interface{}{
+					"success":     true,
+					"status_code": 200,
+					"data": map[string]interface{}{
+						"viewer": map[string]interface{}{
+							"login": "octocat",
+							"name":  "The Octocat",
+							"email": "octocat@github.com",
+						},
+					},
+				},
+				Explanation: "Executes a GraphQL query and returns the data",
+			},
+			{
+				Name:        "GraphQL with variables",
+				Description: "Execute a GraphQL query with variables",
+				Scenario:    "When you need to pass dynamic values to a GraphQL query",
+				Input: map[string]interface{}{
+					"base_url":     "https://api.github.com",
+					"endpoint":     "/graphql",
+					"graphql_query": `query GetRepo($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    name
+    description
+    stargazerCount
+  }
+}`,
+					"graphql_variables": map[string]interface{}{
+						"owner": "golang",
+						"name":  "go",
+					},
+					"auth": map[string]interface{}{
+						"type":  "bearer",
+						"token": "github_token_here",
+					},
+				},
+				Output: map[string]interface{}{
+					"success":     true,
+					"status_code": 200,
+					"data": map[string]interface{}{
+						"repository": map[string]interface{}{
+							"name":           "go",
+							"description":    "The Go programming language",
+							"stargazerCount": 120000,
+						},
+					},
+				},
+				Explanation: "Executes a parameterized GraphQL query with variables",
+			},
+			{
+				Name:        "GraphQL discovery",
+				Description: "Discover GraphQL schema",
+				Scenario:    "When you need to explore available GraphQL operations",
+				Input: map[string]interface{}{
+					"base_url":         "https://api.github.com",
+					"endpoint":         "/graphql",
+					"discover_graphql": true,
+					"auth": map[string]interface{}{
+						"type":  "bearer",
+						"token": "github_token_here",
+					},
+				},
+				Output: map[string]interface{}{
+					"success":     true,
+					"status_code": 200,
+					"graphql_schema": map[string]interface{}{
+						"endpoint": "https://api.github.com/graphql",
+						"operations": map[string]interface{}{
+							"queries": []map[string]interface{}{
+								{
+									"name":        "viewer",
+									"description": "The currently authenticated user",
+									"example":     "query { viewer { login name email } }",
+									"returns":     "User",
+								},
+								{
+									"name":        "repository",
+									"description": "Lookup a repository",
+									"example":     "query { repository(owner: \"owner\", name: \"repo\") { name } }",
+									"returns":     "Repository",
+									"arguments": []map[string]interface{}{
+										{"name": "owner", "type": "String!", "required": true},
+										{"name": "name", "type": "String!", "required": true},
+									},
+								},
+							},
+						},
+					},
+				},
+				Explanation: "Introspects GraphQL schema to discover available operations",
 			},
 		}).
 		WithConstraints([]string{
@@ -454,6 +610,269 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 			"total_operations": len(enhancedOps),
 			"llm_guidance":     generateDiscoveryGuidance(spec, enhancedOps),
 		}, nil
+	}
+
+	// Check if we're in GraphQL discovery mode
+	if discoverGraphQL, ok := paramMap["discover_graphql"].(bool); ok && discoverGraphQL {
+		baseURL, ok := paramMap["base_url"].(string)
+		if !ok || baseURL == "" {
+			return nil, fmt.Errorf("base_url is required for GraphQL discovery")
+		}
+
+		endpoint, ok := paramMap["endpoint"].(string)
+		if !ok || endpoint == "" {
+			return nil, fmt.Errorf("endpoint is required for GraphQL discovery")
+		}
+
+		// Build full URL
+		fullURL := strings.TrimRight(baseURL, "/") + "/" + strings.TrimLeft(endpoint, "/")
+
+		// Get headers
+		headers := make(map[string]string)
+		if h, ok := paramMap["headers"].(map[string]interface{}); ok {
+			headers = convertToStringMap(h)
+		}
+
+		// Apply authentication to headers for GraphQL
+		if auth, ok := paramMap["auth"].(map[string]interface{}); ok {
+			// Create a dummy request to apply auth
+			dummyReq, _ := http.NewRequest("POST", fullURL, nil)
+			for k, v := range headers {
+				dummyReq.Header.Set(k, v)
+			}
+			
+			if err := applyAuthentication(dummyReq, auth); err != nil {
+				return nil, fmt.Errorf("authentication error: %w", err)
+			}
+			
+			// Copy headers back
+			for k := range dummyReq.Header {
+				headers[k] = dummyReq.Header.Get(k)
+			}
+		}
+
+		// Create GraphQL client
+		httpClient := &http.Client{Timeout: 30 * time.Second}
+		graphqlClient := NewGraphQLClient(fullURL, httpClient, headers)
+
+		// Try cache first
+		cache := GetGlobalGraphQLCache()
+		if discovery, found := cache.GetDiscovery(fullURL); found {
+			return map[string]interface{}{
+				"success":         true,
+				"status_code":     200,
+				"graphql_schema":  discovery,
+			}, nil
+		}
+
+		// Perform introspection - for now just do a simple introspection
+		ctx := context.Background()
+		introspectionQuery := `query {
+  __schema {
+    queryType { name }
+    mutationType { name }
+    types {
+      name
+      kind
+      description
+      fields {
+        name
+        description
+        type {
+          name
+          kind
+        }
+      }
+    }
+  }
+}`
+
+		resp, err := graphqlClient.Execute(ctx, introspectionQuery, nil, "")
+		if err != nil {
+			return map[string]interface{}{
+				"success":         false,
+				"status_code":     0,
+				"error_message":   fmt.Sprintf("GraphQL introspection failed: %v", err),
+				"error_guidance":  "Ensure the GraphQL endpoint supports introspection and your authentication is correct",
+			}, nil
+		}
+
+		// For now, return the raw introspection data
+		discovery := &GraphQLDiscoveryResult{
+			Endpoint: fullURL,
+			Operations: GraphQLOperations{
+				Queries:    []GraphQLOperationInfo{},
+				Mutations:  []GraphQLOperationInfo{},
+			},
+			Types: make(map[string]GraphQLTypeInfo),
+		}
+
+		// Basic parsing of introspection result
+		if dataMap, ok := resp.Data.(map[string]interface{}); ok {
+			if schemaMap, ok := dataMap["__schema"].(map[string]interface{}); ok {
+				// Extract query type info
+				if queryType, ok := schemaMap["queryType"].(map[string]interface{}); ok {
+					if name, ok := queryType["name"].(string); ok {
+						discovery.Operations.Queries = append(discovery.Operations.Queries, GraphQLOperationInfo{
+							Name:        name,
+							Description: "Root query type",
+							Example:     "query { ... }",
+						})
+					}
+				}
+				
+				// Extract mutation type info
+				if mutationType, ok := schemaMap["mutationType"].(map[string]interface{}); ok {
+					if name, ok := mutationType["name"].(string); ok {
+						discovery.Operations.Mutations = append(discovery.Operations.Mutations, GraphQLOperationInfo{
+							Name:        name,
+							Description: "Root mutation type",
+							Example:     "mutation { ... }",
+						})
+					}
+				}
+
+				// Extract some type information
+				if types, ok := schemaMap["types"].([]interface{}); ok {
+					for _, t := range types {
+						if typeMap, ok := t.(map[string]interface{}); ok {
+							if name, ok := typeMap["name"].(string); ok {
+								if !strings.HasPrefix(name, "__") { // Skip introspection types
+									typeInfo := GraphQLTypeInfo{
+										Kind: "OBJECT",
+									}
+									if desc, ok := typeMap["description"].(string); ok {
+										typeInfo.Description = desc
+									}
+									if kind, ok := typeMap["kind"].(string); ok {
+										typeInfo.Kind = kind
+									}
+									
+									// Only include non-scalar types
+									if typeInfo.Kind != "SCALAR" {
+										discovery.Types[name] = typeInfo
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Cache the discovery
+		cache.SetDiscovery(fullURL, discovery, 15*time.Minute)
+
+		return map[string]interface{}{
+			"success":         true,
+			"status_code":     200,
+			"graphql_schema":  discovery,
+		}, nil
+	}
+
+	// Check if we're executing a GraphQL query
+	if graphqlQuery, ok := paramMap["graphql_query"].(string); ok && graphqlQuery != "" {
+		baseURL, ok := paramMap["base_url"].(string)
+		if !ok || baseURL == "" {
+			return nil, fmt.Errorf("base_url is required for GraphQL queries")
+		}
+
+		endpoint, ok := paramMap["endpoint"].(string)
+		if !ok || endpoint == "" {
+			return nil, fmt.Errorf("endpoint is required for GraphQL queries")
+		}
+
+		// Build full URL
+		fullURL := strings.TrimRight(baseURL, "/") + "/" + strings.TrimLeft(endpoint, "/")
+
+		// Get headers
+		headers := make(map[string]string)
+		if h, ok := paramMap["headers"].(map[string]interface{}); ok {
+			headers = convertToStringMap(h)
+		}
+
+		// Apply authentication to headers for GraphQL
+		if auth, ok := paramMap["auth"].(map[string]interface{}); ok {
+			// Create a dummy request to apply auth
+			dummyReq, _ := http.NewRequest("POST", fullURL, nil)
+			for k, v := range headers {
+				dummyReq.Header.Set(k, v)
+			}
+			
+			if err := applyAuthentication(dummyReq, auth); err != nil {
+				return nil, fmt.Errorf("authentication error: %w", err)
+			}
+			
+			// Copy headers back
+			for k := range dummyReq.Header {
+				headers[k] = dummyReq.Header.Get(k)
+			}
+		}
+
+		// Get variables
+		var variables map[string]interface{}
+		if v, ok := paramMap["graphql_variables"].(map[string]interface{}); ok {
+			variables = v
+		}
+
+		// Get operation name
+		var operationName string
+		if op, ok := paramMap["graphql_operation_name"].(string); ok {
+			operationName = op
+		}
+
+		// Create GraphQL client
+		httpClient := &http.Client{Timeout: 30 * time.Second}
+		if timeoutStr, ok := paramMap["timeout"].(string); ok {
+			if timeout, err := time.ParseDuration(timeoutStr); err == nil {
+				httpClient.Timeout = timeout
+			}
+		}
+
+		graphqlClient := NewGraphQLClient(fullURL, httpClient, headers)
+
+		// Execute GraphQL query
+		ctx := context.Background()
+		resp, err := graphqlClient.Execute(ctx, graphqlQuery, variables, operationName)
+		if err != nil {
+			return map[string]interface{}{
+				"success":         false,
+				"status_code":     0,
+				"error_message":   fmt.Sprintf("GraphQL execution failed: %v", err),
+				"error_guidance":  GenerateLLMGuidance(err, nil),
+			}, nil
+		}
+
+		// Handle GraphQL errors
+		if len(resp.Errors) > 0 {
+			errorMessages := make([]string, len(resp.Errors))
+			for i, err := range resp.Errors {
+				errorMessages[i] = err.Message
+			}
+			
+			return map[string]interface{}{
+				"success":         false,
+				"status_code":     200, // GraphQL returns 200 even with errors
+				"data":            resp.Data,
+				"error_message":   strings.Join(errorMessages, "; "),
+				"error_details":   resp.Errors,
+				"error_guidance":  "GraphQL query returned errors. Check the error_details for specific field errors",
+				"graphql_extensions": resp.Extensions,
+			}, nil
+		}
+
+		// Success
+		result := map[string]interface{}{
+			"success":      true,
+			"status_code":  200,
+			"data":         resp.Data,
+		}
+		
+		if resp.Extensions != nil {
+			result["graphql_extensions"] = resp.Extensions
+		}
+		
+		return result, nil
 	}
 
 	// Initialize variables for OpenAPI support

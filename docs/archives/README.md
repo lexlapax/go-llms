@@ -24,7 +24,15 @@ The following documents were used in the development of the agent architecture a
 - **analysis-agent-framework-claude.md** - Claude's analysis of agent frameworks and architectural patterns
 - **analysis-agent-framework-gemini.md** - Gemini's comprehensive analysis of agent frameworks, including Google ADK patterns
 
-These documents are preserved for historical reference and to track the evolution of the built-in components system, model discovery features, and agent architecture development.
+## API Client Tool Documentation
+
+The following documents were used in the development of the API client tool with GraphQL support:
+
+- **GRAPHQL_API_CLIENT_DESIGN.md** - Overall GraphQL design with LLM-friendly approach
+- **GRAPHQL_LIBRARY_ANALYSIS.md** - Analysis of various Go GraphQL libraries (selected gqlparser/v2)
+- **GRAPHQL_PARAMETER_DESIGN.md** - GraphQL parameter integration strategy for the api_client tool
+
+These documents are preserved for historical reference and to track the evolution of the built-in components system, model discovery features, agent architecture development, and API client tool enhancements.
 
 ## When to Reference These Documents
 

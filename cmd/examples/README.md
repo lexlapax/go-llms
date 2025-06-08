@@ -563,6 +563,22 @@ cd builtins-web-tools && go run main.go
 cd builtins-web-api-client && go run main.go
 ```
 
+#### [**Built-ins GraphQL Client**](builtins-graphql-client/README.md)
+**Focus**: GraphQL API interaction with introspection and variable support
+
+**Features:**
+- GraphQL query and mutation execution
+- Schema introspection and discovery
+- Variable support for dynamic queries
+- GraphQL-specific error handling
+- Support for nested queries and field selection
+
+**When to use**: When you need to interact with GraphQL APIs like GitHub GraphQL, Shopify, or other modern APIs.
+
+```bash
+cd builtins-graphql-client && go run main.go
+```
+
 #### [**Built-ins OpenAPI Discovery**](builtins-openapi-discovery/README.md)
 **Focus**: OpenAPI/Swagger specification discovery and validation
 

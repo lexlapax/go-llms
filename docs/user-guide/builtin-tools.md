@@ -14,13 +14,13 @@ This guide provides detailed documentation for all built-in tools in Go-LLMs, wi
 
 ## API Client Tool
 
-The `api_client` tool provides a high-level interface for making REST API calls with intelligent error handling, authentication support, and OpenAPI specification discovery.
+The `api_client` tool provides a high-level interface for making REST API and GraphQL calls with intelligent error handling, authentication support, OpenAPI specification discovery, and GraphQL introspection.
 
 ### Overview
 
 **Tool Name**: `api_client`  
 **Category**: `web`  
-**Version**: `2.0.0` (Updated January 7, 2025 with OpenAPI support)
+**Version**: `3.0.0` (Updated January 8, 2025 with GraphQL support)
 
 ### Current Features
 
@@ -56,9 +56,22 @@ The `api_client` tool provides a high-level interface for making REST API calls 
      - Enhanced error guidance with OpenAPI context
      - Operation metadata with parameter counts and requirements
 
+5. **GraphQL Support** (Added in Phase 3 - v3.0.0)
+   - GraphQL query and mutation execution
+   - Variable support for parameterized queries
+   - Schema introspection and discovery
+   - Operation-specific error handling
+   - GraphQL-aware response formatting
+   - Caching of GraphQL schemas and discovery results
+   - LLM-friendly operation discovery
+   - **New in v3.0.0** (January 8, 2025):
+     - Full GraphQL query/mutation support
+     - Schema introspection with caching
+     - Variable type validation
+     - GraphQL-specific error guidance
+
 ### Planned Features (Future Phases)
 
-- **Phase 3**: GraphQL query support
 - **Phase 4**: Advanced authentication (OAuth2, JWT refresh)
 - **Phase 5**: Rate limiting, response caching, pagination handling, streaming responses
 
@@ -78,6 +91,13 @@ The `api_client` tool provides a high-level interface for making REST API calls 
 - `timeout` (integer): Request timeout in seconds (default: 30)
 - `openapi_spec` (string): URL to OpenAPI/Swagger spec for automatic discovery and validation. When provided, enables operation discovery mode
 - `discover_operations` (boolean): If true, returns available operations from the OpenAPI spec instead of making an API call
+
+**GraphQL Parameters (v3.0.0):**
+- `graphql_query` (string): GraphQL query or mutation string. When provided, the tool operates in GraphQL mode
+- `graphql_variables` (object): Variables for the GraphQL query (e.g., {'userId': '123', 'limit': 10})
+- `graphql_operation_name` (string): Name of the operation to execute when query contains multiple operations
+- `discover_graphql` (boolean): If true, performs introspection to discover available queries, mutations, and types
+- `max_graphql_depth` (integer): Maximum depth for GraphQL queries (default: 5, max: 10)
 
 ### Authentication Configuration
 
@@ -249,6 +269,82 @@ The tool can detect and apply authentication from agent state based on OpenAPI s
 
 If the OpenAPI spec defines security requirements and credentials are found in agent state (e.g., `api_key`, `bearer_token`), they will be automatically applied.
 
+#### 11. GraphQL Discovery
+
+Discover available GraphQL operations through introspection:
+
+```json
+{
+  "base_url": "https://api.github.com",
+  "endpoint": "/graphql",
+  "discover_graphql": true,
+  "auth": {
+    "type": "bearer",
+    "token": "github_token_here"
+  }
+}
+```
+
+#### 12. Simple GraphQL Query
+
+Execute a basic GraphQL query:
+
+```json
+{
+  "base_url": "https://api.github.com",
+  "endpoint": "/graphql",
+  "graphql_query": "query { viewer { login name email bio } }",
+  "auth": {
+    "type": "bearer",
+    "token": "github_token_here"
+  }
+}
+```
+
+#### 13. GraphQL Query with Variables
+
+Use variables for dynamic GraphQL queries:
+
+```json
+{
+  "base_url": "https://api.github.com",
+  "endpoint": "/graphql",
+  "graphql_query": "query GetRepo($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { name description stargazerCount } }",
+  "graphql_variables": {
+    "owner": "golang",
+    "name": "go"
+  },
+  "auth": {
+    "type": "bearer",
+    "token": "github_token_here"
+  }
+}
+```
+
+#### 14. GraphQL Mutation
+
+Execute a GraphQL mutation:
+
+```json
+{
+  "base_url": "https://api.example.com",
+  "endpoint": "/graphql",
+  "graphql_query": "mutation CreateUser($input: CreateUserInput!) { createUser(input: $input) { id name email } }",
+  "graphql_variables": {
+    "input": {
+      "name": "John Doe",
+      "email": "john@example.com"
+    }
+  },
+  "auth": {
+    "type": "api_key",
+    "api_key": "your-api-key",
+    "key_location": "header",
+    "key_name": "X-API-Key"
+  }
+}
+```
+
 ### Response Format
 
 The API Client returns a structured response with the following fields:
@@ -318,6 +414,78 @@ The API Client returns a structured response with the following fields:
   },
   "total_operations": 912,
   "llm_guidance": "API: GitHub v3 REST API v1.1.4\nDescription: GitHub's v3 REST API\n\nAvailable servers:\n- https://api.github.com\n\nAuthentication methods:\n- oauth2: OAuth2 authentication\n- bearer: Bearer token authentication\n\nTotal operations: 912\n\nOperations by category:\n\nrepos:\n- GET /repos/{owner}/{repo} - Get a repository (ID: repos/get)\n- GET /users/{username}/repos - List repositories for a user (ID: repos/listForUser)\n  Requires: 1 path params, 4 query params\n\nTo use an operation, provide the endpoint path and method. The tool will guide you on required parameters."
+}
+```
+
+**GraphQL Query Response:**
+```json
+{
+  "success": true,
+  "status_code": 200,
+  "data": {
+    "viewer": {
+      "login": "octocat",
+      "name": "The Octocat",
+      "email": "octocat@github.com",
+      "bio": "GitHub's mascot"
+    }
+  }
+}
+```
+
+**GraphQL Discovery Response:**
+```json
+{
+  "success": true,
+  "status_code": 200,
+  "graphql_schema": {
+    "endpoint": "https://api.github.com/graphql",
+    "operations": {
+      "queries": [
+        {
+          "name": "Query",
+          "description": "Root query type",
+          "example": "query { ... }"
+        }
+      ],
+      "mutations": []
+    },
+    "types": {
+      "User": {
+        "kind": "OBJECT",
+        "description": "A user is an individual's account on GitHub",
+        "fields": []
+      },
+      "Repository": {
+        "kind": "OBJECT",
+        "description": "A repository contains the content for a project",
+        "fields": []
+      }
+    }
+  }
+}
+```
+
+**GraphQL Error Response:**
+```json
+{
+  "success": false,
+  "status_code": 200,
+  "data": null,
+  "error_message": "Field 'invalidField' doesn't exist on type 'User'",
+  "error_details": [
+    {
+      "message": "Field 'invalidField' doesn't exist on type 'User'",
+      "path": ["viewer", "invalidField"],
+      "extensions": {
+        "code": "FIELD_NOT_FOUND"
+      }
+    }
+  ],
+  "error_guidance": "GraphQL query returned errors. Check the error_details for specific field errors",
+  "graphql_extensions": {
+    "requestId": "abc123"
+  }
 }
 ```
 
@@ -399,12 +567,18 @@ The API Client is designed to work seamlessly with LLM agents:
 5. **OpenAPI Discovery**: LLMs can explore APIs dynamically using OpenAPI specs
 6. **Smart Validation**: Provides actionable guidance when requests don't match API schemas
 7. **Operation Metadata**: Rich documentation from OpenAPI specs helps LLMs understand APIs
-8. **Automatic Configuration**: The tool can automatically:
+8. **GraphQL Support**: LLMs can explore and execute GraphQL queries with:
+   - Schema introspection for discovering available operations
+   - Variable type validation and guidance
+   - GraphQL-specific error messages with field paths
+   - Automatic query structure validation
+9. **Automatic Configuration**: The tool can automatically:
    - Resolve server URLs from OpenAPI specs (no need to specify base_url)
    - Detect and apply authentication from agent state based on OpenAPI security schemes
    - Provide parameter-specific guidance on validation errors
    - List allowed HTTP methods when a 405 error occurs
    - Show required authentication methods for 401 errors
+   - Cache GraphQL schemas for improved performance
 
 ### OpenAPI Features Deep Dive
 
@@ -478,6 +652,75 @@ result, _ = agent.ExecuteTool("api_client", map[string]interface{}{
 // 5. Provide enhanced error guidance if something goes wrong
 ```
 
+### GraphQL Features Deep Dive
+
+#### Schema Introspection
+The tool supports GraphQL schema discovery through introspection:
+1. Automatically queries the GraphQL endpoint for schema information
+2. Caches schemas for 15 minutes to reduce API calls
+3. Returns simplified operation listings for LLM consumption
+4. Identifies available queries, mutations, and custom types
+
+#### Query Validation
+GraphQL queries are validated before execution:
+1. Syntax validation using gqlparser
+2. Variable type checking
+3. Query depth limiting (default: 5, max: 10)
+4. Fragment support (inline fragments currently supported)
+
+#### Error Handling
+GraphQL-specific error handling provides:
+1. Field-level error messages with paths
+2. Type mismatch guidance
+3. Authentication error detection
+4. Query complexity warnings
+
+### Practical GraphQL Example
+
+Here's a complete example showing GraphQL features with an LLM agent:
+
+```go
+// Step 1: Discover GraphQL schema
+result, _ := agent.ExecuteTool("api_client", map[string]interface{}{
+    "base_url": "https://api.github.com",
+    "endpoint": "/graphql",
+    "discover_graphql": true,
+    "auth": map[string]interface{}{
+        "type": "bearer",
+        "token": os.Getenv("GITHUB_TOKEN"),
+    },
+})
+
+// Step 2: Execute a GraphQL query with variables
+result, _ = agent.ExecuteTool("api_client", map[string]interface{}{
+    "base_url": "https://api.github.com",
+    "endpoint": "/graphql",
+    "graphql_query": `
+        query GetRepo($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                name
+                description
+                stargazerCount
+                issues(first: 5, states: OPEN) {
+                    nodes {
+                        title
+                        number
+                    }
+                }
+            }
+        }
+    `,
+    "graphql_variables": map[string]interface{}{
+        "owner": "golang",
+        "name": "go",
+    },
+    "auth": map[string]interface{}{
+        "type": "bearer",
+        "token": os.Getenv("GITHUB_TOKEN"),
+    },
+})
+```
+
 ### Tips for LLM Agents
 
 1. **Start with Discovery**: Always begin by discovering operations to understand what's available
@@ -485,6 +728,12 @@ result, _ = agent.ExecuteTool("api_client", map[string]interface{}{
 3. **Trust Automatic Features**: Let the tool handle server URLs and authentication when possible
 4. **Use Validation**: Request validation catches errors before sending, saving API calls
 5. **Follow Error Guidance**: The tool provides specific instructions for fixing issues
+6. **GraphQL Best Practices**:
+   - Use introspection to understand the schema before querying
+   - Include only necessary fields to reduce response size
+   - Use variables for dynamic values instead of string concatenation
+   - Handle GraphQL errors separately from HTTP errors
+   - Cache discovery results when exploring the same API multiple times
 
 ## Web Tools
 

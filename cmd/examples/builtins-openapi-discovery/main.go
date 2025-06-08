@@ -20,11 +20,10 @@ func main() {
 	ctx := context.Background()
 
 	// Create LLM provider
-	provider, err := llmutil.NewProviderFromString("openai")
+	provider, err := llmutil.NewProviderFromString("gemini")
 	if err != nil {
 		log.Fatalf("Failed to create provider: %v", err)
 	}
-
 	// Create API Client Tool
 	apiTool := web.NewAPIClientTool()
 

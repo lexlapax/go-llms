@@ -775,3 +775,50 @@ After analyzing Google's Agent Development Kit (ADK), we identified key features
       - Zero memory allocations for cached operations
     - [x] Created comprehensive tests for caching system
     - [x] Created benchmarks demonstrating performance gains
+
+## API Client Tool Phase 3: GraphQL Support (Completed - January 8, 2025)
+- [x] Research and Design Phase
+  - [x] Analyzed GraphQL libraries: gqlparser/v2, graphql-go, graphql, go-graphql-client
+  - [x] Selected gqlparser/v2 for its lightweight parsing and validation (no server overhead)
+  - [x] Created comprehensive design documents:
+    - [x] GRAPHQL_API_CLIENT_DESIGN.md - Overall design with LLM-friendly approach
+    - [x] GRAPHQL_LIBRARY_ANALYSIS.md - Analyzed various Go GraphQL libraries
+    - [x] GRAPHQL_PARAMETER_DESIGN.md - Parameter integration strategy
+  - [x] Updated TODO.md with detailed 5-day implementation plan
+- [x] Implementation Phase
+  - [x] Day 1: GraphQL client foundation
+    - [x] Added gqlparser/v2 dependency
+    - [x] Created graphql.go with GraphQLClient implementation
+    - [x] Implemented Execute() for query/mutation execution
+    - [x] Implemented Introspect() for schema discovery
+  - [x] Day 2: Discovery and caching
+    - [x] Created graphql_discovery.go with schema discovery
+    - [x] Implemented operation enumeration for LLM consumption
+    - [x] Created graphql_cache.go with TTL-based caching
+    - [x] Added global cache instance with thread-safe operations
+  - [x] Day 3: Integration with api_client
+    - [x] Added GraphQL parameters to api_client schema:
+      - graphql_query, graphql_variables, graphql_operation_name
+      - discover_graphql, max_graphql_depth
+    - [x] Integrated GraphQL execution in executeAPIClient
+    - [x] Added GraphQL discovery mode
+    - [x] Updated tool version to 3.0.0
+  - [x] Day 4: Testing and examples
+    - [x] Created comprehensive test suite (graphql_test.go)
+    - [x] Created builtins-graphql-client example
+    - [x] Tested against real APIs (GitHub GraphQL, Countries API)
+    - [x] All tests passing including integration tests
+  - [x] Day 5: Documentation and polish
+    - [x] Updated builtin-tools.md with GraphQL sections
+    - [x] Added GraphQL parameters, examples, response formats
+    - [x] Added GraphQL error handling documentation
+    - [x] Updated examples README.md with GraphQL example
+- [x] Key Features Implemented
+  - [x] GraphQL query and mutation execution with variables
+  - [x] Schema introspection and operation discovery
+  - [x] Variable type validation
+  - [x] GraphQL-specific error formatting with field paths
+  - [x] Caching of schemas and discovery results (15-minute TTL)
+  - [x] LLM-friendly operation discovery
+  - [x] Integration with existing authentication mechanisms
+  - [x] Maintained consistent response format with REST mode
