@@ -76,55 +76,61 @@
 
 
 
-- [ ] Phase 2: Tool Migration Part 1 (Week 2) - 15 tools
+- [ ] Phase 2: Tool Migration to Enhanced Interface (Week 2) - Update existing tools to use ToolBuilder pattern
   - [ ] Day 1: Migrate calculator tool (1 tool - template for others)
-    - [ ] Write tests for calculator with new interface
-    - [ ] Implement comprehensive metadata
-    - [ ] Add 5+ examples with scenarios
-    - [ ] Test MCP export
+    - [ ] Update calculator to use atools.NewToolBuilder() instead of atools.NewTool()
+    - [ ] Add WithUsageInstructions() - detailed guidance on when/how to use
+    - [ ] Add WithExamples() - convert existing examples to new ToolExample format
+    - [ ] Add WithConstraints() - limitations (e.g., factorial max n=170)
+    - [ ] Add WithErrorGuidance() - map error types to helpful messages
+    - [ ] Add WithOutputSchema() - define CalculatorResult schema
+    - [ ] Add WithBehavior() - (deterministic: true, destructive: false, confirmation: false, latency: "fast")
+    - [ ] Keep existing functionality unchanged
+    - [ ] Test MCP export functionality
   - [ ] Day 2: Migrate system tools (4 tools)
-    - [ ] execute_command - Add safety constraints and confirmation
-    - [ ] get_environment_variable - Simple migration
-    - [ ] get_system_info - Add output examples
-    - [ ] process_list - Add filtering guidance
+    - [ ] execute_command - Add safety constraints and confirmation (destructive: true, confirmation: true)
+    - [ ] get_environment_variable - Add pattern matching examples and security guidance
+    - [ ] get_system_info - Add output examples and cross-platform notes
+    - [ ] process_list - Add filtering guidance and platform differences
   - [ ] Day 3: Migrate file tools (6 tools)
-    - [ ] file_read - Add encoding and size guidance
-    - [ ] file_write - Add destructive warnings
-    - [ ] file_list - Complex parameter examples
-    - [ ] file_delete - Add confirmation requirements
-    - [ ] file_move - Add rollback guidance
-    - [ ] file_search - Add regex examples
-  - [ ] Day 4: Migrate web tools (4 tools)
-    - [ ] web_search - Multi-engine examples
-    - [ ] web_fetch - Add timeout guidance
-    - [ ] web_scrape - Selector examples
-    - [ ] http_request - Auth method examples
+    - [ ] file_read - Add encoding guidance, size limits, binary file handling
+    - [ ] file_write - Add destructive warnings (destructive: true), atomic write info
+    - [ ] file_list - Complex parameter examples, sorting options
+    - [ ] file_delete - Add confirmation requirements (destructive: true, confirmation: true)
+    - [ ] file_move - Add rollback guidance, cross-device limitations
+    - [ ] file_search - Add regex examples, performance notes for large directories
+  - [ ] Day 4: Migrate web tools (4 tools - api_client already done)
+    - [ ] web_search - Multi-engine examples, API key guidance
+    - [ ] web_fetch - Add timeout guidance, error handling examples
+    - [ ] web_scrape - Selector examples, HTML parsing guidance
+    - [ ] http_request - Auth method examples, header formatting
   - [ ] Day 5: Testing & fixes
     - [ ] Run all migrated tool tests
-    - [ ] Fix any issues
-    - [ ] Update integration tests
+    - [ ] Verify ToolBuilder pattern is correctly applied
+    - [ ] Test MCP export for all tools
+    - [ ] Update integration tests if needed
 
-- [ ] Phase 3: Tool Migration Part 2 (Week 3) - 17 tools + examples
+- [ ] Phase 3: Tool Migration Part 2 (Week 3) - Continue migration to ToolBuilder pattern
   - [ ] Day 1: Migrate data tools (4 tools)
-    - [ ] json_process - JSONPath examples
-    - [ ] csv_process - Transform examples
-    - [ ] xml_process - XPath guidance
-    - [ ] data_transform - Operation chains
+    - [ ] json_process - Update to ToolBuilder with JSONPath query examples
+    - [ ] csv_process - Add transformation examples, delimiter options
+    - [ ] xml_process - Add XPath guidance, namespace handling
+    - [ ] data_transform - Add operation chains, performance considerations
   - [ ] Day 2: Migrate datetime tools (7 tools)
-    - [ ] datetime_now - Timezone examples
-    - [ ] datetime_info - Component extraction
-    - [ ] datetime_calculate - Business days
-    - [ ] datetime_parse - Format patterns
-    - [ ] datetime_format - Locale examples
-    - [ ] datetime_convert - Zone handling
-    - [ ] datetime_compare - Comparison logic
+    - [ ] datetime_now - Add timezone examples, format options
+    - [ ] datetime_info - Add component extraction examples, week calculations
+    - [ ] datetime_calculate - Add business days examples, date math
+    - [ ] datetime_parse - Add format pattern examples, auto-detection
+    - [ ] datetime_format - Add locale examples, custom formats
+    - [ ] datetime_convert - Add timezone conversion examples
+    - [ ] datetime_compare - Add comparison logic, relative time examples
   - [ ] Day 3: Migrate feed tools (6 tools)
-    - [ ] feed_fetch - Format detection
-    - [ ] feed_discover - Auto-discovery
-    - [ ] feed_filter - Complex queries
-    - [ ] feed_aggregate - Deduplication
-    - [ ] feed_convert - Format examples
-    - [ ] feed_extract - Content parsing
+    - [ ] feed_fetch - Add format detection examples, encoding handling
+    - [ ] feed_discover - Add auto-discovery examples, link parsing
+    - [ ] feed_filter - Add complex query examples, date filtering
+    - [ ] feed_aggregate - Add deduplication examples, merge strategies
+    - [ ] feed_convert - Add format conversion examples
+    - [ ] feed_extract - Add content extraction patterns
   - [ ] Day 4: Update examples (first 15)
     - [ ] agent-calculator - Remove manual prompt
     - [ ] agent-simple-llm - Use auto docs

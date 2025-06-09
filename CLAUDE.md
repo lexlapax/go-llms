@@ -110,6 +110,22 @@ Until we reach close to v1.. *no backward compatibility* do not add extra code f
     - Created builtins-web-api-client example with GitHub API integration
     - Performance benchmarks: 250K req/sec for simple operations
 
+**Recent Updates** (January 9, 2025):
+- **Tool System Enhancement Phase 2: Tool Migration (IN PROGRESS)**
+  - Migrating all built-in tools to use ToolBuilder pattern with enhanced metadata
+  - Phase 2 focuses on updating 32 existing tools from atools.NewTool() to atools.NewToolBuilder()
+  - Each tool will get:
+    - WithUsageInstructions() - Detailed LLM guidance
+    - WithExamples() - Multiple concrete examples in ToolExample format
+    - WithConstraints() - Tool limitations and edge cases
+    - WithErrorGuidance() - Error type to helpful message mapping
+    - WithOutputSchema() - Structured output definition
+    - WithBehavior() - Deterministic/destructive/confirmation/latency flags
+  - Day 1: Calculator tool (template for others)
+  - Day 2-4: System, File, and Web tools (14 tools)
+  - Week 3: Data, DateTime, and Feed tools (17 tools)
+  - This follows the same pattern used for api_client tool in Phase 4
+
 **Recent Updates** (June 7, 2025):
 - **Tool System Enhancement Phase 1, Day 3 (COMPLETED)**
   - Successfully updated Tool Registry with enhanced metadata and MCP export functionality
