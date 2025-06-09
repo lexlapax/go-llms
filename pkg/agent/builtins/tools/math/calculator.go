@@ -202,12 +202,238 @@ func Calculator() domain.Tool {
 		return calculatorExecute(ctx, typedParams)
 	}
 
-	return atools.NewTool(
-		"calculator",
-		"Performs mathematical calculations including arithmetic, trigonometry, and logarithms",
-		wrappedFn,
-		calculatorParamSchema,
-	)
+	// Create output schema for CalculatorResult
+	outputSchema := &sdomain.Schema{
+		Type: "object",
+		Properties: map[string]sdomain.Property{
+			"result": {
+				Type:        "number",
+				Description: "The calculation result",
+			},
+			"operation": {
+				Type:        "string",
+				Description: "The operation performed",
+			},
+			"operand1": {
+				Type:        "number",
+				Description: "First operand used",
+			},
+			"operand2": {
+				Type:        "number",
+				Description: "Second operand (if applicable)",
+			},
+			"success": {
+				Type:        "boolean",
+				Description: "Whether the calculation succeeded",
+			},
+			"error": {
+				Type:        "string",
+				Description: "Error message if calculation failed",
+			},
+		},
+		Required: []string{"operation", "success"},
+	}
+
+	builder := atools.NewToolBuilder("calculator", "Performs mathematical calculations including arithmetic, trigonometry, and logarithms").
+		WithFunction(wrappedFn).
+		WithParameterSchema(calculatorParamSchema).
+		WithOutputSchema(outputSchema).
+		WithUsageInstructions(`Use this tool to perform mathematical calculations. It supports:
+
+Basic Arithmetic:
+- add (+): Addition of two numbers
+- subtract (-): Subtraction (operand1 - operand2)
+- multiply (*): Multiplication
+- divide (/): Division (checks for division by zero)
+- mod (%): Modulo operation
+- power (^, **): Exponentiation
+- abs: Absolute value
+
+Roots and Logarithms:
+- sqrt: Square root (requires non-negative operand)
+- cbrt: Cube root
+- log: Natural logarithm (base e) or logarithm with custom base
+- log10: Base-10 logarithm
+- log2: Base-2 logarithm
+- exp: e raised to the power of operand1
+
+Trigonometry (angles in radians):
+- sin, cos, tan: Standard trigonometric functions
+- asin, acos, atan: Inverse trigonometric functions
+- sinh, cosh, tanh: Hyperbolic functions
+
+Rounding:
+- floor: Round down to nearest integer
+- ceil: Round up to nearest integer
+- round: Round to nearest integer
+
+Advanced:
+- factorial: Calculate n! (requires non-negative integer ≤ 170)
+- gcd: Greatest common divisor (requires positive integers)
+- lcm: Least common multiple (requires positive integers)
+
+Mathematical Constants (no operands needed):
+- pi (π): 3.14159...
+- e: Euler's number (2.71828...)
+- phi (φ): Golden ratio
+- tau (τ): 2π
+- sqrt2, sqrte, sqrtpi, sqrtphi: Square roots of constants
+- ln2, ln10, log2e, log10e: Logarithmic constants
+
+Special operand values:
+- You can use constant names as operands, e.g., operand1: "pi"
+- Numbers can be provided as strings and will be parsed`).
+		WithExamples([]domain.ToolExample{
+			{
+				Name:        "Basic addition",
+				Description: "Add two decimal numbers",
+				Scenario:    "When you need to sum two values",
+				Input: map[string]interface{}{
+					"operation": "add",
+					"operand1":  10.5,
+					"operand2":  5.2,
+				},
+				Output: map[string]interface{}{
+					"result":    15.7,
+					"operation": "add",
+					"operand1":  10.5,
+					"operand2":  5.2,
+					"success":   true,
+				},
+				Explanation: "Addition simply sums the two operands",
+			},
+			{
+				Name:        "Square root",
+				Description: "Calculate the square root of a number",
+				Scenario:    "When you need to find what number squared equals your input",
+				Input: map[string]interface{}{
+					"operation": "sqrt",
+					"operand1":  16,
+				},
+				Output: map[string]interface{}{
+					"result":    4.0,
+					"operation": "sqrt",
+					"operand1":  16,
+					"success":   true,
+				},
+				Explanation: "Square root is a unary operation - only operand1 is used",
+			},
+			{
+				Name:        "Trigonometry with constants",
+				Description: "Calculate sine of π/2",
+				Scenario:    "When working with angles and trigonometric functions",
+				Input: map[string]interface{}{
+					"operation": "sin",
+					"operand1":  "pi",
+					"operand2":  2,
+				},
+				Output: map[string]interface{}{
+					"result":    1.0,
+					"operation": "sin",
+					"operand1":  1.5707963267948966, // π/2
+					"success":   true,
+				},
+				Explanation: "First divide pi by 2, then calculate sin. Note: operand1 can be a constant name",
+			},
+			{
+				Name:        "Get mathematical constant",
+				Description: "Retrieve the value of π",
+				Scenario:    "When you need a precise mathematical constant",
+				Input: map[string]interface{}{
+					"operation": "pi",
+				},
+				Output: map[string]interface{}{
+					"result":    3.141592653589793,
+					"operation": "pi",
+					"success":   true,
+				},
+				Explanation: "Constants don't require operands",
+			},
+			{
+				Name:        "Division by zero error",
+				Description: "Handle division by zero gracefully",
+				Scenario:    "Error handling example",
+				Input: map[string]interface{}{
+					"operation": "divide",
+					"operand1":  10,
+					"operand2":  0,
+				},
+				Output: map[string]interface{}{
+					"operation": "divide",
+					"operand1":  10,
+					"operand2":  0,
+					"success":   false,
+					"error":     "division by zero",
+				},
+				Explanation: "The tool returns errors in the result rather than throwing exceptions",
+			},
+			{
+				Name:        "Factorial calculation",
+				Description: "Calculate 5!",
+				Scenario:    "When you need to calculate permutations or combinations",
+				Input: map[string]interface{}{
+					"operation": "factorial",
+					"operand1":  5,
+				},
+				Output: map[string]interface{}{
+					"result":    120,
+					"operation": "factorial",
+					"operand1":  5,
+					"success":   true,
+				},
+				Explanation: "5! = 5 × 4 × 3 × 2 × 1 = 120",
+			},
+			{
+				Name:        "Logarithm with custom base",
+				Description: "Calculate log base 2 of 8",
+				Scenario:    "When you need logarithms in bases other than e or 10",
+				Input: map[string]interface{}{
+					"operation": "log",
+					"operand1":  8,
+					"operand2":  2,
+				},
+				Output: map[string]interface{}{
+					"result":    3,
+					"operation": "log",
+					"operand1":  8,
+					"operand2":  2,
+					"success":   true,
+				},
+				Explanation: "log₂(8) = 3 because 2³ = 8",
+			},
+		}).
+		WithConstraints([]string{
+			"Angles for trigonometric functions must be in radians, not degrees",
+			"Square root requires non-negative numbers",
+			"Logarithms require positive numbers",
+			"Division by zero is not allowed",
+			"Factorial maximum input is 170 (171! overflows float64)",
+			"Factorial requires non-negative integers",
+			"GCD and LCM require positive integers",
+			"Inverse trig functions (asin, acos) require input between -1 and 1",
+			"Results may have floating-point precision limitations",
+		}).
+		WithErrorGuidance(map[string]string{
+			"division by zero":                   "Cannot divide by zero. Check that operand2 is not zero for division",
+			"modulo by zero":                     "Cannot calculate modulo with zero divisor. Ensure operand2 is not zero",
+			"cannot take square root of negative number": "Square root of negative numbers results in complex numbers, which this tool doesn't support. Use only non-negative values",
+			"logarithm of non-positive number":   "Logarithm is only defined for positive numbers. Ensure operand1 is greater than 0",
+			"invalid logarithm base":             "Logarithm base must be positive and not equal to 1",
+			"asin domain error":                  "asin requires input between -1 and 1 inclusive",
+			"acos domain error":                  "acos requires input between -1 and 1 inclusive",
+			"factorial requires non-negative integer": "Factorial is only defined for non-negative integers (0, 1, 2, ...)",
+			"gcd requires positive integers":     "GCD (Greatest Common Divisor) only works with positive whole numbers",
+			"lcm requires positive integers":     "LCM (Least Common Multiple) only works with positive whole numbers",
+			"unsupported operation":              "The operation you specified is not recognized. Check the usage instructions for valid operations",
+			"result is NaN":                      "The calculation resulted in 'Not a Number' - this typically happens with invalid operations like 0/0",
+			"result is infinite":                 "The calculation resulted in infinity - the result is too large to represent",
+		}).
+		WithCategory("math").
+		WithTags([]string{"math", "calculation", "arithmetic", "trigonometry", "logarithm", "statistics"}).
+		WithVersion("2.0.0").
+		WithBehavior(true, false, false, "fast")
+
+	return builder.Build()
 }
 
 // calculatorExecute is the main calculation logic

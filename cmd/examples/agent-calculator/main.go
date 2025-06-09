@@ -343,10 +343,35 @@ func runLLMExample() {
 	fmt.Println("=== Built-in Calculator Tool with LLM Agent ===")
 	fmt.Println()
 
-	// Create LLM provider
-	llmProvider, err := createLLMProvider()
+	ctx := context.Background()
+
+	// Create LLM provider using provider/model string
+	providerString := "anthropic/claude-3-7-sonnet-latest" // Default to Claude
+	if os.Getenv("OPENAI_API_KEY") != "" {
+		providerString = "openai/gpt-4o"
+	} else if os.Getenv("GEMINI_API_KEY") != "" {
+		providerString = "gemini/gemini-2.0-flash"
+	}
+
+	provider, err := llmutil.NewProviderFromString(providerString)
 	if err != nil {
-		log.Fatalf("Failed to create LLM provider: %v", err)
+		// Fall back to mock provider for demonstration
+		fmt.Println("Note: No LLM API keys found. Using mock provider for demonstration.")
+		fmt.Println("The mock will simulate calculator tool usage.")
+		fmt.Println("Tip: Set DEBUG=1 to see detailed logging of agent execution.")
+		fmt.Println()
+		provider = createMockProvider()
+	}
+
+	// Parse provider string to get provider and model info
+	providerName, modelName, _ := llmutil.ParseProviderModelString(providerString)
+
+	// Print provider information
+	fmt.Printf("Provider: %s\n", providerName)
+	if modelName != "" {
+		fmt.Printf("Model: %s\n\n", modelName)
+	} else {
+		fmt.Printf("Model: (default for provider)\n\n")
 	}
 
 	// Get calculator tool from registry
@@ -357,131 +382,159 @@ func runLLMExample() {
 
 	// Create LLM agent with calculator tool
 	deps := core.LLMDeps{
-		Provider: llmProvider,
+		Provider: provider,
 	}
 	agent := core.NewLLMAgent("math-assistant", "Math Assistant with Calculator", deps)
 
 	// Add logging hooks if DEBUG is enabled
-	if debug := os.Getenv("DEBUG"); debug == "1" || strings.ToLower(debug) == "true" {
-		logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+	if os.Getenv("DEBUG") == "1" {
+		// Create slog logger that outputs to stderr
+		opts := &slog.HandlerOptions{
 			Level: slog.LevelDebug,
-		}))
+		}
+		logger := slog.New(slog.NewTextHandler(os.Stderr, opts))
 		loggingHook := core.NewLoggingHook(logger, core.LogLevelDebug)
 		agent.WithHook(loggingHook)
+		log.Println("Debug logging enabled")
 	}
 
+	// Add the calculator tool
 	agent.AddTool(calculator)
-	agent.SetSystemPrompt(`You are a helpful math assistant with access to a calculator tool.
 
-When asked to perform calculations, use the calculator tool by responding with:
-{"tool": "calculator", "params": {"operation": "...", "operand1": ..., "operand2": ...}}
+	// Set system prompt that leverages the tool's built-in documentation
+	agent.SetSystemPrompt(`You are a helpful math assistant. You MUST use the calculator tool to perform ALL calculations when requested.
 
-The calculator supports:
-- Binary operations (need operand1 AND operand2): add, subtract, multiply, divide, power, mod
-- Unary operations (only need operand1): abs, sqrt, cbrt, exp, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, floor, ceil, round, factorial
-- Constants (no operands needed): pi, e, phi, tau, sqrt2, sqrte, sqrtpi, sqrtphi, ln2, ln10, log2e, log10e
-- Special cases:
-  - log: if operand2 is provided, it's log base operand2 of operand1; if not, it's natural log
-  - gcd, lcm: need both operand1 and operand2
+The calculator tool provides comprehensive mathematical capabilities. When asked to perform any calculation:
+1. Always use the calculator tool
+2. Do not attempt to calculate results yourself
+3. Use the tool's output to provide accurate results
 
-Important notes:
-- For unary operations, only provide operand1 (do NOT include operand2)
-- operand1 and operand2 can be numbers or special constant strings
-- Recognized constants: "pi", "e", "phi", "tau", "sqrt2", "sqrte", "sqrtpi", "sqrtphi", "ln2", "ln10", "log2e", "log10e"
-- For pi/2, use: 1.5707963267948966 or {"operation": "divide", "operand1": "pi", "operand2": 2}
+IMPORTANT: You must actually use the calculator tool for every calculation. Do not just describe what you would do - actually do it.
 
-Examples:
-- Multiply 5 by 3: {"tool": "calculator", "params": {"operation": "multiply", "operand1": 5, "operand2": 3}}
-- Square root of 16: {"tool": "calculator", "params": {"operation": "sqrt", "operand1": 16}}
-- Sine of pi/2: {"tool": "calculator", "params": {"operation": "sin", "operand1": 1.5707963267948966}}
-- Pi times e: {"tool": "calculator", "params": {"operation": "multiply", "operand1": "pi", "operand2": "e"}}
+The tool will guide you on proper usage, including which operations need one or two operands.`)
 
-Always use the tool for calculations rather than computing them yourself.`)
-
-	// Example prompts
-	prompts := []string{
-		"What is 25 * 17?",
-		"Calculate the square root of 144",
-		"What is 2 to the power of 10?",
-		"Find the sine of pi/2 radians",
-		"Calculate 15! (factorial)",
-		"What is the GCD of 48 and 18?",
-		"Calculate log base 2 of 64",
-		"What is pi times e?",
+	// Example prompts showcasing different calculator features
+	examples := []struct {
+		title  string
+		prompt string
+	}{
+		{
+			title:  "Basic Arithmetic",
+			prompt: "What is 25 * 17?",
+		},
+		{
+			title:  "Square Root",
+			prompt: "Calculate the square root of 144",
+		},
+		{
+			title:  "Power Operation",
+			prompt: "What is 2 to the power of 10?",
+		},
+		{
+			title:  "Trigonometry",
+			prompt: "Find the sine of pi/2 radians",
+		},
+		{
+			title:  "Advanced Math - Factorial",
+			prompt: "Calculate 15! (factorial)",
+		},
+		{
+			title:  "Advanced Math - GCD",
+			prompt: "What is the GCD of 48 and 18?",
+		},
+		{
+			title:  "Logarithms",
+			prompt: "Calculate log base 2 of 64",
+		},
+		{
+			title:  "Using Constants",
+			prompt: "What is pi times e?",
+		},
+		{
+			title:  "Error Handling",
+			prompt: "What is the square root of -16?",
+		},
+		{
+			title:  "Complex Calculation",
+			prompt: "Calculate (phi squared) minus (sqrt(5))",
+		},
 	}
 
-	ctx := context.Background()
+	// Display tool metadata if requested
+	if len(os.Args) > 2 && os.Args[2] == "info" {
+		fmt.Println("=== Calculator Tool Information ===")
+		fmt.Printf("Name: %s\n", calculator.Name())
+		fmt.Printf("Description: %s\n", calculator.Description())
+		fmt.Printf("Version: %s\n", calculator.Version())
+		fmt.Printf("Category: %s\n", calculator.Category())
+		fmt.Printf("Tags: %v\n", calculator.Tags())
+		fmt.Printf("Deterministic: %v\n", calculator.IsDeterministic())
+		fmt.Printf("Destructive: %v\n", calculator.IsDestructive())
+		fmt.Printf("Requires Confirmation: %v\n", calculator.RequiresConfirmation())
+		fmt.Printf("Estimated Latency: %s\n", calculator.EstimatedLatency())
+		fmt.Println("\nUsage Instructions:")
+		fmt.Println(calculator.UsageInstructions())
+		fmt.Println("\nConstraints:")
+		for _, c := range calculator.Constraints() {
+			fmt.Printf("- %s\n", c)
+		}
+		fmt.Println("\nExamples available:", len(calculator.Examples()))
+		return
+	}
 
-	for i, prompt := range prompts {
-		fmt.Printf("\n===== Example %d: %s =====\n", i+1, prompt)
+	// Run examples
+	for i, example := range examples {
+		fmt.Printf("\n=== Example %d: %s ===\n", i+1, example.title)
 
 		// Create state with the prompt
 		state := agentDomain.NewState()
-		state.Set("user_input", prompt)
-
-		fmt.Println("\n→ Running agent...")
+		state.Set("user_input", example.prompt)
 
 		// Run the agent
 		result, runErr := agent.Run(ctx, state)
 		if runErr != nil {
-			log.Printf("❌ Error: %v", runErr)
+			log.Printf("Error: %v", runErr)
 			continue
 		}
 
-		fmt.Println("\n→ Agent completed. Extracting response...")
-
 		// Extract and display the response
-		if output, ok := result.Get("output"); ok {
-			fmt.Printf("\n✅ Final Response: %v\n", output)
-		} else if response, ok := result.Get("result"); ok {
-			fmt.Printf("\n✅ Final Response: %v\n", response)
-		} else {
-			// Show all available keys
-			fmt.Printf("\n⚠️  No output found. Available keys in result: %v\n", result.Keys())
-			// Try to get the raw LLM response
-			if messages := result.Messages(); len(messages) > 0 {
-				fmt.Printf("Last message: %v\n", messages[len(messages)-1].Content)
-			}
-		}
-
-		fmt.Println("\n" + strings.Repeat("-", 60))
+		printLastMessage(result)
 	}
 
-	fmt.Println("\nNote: To run this example with a real LLM, set one of these environment variables:")
-	fmt.Println("  OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY")
-	fmt.Println("\nUsage: agent-custom-calculator llm")
-	fmt.Println("\nTo enable detailed logging, set DEBUG=1 or DEBUG=true before running the example.")
+	fmt.Println("\n=== Instructions ===")
+	fmt.Println("To run this example:")
+	fmt.Println("1. For direct tool usage: ./agent-calculator")
+	fmt.Println("2. For LLM integration: ./agent-calculator llm")
+	fmt.Println("3. For tool information: ./agent-calculator llm info")
+	fmt.Println("\nEnvironment variables:")
+	fmt.Println("- Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY for real LLM")
+	fmt.Println("- Set DEBUG=1 to enable detailed logging")
 }
 
-// createLLMProvider creates an LLM provider from environment variables
-func createLLMProvider() (ldomain.Provider, error) {
-	// Try OpenAI first
-	if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
-		return provider.NewOpenAIProvider(apiKey, "gpt-4o"), nil
+func printLastMessage(state *agentDomain.State) {
+	// Try to get the response from various possible keys
+	responseKeys := []string{"response", "output", "result", "answer", "reply"}
+
+	for _, key := range responseKeys {
+		if value, exists := state.Get(key); exists {
+			fmt.Printf("Response: %v\n", value)
+			return
+		}
 	}
 
-	// Try Anthropic
-	if apiKey := os.Getenv("ANTHROPIC_API_KEY"); apiKey != "" {
-		return provider.NewAnthropicProvider(apiKey, "claude-3-7-sonnet-latest"), nil
+	// If no response found in common keys, check messages
+	if messages := state.Messages(); len(messages) > 0 {
+		lastMsg := messages[len(messages)-1]
+		fmt.Printf("Response: %v\n", lastMsg.Content)
+		return
 	}
 
-	// Try Gemini
-	if apiKey := os.Getenv("GEMINI_API_KEY"); apiKey != "" {
-		return provider.NewGeminiProvider(apiKey, "gemini-2.0-flash"), nil
-	}
+	// Last resort: print available keys for debugging
+	fmt.Printf("No response found. Available keys: %v\n", state.Keys())
+}
 
-	// Try GO_LLMS environment variables
-	p, _, _, llmErr := llmutil.ProviderFromEnv()
-	if llmErr == nil {
-		return p, nil
-	}
-
-	// Use mock provider as fallback for demonstration
-	fmt.Println("Note: No LLM API keys found. Using mock provider for demonstration.")
-	fmt.Println("The mock will simulate calculator tool usage.")
-	fmt.Println("Tip: Set DEBUG=1 or DEBUG=true to see detailed logging of agent execution.")
-	fmt.Println()
-
+// createMockProvider creates a mock provider for demonstration
+func createMockProvider() ldomain.Provider {
 	mockProvider := provider.NewMockProvider()
 	// Track if we've seen a tool result
 	hasToolResult := false
@@ -609,7 +662,7 @@ func createLLMProvider() (ldomain.Provider, error) {
 		}, nil
 	})
 
-	return mockProvider, nil
+	return mockProvider
 }
 
 func contains(s, substr string) bool {
