@@ -29,7 +29,7 @@ func init() {
 			Category:    "web",
 			Tags:        []string{"api", "rest", "http", "graphql", "integration", "client"},
 			Description: "Make REST API and GraphQL calls with automatic error handling and authentication support",
-			Version:     "3.0.0",
+			Version:     "4.0.0",
 			Examples: []builtins.Example{
 				{
 					Name:        "Fetch GitHub User",
@@ -78,6 +78,37 @@ params := map[string]interface{}{
 }
 // Returns: {"success": true, "status_code": 200, "data": {"viewer": {"login": "octocat", "name": "The Octocat"}}}`,
 				},
+				{
+					Name:        "OAuth2 Authentication",
+					Description: "Use OAuth2 access token for authenticated requests",
+					Code: `// Make request with OAuth2 token
+params := map[string]interface{}{
+    "base_url": "https://api.example.com",
+    "endpoint": "/user/profile",
+    "method": "GET",
+    "auth": map[string]interface{}{
+        "type": "oauth2",
+        "access_token": "your-access-token"
+    }
+}
+// Returns: {"success": true, "status_code": 200, "data": {"id": "user123", "email": "user@example.com"}}`,
+				},
+				{
+					Name:        "Custom Header Authentication",
+					Description: "Use custom authentication headers for APIs with non-standard auth",
+					Code: `// Custom auth header
+params := map[string]interface{}{
+    "base_url": "https://api.custom.com",
+    "endpoint": "/data",
+    "auth": map[string]interface{}{
+        "type": "custom",
+        "header_name": "X-Custom-Auth",
+        "header_value": "secret123",
+        "prefix": "Token"
+    }
+}
+// Will set header: X-Custom-Auth: Token secret123`,
+				},
 			},
 		},
 	})
@@ -123,8 +154,8 @@ func createAPIClientTool() domain.Tool {
 				Properties: map[string]sdomain.Property{
 					"type": {
 						Type:        "string",
-						Description: "Authentication type: 'api_key', 'bearer', 'basic'",
-						Enum:        []string{"api_key", "bearer", "basic"},
+						Description: "Authentication type: 'api_key', 'bearer', 'basic', 'oauth2', 'custom'",
+						Enum:        []string{"api_key", "bearer", "basic", "oauth2", "custom"},
 					},
 					"api_key": {
 						Type:        "string",
@@ -132,8 +163,8 @@ func createAPIClientTool() domain.Tool {
 					},
 					"key_location": {
 						Type:        "string",
-						Description: "Where to place the API key: 'header' or 'query'",
-						Enum:        []string{"header", "query"},
+						Description: "Where to place the API key: 'header', 'query', or 'cookie'",
+						Enum:        []string{"header", "query", "cookie"},
 					},
 					"key_name": {
 						Type:        "string",
@@ -150,6 +181,27 @@ func createAPIClientTool() domain.Tool {
 					"password": {
 						Type:        "string",
 						Description: "Password (for basic auth)",
+					},
+					"access_token": {
+						Type:        "string",
+						Description: "OAuth2 access token (for oauth2 auth)",
+					},
+					"flow": {
+						Type:        "string",
+						Description: "OAuth2 flow type: 'client_credentials' or 'authorization_code'",
+						Enum:        []string{"client_credentials", "authorization_code"},
+					},
+					"header_name": {
+						Type:        "string",
+						Description: "Custom header name (for custom auth)",
+					},
+					"header_value": {
+						Type:        "string",
+						Description: "Custom header value (for custom auth)",
+					},
+					"prefix": {
+						Type:        "string",
+						Description: "Optional prefix for custom header value (e.g., 'Bearer', 'Token')",
 					},
 				},
 			},
@@ -184,6 +236,40 @@ func createAPIClientTool() domain.Tool {
 			"max_graphql_depth": {
 				Type:        "integer",
 				Description: "Maximum depth for GraphQL queries (default: 5, max: 10)",
+			},
+			"enable_session": {
+				Type:        "boolean",
+				Description: "Enable session/cookie management to maintain state across requests",
+			},
+			"oauth2_config": {
+				Type:        "object",
+				Description: "OAuth2 configuration for token exchange",
+				Properties: map[string]sdomain.Property{
+					"token_url": {
+						Type:        "string",
+						Description: "OAuth2 token endpoint URL",
+					},
+					"auth_url": {
+						Type:        "string",
+						Description: "OAuth2 authorization endpoint URL (for authorization_code flow)",
+					},
+					"client_id": {
+						Type:        "string",
+						Description: "OAuth2 client ID",
+					},
+					"client_secret": {
+						Type:        "string",
+						Description: "OAuth2 client secret",
+					},
+					"redirect_uri": {
+						Type:        "string",
+						Description: "OAuth2 redirect URI (for authorization_code flow)",
+					},
+					"scope": {
+						Type:        "string",
+						Description: "OAuth2 scope (space-separated list)",
+					},
+				},
 			},
 		},
 		Required: []string{"base_url", "endpoint"},
@@ -237,7 +323,7 @@ func createAPIClientTool() domain.Tool {
 		WithParameterSchema(paramSchema).
 		WithOutputSchema(outputSchema).
 		WithUsageInstructions(`Use this tool to interact with REST APIs and GraphQL endpoints. It handles:
-- Multiple authentication methods (API key, Bearer token, Basic auth)
+- Multiple authentication methods (API key, Bearer token, Basic auth, OAuth2, Custom headers)
 - Automatic JSON encoding/decoding
 - Path parameter substitution
 - Helpful error messages and guidance
@@ -246,6 +332,17 @@ func createAPIClientTool() domain.Tool {
 - GraphQL queries, mutations, and introspection
 
 The tool will automatically set appropriate headers and handle responses intelligently.
+
+Authentication Options:
+- API Key: Set key location (header/query/cookie) and key name
+- Bearer: Standard Authorization: Bearer token
+- Basic: Username/password authentication
+- OAuth2: Use access token from OAuth2 flow
+- Custom: Set any custom header with optional prefix
+
+Session Management:
+- Enable enable_session=true to maintain cookies across requests
+- Sessions are preserved in agent state for reuse
 
 REST API Modes:
 - Regular Mode: Standard REST API calls with path/query parameters
@@ -400,8 +497,8 @@ GraphQL Modes:
 				Description: "Execute a GraphQL query with variables",
 				Scenario:    "When you need to pass dynamic values to a GraphQL query",
 				Input: map[string]interface{}{
-					"base_url":     "https://api.github.com",
-					"endpoint":     "/graphql",
+					"base_url": "https://api.github.com",
+					"endpoint": "/graphql",
 					"graphql_query": `query GetRepo($owner: String!, $name: String!) {
   repository(owner: $owner, name: $name) {
     name
@@ -492,7 +589,7 @@ GraphQL Modes:
 		}).
 		WithCategory("web").
 		WithTags([]string{"api", "rest", "http", "integration"}).
-		WithVersion("2.0.0").
+		WithVersion("4.0.0").
 		WithBehavior(false, false, false, "medium")
 
 	return builder.Build()
@@ -642,11 +739,11 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 			for k, v := range headers {
 				dummyReq.Header.Set(k, v)
 			}
-			
+
 			if err := applyAuthentication(dummyReq, auth); err != nil {
 				return nil, fmt.Errorf("authentication error: %w", err)
 			}
-			
+
 			// Copy headers back
 			for k := range dummyReq.Header {
 				headers[k] = dummyReq.Header.Get(k)
@@ -663,7 +760,7 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 				for k, v := range headers {
 					dummyReq.Header.Set(k, v)
 				}
-				
+
 				if err := applyAuthentication(dummyReq, authMap); err != nil {
 					if ctx.Events != nil {
 						ctx.Events.EmitCustom("auto_auth_failed", map[string]interface{}{
@@ -677,7 +774,7 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 					}
 					if ctx.Events != nil {
 						ctx.Events.EmitCustom("auto_auth_applied", map[string]interface{}{
-							"type": authMap["type"],
+							"type":     authMap["type"],
 							"endpoint": fullURL,
 						})
 					}
@@ -693,9 +790,9 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 		cache := GetGlobalGraphQLCache()
 		if discovery, found := cache.GetDiscovery(fullURL); found {
 			return map[string]interface{}{
-				"success":         true,
-				"status_code":     200,
-				"graphql_schema":  discovery,
+				"success":        true,
+				"status_code":    200,
+				"graphql_schema": discovery,
 			}, nil
 		}
 
@@ -724,10 +821,10 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 		resp, err := graphqlClient.Execute(ctx, introspectionQuery, nil, "")
 		if err != nil {
 			return map[string]interface{}{
-				"success":         false,
-				"status_code":     0,
-				"error_message":   fmt.Sprintf("GraphQL introspection failed: %v", err),
-				"error_guidance":  "Ensure the GraphQL endpoint supports introspection and your authentication is correct",
+				"success":        false,
+				"status_code":    0,
+				"error_message":  fmt.Sprintf("GraphQL introspection failed: %v", err),
+				"error_guidance": "Ensure the GraphQL endpoint supports introspection and your authentication is correct",
 			}, nil
 		}
 
@@ -735,8 +832,8 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 		discovery := &GraphQLDiscoveryResult{
 			Endpoint: fullURL,
 			Operations: GraphQLOperations{
-				Queries:    []GraphQLOperationInfo{},
-				Mutations:  []GraphQLOperationInfo{},
+				Queries:   []GraphQLOperationInfo{},
+				Mutations: []GraphQLOperationInfo{},
 			},
 			Types: make(map[string]GraphQLTypeInfo),
 		}
@@ -754,7 +851,7 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 						})
 					}
 				}
-				
+
 				// Extract mutation type info
 				if mutationType, ok := schemaMap["mutationType"].(map[string]interface{}); ok {
 					if name, ok := mutationType["name"].(string); ok {
@@ -781,7 +878,7 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 									if kind, ok := typeMap["kind"].(string); ok {
 										typeInfo.Kind = kind
 									}
-									
+
 									// Only include non-scalar types
 									if typeInfo.Kind != "SCALAR" {
 										discovery.Types[name] = typeInfo
@@ -798,9 +895,9 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 		cache.SetDiscovery(fullURL, discovery, 15*time.Minute)
 
 		return map[string]interface{}{
-			"success":         true,
-			"status_code":     200,
-			"graphql_schema":  discovery,
+			"success":        true,
+			"status_code":    200,
+			"graphql_schema": discovery,
 		}, nil
 	}
 
@@ -833,11 +930,11 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 			for k, v := range headers {
 				dummyReq.Header.Set(k, v)
 			}
-			
+
 			if err := applyAuthentication(dummyReq, auth); err != nil {
 				return nil, fmt.Errorf("authentication error: %w", err)
 			}
-			
+
 			// Copy headers back
 			for k := range dummyReq.Header {
 				headers[k] = dummyReq.Header.Get(k)
@@ -854,7 +951,7 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 				for k, v := range headers {
 					dummyReq.Header.Set(k, v)
 				}
-				
+
 				if err := applyAuthentication(dummyReq, authMap); err != nil {
 					if ctx.Events != nil {
 						ctx.Events.EmitCustom("auto_auth_failed", map[string]interface{}{
@@ -868,7 +965,7 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 					}
 					if ctx.Events != nil {
 						ctx.Events.EmitCustom("auto_auth_applied", map[string]interface{}{
-							"type": authMap["type"],
+							"type":     authMap["type"],
 							"endpoint": fullURL,
 						})
 					}
@@ -903,10 +1000,10 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 		resp, err := graphqlClient.Execute(ctx, graphqlQuery, variables, operationName)
 		if err != nil {
 			return map[string]interface{}{
-				"success":         false,
-				"status_code":     0,
-				"error_message":   fmt.Sprintf("GraphQL execution failed: %v", err),
-				"error_guidance":  GenerateLLMGuidance(err, nil),
+				"success":        false,
+				"status_code":    0,
+				"error_message":  fmt.Sprintf("GraphQL execution failed: %v", err),
+				"error_guidance": GenerateLLMGuidance(err, nil),
 			}, nil
 		}
 
@@ -916,29 +1013,29 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 			for i, err := range resp.Errors {
 				errorMessages[i] = err.Message
 			}
-			
+
 			return map[string]interface{}{
-				"success":         false,
-				"status_code":     200, // GraphQL returns 200 even with errors
-				"data":            resp.Data,
-				"error_message":   strings.Join(errorMessages, "; "),
-				"error_details":   resp.Errors,
-				"error_guidance":  "GraphQL query returned errors. Check the error_details for specific field errors",
+				"success":            false,
+				"status_code":        200, // GraphQL returns 200 even with errors
+				"data":               resp.Data,
+				"error_message":      strings.Join(errorMessages, "; "),
+				"error_details":      resp.Errors,
+				"error_guidance":     "GraphQL query returned errors. Check the error_details for specific field errors",
 				"graphql_extensions": resp.Extensions,
 			}, nil
 		}
 
 		// Success
 		result := map[string]interface{}{
-			"success":      true,
-			"status_code":  200,
-			"data":         resp.Data,
+			"success":     true,
+			"status_code": 200,
+			"data":        resp.Data,
 		}
-		
+
 		if resp.Extensions != nil {
 			result["graphql_extensions"] = resp.Extensions
 		}
-		
+
 		return result, nil
 	}
 
@@ -1189,7 +1286,7 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 			"error_guidance": "Check if the API server is accessible and the URL is correct",
 		}, nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	bodyBytes, err := io.ReadAll(resp.Body)
@@ -1487,17 +1584,17 @@ func getAuthConfigFromState(ctx *domain.ToolContext, schemeName string, scheme S
 		In:          scheme.In,
 		Description: scheme.Description,
 	}
-	
+
 	// Use unified auth detection with single scheme
 	schemes := map[string]auth.AuthScheme{
 		schemeName: authScheme,
 	}
-	
+
 	authConfig := auth.DetectAuthFromState(ctx.State, "", schemes)
 	if authConfig != nil {
 		return auth.ConvertAuthConfigToMap(authConfig)
 	}
-	
+
 	return nil
 }
 

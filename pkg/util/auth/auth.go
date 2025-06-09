@@ -44,8 +44,9 @@ func ApplyAuth(req *http.Request, auth map[string]interface{}) error {
 	case "basic":
 		return applyBasicAuth(req, auth)
 	case "oauth2":
-		// TODO: Implement OAuth2 flows in Phase 4
-		return fmt.Errorf("OAuth2 authentication not yet implemented")
+		return applyOAuth2Auth(req, auth)
+	case "custom":
+		return applyCustomAuth(req, auth)
 	default:
 		return fmt.Errorf("unsupported auth type: %s", authType)
 	}
@@ -55,17 +56,17 @@ func ApplyAuth(req *http.Request, auth map[string]interface{}) error {
 func DetectAuthFromState(state StateReader, baseURL string, schemes map[string]AuthScheme) *AuthConfig {
 	// Normalize URL for pattern matching
 	normalizedURL := strings.ToLower(strings.TrimRight(baseURL, "/"))
-	
+
 	// Try URL-specific detection first
 	if auth := detectURLSpecificAuth(state, normalizedURL); auth != nil {
 		return auth
 	}
-	
+
 	// If schemes are provided, try to match against them
 	if len(schemes) > 0 {
 		return detectFromSchemes(state, schemes)
 	}
-	
+
 	// Fall back to generic auth detection
 	return detectGenericAuth(state)
 }
@@ -138,7 +139,7 @@ func detectURLSpecificAuth(state StateReader, normalizedURL string) *AuthConfig 
 			"github_personal_access_token",
 			"github_pat",
 		}
-		
+
 		for _, key := range tokenKeys {
 			if value, exists := state.Get(key); exists {
 				if token, ok := value.(string); ok && token != "" {
@@ -152,7 +153,7 @@ func detectURLSpecificAuth(state StateReader, normalizedURL string) *AuthConfig 
 			}
 		}
 	}
-	
+
 	// GitLab
 	if strings.Contains(normalizedURL, "gitlab") {
 		tokenKeys := []string{
@@ -162,7 +163,7 @@ func detectURLSpecificAuth(state StateReader, normalizedURL string) *AuthConfig 
 			"GITLAB_API_KEY",
 			"gitlab_personal_access_token",
 		}
-		
+
 		for _, key := range tokenKeys {
 			if value, exists := state.Get(key); exists {
 				if token, ok := value.(string); ok && token != "" {
@@ -176,9 +177,9 @@ func detectURLSpecificAuth(state StateReader, normalizedURL string) *AuthConfig 
 			}
 		}
 	}
-	
+
 	// Add more providers as needed
-	
+
 	return nil
 }
 
@@ -210,7 +211,7 @@ func detectAPIKeyFromState(state StateReader, schemeName string, scheme AuthSche
 		"apiKey",
 		scheme.Name, // The actual parameter name
 	}
-	
+
 	for _, keyName := range keyNames {
 		if value, exists := state.Get(keyName); exists {
 			if apiKey, ok := value.(string); ok && apiKey != "" {
@@ -225,7 +226,7 @@ func detectAPIKeyFromState(state StateReader, schemeName string, scheme AuthSche
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -240,7 +241,7 @@ func detectHTTPAuthFromState(state StateReader, schemeName string, scheme AuthSc
 			"access_token",
 			"token",
 		}
-		
+
 		for _, key := range tokenKeys {
 			if value, exists := state.Get(key); exists {
 				if token, ok := value.(string); ok && token != "" {
@@ -253,11 +254,11 @@ func detectHTTPAuthFromState(state StateReader, schemeName string, scheme AuthSc
 				}
 			}
 		}
-		
+
 	case "basic":
 		// Look for username/password pairs
 		var username, password string
-		
+
 		usernameKeys := []string{
 			fmt.Sprintf("%s_username", schemeName),
 			"api_username",
@@ -268,7 +269,7 @@ func detectHTTPAuthFromState(state StateReader, schemeName string, scheme AuthSc
 			"api_password",
 			"password",
 		}
-		
+
 		for _, key := range usernameKeys {
 			if value, exists := state.Get(key); exists {
 				if u, ok := value.(string); ok && u != "" {
@@ -277,7 +278,7 @@ func detectHTTPAuthFromState(state StateReader, schemeName string, scheme AuthSc
 				}
 			}
 		}
-		
+
 		for _, key := range passwordKeys {
 			if value, exists := state.Get(key); exists {
 				if p, ok := value.(string); ok && p != "" {
@@ -286,7 +287,7 @@ func detectHTTPAuthFromState(state StateReader, schemeName string, scheme AuthSc
 				}
 			}
 		}
-		
+
 		if username != "" && password != "" {
 			return &AuthConfig{
 				Type: "basic",
@@ -297,7 +298,7 @@ func detectHTTPAuthFromState(state StateReader, schemeName string, scheme AuthSc
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -310,7 +311,7 @@ func detectGenericAuth(state StateReader) *AuthConfig {
 		"x_api_key",
 		"X_API_KEY",
 	}
-	
+
 	for _, key := range apiKeyNames {
 		if value, exists := state.Get(key); exists {
 			if apiKey, ok := value.(string); ok && apiKey != "" {
@@ -325,7 +326,7 @@ func detectGenericAuth(state StateReader) *AuthConfig {
 			}
 		}
 	}
-	
+
 	// Try bearer token patterns (excluding api_key which is handled above)
 	tokenKeys := []string{
 		"api_token",
@@ -334,7 +335,7 @@ func detectGenericAuth(state StateReader) *AuthConfig {
 		"auth_token",
 		"token",
 	}
-	
+
 	for _, key := range tokenKeys {
 		if value, exists := state.Get(key); exists {
 			if token, ok := value.(string); ok && token != "" {
@@ -347,7 +348,7 @@ func detectGenericAuth(state StateReader) *AuthConfig {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -356,15 +357,63 @@ func ConvertAuthConfigToMap(config *AuthConfig) map[string]interface{} {
 	if config == nil {
 		return nil
 	}
-	
+
 	result := map[string]interface{}{
 		"type": config.Type,
 	}
-	
+
 	// Merge data fields into result
 	for k, v := range config.Data {
 		result[k] = v
 	}
-	
+
 	return result
+}
+
+func applyOAuth2Auth(req *http.Request, auth map[string]interface{}) error {
+	// Check for access token first (simplest case)
+	if accessToken, ok := auth["access_token"].(string); ok && accessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		return nil
+	}
+
+	// Handle different OAuth2 flows
+	flowType, _ := auth["flow"].(string)
+	switch flowType {
+	case "client_credentials":
+		// Client credentials should have already obtained the token
+		// Just use the access_token field
+		return fmt.Errorf("client credentials flow requires access_token to be set")
+	case "authorization_code":
+		// Authorization code flow should have already exchanged code for token
+		return fmt.Errorf("authorization code flow requires access_token to be set")
+	default:
+		// Default to bearer token if available
+		if token, ok := auth["token"].(string); ok && token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+			return nil
+		}
+		return fmt.Errorf("OAuth2 requires access_token or token field")
+	}
+}
+
+func applyCustomAuth(req *http.Request, auth map[string]interface{}) error {
+	// Support custom header authentication
+	headerName, ok := auth["header_name"].(string)
+	if !ok || headerName == "" {
+		return fmt.Errorf("custom auth requires header_name")
+	}
+
+	headerValue, ok := auth["header_value"].(string)
+	if !ok || headerValue == "" {
+		return fmt.Errorf("custom auth requires header_value")
+	}
+
+	// Optional prefix (like "Bearer", "Token", etc.)
+	if prefix, ok := auth["prefix"].(string); ok && prefix != "" {
+		headerValue = prefix + " " + headerValue
+	}
+
+	req.Header.Set(headerName, headerValue)
+	return nil
 }

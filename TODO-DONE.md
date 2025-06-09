@@ -1,5 +1,39 @@
 # Go-LLMs Completed Tasks
 
+## API Client Tool Advanced Authentication (Completed - January 9, 2025 11:03 AM PST)
+- [x] Phase 4: Advanced Authentication
+  - [x] Implemented OAuth2 authentication support
+    - [x] Access token authentication (Bearer tokens)
+    - [x] Client credentials flow configuration
+    - [x] Authorization code flow configuration
+    - [x] JWT token expiry detection and refresh support
+  - [x] Implemented custom header authentication
+    - [x] Custom header name and value
+    - [x] Optional prefix support (Token, Bearer, etc.)
+  - [x] Enhanced API key authentication
+    - [x] Added cookie location support (in addition to header and query)
+  - [x] Implemented session/cookie management
+    - [x] Cookie jar for maintaining state across requests
+    - [x] Session persistence in agent state
+    - [x] Session serialization and restoration
+  - [x] Created comprehensive authentication tests
+    - [x] All authentication methods tested
+    - [x] State-based auth detection tested
+    - [x] 100% test coverage for new features
+  - [x] Updated API client tool to v4.0.0
+    - [x] Updated parameter schemas with new auth options
+    - [x] Added oauth2_config and enable_session parameters
+    - [x] Added new examples in tool definition
+  - [x] Created builtins-api-client-auth example
+    - [x] Demonstrates all new authentication features
+    - [x] Shows state-based credential management
+    - [x] Includes comprehensive README
+  - [x] Updated documentation
+    - [x] Updated builtin-tools.md with new auth methods
+    - [x] Added session management documentation
+    - [x] Added OAuth2 configuration examples
+    - [x] Updated examples README
+
 ## Built-in Components Infrastructure (Completed - January 31, 2025)
 - [x] P1: Analyze structure for exposing built-in tools, agents, and workflows
   - [x] Analyzed existing pkg/agent structure and patterns

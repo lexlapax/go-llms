@@ -129,6 +129,88 @@ func TestApplyAuth(t *testing.T) {
 			},
 			expectedError: true,
 		},
+		{
+			name: "OAuth2 with access token",
+			auth: map[string]interface{}{
+				"type":         "oauth2",
+				"access_token": "oauth-token-123",
+			},
+			expectedError: false,
+			checkFunc: func(req *http.Request) error {
+				expected := "Bearer oauth-token-123"
+				if req.Header.Get("Authorization") != expected {
+					return fmt.Errorf("expected Authorization header to be '%s', got '%s'", expected, req.Header.Get("Authorization"))
+				}
+				return nil
+			},
+		},
+		{
+			name: "OAuth2 missing access token",
+			auth: map[string]interface{}{
+				"type": "oauth2",
+			},
+			expectedError: true,
+		},
+		{
+			name: "Custom header auth",
+			auth: map[string]interface{}{
+				"type":         "custom",
+				"header_name":  "X-Custom-Auth",
+				"header_value": "custom-secret",
+			},
+			expectedError: false,
+			checkFunc: func(req *http.Request) error {
+				if req.Header.Get("X-Custom-Auth") != "custom-secret" {
+					return fmt.Errorf("expected X-Custom-Auth header to be 'custom-secret', got '%s'", req.Header.Get("X-Custom-Auth"))
+				}
+				return nil
+			},
+		},
+		{
+			name: "Custom header auth with prefix",
+			auth: map[string]interface{}{
+				"type":         "custom",
+				"header_name":  "Authorization",
+				"header_value": "12345",
+				"prefix":       "Token",
+			},
+			expectedError: false,
+			checkFunc: func(req *http.Request) error {
+				expected := "Token 12345"
+				if req.Header.Get("Authorization") != expected {
+					return fmt.Errorf("expected Authorization header to be '%s', got '%s'", expected, req.Header.Get("Authorization"))
+				}
+				return nil
+			},
+		},
+		{
+			name: "Custom header missing header_name",
+			auth: map[string]interface{}{
+				"type":         "custom",
+				"header_value": "test",
+			},
+			expectedError: true,
+		},
+		{
+			name: "API key in cookie",
+			auth: map[string]interface{}{
+				"type":         "api_key",
+				"api_key":      "cookie-key-123",
+				"key_location": "cookie",
+				"key_name":     "session_id",
+			},
+			expectedError: false,
+			checkFunc: func(req *http.Request) error {
+				cookie, err := req.Cookie("session_id")
+				if err != nil {
+					return fmt.Errorf("expected cookie 'session_id' to be set: %v", err)
+				}
+				if cookie.Value != "cookie-key-123" {
+					return fmt.Errorf("expected cookie value to be 'cookie-key-123', got '%s'", cookie.Value)
+				}
+				return nil
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -155,11 +237,11 @@ func TestApplyAuth(t *testing.T) {
 
 func TestDetectAuthFromState(t *testing.T) {
 	tests := []struct {
-		name          string
-		stateValues   map[string]interface{}
-		baseURL       string
-		schemes       map[string]AuthScheme
-		expectedAuth  *AuthConfig
+		name         string
+		stateValues  map[string]interface{}
+		baseURL      string
+		schemes      map[string]AuthScheme
+		expectedAuth *AuthConfig
 	}{
 		{
 			name: "GitHub bearer token detection",
@@ -315,7 +397,7 @@ func TestDetectAuthFromState(t *testing.T) {
 					if result.Type != tt.expectedAuth.Type {
 						t.Errorf("expected auth type %s, got %s", tt.expectedAuth.Type, result.Type)
 					}
-					
+
 					// Check data fields
 					for k, v := range tt.expectedAuth.Data {
 						if result.Data[k] != v {
@@ -374,7 +456,7 @@ func TestConvertAuthConfigToMap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ConvertAuthConfigToMap(tt.config)
-			
+
 			if tt.expected == nil {
 				if result != nil {
 					t.Errorf("expected nil, got %+v", result)

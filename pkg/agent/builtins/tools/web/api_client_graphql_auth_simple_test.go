@@ -23,7 +23,7 @@ func TestAPIClientTool_GraphQLAuthSimple(t *testing.T) {
 		apiKey := r.Header.Get("X-API-Key")
 		t.Logf("Received Authorization header: %s", auth)
 		t.Logf("Received X-API-Key header: %s", apiKey)
-		
+
 		// Decode GraphQL request
 		var req map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -35,9 +35,9 @@ func TestAPIClientTool_GraphQLAuthSimple(t *testing.T) {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"data": map[string]interface{}{
 				"viewer": map[string]interface{}{
-					"login": "testuser",
-					"name":  "Test User",
-					"auth":  auth, // Echo auth header for verification
+					"login":  "testuser",
+					"name":   "Test User",
+					"auth":   auth,   // Echo auth header for verification
 					"apikey": apiKey, // Echo API key header for verification
 				},
 			},
@@ -48,10 +48,10 @@ func TestAPIClientTool_GraphQLAuthSimple(t *testing.T) {
 	tool := NewAPIClientTool()
 
 	tests := []struct {
-		name          string
-		stateValues   map[string]interface{}
-		params        map[string]interface{}
-		expectedAuth  string
+		name         string
+		stateValues  map[string]interface{}
+		params       map[string]interface{}
+		expectedAuth string
 	}{
 		{
 			name: "Generic API token becomes bearer",
@@ -78,7 +78,7 @@ func TestAPIClientTool_GraphQLAuthSimple(t *testing.T) {
 			expectedAuth: "", // API key goes in X-API-Key header, not Authorization
 		},
 		{
-			name: "No auth in state",
+			name:        "No auth in state",
 			stateValues: map[string]interface{}{},
 			params: map[string]interface{}{
 				"base_url":      server.URL,
@@ -116,7 +116,7 @@ func TestAPIClientTool_GraphQLAuthSimple(t *testing.T) {
 				if !resultMap["success"].(bool) {
 					t.Errorf("Expected success but got: %v", result)
 				}
-				
+
 				// Check auth header was applied correctly
 				if data, ok := resultMap["data"].(map[string]interface{}); ok {
 					if viewer, ok := data["viewer"].(map[string]interface{}); ok {

@@ -36,9 +36,9 @@ type GraphQLRequest struct {
 
 // GraphQLResponse represents a GraphQL response
 type GraphQLResponse struct {
-	Data       interface{}              `json:"data"`
-	Errors     []GraphQLError           `json:"errors,omitempty"`
-	Extensions map[string]interface{}   `json:"extensions,omitempty"`
+	Data       interface{}            `json:"data"`
+	Errors     []GraphQLError         `json:"errors,omitempty"`
+	Extensions map[string]interface{} `json:"extensions,omitempty"`
 }
 
 // GraphQLError represents a GraphQL error
@@ -53,7 +53,7 @@ func NewGraphQLClient(endpoint string, httpClient *http.Client, headers map[stri
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 30 * time.Second}
 	}
-	
+
 	return &GraphQLClient{
 		endpoint:   endpoint,
 		httpClient: httpClient,
@@ -276,26 +276,26 @@ func formatGraphQLErrors(errors []GraphQLError) string {
 // GenerateLLMGuidance generates helpful guidance for GraphQL errors
 func GenerateLLMGuidance(err error, schema *ast.Schema) string {
 	errMsg := err.Error()
-	
+
 	// Field not found errors
 	if strings.Contains(errMsg, "field") && strings.Contains(errMsg, "doesn't exist") {
 		return "This field doesn't exist on the type. Check the schema discovery or introspection results to see available fields."
 	}
-	
+
 	// Variable type errors
 	if strings.Contains(errMsg, "variable") && strings.Contains(errMsg, "type") {
 		return "Variable type mismatch. Ensure variables match the expected types defined in the query."
 	}
-	
+
 	// Syntax errors
 	if strings.Contains(errMsg, "syntax error") || strings.Contains(errMsg, "parse") {
 		return "GraphQL syntax error. Check for missing braces, parentheses, or incorrect query structure."
 	}
-	
+
 	// Authentication errors
 	if strings.Contains(errMsg, "unauthorized") || strings.Contains(errMsg, "forbidden") {
 		return "Authentication required. Ensure you've provided the correct authentication credentials."
 	}
-	
+
 	return "GraphQL operation failed. Use discover_graphql to explore available operations and their structure."
 }

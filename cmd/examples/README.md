@@ -579,6 +579,24 @@ cd builtins-web-api-client && go run main.go
 cd builtins-graphql-client && go run main.go
 ```
 
+#### [**Built-ins API Client Authentication**](builtins-api-client-auth/README.md)
+**Focus**: Advanced authentication features for API interactions
+
+**Features:**
+- OAuth2 bearer token and access token authentication
+- Custom header authentication with prefixes
+- Automatic authentication detection from state
+- API key in headers, query parameters, or cookies
+- Session/cookie management across requests
+- OAuth2 configuration and token exchange
+- Multiple authentication method fallbacks
+
+**When to use**: When you need to interact with APIs that require advanced authentication methods beyond basic API keys.
+
+```bash
+cd builtins-api-client-auth && go run main.go
+```
+
 #### [**Built-ins OpenAPI Discovery**](builtins-openapi-discovery/README.md)
 **Focus**: OpenAPI/Swagger specification discovery and validation
 

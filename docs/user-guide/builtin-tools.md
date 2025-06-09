@@ -122,17 +122,19 @@ The tool automatically detects and applies appropriate authentication based on:
 
 #### Manual Authentication (When Needed)
 
-The `auth` parameter supports explicit authentication:
+The `auth` parameter supports multiple authentication types:
 
+**API Key Authentication:**
 ```json
 {
   "type": "api_key",
   "api_key": "your-api-key",
-  "key_location": "header",
+  "key_location": "header",  // or "query" or "cookie"
   "key_name": "X-API-Key"
 }
 ```
 
+**Bearer Token Authentication:**
 ```json
 {
   "type": "bearer",
@@ -140,6 +142,7 @@ The `auth` parameter supports explicit authentication:
 }
 ```
 
+**Basic Authentication:**
 ```json
 {
   "type": "basic",
@@ -148,7 +151,67 @@ The `auth` parameter supports explicit authentication:
 }
 ```
 
+**OAuth2 Authentication:**
+```json
+{
+  "type": "oauth2",
+  "access_token": "your-access-token"
+}
+```
+
+**Custom Header Authentication:**
+```json
+{
+  "type": "custom",
+  "header_name": "X-Custom-Auth",
+  "header_value": "your-secret",
+  "prefix": "Token"  // Optional prefix (e.g., "Bearer", "Token")
+}
+```
+
 **Security Note:** For production use, always prefer storing credentials in agent state to prevent exposing them to LLMs.
+
+#### Session/Cookie Management
+
+Enable session management to maintain state across requests:
+
+```json
+{
+  "base_url": "https://api.example.com",
+  "endpoint": "/login",
+  "method": "POST",
+  "enable_session": true,
+  "body": {
+    "username": "user",
+    "password": "pass"
+  }
+}
+```
+
+Subsequent requests with `enable_session: true` will automatically include cookies from previous responses.
+
+#### OAuth2 Configuration
+
+For OAuth2 token exchange, provide configuration in the `oauth2_config` parameter:
+
+```json
+{
+  "oauth2_config": {
+    "token_url": "https://auth.example.com/oauth/token",
+    "auth_url": "https://auth.example.com/oauth/authorize",
+    "client_id": "your-client-id",
+    "client_secret": "your-client-secret",
+    "redirect_uri": "http://localhost:8080/callback",
+    "scope": "read write"
+  }
+}
+```
+
+The tool supports:
+- Client credentials flow (server-to-server authentication)
+- Authorization code flow (user authentication)
+- Automatic token refresh using refresh tokens
+- JWT token expiry detection
 
 ### Usage Examples
 
@@ -371,6 +434,95 @@ Execute a GraphQL mutation:
   }
 }
 ```
+
+#### 15. OAuth2 Authentication
+
+```json
+{
+  "base_url": "https://api.example.com",
+  "endpoint": "/user/profile",
+  "method": "GET",
+  "auth": {
+    "type": "oauth2",
+    "access_token": "your-oauth2-access-token"
+  }
+}
+```
+
+#### 16. Custom Header Authentication
+
+```json
+{
+  "base_url": "https://api.custom.com",
+  "endpoint": "/data",
+  "method": "GET",
+  "auth": {
+    "type": "custom",
+    "header_name": "X-Service-Token",
+    "header_value": "secret123",
+    "prefix": "Bearer"
+  }
+}
+```
+
+#### 17. API Key in Query Parameter
+
+```json
+{
+  "base_url": "https://api.weather.com",
+  "endpoint": "/current",
+  "method": "GET",
+  "query_params": {
+    "city": "London"
+  },
+  "auth": {
+    "type": "api_key",
+    "api_key": "your-weather-key",
+    "key_location": "query",
+    "key_name": "apikey"
+  }
+}
+```
+
+#### 18. Session Management Example
+
+```json
+{
+  "base_url": "https://api.sessiondemo.com",
+  "endpoint": "/auth/login",
+  "method": "POST",
+  "enable_session": true,
+  "body": {
+    "username": "demo_user",
+    "password": "demo_pass"
+  }
+}
+```
+
+Follow-up request using session:
+```json
+{
+  "base_url": "https://api.sessiondemo.com",
+  "endpoint": "/user/profile",
+  "method": "GET",
+  "enable_session": true
+}
+```
+
+#### 19. OAuth2 Client Credentials Flow
+
+Store OAuth2 config in state:
+```python
+state.Set("oauth2_config", {
+  "token_url": "https://auth.example.com/oauth/token",
+  "client_id": "your-client-id",
+  "client_secret": "your-client-secret",
+  "flow": "client_credentials",
+  "scope": "read write"
+})
+```
+
+The tool will automatically exchange credentials for an access token when needed.
 
 ### Response Format
 

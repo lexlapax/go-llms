@@ -13,26 +13,26 @@ import (
 
 // GraphQLDiscoveryResult represents discovered GraphQL operations for LLM consumption
 type GraphQLDiscoveryResult struct {
-	Endpoint    string                    `json:"endpoint"`
-	Operations  GraphQLOperations         `json:"operations"`
-	Types       map[string]GraphQLTypeInfo `json:"types"`
+	Endpoint   string                     `json:"endpoint"`
+	Operations GraphQLOperations          `json:"operations"`
+	Types      map[string]GraphQLTypeInfo `json:"types"`
 }
 
 // GraphQLOperations contains categorized operations
 type GraphQLOperations struct {
-	Queries      []GraphQLOperationInfo `json:"queries"`
-	Mutations    []GraphQLOperationInfo `json:"mutations"`
+	Queries       []GraphQLOperationInfo `json:"queries"`
+	Mutations     []GraphQLOperationInfo `json:"mutations"`
 	Subscriptions []GraphQLOperationInfo `json:"subscriptions,omitempty"`
 }
 
 // GraphQLOperationInfo describes a single operation for LLM understanding
 type GraphQLOperationInfo struct {
-	Name           string                 `json:"name"`
-	Description    string                 `json:"description"`
-	Example        string                 `json:"example"`
-	Returns        string                 `json:"returns"`
-	Arguments      []GraphQLArgumentInfo  `json:"arguments,omitempty"`
-	RequiredArgs   []string               `json:"required_args,omitempty"`
+	Name            string                `json:"name"`
+	Description     string                `json:"description"`
+	Example         string                `json:"example"`
+	Returns         string                `json:"returns"`
+	Arguments       []GraphQLArgumentInfo `json:"arguments,omitempty"`
+	RequiredArgs    []string              `json:"required_args,omitempty"`
 	AvailableFields []string              `json:"available_fields,omitempty"`
 }
 
@@ -149,7 +149,7 @@ func processOperationType(schema *ast.Schema, typeDef *ast.Definition, operation
 				Required:    arg.Type.NonNull,
 			}
 			op.Arguments = append(op.Arguments, argInfo)
-			
+
 			if arg.Type.NonNull {
 				requiredArgs = append(requiredArgs, arg.Name)
 			}
@@ -188,11 +188,11 @@ func processOperationType(schema *ast.Schema, typeDef *ast.Definition, operation
 // generateOperationExample creates an example query for an operation
 func generateOperationExample(operationType string, field *ast.FieldDefinition) string {
 	var example strings.Builder
-	
+
 	example.WriteString(operationType)
 	example.WriteString(" { ")
 	example.WriteString(field.Name)
-	
+
 	// Add arguments if any
 	if len(field.Arguments) > 0 {
 		example.WriteString("(")
@@ -206,7 +206,7 @@ func generateOperationExample(operationType string, field *ast.FieldDefinition) 
 		}
 		example.WriteString(")")
 	}
-	
+
 	// Add basic field selection
 	example.WriteString(" { ")
 	if returnType := getBaseType(field.Type); returnType != nil {
@@ -217,7 +217,7 @@ func generateOperationExample(operationType string, field *ast.FieldDefinition) 
 		}
 	}
 	example.WriteString(" } }")
-	
+
 	return example.String()
 }
 
@@ -227,7 +227,7 @@ func getExampleValue(t *ast.Type) string {
 	if baseType == nil {
 		return "null"
 	}
-	
+
 	switch baseType.Name() {
 	case "String":
 		return `"example"`
@@ -249,11 +249,11 @@ func getTypeName(t *ast.Type) string {
 	if t == nil {
 		return "Unknown"
 	}
-	
+
 	var name string
 	var nonNull bool
 	var isList bool
-	
+
 	// Unwrap type modifiers
 	current := t
 	for current != nil {
@@ -268,7 +268,7 @@ func getTypeName(t *ast.Type) string {
 			break
 		}
 	}
-	
+
 	// Build type string
 	result := name
 	if isList {
@@ -277,7 +277,7 @@ func getTypeName(t *ast.Type) string {
 	if nonNull {
 		result = result + "!"
 	}
-	
+
 	return result
 }
 
@@ -286,12 +286,12 @@ func getBaseType(t *ast.Type) *ast.Type {
 	if t == nil {
 		return nil
 	}
-	
+
 	current := t
 	for current.Elem != nil {
 		current = current.Elem
 	}
-	
+
 	return current
 }
 
@@ -301,24 +301,24 @@ func isImportantType(typeDef *ast.Definition) bool {
 	if strings.HasPrefix(typeDef.Name, "__") {
 		return false
 	}
-	
+
 	// Skip scalar types (they're self-explanatory)
 	if typeDef.Kind == ast.Scalar {
 		return false
 	}
-	
+
 	// Include types with descriptions or multiple fields
 	if typeDef.Description != "" {
 		return true
 	}
-	
+
 	if len(typeDef.Fields) > 1 {
 		return true
 	}
-	
+
 	if len(typeDef.EnumValues) > 0 {
 		return true
 	}
-	
+
 	return false
 }

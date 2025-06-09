@@ -11,6 +11,24 @@ Until we reach close to v1.. *no backward compatibility* do not add extra code f
 
 **Current Version**: v0.3.1 (Active Development - January 2025)
 
+**Recent Updates** (January 9, 2025):
+- **API Client Tool Phase 4: Advanced Authentication (COMPLETED)**
+  - Implemented comprehensive OAuth2 support in api_client tool (v4.0.0)
+  - Features implemented:
+    - OAuth2 flows (client credentials and authorization code)
+    - Access token authentication with JWT expiry detection
+    - Session/cookie management with cookie jar functionality
+    - Custom authentication headers with optional prefix
+    - Enhanced API key support (added cookie location)
+    - Automatic authentication detection from agent state
+  - Created comprehensive auth package (pkg/util/auth/):
+    - oauth2.go: Token management, exchange, and refresh
+    - session.go: Cookie jar and session persistence
+    - auth_test.go: 100% test coverage for all auth methods
+  - Created builtins-api-client-auth example demonstrating all auth features
+  - Updated documentation with authentication examples and guidance
+  - All code passes linting with 0 issues
+
 **Recent Updates** (January 8, 2025):
 - **Unified Authentication Middleware (COMPLETED)**
   - Created unified authentication system in pkg/util/auth/

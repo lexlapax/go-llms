@@ -23,7 +23,7 @@ func TestAPIClientTool_GraphQLAuthFromState(t *testing.T) {
 		// Check authorization header
 		auth := r.Header.Get("Authorization")
 		expectedAuth := "Bearer " + authToken
-		
+
 		// Allow requests without auth for the "without auth" test case
 		if auth == "" && strings.Contains(r.Header.Get("X-Test-Case"), "without_auth") {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -36,7 +36,7 @@ func TestAPIClientTool_GraphQLAuthFromState(t *testing.T) {
 			})
 			return
 		}
-		
+
 		if auth != expectedAuth && auth != "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]interface{}{
