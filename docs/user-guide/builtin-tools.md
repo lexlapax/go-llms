@@ -101,7 +101,28 @@ The `api_client` tool provides a high-level interface for making REST API and Gr
 
 ### Authentication Configuration
 
-The `auth` parameter supports the following authentication types:
+The tool features unified authentication middleware with two approaches:
+
+#### Automatic Authentication (Recommended)
+
+Store credentials in agent state for automatic detection and application:
+
+```python
+# In your agent code:
+state.Set("github_token", "ghp_xxx")      # For GitHub APIs
+state.Set("api_key", "key_xxx")           # For generic APIs
+state.Set("api_username", "user")         # For basic auth
+state.Set("api_password", "pass")         # For basic auth
+```
+
+The tool automatically detects and applies appropriate authentication based on:
+- URL patterns (e.g., github.com, gitlab.com)
+- OpenAPI security schemes
+- Generic patterns in state
+
+#### Manual Authentication (When Needed)
+
+The `auth` parameter supports explicit authentication:
 
 ```json
 {
@@ -126,6 +147,8 @@ The `auth` parameter supports the following authentication types:
   "password": "your-password"
 }
 ```
+
+**Security Note:** For production use, always prefer storing credentials in agent state to prevent exposing them to LLMs.
 
 ### Usage Examples
 
@@ -256,18 +279,34 @@ When `base_url` is omitted, the tool automatically uses the first server URL fro
 
 #### 10. Automatic Authentication Detection
 
-The tool can detect and apply authentication from agent state based on OpenAPI security schemes:
+The tool features unified authentication middleware that automatically detects and applies credentials from agent state:
 
+**How it works:**
+1. Store credentials in agent state (e.g., `state.Set("github_token", "ghp_xxx")`)
+2. The tool detects credentials based on:
+   - URL patterns (e.g., GitHub, GitLab)
+   - OpenAPI security schemes
+   - Generic auth patterns in state
+3. Authentication is applied transparently - LLMs never see credentials
+
+**Example:**
 ```json
 {
-  "base_url": "https://api.example.com",
-  "endpoint": "/protected/resource",
-  "method": "GET",
-  "openapi_spec": "https://api.example.com/openapi.json"
+  "base_url": "https://api.github.com",
+  "endpoint": "/user/repos",
+  "method": "GET"
 }
 ```
 
-If the OpenAPI spec defines security requirements and credentials are found in agent state (e.g., `api_key`, `bearer_token`), they will be automatically applied.
+If `github_token` or `github_api_key` exists in agent state, it will be automatically applied as a Bearer token.
+
+**Supported auth types:**
+- API Key (header or query parameter)
+- Bearer Token
+- Basic Authentication
+- OAuth2 (placeholder for future implementation)
+
+**Security best practice:** Never pass credentials in tool parameters. Always store them in agent state.
 
 #### 11. GraphQL Discovery
 
@@ -277,27 +316,19 @@ Discover available GraphQL operations through introspection:
 {
   "base_url": "https://api.github.com",
   "endpoint": "/graphql",
-  "discover_graphql": true,
-  "auth": {
-    "type": "bearer",
-    "token": "github_token_here"
-  }
+  "discover_graphql": true
 }
 ```
 
 #### 12. Simple GraphQL Query
 
-Execute a basic GraphQL query:
+Execute a basic GraphQL query (authentication automatically applied from state):
 
 ```json
 {
   "base_url": "https://api.github.com",
   "endpoint": "/graphql",
-  "graphql_query": "query { viewer { login name email bio } }",
-  "auth": {
-    "type": "bearer",
-    "token": "github_token_here"
-  }
+  "graphql_query": "query { viewer { login name email bio } }"
 }
 ```
 
@@ -313,10 +344,6 @@ Use variables for dynamic GraphQL queries:
   "graphql_variables": {
     "owner": "golang",
     "name": "go"
-  },
-  "auth": {
-    "type": "bearer",
-    "token": "github_token_here"
   }
 }
 ```
@@ -629,7 +656,7 @@ Here's a complete example showing how to use OpenAPI features with an LLM agent:
 
 ```go
 // Step 1: Store credentials in agent state
-agent.State.Set("github_token", os.Getenv("GITHUB_TOKEN"))
+agent.State.Set("github_token", os.Getenv("GITHUB_API_KEY"))
 
 // Step 2: Discover available operations
 result, _ := agent.ExecuteTool("api_client", map[string]interface{}{
@@ -680,15 +707,15 @@ GraphQL-specific error handling provides:
 Here's a complete example showing GraphQL features with an LLM agent:
 
 ```go
-// Step 1: Discover GraphQL schema
+// Store GitHub token in agent state
+state := agent.GetState()
+state.Set("github_token", os.Getenv("GITHUB_API_KEY"))
+
+// Step 1: Discover GraphQL schema (auth applied automatically)
 result, _ := agent.ExecuteTool("api_client", map[string]interface{}{
     "base_url": "https://api.github.com",
     "endpoint": "/graphql",
     "discover_graphql": true,
-    "auth": map[string]interface{}{
-        "type": "bearer",
-        "token": os.Getenv("GITHUB_TOKEN"),
-    },
 })
 
 // Step 2: Execute a GraphQL query with variables
@@ -713,10 +740,6 @@ result, _ = agent.ExecuteTool("api_client", map[string]interface{}{
     "graphql_variables": map[string]interface{}{
         "owner": "golang",
         "name": "go",
-    },
-    "auth": map[string]interface{}{
-        "type": "bearer",
-        "token": os.Getenv("GITHUB_TOKEN"),
     },
 })
 ```

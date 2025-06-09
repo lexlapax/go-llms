@@ -12,6 +12,14 @@ Until we reach close to v1.. *no backward compatibility* do not add extra code f
 **Current Version**: v0.3.1 (Active Development - January 2025)
 
 **Recent Updates** (January 8, 2025):
+- **Unified Authentication Middleware (COMPLETED)**
+  - Created unified authentication system in pkg/util/auth/
+  - Designed to keep credentials away from LLMs (stored in agent state only)
+  - Support for API key, bearer token, basic auth (OAuth2 placeholder for future)
+  - Provider-specific detection (GitHub, GitLab) based on URL patterns
+  - Integrated with REST, OpenAPI, and GraphQL modes in api_client tool
+  - Updated all examples to use state-based auth (no credentials in prompts)
+  - Follows security best practices and Google ADK's authentication approach
 - **API Client Tool Phase 3: GraphQL Support (COMPLETED)**
   - Implemented comprehensive GraphQL support in api_client tool (v3.0.0)
   - Features implemented:

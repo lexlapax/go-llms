@@ -20,10 +20,27 @@ func main() {
 	ctx := context.Background()
 
 	// Create LLM provider
-	provider, err := llmutil.NewProviderFromString("gemini")
+	// using one of three provider/model combinations:
+	// 1. "openai/gpt-4o"
+	// 2. "anthropic/claude-3-7-sonnet-latest"
+	// 3. "gemini/gemini-2.0-flash"
+	providerString := "gemini/gemini-2.0-flash"
+	provider, err := llmutil.NewProviderFromString(providerString)
 	if err != nil {
 		log.Fatalf("Failed to create provider: %v", err)
 	}
+
+	// Parse provider string to get provider and model info
+	providerName, modelName, _ := llmutil.ParseProviderModelString(providerString)
+
+	// Print provider information
+	fmt.Printf("Provider: %s\n", providerName)
+	if modelName != "" {
+		fmt.Printf("Model: %s\n\n", modelName)
+	} else {
+		fmt.Printf("Model: (default for provider)\n\n")
+	}
+
 	// Create API Client Tool
 	apiTool := web.NewAPIClientTool()
 
@@ -129,12 +146,14 @@ OpenAPI spec for validation: https://petstore3.swagger.io/api/v3/openapi.json`)
 	}
 
 	// Example 5: API with authentication (if GitHub token available)
-	if apiKey := os.Getenv("GITHUB_TOKEN"); apiKey != "" {
+	if apiKey := os.Getenv("GITHUB_API_KEY"); apiKey != "" {
 		fmt.Println("\n=== Example 5: Authenticated GitHub API with OpenAPI ===")
 		state5 := domain.NewState()
-		state5.Set("user_input", fmt.Sprintf(`Use the api_client tool with the GitHub OpenAPI spec to understand the authentication requirements.
-Then list my repositories using this token: %s
-Use the spec at: https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json`, apiKey))
+		// Store the API key in state for automatic authentication
+		state5.Set("github_api_key", apiKey)
+		state5.Set("user_input", `Use the api_client tool with the GitHub OpenAPI spec to understand the authentication requirements.
+Then list my repositories at https://api.github.com/user/repos.
+Use the spec at: https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json`)
 
 		result5, err := agent.Run(ctx, state5)
 		if err != nil {

@@ -32,7 +32,7 @@ This will run examples that don't require authentication:
 To run the authenticated examples (creating gists, checking rate limits), provide a GitHub personal access token:
 
 ```bash
-GITHUB_TOKEN="your-github-token" go run cmd/examples/builtins-web-api-client/main.go
+GITHUB_API_KEY="your-github-token" go run cmd/examples/builtins-web-api-client/main.go
 ```
 
 ### With Debug Logging
@@ -43,7 +43,7 @@ To see detailed logging of agent operations, tool calls, and responses:
 DEBUG=1 go run cmd/examples/builtins-web-api-client/main.go
 
 # Or with authentication
-DEBUG=1 GITHUB_TOKEN="your-github-token" go run cmd/examples/builtins-web-api-client/main.go
+DEBUG=1 GITHUB_API_KEY="your-github-token" go run cmd/examples/builtins-web-api-client/main.go
 ```
 
 To create a GitHub token:

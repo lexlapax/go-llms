@@ -10,7 +10,7 @@ This example demonstrates how to use the `api_client` tool to interact with Grap
 
 For GitHub GraphQL API examples:
 ```bash
-export GITHUB_TOKEN="your-github-personal-access-token"
+export GITHUB_API_KEY="your-github-personal-access-token"
 ```
 
 For the LLM provider:

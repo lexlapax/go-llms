@@ -20,15 +20,33 @@ func main() {
 	ctx := context.Background()
 
 	// Check for required API keys
-	githubToken := os.Getenv("GITHUB_TOKEN")
+	githubToken := os.Getenv("GITHUB_API_KEY")
 	if githubToken == "" {
-		log.Println("Warning: GITHUB_TOKEN not set, GitHub GraphQL examples will fail")
+		log.Println("Warning: GITHUB_API_KEY not set, GitHub GraphQL examples will fail")
+	} else {
+		log.Printf("GitHub API key found: %s...%s", githubToken[:10], githubToken[len(githubToken)-4:])
 	}
 
 	// Create LLM provider
-	provider, err := llmutil.NewProviderFromString("anthropic")
+	// using one of three provider/model combinations:
+	// 1. "openai/gpt-4o"
+	// 2. "anthropic/claude-3-7-sonnet-latest"
+	// 3. "gemini/gemini-2.0-flash"
+	providerString := "openai/gpt-4o"
+	provider, err := llmutil.NewProviderFromString(providerString)
 	if err != nil {
 		log.Fatalf("Failed to create provider: %v", err)
+	}
+
+	// Parse provider string to get provider and model info
+	providerName, modelName, _ := llmutil.ParseProviderModelString(providerString)
+
+	// Print provider information
+	fmt.Printf("Provider: %s\n", providerName)
+	if modelName != "" {
+		fmt.Printf("Model: %s\n\n", modelName)
+	} else {
+		fmt.Printf("Model: (default for provider)\n\n")
 	}
 
 	// Create API Client Tool
@@ -72,7 +90,11 @@ IMPORTANT: Always make the actual API call using the api_client tool. Do not jus
 	// Example 1: Discover GitHub GraphQL Schema
 	fmt.Println("=== Example 1: Discovering GitHub GraphQL Schema ===")
 	state := domain.NewState()
-	state.Set("user_input", "Use the api_client tool to discover what GraphQL operations are available at GitHub's GraphQL API endpoint https://api.github.com/graphql. Use my GITHUB_TOKEN for authentication.")
+	// Set GitHub API key in state for authentication
+	if githubToken != "" {
+		state.Set("github_token", githubToken)
+	}
+	state.Set("user_input", "Use the api_client tool to discover what GraphQL operations are available at GitHub's GraphQL API endpoint https://api.github.com/graphql.")
 
 	result, err := agent.Run(ctx, state)
 	if err != nil {
@@ -86,6 +108,10 @@ IMPORTANT: Always make the actual API call using the api_client tool. Do not jus
 	// Example 2: Execute a simple query
 	fmt.Println("\n=== Example 2: Query Current User ===")
 	state = domain.NewState()
+	// Set GitHub API key in state for authentication
+	if githubToken != "" {
+		state.Set("github_token", githubToken)
+	}
 	state.Set("user_input", `Use the api_client tool to query the current authenticated user from GitHub GraphQL API. 
 Get their login, name, email, and bio using this query:
 query {
@@ -109,6 +135,10 @@ query {
 	// Example 3: Query with variables
 	fmt.Println("\n=== Example 3: Query Repository with Variables ===")
 	state = domain.NewState()
+	// Set GitHub API key in state for authentication
+	if githubToken != "" {
+		state.Set("github_token", githubToken)
+	}
 	state.Set("user_input", `Use the api_client tool to query information about the golang/go repository using variables. 
 Use this query:
 query GetRepo($owner: String!, $name: String!) {
@@ -156,6 +186,10 @@ First discover what's available, then query for information about the United Sta
 	// Example 5: Error handling
 	fmt.Println("\n=== Example 5: GraphQL Error Handling ===")
 	state = domain.NewState()
+	// Set GitHub API key in state for authentication
+	if githubToken != "" {
+		state.Set("github_token", githubToken)
+	}
 	state.Set("user_input", `Use the api_client tool to execute an invalid GraphQL query to see error handling:
 query {
   viewer {
@@ -176,6 +210,10 @@ query {
 	// Example 6: Complex nested query
 	fmt.Println("\n=== Example 6: Complex Nested Query ===")
 	state = domain.NewState()
+	// Set GitHub API key in state for authentication
+	if githubToken != "" {
+		state.Set("github_token", githubToken)
+	}
 	state.Set("user_input", `Use the api_client tool to get the 5 most recent repositories for the current user with their languages:
 query {
   viewer {
@@ -206,11 +244,3 @@ query {
 	}
 }
 
-func init() {
-	// Set default environment variables if not present
-	if os.Getenv("ANTHROPIC_API_KEY") == "" && os.Getenv("OPENAI_API_KEY") == "" && os.Getenv("GEMINI_API_KEY") == "" {
-		fmt.Println("Warning: No LLM API keys found in environment")
-		fmt.Println("Please set one of: ANTHROPIC_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY")
-		fmt.Println()
-	}
-}

@@ -370,6 +370,39 @@ output, _ := resultState.Get("output")
 fmt.Printf("Agent result: %v\n", output)
 ```
 
+### Secure API Authentication with Tools
+
+When using tools that make API calls (like the `api_client` tool), credentials should be stored in the agent's state rather than passed as parameters. This follows security best practices by keeping credentials away from LLMs:
+
+```go
+// Create an agent with API tools
+agent := core.NewLLMAgent("api-agent", "An agent that calls APIs", deps)
+agent.AddTool(web.NewAPIClientTool())
+
+// Store credentials in state - they will be automatically detected and used
+state := domain.NewState()
+state.Set("github_token", os.Getenv("GITHUB_API_KEY"))        // For GitHub APIs
+state.Set("api_key", os.Getenv("GENERIC_API_KEY"))           // For generic APIs
+state.Set("api_username", "user")                             // For basic auth
+state.Set("api_password", os.Getenv("API_PASSWORD"))         // For basic auth
+
+// The LLM only sees the request, not the credentials
+state.Set("user_input", "List my GitHub repositories")
+
+// The api_client tool will automatically detect and apply credentials
+result, err := agent.Run(context.Background(), state)
+```
+
+The authentication middleware automatically detects credentials based on:
+- URL patterns (e.g., github.com → looks for `github_token` or `github_api_key`)
+- OpenAPI security schemes (reads auth requirements from spec)
+- Generic patterns (falls back to `api_key`, `bearer_token`, etc.)
+
+This approach ensures that:
+- LLMs never see actual credentials in prompts or tool parameters
+- Authentication is applied transparently at the HTTP request level
+- Multiple authentication methods are supported (API Key, Bearer, Basic, OAuth2)
+
 ### Prompt Enhancement
 
 ```go
@@ -666,6 +699,18 @@ The core functionality is fairly complete and working for basic llm wrappers. Ho
     - Moved testing utilities to pkg/testutils for better organization
     - Updated MockTool to implement all new interface methods
     - All tests passing with 72.8% coverage
+- 🎉 **API Client Tool v3.0.0 - GraphQL Support & Unified Authentication** (January 8, 2025):
+  - **GraphQL Support**: Full GraphQL query/mutation execution with variables
+    - Schema introspection and operation discovery
+    - Variable type validation and GraphQL-specific error handling
+    - Caching of schemas and discovery results (15-minute TTL)
+    - Integration with existing authentication mechanisms
+  - **Unified Authentication Middleware**: Secure credential management
+    - Created pkg/util/auth package for centralized authentication
+    - Credentials stored in agent state, never exposed to LLMs
+    - Automatic detection based on URL patterns and OpenAPI schemes
+    - Support for API Key, Bearer Token, Basic Auth, and OAuth2 (placeholder)
+    - Used by REST, OpenAPI, and GraphQL modes consistently
 
 **v0.3.0** (June 2025)
 - 🎉 **Built-in Tools System** - Complete implementation of comprehensive built-in tools

@@ -19,6 +19,7 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	atools "github.com/lexlapax/go-llms/pkg/agent/tools"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/util/auth"
 )
 
 func init() {
@@ -634,6 +635,7 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 		}
 
 		// Apply authentication to headers for GraphQL
+		authApplied := false
 		if auth, ok := paramMap["auth"].(map[string]interface{}); ok {
 			// Create a dummy request to apply auth
 			dummyReq, _ := http.NewRequest("POST", fullURL, nil)
@@ -648,6 +650,38 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 			// Copy headers back
 			for k := range dummyReq.Header {
 				headers[k] = dummyReq.Header.Get(k)
+			}
+			authApplied = true
+		}
+
+		// Auto-apply authentication from state if not already provided
+		if !authApplied && ctx != nil && ctx.State != nil {
+			if authConfig := auth.DetectAuthFromState(ctx.State, baseURL, nil); authConfig != nil {
+				authMap := auth.ConvertAuthConfigToMap(authConfig)
+				// Create a dummy request to apply auth
+				dummyReq, _ := http.NewRequest("POST", fullURL, nil)
+				for k, v := range headers {
+					dummyReq.Header.Set(k, v)
+				}
+				
+				if err := applyAuthentication(dummyReq, authMap); err != nil {
+					if ctx.Events != nil {
+						ctx.Events.EmitCustom("auto_auth_failed", map[string]interface{}{
+							"error": err.Error(),
+						})
+					}
+				} else {
+					// Copy headers back
+					for k := range dummyReq.Header {
+						headers[k] = dummyReq.Header.Get(k)
+					}
+					if ctx.Events != nil {
+						ctx.Events.EmitCustom("auto_auth_applied", map[string]interface{}{
+							"type": authMap["type"],
+							"endpoint": fullURL,
+						})
+					}
+				}
 			}
 		}
 
@@ -792,6 +826,7 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 		}
 
 		// Apply authentication to headers for GraphQL
+		authApplied := false
 		if auth, ok := paramMap["auth"].(map[string]interface{}); ok {
 			// Create a dummy request to apply auth
 			dummyReq, _ := http.NewRequest("POST", fullURL, nil)
@@ -806,6 +841,38 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 			// Copy headers back
 			for k := range dummyReq.Header {
 				headers[k] = dummyReq.Header.Get(k)
+			}
+			authApplied = true
+		}
+
+		// Auto-apply authentication from state if not already provided
+		if !authApplied && ctx != nil && ctx.State != nil {
+			if authConfig := auth.DetectAuthFromState(ctx.State, baseURL, nil); authConfig != nil {
+				authMap := auth.ConvertAuthConfigToMap(authConfig)
+				// Create a dummy request to apply auth
+				dummyReq, _ := http.NewRequest("POST", fullURL, nil)
+				for k, v := range headers {
+					dummyReq.Header.Set(k, v)
+				}
+				
+				if err := applyAuthentication(dummyReq, authMap); err != nil {
+					if ctx.Events != nil {
+						ctx.Events.EmitCustom("auto_auth_failed", map[string]interface{}{
+							"error": err.Error(),
+						})
+					}
+				} else {
+					// Copy headers back
+					for k := range dummyReq.Header {
+						headers[k] = dummyReq.Header.Get(k)
+					}
+					if ctx.Events != nil {
+						ctx.Events.EmitCustom("auto_auth_applied", map[string]interface{}{
+							"type": authMap["type"],
+							"endpoint": fullURL,
+						})
+					}
+				}
 			}
 		}
 
@@ -1174,60 +1241,8 @@ func executeAPIClient(ctx *domain.ToolContext, params interface{}) (interface{},
 }
 
 // applyAuthentication applies the specified authentication to the request
-func applyAuthentication(req *http.Request, auth map[string]interface{}) error {
-	authType, ok := auth["type"].(string)
-	if !ok {
-		return fmt.Errorf("auth type is required")
-	}
-
-	switch authType {
-	case "api_key":
-		apiKey, ok := auth["api_key"].(string)
-		if !ok || apiKey == "" {
-			return fmt.Errorf("api_key is required for api_key auth")
-		}
-
-		keyLocation := "header"
-		if loc, ok := auth["key_location"].(string); ok {
-			keyLocation = loc
-		}
-
-		keyName := "X-API-Key"
-		if name, ok := auth["key_name"].(string); ok {
-			keyName = name
-		}
-
-		switch keyLocation {
-		case "header":
-			req.Header.Set(keyName, apiKey)
-		case "query":
-			q := req.URL.Query()
-			q.Set(keyName, apiKey)
-			req.URL.RawQuery = q.Encode()
-		default:
-			return fmt.Errorf("invalid key_location: %s", keyLocation)
-		}
-
-	case "bearer":
-		token, ok := auth["token"].(string)
-		if !ok || token == "" {
-			return fmt.Errorf("token is required for bearer auth")
-		}
-		req.Header.Set("Authorization", "Bearer "+token)
-
-	case "basic":
-		username, ok1 := auth["username"].(string)
-		password, ok2 := auth["password"].(string)
-		if !ok1 || !ok2 || username == "" {
-			return fmt.Errorf("username and password are required for basic auth")
-		}
-		req.SetBasicAuth(username, password)
-
-	default:
-		return fmt.Errorf("unsupported auth type: %s", authType)
-	}
-
-	return nil
+func applyAuthentication(req *http.Request, authMap map[string]interface{}) error {
+	return auth.ApplyAuth(req, authMap)
 }
 
 // extractHeaders converts http.Header to a simple map
@@ -1464,95 +1479,25 @@ func detectAuthFromSpec(spec *OpenAPISpec, endpoint, method string, ctx *domain.
 
 // getAuthConfigFromState attempts to retrieve authentication configuration from agent state
 func getAuthConfigFromState(ctx *domain.ToolContext, schemeName string, scheme SecurityScheme) map[string]interface{} {
-	state := ctx.State
-
-	switch scheme.Type {
-	case "apiKey":
-		// Look for API key in state with various common names
-		keyNames := []string{
-			fmt.Sprintf("%s_api_key", schemeName),
-			fmt.Sprintf("%s_key", schemeName),
-			"api_key",
-			"apiKey",
-			scheme.Name, // The actual header/query param name
-		}
-
-		for _, keyName := range keyNames {
-			if value, exists := state.Get(keyName); exists {
-				if apiKey, ok := value.(string); ok && apiKey != "" {
-					return map[string]interface{}{
-						"type":         "api_key",
-						"api_key":      apiKey,
-						"key_location": scheme.In,
-						"key_name":     scheme.Name,
-					}
-				}
-			}
-		}
-
-	case "http":
-		if scheme.Scheme == "bearer" {
-			// Look for bearer token
-			tokenNames := []string{
-				fmt.Sprintf("%s_token", schemeName),
-				fmt.Sprintf("%s_bearer", schemeName),
-				"bearer_token",
-				"access_token",
-				"token",
-			}
-
-			for _, tokenName := range tokenNames {
-				if value, exists := state.Get(tokenName); exists {
-					if token, ok := value.(string); ok && token != "" {
-						return map[string]interface{}{
-							"type":  "bearer",
-							"token": token,
-						}
-					}
-				}
-			}
-		} else if scheme.Scheme == "basic" {
-			// Look for basic auth credentials
-			usernameKeys := []string{
-				fmt.Sprintf("%s_username", schemeName),
-				"api_username",
-				"username",
-			}
-			passwordKeys := []string{
-				fmt.Sprintf("%s_password", schemeName),
-				"api_password",
-				"password",
-			}
-
-			var username, password string
-			for _, key := range usernameKeys {
-				if value, exists := state.Get(key); exists {
-					if u, ok := value.(string); ok && u != "" {
-						username = u
-						break
-					}
-				}
-			}
-
-			for _, key := range passwordKeys {
-				if value, exists := state.Get(key); exists {
-					if p, ok := value.(string); ok && p != "" {
-						password = p
-						break
-					}
-				}
-			}
-
-			if username != "" && password != "" {
-				return map[string]interface{}{
-					"type":     "basic",
-					"username": username,
-					"password": password,
-				}
-			}
-		}
+	// Convert SecurityScheme to auth.AuthScheme
+	authScheme := auth.AuthScheme{
+		Type:        scheme.Type,
+		Scheme:      scheme.Scheme,
+		Name:        scheme.Name,
+		In:          scheme.In,
+		Description: scheme.Description,
 	}
-
+	
+	// Use unified auth detection with single scheme
+	schemes := map[string]auth.AuthScheme{
+		schemeName: authScheme,
+	}
+	
+	authConfig := auth.DetectAuthFromState(ctx.State, "", schemes)
+	if authConfig != nil {
+		return auth.ConvertAuthConfigToMap(authConfig)
+	}
+	
 	return nil
 }
 

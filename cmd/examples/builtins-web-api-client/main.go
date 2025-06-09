@@ -20,9 +20,25 @@ func main() {
 	ctx := context.Background()
 
 	// Create LLM provider
-	provider, err := llmutil.NewProviderFromString("openai")
+	// using one of three provider/model combinations:
+	// 1. "openai/gpt-4o"
+	// 2. "anthropic/claude-3-7-sonnet-latest"
+	// 3. "gemini/gemini-2.0-flash"
+	providerString := "anthropic/claude-3-7-sonnet-latest"
+	provider, err := llmutil.NewProviderFromString(providerString)
 	if err != nil {
 		log.Fatalf("Failed to create provider: %v", err)
+	}
+
+	// Parse provider string to get provider and model info
+	providerName, modelName, _ := llmutil.ParseProviderModelString(providerString)
+
+	// Print provider information
+	fmt.Printf("Provider: %s\n", providerName)
+	if modelName != "" {
+		fmt.Printf("Model: %s\n\n", modelName)
+	} else {
+		fmt.Printf("Model: (default for provider)\n\n")
 	}
 
 	// Create API Client Tool
@@ -96,10 +112,12 @@ IMPORTANT: Always make the actual API call using the api_client tool. Do not jus
 	}
 
 	// Example 3: Making authenticated API calls (if API key is available)
-	if apiKey := os.Getenv("GITHUB_TOKEN"); apiKey != "" {
+	if apiKey := os.Getenv("GITHUB_API_KEY"); apiKey != "" {
 		fmt.Println("\n=== Example 3: Authenticated API Call ===")
 		state3 := domain.NewState()
-		state3.Set("user_input", fmt.Sprintf("Use the api_client tool to check my GitHub rate limit status. Use this token for authentication: %s", apiKey))
+		// Store the API key in state for automatic authentication
+		state3.Set("github_api_key", apiKey)
+		state3.Set("user_input", "Use the api_client tool to check my GitHub rate limit status at https://api.github.com/rate_limit")
 
 		result3, err := agent.Run(ctx, state3)
 		if err != nil {
@@ -110,15 +128,16 @@ IMPORTANT: Always make the actual API call using the api_client tool. Do not jus
 	}
 
 	// Example 4: POST request (creating a gist if authenticated)
-	if apiKey := os.Getenv("GITHUB_TOKEN"); apiKey != "" {
+	if apiKey := os.Getenv("GITHUB_API_KEY"); apiKey != "" {
 		fmt.Println("\n=== Example 4: Creating a GitHub Gist ===")
 		state4 := domain.NewState()
-		state4.Set("user_input", fmt.Sprintf(`Use the api_client tool to create a new GitHub gist with the following:
+		// Store the API key in state for automatic authentication
+		state4.Set("github_api_key", apiKey)
+		state4.Set("user_input", `Use the api_client tool to create a new GitHub gist at https://api.github.com/gists with the following:
 - Description: "API Client Tool Demo"
 - Filename: "hello.go"
 - Content: "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello from API Client Tool!\")\n}"
-- Make it public
-- Use this token: %s`, apiKey))
+- Make it public`)
 
 		result4, err := agent.Run(ctx, state4)
 		if err != nil {

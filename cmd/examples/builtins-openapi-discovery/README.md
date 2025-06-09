@@ -32,7 +32,7 @@ DEBUG=1 go run cmd/examples/builtins-openapi-discovery/main.go
 ## Environment Variables
 
 - `OPENAI_API_KEY`: Required for the LLM agent
-- `GITHUB_TOKEN`: Optional, enables authenticated GitHub API examples
+- `GITHUB_API_KEY`: Optional, enables authenticated GitHub API examples
 - `DEBUG`: Set to "1" to enable detailed logging of agent operations, tool calls, and API interactions
 
 ## APIs Used

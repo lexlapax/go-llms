@@ -348,3 +348,13 @@ func TestGenerateLLMGuidance(t *testing.T) {
 		})
 	}
 }
+
+// TestDetectGraphQLAuth has been replaced by unified auth tests in auth package
+// The old detectGraphQLAuth function has been removed in favor of auth.DetectAuthFromState
+/*
+func TestDetectGraphQLAuth(t *testing.T) {
+	// This test is obsolete - authentication detection is now handled by
+	// the unified auth package. See TestAPIClientTool_GraphQLAuthFromState
+	// for the new implementation tests.
+}
+*/

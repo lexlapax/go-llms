@@ -822,3 +822,33 @@ After analyzing Google's Agent Development Kit (ADK), we identified key features
   - [x] LLM-friendly operation discovery
   - [x] Integration with existing authentication mechanisms
   - [x] Maintained consistent response format with REST mode
+
+## Unified Authentication Middleware (Completed - January 8, 2025)
+- [x] Created unified authentication system in pkg/util/auth/
+  - [x] Designed to keep credentials away from LLMs (stored in agent state)
+  - [x] Support for multiple auth types: API key, bearer token, basic auth
+  - [x] Provider-specific detection (GitHub, GitLab) based on URL patterns
+  - [x] OpenAPI security scheme integration
+  - [x] OAuth2 placeholder for future implementation
+- [x] Implementation details:
+  - [x] Created auth.go with ApplyAuth and DetectAuthFromState functions
+  - [x] StateReader interface for accessing agent state
+  - [x] URL pattern matching for provider-specific auth
+  - [x] Generic auth detection with priority ordering
+  - [x] Comprehensive test suite with 100% coverage
+- [x] Integration with API client tool:
+  - [x] REST mode uses unified auth detection
+  - [x] OpenAPI mode integrates with security schemes
+  - [x] GraphQL mode auto-detects and applies auth
+  - [x] Authentication applied transparently at HTTP request level
+- [x] Updated all examples to use state-based auth:
+  - [x] builtins-graphql-client - removed all bearer tokens from prompts
+  - [x] builtins-web-api-client - updated examples 3 and 4
+  - [x] builtins-openapi-discovery - updated example 5
+  - [x] Credentials stored in state (e.g., state.Set("github_token", token))
+  - [x] No credentials passed to LLMs in prompts
+- [x] Security best practices achieved:
+  - [x] LLMs never see actual credentials
+  - [x] Auth detection based on URL and state context
+  - [x] Credentials applied only at HTTP request execution
+  - [x] Follows Google ADK's approach to authentication
