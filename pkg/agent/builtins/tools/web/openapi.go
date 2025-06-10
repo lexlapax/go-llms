@@ -312,7 +312,9 @@ func (p *OpenAPIParser) FetchSpec(specURL string) (*OpenAPISpec, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch OpenAPI spec from %s: %w", specURL, err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to fetch OpenAPI spec: HTTP %d", resp.StatusCode)
@@ -1217,136 +1219,136 @@ func (od *OperationDiscovery) GetPathToOperationMap() map[string]EnhancedOperati
 }
 
 // convertToValidationSchema converts OpenAPI Schema to schema domain Schema for validation
-func (od *OperationDiscovery) convertToValidationSchema(schema Schema) *sdomain.Schema {
-	result := &sdomain.Schema{
-		Type:        schema.Type,
-		Description: schema.Description,
-		Title:       schema.Title,
-	}
-
-	// Convert properties
-	if schema.Properties != nil {
-		result.Properties = make(map[string]sdomain.Property)
-		for name, prop := range schema.Properties {
-			if prop != nil {
-				result.Properties[name] = od.convertToValidationProperty(*prop)
-			}
-		}
-	}
-
-	// Convert required fields
-	result.Required = schema.Required
-
-	// Convert conditional schemas
-	if schema.AllOf != nil {
-		result.AllOf = make([]*sdomain.Schema, len(schema.AllOf))
-		for i, subSchema := range schema.AllOf {
-			if subSchema != nil {
-				result.AllOf[i] = od.convertToValidationSchema(*subSchema)
-			}
-		}
-	}
-
-	if schema.AnyOf != nil {
-		result.AnyOf = make([]*sdomain.Schema, len(schema.AnyOf))
-		for i, subSchema := range schema.AnyOf {
-			if subSchema != nil {
-				result.AnyOf[i] = od.convertToValidationSchema(*subSchema)
-			}
-		}
-	}
-
-	if schema.OneOf != nil {
-		result.OneOf = make([]*sdomain.Schema, len(schema.OneOf))
-		for i, subSchema := range schema.OneOf {
-			if subSchema != nil {
-				result.OneOf[i] = od.convertToValidationSchema(*subSchema)
-			}
-		}
-	}
-
-	if schema.Not != nil {
-		result.Not = od.convertToValidationSchema(*schema.Not)
-	}
-
-	return result
-}
+// // func (od *OperationDiscovery) convertToValidationSchema(schema Schema) *sdomain.Schema {
+// 	result := &sdomain.Schema{
+// 		Type:        schema.Type,
+// 		Description: schema.Description,
+// 		Title:       schema.Title,
+// 	}
+//
+// 	// Convert properties
+// 	if schema.Properties != nil {
+// 		result.Properties = make(map[string]sdomain.Property)
+// 		for name, prop := range schema.Properties {
+// 			if prop != nil {
+// 				result.Properties[name] = od.convertToValidationProperty(*prop)
+// 			}
+// 		}
+// 	}
+//
+// 	// Convert required fields
+// 	result.Required = schema.Required
+//
+// 	// Convert conditional schemas
+// 	if schema.AllOf != nil {
+// 		result.AllOf = make([]*sdomain.Schema, len(schema.AllOf))
+// 		for i, subSchema := range schema.AllOf {
+// 			if subSchema != nil {
+// 				result.AllOf[i] = od.convertToValidationSchema(*subSchema)
+// 			}
+// 		}
+// 	}
+//
+// 	if schema.AnyOf != nil {
+// 		result.AnyOf = make([]*sdomain.Schema, len(schema.AnyOf))
+// 		for i, subSchema := range schema.AnyOf {
+// 			if subSchema != nil {
+// 				result.AnyOf[i] = od.convertToValidationSchema(*subSchema)
+// 			}
+// 		}
+// 	}
+//
+// 	if schema.OneOf != nil {
+// 		result.OneOf = make([]*sdomain.Schema, len(schema.OneOf))
+// 		for i, subSchema := range schema.OneOf {
+// 			if subSchema != nil {
+// 				result.OneOf[i] = od.convertToValidationSchema(*subSchema)
+// 			}
+// 		}
+// 	}
+//
+// 	if schema.Not != nil {
+// 		result.Not = od.convertToValidationSchema(*schema.Not)
+// 	}
+//
+// 	return result
+// }
 
 // convertToValidationProperty converts OpenAPI Schema to schema domain Property for validation
-func (od *OperationDiscovery) convertToValidationProperty(schema Schema) sdomain.Property {
-	prop := sdomain.Property{
-		Type:             schema.Type,
-		Format:           schema.Format,
-		Description:      schema.Description,
-		Minimum:          schema.Minimum,
-		Maximum:          schema.Maximum,
-		ExclusiveMinimum: schema.ExclusiveMinimum,
-		ExclusiveMaximum: schema.ExclusiveMaximum,
-		MinLength:        schema.MinLength,
-		MaxLength:        schema.MaxLength,
-		MinItems:         schema.MinItems,
-		MaxItems:         schema.MaxItems,
-		Pattern:          schema.Pattern,
-	}
-
-	// Convert enum values to strings
-	if schema.Enum != nil {
-		prop.Enum = make([]string, len(schema.Enum))
-		for i, enumVal := range schema.Enum {
-			prop.Enum[i] = fmt.Sprintf("%v", enumVal)
-		}
-	}
-
-	// Convert unique items
-	if schema.UniqueItems {
-		uniqueItems := true
-		prop.UniqueItems = &uniqueItems
-	}
-
-	// Convert required fields
-	prop.Required = schema.Required
-
-	// Convert items schema for arrays
-	if schema.Items != nil {
-		itemProp := od.convertToValidationProperty(*schema.Items)
-		prop.Items = &itemProp
-	}
-
-	// Convert nested properties for objects
-	if schema.Properties != nil {
-		prop.Properties = make(map[string]sdomain.Property)
-		for name, nestedSchema := range schema.Properties {
-			if nestedSchema != nil {
-				prop.Properties[name] = od.convertToValidationProperty(*nestedSchema)
-			}
-		}
-	}
-
-	// Convert conditional schemas
-	if schema.AnyOf != nil {
-		prop.AnyOf = make([]*sdomain.Schema, len(schema.AnyOf))
-		for i, subSchema := range schema.AnyOf {
-			if subSchema != nil {
-				prop.AnyOf[i] = od.convertToValidationSchema(*subSchema)
-			}
-		}
-	}
-
-	if schema.OneOf != nil {
-		prop.OneOf = make([]*sdomain.Schema, len(schema.OneOf))
-		for i, subSchema := range schema.OneOf {
-			if subSchema != nil {
-				prop.OneOf[i] = od.convertToValidationSchema(*subSchema)
-			}
-		}
-	}
-
-	if schema.Not != nil {
-		prop.Not = od.convertToValidationSchema(*schema.Not)
-	}
-
-	return prop
-}
+// // func (od *OperationDiscovery) convertToValidationProperty(schema Schema) sdomain.Property {
+// 	prop := sdomain.Property{
+// 		Type:             schema.Type,
+// 		Format:           schema.Format,
+// 		Description:      schema.Description,
+// 		Minimum:          schema.Minimum,
+// 		Maximum:          schema.Maximum,
+// 		ExclusiveMinimum: schema.ExclusiveMinimum,
+// 		ExclusiveMaximum: schema.ExclusiveMaximum,
+// 		MinLength:        schema.MinLength,
+// 		MaxLength:        schema.MaxLength,
+// 		MinItems:         schema.MinItems,
+// 		MaxItems:         schema.MaxItems,
+// 		Pattern:          schema.Pattern,
+// 	}
+//
+// 	// Convert enum values to strings
+// 	if schema.Enum != nil {
+// 		prop.Enum = make([]string, len(schema.Enum))
+// 		for i, enumVal := range schema.Enum {
+// 			prop.Enum[i] = fmt.Sprintf("%v", enumVal)
+// 		}
+// 	}
+//
+// 	// Convert unique items
+// 	if schema.UniqueItems {
+// 		uniqueItems := true
+// 		prop.UniqueItems = &uniqueItems
+// 	}
+//
+// 	// Convert required fields
+// 	prop.Required = schema.Required
+//
+// 	// Convert items schema for arrays
+// 	if schema.Items != nil {
+// 		itemProp := od.convertToValidationProperty(*schema.Items)
+// 		prop.Items = &itemProp
+// 	}
+//
+// 	// Convert nested properties for objects
+// 	if schema.Properties != nil {
+// 		prop.Properties = make(map[string]sdomain.Property)
+// 		for name, nestedSchema := range schema.Properties {
+// 			if nestedSchema != nil {
+// 				prop.Properties[name] = od.convertToValidationProperty(*nestedSchema)
+// 			}
+// 		}
+// 	}
+//
+// 	// Convert conditional schemas
+// 	if schema.AnyOf != nil {
+// 		prop.AnyOf = make([]*sdomain.Schema, len(schema.AnyOf))
+// 		for i, subSchema := range schema.AnyOf {
+// 			if subSchema != nil {
+// 				prop.AnyOf[i] = od.convertToValidationSchema(*subSchema)
+// 			}
+// 		}
+// 	}
+//
+// 	if schema.OneOf != nil {
+// 		prop.OneOf = make([]*sdomain.Schema, len(schema.OneOf))
+// 		for i, subSchema := range schema.OneOf {
+// 			if subSchema != nil {
+// 				prop.OneOf[i] = od.convertToValidationSchema(*subSchema)
+// 			}
+// 		}
+// 	}
+//
+// 	if schema.Not != nil {
+// 		prop.Not = od.convertToValidationSchema(*schema.Not)
+// 	}
+//
+// 	return prop
+// }
 
 // ValidateRequestBody validates a request body against an operation's schema
 func (od *OperationDiscovery) ValidateRequestBody(operationID string, requestBody interface{}) (*sdomain.ValidationResult, error) {

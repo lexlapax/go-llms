@@ -74,6 +74,7 @@ func main() {
 }
 
 // Alternative example with error handling
+/*
 func _exampleWithErrorHandling() {
 	ctx := context.Background()
 
@@ -114,9 +115,12 @@ func _exampleWithErrorHandling() {
 		fmt.Printf("Step %s: %s\n", stepName, stepStatus.State)
 	}
 }
+*/
 
+/*
 func _createMockAgent(name, prompt string) domain.BaseAgent {
 	// For demonstration - in real use, create actual LLM agents
 	agent := core.NewBaseAgent(name, prompt, domain.AgentTypeCustom)
 	return agent
 }
+*/

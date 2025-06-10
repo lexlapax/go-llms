@@ -156,7 +156,7 @@ func (r *toolRegistry) RegisterTool(name string, tool domain.Tool, metadata Tool
 	baseMetadata := metadata.Metadata
 
 	// Register with base registry
-	return r.Registry.Register(name, tool, baseMetadata)
+	return r.Register(name, tool, baseMetadata)
 }
 
 // ListByPermission returns tools requiring specific permission
@@ -231,12 +231,12 @@ func validateToolMetadata(name string, tool domain.Tool, metadata ToolMetadata) 
 // matchesResourceCriteriaEnhanced checks if resource info matches criteria
 func matchesResourceCriteriaEnhanced(info ResourceInfo, criteria ResourceCriteria) bool {
 	// Check memory constraint
-	if criteria.MaxMemory != "" {
+	if criteria.MaxMemory != "" && info.Memory != "" {
 		memoryLevels := map[string]int{"low": 1, "medium": 2, "high": 3}
-		maxLevel := memoryLevels[criteria.MaxMemory]
-		infoLevel := memoryLevels[info.Memory]
+		maxLevel, maxExists := memoryLevels[criteria.MaxMemory]
+		infoLevel, infoExists := memoryLevels[info.Memory]
 
-		if infoLevel > maxLevel {
+		if maxExists && infoExists && infoLevel > maxLevel {
 			return false
 		}
 	}
@@ -259,6 +259,7 @@ func matchesResourceCriteriaEnhanced(info ResourceInfo, criteria ResourceCriteri
 	return true
 }
 
+/*
 // matchesResourceCriteria checks if tags indicate matching resource usage
 func matchesResourceCriteria(tags []string, criteria ResourceCriteria) bool {
 	// This is a simplified implementation using tags
@@ -323,6 +324,7 @@ func matchesResourceCriteria(tags []string, criteria ResourceCriteria) bool {
 
 	return true
 }
+*/
 
 // ExportToMCP exports a single tool to MCP format
 func (r *toolRegistry) ExportToMCP(name string) (domain.MCPToolDefinition, error) {

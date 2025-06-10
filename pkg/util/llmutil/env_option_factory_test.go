@@ -32,7 +32,7 @@ func TestCreateProviderWithUseCase(t *testing.T) {
 		EnvOpenAIUseCase, EnvAnthropicUseCase, EnvGeminiUseCase,
 	}
 	for _, v := range envVars {
-		os.Unsetenv(v)
+		_ = os.Unsetenv(v)
 	}
 
 	// Test creating provider with use case

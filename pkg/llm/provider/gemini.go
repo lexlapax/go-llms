@@ -306,7 +306,7 @@ func (p *GeminiProvider) GenerateMessage(ctx context.Context, messages []domain.
 	if err != nil {
 		return domain.Response{}, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
@@ -471,7 +471,7 @@ func (p *GeminiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		// Extract error information
 		var errorResponse struct {
@@ -497,7 +497,7 @@ func (p *GeminiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 
 	// Start a goroutine to read the stream
 	go func() {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		defer close(tokenCh)
 
 		scanner := bufio.NewScanner(resp.Body)

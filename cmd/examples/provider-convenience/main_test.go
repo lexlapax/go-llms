@@ -220,7 +220,7 @@ func TestRunWithTimeout(t *testing.T) {
 	state2 := agentDomain.NewState()
 	state2.Set("prompt", "Complex question that requires thinking")
 
-	_, err = agent.Run(shortCtx, state2)
+	_, _ = agent.Run(shortCtx, state2)
 
 	// This may or may not timeout depending on the mock implementation speed
 	// So we don't test the error condition here as it's not deterministic

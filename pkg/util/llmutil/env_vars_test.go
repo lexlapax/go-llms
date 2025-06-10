@@ -13,9 +13,9 @@ func TestGetAPIKeyFromEnv(t *testing.T) {
 
 	// Clean up environment after test
 	defer func() {
-		os.Setenv(EnvOpenAIAPIKey, origOpenAIKey)
-		os.Setenv(EnvAnthropicAPIKey, origAnthropicKey)
-		os.Setenv(EnvGeminiAPIKey, origGeminiKey)
+		_ = os.Setenv(EnvOpenAIAPIKey, origOpenAIKey)
+		_ = os.Setenv(EnvAnthropicAPIKey, origAnthropicKey)
+		_ = os.Setenv(EnvGeminiAPIKey, origGeminiKey)
 	}()
 
 	tests := []struct {
@@ -71,7 +71,7 @@ func TestGetAPIKeyFromEnv(t *testing.T) {
 
 			// Set environment variables for test
 			for k, v := range tt.envVars {
-				os.Setenv(k, v)
+				_ = os.Setenv(k, v)
 			}
 
 			// Call function
@@ -93,9 +93,9 @@ func TestGetModelFromEnv(t *testing.T) {
 
 	// Clean up environment after test
 	defer func() {
-		os.Setenv(EnvOpenAIModel, origOpenAIModel)
-		os.Setenv(EnvAnthropicModel, origAnthropicModel)
-		os.Setenv(EnvGeminiModel, origGeminiModel)
+		_ = os.Setenv(EnvOpenAIModel, origOpenAIModel)
+		_ = os.Setenv(EnvAnthropicModel, origAnthropicModel)
+		_ = os.Setenv(EnvGeminiModel, origGeminiModel)
 	}()
 
 	tests := []struct {
@@ -163,7 +163,7 @@ func TestGetModelFromEnv(t *testing.T) {
 
 			// Set environment variables for test
 			for k, v := range tt.envVars {
-				os.Setenv(k, v)
+				_ = os.Setenv(k, v)
 			}
 
 			// Call function
@@ -185,9 +185,9 @@ func TestGetCommonOptionsFromEnv(t *testing.T) {
 
 	// Clean up environment after test
 	defer func() {
-		os.Setenv(EnvHTTPTimeout, origHTTPTimeout)
-		os.Setenv(EnvRetryAttempts, origRetryAttempts)
-		os.Setenv(EnvRetryDelay, origRetryDelay)
+		_ = os.Setenv(EnvHTTPTimeout, origHTTPTimeout)
+		_ = os.Setenv(EnvRetryAttempts, origRetryAttempts)
+		_ = os.Setenv(EnvRetryDelay, origRetryDelay)
 	}()
 
 	tests := []struct {
@@ -250,7 +250,7 @@ func TestGetCommonOptionsFromEnv(t *testing.T) {
 
 			// Set environment variables for test
 			for k, v := range tt.envVars {
-				os.Setenv(k, v)
+				_ = os.Setenv(k, v)
 			}
 
 			// Call function
@@ -277,12 +277,12 @@ func TestGetProviderOptionsFromEnv(t *testing.T) {
 
 	// Clean up environment after test
 	defer func() {
-		os.Setenv(EnvOpenAIBaseURL, origOpenAIBaseURL)
-		os.Setenv(EnvAnthropicBaseURL, origAnthropicBaseURL)
-		os.Setenv(EnvGeminiBaseURL, origGeminiBaseURL)
-		os.Setenv(EnvHTTPTimeout, origHTTPTimeout)
-		os.Setenv(EnvAnthropicSystemPrompt, origAnthropicSystemPrompt)
-		os.Setenv(EnvOpenAIOrganization, origOpenAIOrganization)
+		_ = os.Setenv(EnvOpenAIBaseURL, origOpenAIBaseURL)
+		_ = os.Setenv(EnvAnthropicBaseURL, origAnthropicBaseURL)
+		_ = os.Setenv(EnvGeminiBaseURL, origGeminiBaseURL)
+		_ = os.Setenv(EnvHTTPTimeout, origHTTPTimeout)
+		_ = os.Setenv(EnvAnthropicSystemPrompt, origAnthropicSystemPrompt)
+		_ = os.Setenv(EnvOpenAIOrganization, origOpenAIOrganization)
 	}()
 
 	tests := []struct {
@@ -362,7 +362,7 @@ func TestGetProviderOptionsFromEnv(t *testing.T) {
 
 			// Set environment variables for test
 			for k, v := range tt.envVars {
-				os.Setenv(k, v)
+				_ = os.Setenv(k, v)
 			}
 
 			// Call function

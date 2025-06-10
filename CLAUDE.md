@@ -8,833 +8,103 @@ Go-LLMs is a Go library that provides a unified interface to interact with vario
 
 Until we reach close to v1.. *no backward compatibility* do not add extra code for backward compatibility. when planning plan for in place replacement and migration of code to new functionality.
 
-
 **Current Version**: v0.3.1 (Active Development - January 2025)
-
-**Recent Updates** (January 9, 2025):
-- **API Client Tool Phase 4: Advanced Authentication (COMPLETED)**
-  - Implemented comprehensive OAuth2 support in api_client tool (v4.0.0)
-  - Features implemented:
-    - OAuth2 flows (client credentials and authorization code)
-    - Access token authentication with JWT expiry detection
-    - Session/cookie management with cookie jar functionality
-    - Custom authentication headers with optional prefix
-    - Enhanced API key support (added cookie location)
-    - Automatic authentication detection from agent state
-  - Created comprehensive auth package (pkg/util/auth/):
-    - oauth2.go: Token management, exchange, and refresh
-    - session.go: Cookie jar and session persistence
-    - auth_test.go: 100% test coverage for all auth methods
-  - Created builtins-api-client-auth example demonstrating all auth features
-  - Updated documentation with authentication examples and guidance
-  - All code passes linting with 0 issues
-
-**Recent Updates** (January 8, 2025):
-- **Unified Authentication Middleware (COMPLETED)**
-  - Created unified authentication system in pkg/util/auth/
-  - Designed to keep credentials away from LLMs (stored in agent state only)
-  - Support for API key, bearer token, basic auth (OAuth2 placeholder for future)
-  - Provider-specific detection (GitHub, GitLab) based on URL patterns
-  - Integrated with REST, OpenAPI, and GraphQL modes in api_client tool
-  - Updated all examples to use state-based auth (no credentials in prompts)
-  - Follows security best practices and Google ADK's authentication approach
-- **API Client Tool Phase 3: GraphQL Support (COMPLETED)**
-  - Implemented comprehensive GraphQL support in api_client tool (v3.0.0)
-  - Features implemented:
-    - GraphQL query and mutation execution with variables
-    - Schema introspection and operation discovery
-    - Variable type validation and GraphQL-specific error handling
-    - Caching of schemas and discovery results (15-minute TTL)
-    - LLM-friendly operation discovery and guidance
-    - Integration with existing authentication mechanisms
-  - Created builtins-graphql-client example demonstrating all features
-  - Updated documentation with GraphQL parameters, examples, and response formats
-  - All tests passing including real API integration tests
-
-**Recent Updates** (January 8, 2025):
-- **API Client Tool Phase 2: OpenAPI/Swagger Integration (COMPLETED)**
-  - Phase 2, Day 5: Performance Optimization and Caching (COMPLETED)
-    - Implemented in-memory caching with TTL support for OpenAPI specs
-    - Created operation index for O(1) lookup by method and path
-    - Added memory pooling for reduced allocations
-    - Performance improvements:
-      - Spec fetching: 2,531x speedup with cache (104μs → 41ns)
-      - Operation enumeration: 26,745x speedup (19.8μs → 0.74ns)
-      - Zero memory allocations for cached operations
-    - Thread-safe implementation with comprehensive test coverage
-    - Automatic features and enhanced documentation:
-      - Automatic server URL resolution from OpenAPI specs
-      - Security scheme detection and automatic authentication
-      - Enhanced error guidance with OpenAPI context
-      - Updated builtin-tools.md with comprehensive OpenAPI documentation
-  - Phase 2, Day 4: Public API Examples and Testing (COMPLETED)
-    - Added OpenAPI discovery mode to api_client tool (openapi_spec + discover_operations params)
-    - Created comprehensive builtins-openapi-discovery example with GitHub, PetStore, JSONPlaceholder
-    - Integrated discovery with existing OpenAPIParser and OperationDiscovery systems
-    - Added request validation against OpenAPI schemas before sending requests
-    - Created api_client_openapi_test.go with mock and real API integration tests
-    - Updated examples/README.md with new OpenAPI discovery example
-    - All tests passing, including real API tests (PetStore, GitHub)
-    - Additional improvements (January 7, 2025):
-      - Added DEBUG=1 environment variable support to both examples
-      - Implemented proper LoggingHook configuration with slog
-      - Fixed prompt issues - changed from state.Set("prompt") to state.Set("user_input")
-      - Made all prompts explicit about using api_client tool
-      - Added "IMMEDIATELY" directive for examples that weren't triggering tool use
-      - Updated system prompts to be more directive about tool execution
-    - Updated builtin-tools.md documentation:
-      - Added openapi_spec and discover_operations parameters documentation
-      - Created OpenAPI usage examples (discovery and validated requests)
-      - Enhanced response format documentation with OpenAPI discovery responses
-      - Added OpenAPI validation error examples with LLM guidance
-      - Updated LLM Integration section with OpenAPI-specific capabilities
-  - Phase 2, Day 3: Request Validation Integration (COMPLETED)
-    - Successfully implemented comprehensive request validation system
-    - Created ValidationOptions struct for flexible validation control
-    - Implemented ValidationReport with detailed error reporting and LLM guidance
-    - Added ValidateRequest method for complete request validation (parameters + body)
-    - Enhanced parameter validation with ValidateParametersEnhanced supporting all types
-    - Added request body validation with ValidateRequestBodyEnhanced for POST/PUT
-    - Implemented optional response validation with ValidateResponse
-    - Smart error guidance generation with actionable suggestions
-    - Validation bypass options for flexible usage scenarios
-    - Created comprehensive test suite - all 15 operation discovery tests passing
-  - Phase 2, Day 1-2: OpenAPI Spec Parsing and Operation Discovery (COMPLETED)
-    - Implemented OpenAPI 3.0/3.1 spec parsing with JSON/YAML support
-    - Created operation discovery system with comprehensive metadata extraction
-    - Parameter validation integrated with existing schema validation system
-    - LLM-friendly guidance generation for all operations
-  - Phase 1: Basic REST Client (COMPLETED)
-    - All HTTP methods, authentication, path parameters, custom headers
-    - Comprehensive test suite with 100% coverage
-    - Created builtins-web-api-client example with GitHub API integration
-    - Performance benchmarks: 250K req/sec for simple operations
-
-**Recent Updates** (January 9, 2025):
-- **Tool System Enhancement Phase 2: Tool Migration (IN PROGRESS)**
-  - Migrating all built-in tools to use ToolBuilder pattern with enhanced metadata
-  - Phase 2 focuses on updating 32 existing tools from atools.NewTool() to atools.NewToolBuilder()
-  - Each tool will get:
-    - WithUsageInstructions() - Detailed LLM guidance
-    - WithExamples() - Multiple concrete examples in ToolExample format
-    - WithConstraints() - Tool limitations and edge cases
-    - WithErrorGuidance() - Error type to helpful message mapping
-    - WithOutputSchema() - Structured output definition
-    - WithBehavior() - Deterministic/destructive/confirmation/latency flags
-  - Day 1: Calculator tool (template for others)
-  - Day 2-4: System, File, and Web tools (14 tools)
-  - Week 3: Data, DateTime, and Feed tools (17 tools)
-  - This follows the same pattern used for api_client tool in Phase 4
-
-**Recent Updates** (June 7, 2025):
-- **Tool System Enhancement Phase 1, Day 3 (COMPLETED)**
-  - Successfully updated Tool Registry with enhanced metadata and MCP export functionality
-  - Fixed test failures by updating tests to use RegisterTool instead of Register
-  - Moved testing utilities from pkg/agent/tools to pkg/testutils (better organization)
-  - Updated MockTool in testutils to implement all new Tool interface methods
-  - All tests passing with 72.8% coverage
-  - Key additions:
-    - ExportToMCP(name string) - Export single tool to MCP format
-    - ExportAllToMCP() - Export all tools to MCP catalog
-    - GetToolDocumentation(name string) - Get comprehensive tool documentation
-    - Enhanced ToolMetadata automatically populated from tool interface
-
-**Recent Updates** (January 9, 2025):
-- **Tool System Enhancement Phase 2: Tool Migration (IN PROGRESS)**
-  - Phase 2, Day 1: Calculator Tool Migration (COMPLETED)
-    - Successfully migrated calculator tool to use ToolBuilder pattern
-    - Added comprehensive metadata: 7 examples, 9 constraints, 13 error guidance mappings
-    - Enhanced with usage instructions, output schema, and behavioral hints
-    - Updated agent-calculator example to follow builtins-web-api-client pattern
-    - Added provider/model display, debug logging, and tool information mode
-    - All tests passing, MCP export verified
-  - Phase 2, Day 2: System Tools Migration (COMPLETED)
-    - Migrated all 4 system tools to ToolBuilder pattern:
-      - execute_command: Added safety constraints, confirmation required (7 examples)
-      - get_environment_variable: Added pattern matching and security guidance (7 examples)  
-      - get_system_info: Added cross-platform output examples (5 examples)
-      - process_list: Added filtering guidance and platform differences (6 examples)
-    - All system tool tests passing
-    - Each tool now has comprehensive metadata for LLM guidance
-  - Phase 2, Day 3: File Tools Migration (COMPLETED)
-    - Migrated all 6 file tools to ToolBuilder pattern:
-      - file_read: Added encoding detection, size limits, binary handling (7 examples)
-      - file_write: Added atomic operations, backup support, destructive warnings (7 examples)
-      - file_list: Added complex filtering, sorting, recursive options (7 examples)
-      - file_delete: Added confirmation requirements, safety checks, destructive flags (7 examples)
-      - file_move: Added cross-device support, overwrite protection (7 examples)
-      - file_search: Added regex patterns, context lines, performance notes (7 examples)
-    - All file tool tests passing
-    - Comprehensive metadata for safe file operations
-  - Phase 2, Day 3: File Tools Migration (IN PROGRESS - NEXT)
-
-**Recent Updates** (June 6, 2025):
-- **Tool System Enhancement with LLM Guidance**
-  - Phase 1, Day 1-2: Core Infrastructure (COMPLETED)
-    - Created comprehensive Tool interface with LLM guidance features
-    - Implemented ToolBuilder with fluent interface
-    - Full MCP (Model Context Protocol) compatibility support
-    - Maintained backward compatibility with existing NewTool function
-- **Agent Custom Research Example Rewrite (COMPLETED)**
-  - Successfully rewrote agent-custom-research to properly showcase custom agent development:
-    - ResearchAgent now extends BaseAgentImpl (not LLMAgent) for full control
-    - Implemented code-based orchestration without library sub-agent features
-    - Created MultiSearchAgent (also extends BaseAgentImpl) for parallel searches
-    - MultiSearchAgent runs searches across 5 engines: DuckDuckGo, Brave, Tavily, Serpapi, Serper.dev
-    - Uses 4 query variations per engine (overview, latest, expert, tutorial) = 20 parallel searches
-    - LLMAgent instances created with specialized prompts (not extended):
-      - DuplicateFilterAgent: Deduplicates search results
-      - ContentAnalyzerAgent: Extracts key insights
-      - ReportGeneratorAgent: Creates final research report
-    - Added DEBUG=1 environment variable support for detailed logging
-    - Demonstrates agent composition (agents using other agents)
-    - Shows proper error handling with fallback to mock agents
-  - Architecture follows two-layer pattern:
-    - ResearchAgent orchestrates overall workflow
-    - MultiSearchAgent specializes in parallel search execution
-  - **Testing Results**:
-    - Example successfully searches across multiple engines (119 results found)
-    - Parallel search execution working correctly
-    - LLM agents properly process search results
-    - Generates comprehensive research reports on the correct topic
-    - Fixed issues: result type casting, state key naming, prompt context inclusion
-- **Web Search Tool Enhancements**:
-  - Added Serpapi.com support (SERPAPI_API_KEY) - uses GET requests
-  - Added Serper.dev support (SERPERDEV_API_KEY) - uses POST requests  
-  - Fixed Brave Search JSON parsing (Query field now interface{})
-  - Renamed SEARCH_API_KEY to BRAVE_API_KEY for clarity
-  - Updated search priority: Tavily > Serper.dev > Serpapi > Brave > DuckDuckGo
-  - Consolidated examples documentation (merged BUILTINS_EXAMPLES.md into examples/README.md)
-- **Web Search Tool Enhancement (Earlier Updates)**
-  - Implemented Brave Search API support (uses BRAVE_API_KEY environment variable)
-  - Implemented Tavily Search API support (uses TAVILY_API_KEY environment variable)
-  - Added automatic engine selection logic
-  - Created comprehensive tests using TDD approach
-  - Updated tool version to 2.0.0 with new examples
-  - Created user guide documentation at docs/user-guide/web-search-tool.md
-  - Tavily is preferred for LLM applications as it provides AI-optimized results with summaries
-  - **Added EngineAPIKey Parameter** - Production-ready API key management:
-    - Added optional `engine_api_key` parameter for explicit API key injection
-    - Explicit keys override environment variables for better security
-    - Enables parallel searches with different API keys
-    - Supports multi-tenant and A/B testing scenarios
-    - Comprehensive tests validate precedence and security
-
-**Recent Updates** (June 5, 2025):
-- **Agent Architecture Restructuring Phases 1-5 and Phase 7 COMPLETED**
-  - Phase 1: Core Infrastructure (COMPLETED)
-    - Created domain interfaces: BaseAgent, State, Event system, Artifacts, Errors, Config
-    - Implemented core functionality: BaseAgentImpl, StateManager, EventDispatcher, AgentRegistry
-    - Created comprehensive tests with good coverage (domain: 52.9%, core: 38.9%)
-    - All tests passing, code meets linting standards
-    - Created comprehensive architecture documentation: docs/technical/agents.md
-  - Phase 1.5: Enhanced Core Infrastructure (COMPLETED)
-    - Implemented Handoff interface for agent delegation with fluent builder pattern
-    - Implemented Guardrails interface for input/output validation
-    - Enhanced RunContext with generic type-safe dependency injection
-    - Implemented FunctionalEventStream with functional operations (filter, map, reduce, etc.)
-    - Implemented StateValidator with built-in validators (schema, field presence, type checking)
-    - Implemented StateTransforms with 15+ transformation functions
-    - Implemented TracingHook for OpenTelemetry-compatible instrumentation
-    - All components have comprehensive tests with 100% coverage and zero linting issues
-  - Phase 2: LLM Agent Migration (COMPLETED)
-    - Implemented new LLMAgent with full integration of Phase 1.5 components
-    - Ultra-simple agent creation from provider/model strings: `NewAgentFromString("agent", "claude")`
-    - State-based execution replacing message-based approach
-    - Tool calling integrated with new State management
-    - Full hook system implementation (metrics, logging)
-    - Comprehensive provider string parsing with aliases and model inference
-    - Removed deprecated workflow.Agent package entirely
-    - Updated all examples to use new core.LLMAgent
-  - Phase 3: Workflow Agents (COMPLETED)
-    - Implemented complete workflow agent architecture with four agent types
-    - SequentialAgent: Step-by-step processing with error handling and state passthrough
-    - ParallelAgent: Concurrent processing with configurable merge strategies and concurrency limits
-    - ConditionalAgent: Branch-based execution with priority evaluation and multiple match support
-    - LoopAgent: Iterative processing with count/while/until loops, termination conditions, and result collection
-    - All workflow agents have comprehensive tests, examples, and documentation
-    - Production-ready features: Error handling, timeout support, hook integration, metadata collection
-  - Phase 4: Agent-Tool Integration (COMPLETED - February 4, 2025)
-    - Implemented bidirectional agent-tool conversion utilities
-    - Created comprehensive tool context system with state access and event emission
-    - Updated all built-in tools to use new ToolContext interface
-    - Created agent-workflow-as-tool example demonstrating multi-stage research pipeline
-    - Fixed all test failures in agent/tools package
-    - Full integration between agents and tools with event forwarding and state sharing
-  - Phase 5: Multi-Agent System Enhancement (COMPLETED - June 5, 2025)
-    - Implemented automatic sub-agent to tool conversion
-    - Created SharedStateContext for parent-child state sharing
-    - Added simplified constructors (NewLLMAgentWithSubAgents, etc.)
-    - Implemented TransferTo() and GetSubAgentByName() convenience methods
-    - Updated examples and created comprehensive migration guide
-    - Feature parity with Google ADK's multi-agent approach achieved
-  - Phase 7: Migration and Testing (RENAMED FROM PHASE 6, COMPLETED - June 5, 2025)
-    - Day 1-2: Discovery and Analysis - COMPLETED
-    - Day 3-4: Code Removal and Cleanup - COMPLETED
-      - Removed deprecated code and legacy comments
-      - Removed workflow_migration build tags
-      - Migrated all 10 test files to new architecture
-      - Moved benchmarks directory to tests/benchmarks
-    - Day 5: Documentation Updates - COMPLETED
-      - Updated all user guide documentation (getting-started.md, built-in-components.md, custom-agents.md)
-      - Updated API documentation (agent.md)
-      - Updated README.md with new architecture examples
-    - Week 1-2: Examples Overhaul - COMPLETED
-      - Analyzed and categorized all examples
-      - Updated basic examples (simple, agent-simple-llm, convenience)
-      - Removed 3 empty example directories
-      - Created all planned examples including: state-persistence, error-handling, guardrails, workflow-composition, multi-agent coordination, agent handoff
-      - All examples verified to compile and run
-    - Week 2: Testing Migration - COMPLETED (June 5, 2025)
-      - Integration tests: COMPLETED
-        - Created hook_integration_test.go with 8 comprehensive test scenarios
-        - Created multi_agent_coordination_test.go with 8 test scenarios
-        - All integration tests passing with make test
-        - Fixed critical linting issues (file permissions, error checking)
-      - Stress tests: COMPLETED
-        - Verified all existing stress tests already use new architecture
-        - Created workflow_stress_test.go with comprehensive workflow agent stress tests
-      - Benchmarks: COMPLETED
-        - Verified all existing benchmarks already use new architecture
-        - Created agent_advanced_bench_test.go with performance benchmarks for new features
-      - Test Documentation: COMPLETED
-        - Updated docs/technical/testing.md with new test documentation
-- **Documentation Updates** (February 2, 2025)
-  - Consolidated LIST_MODELS_ANALYSIS.md into docs/user-guide/model-discovery.md
-  - Archived LIST_MODELS_ANALYSIS.md to docs/archives/
-  - Updated archives README.md to reference all archived documents
-- **Built-in Components Implementation Progress**
-  - Phase 1: Core Registry Infrastructure - COMPLETED
-  - Phase 2.0-2.3: Tool Migration and Enhancement - COMPLETED
-    - Implemented comprehensive registry system with search and discovery
-    - Migrated and enhanced all web tools (WebFetch, WebSearch, WebScrape, HTTPRequest)
-    - Migrated and enhanced all file tools (ReadFile, WriteFile, FileList, FileDelete, FileMove, FileSearch)
-    - Implemented all system tools (ExecuteCommand, GetEnvironmentVariable, GetSystemInfo, ProcessList)
-    - Successfully deprecated and removed common_tools.go
-    - All tools have comprehensive tests and documentation
-  - Phase 2.4: Data Tools - COMPLETED
-    - Implemented JSONProcess with parsing, JSONPath querying, and transformations
-    - Implemented CSVProcess with parsing, filtering, transformations, and JSON conversion
-    - Implemented XMLProcess with parsing, XPath querying, and JSON conversion
-    - Implemented DataTransform with filter, map, reduce, sort, group_by, unique, reverse
-    - All data tools are pure data processing without LLM dependencies
-    - Comprehensive test coverage and proper registry integration
-  - Phase 2.5: Date, Time Tools - COMPLETED
-    - Implemented all 7 datetime tools (DateTimeNow, DateTimeInfo, DateTimeCalculate, DateTimeParse, DateTimeFormat, DateTimeConvert, DateTimeCompare)
-    - Full timezone support, localization, business day calculations, and comprehensive date operations
-  - Phase 2.6: Feed Process Tools - COMPLETED
-    - Implemented FeedFetch, FeedDiscover, FeedFilter, FeedAggregate, FeedConvert, FeedExtract
-    - All feed tools have comprehensive tests and documentation
-  - Phase 3: Agent Templates - PENDING
-  - Phase 4: Workflow Patterns - PENDING
-- **Fixed All Linting Errors**
-  - Fixed S1002 boolean comparisons, S1017 string trimming, errcheck issues
-  - Removed unused code and fixed missing newlines
-- **Created Comprehensive Examples**
-  - Created builtins-web-tools example
-  - Created builtins-system-tools example  
-  - Created builtins-data-tools example
-  - Updated examples documentation
-- **Completed All Phases of Logging Strategy Implementation** (January 30, 2025)
-  - Phase 1: Documentation - Created comprehensive logging documentation at `docs/technical/logging.md`
-  - Phase 2: Standardized Examples - Converted all examples to use consistent logging patterns
-  - Phase 3: Debug Infrastructure - Added debug build tags and conditional compilation support
-  - Phase 4: Core Library Cleanup - Removed all direct logging from pkg/, improved error messages with context
-- Added ABOUTME comments to all Go source files for better code documentation
-- Created `CONTRIBUTING.md` with contribution guidelines including logging best practices
-- Fixed all linting errors (removed empty branches in model_inventory.go)
-- Added Logger interface to profiling package to support optional logging without forcing it on users
-- All make targets tested and working (36.7% test coverage)
 
 ## Common Development Commands
 
 ### Build Commands
 ```bash
-# Build the main binary
-make build
-
-# Build with debug logging enabled
-make build-debug
-# Then run with: GO_LLMS_DEBUG=all ./bin/go-llms-debug
-
-# Build all example binaries
-make build-examples
-
-# Build a specific example
-make build-example EXAMPLE=simple
+make build                      # Build the main binary
+make build-debug               # Build with debug logging enabled
+make build-examples            # Build all example binaries
+make build-example EXAMPLE=simple  # Build a specific example
 ```
 
 ### Test Commands
 ```bash
-# Run all tests excluding integration, multi-provider, stress tests
-make test
-
-# Run tests with debug logging enabled
-make test-debug
-GO_LLMS_DEBUG=param_cache make test-debug
-
-# Run all tests including integration tests (requires API keys)
-make test-all
-
-# Run tests for a specific package
-make test-pkg PKG=schema/validation
-
-# Run a specific test function
-make test-func PKG=schema/validation FUNC=TestArrayValidation
-
-# Run mock-only integration tests (doesn't require API keys)
-make test-integration-mock
-
-# Run only short tests
-make test-short
-```
-
-### Integration Test Commands
-```bash
-# Run integration tests (requires API keys for providers)
-make test-integration
-
-# Enable specific provider tests with environment variables
-ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...
-
-# Skip specific provider tests
-SKIP_OPEN_ROUTER=1 ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...
-SKIP_OLLAMA=1 ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...
-```
-
-### Benchmark Commands
-```bash
-# Run all benchmarks
-make benchmark
-
-# Run benchmarks for a specific package
-make benchmark-pkg PKG=schema/validation
-
-# Run a specific benchmark
-make benchmark-specific BENCH=BenchmarkConsensus
-
-# Profile CPU usage
-make profile-cpu
+make test                      # Run all tests (excludes integration/stress)
+make test-all                  # Run all tests including integration
+make test-pkg PKG=schema/validation  # Test specific package
+make test-func PKG=schema/validation FUNC=TestArrayValidation  # Test specific function
+make test-integration-mock     # Run mock-only integration tests
 ```
 
 ### Code Quality Commands
 ```bash
-# Format code
-make fmt
-
-# Run vet checks
-make vet
-
-# Run linting (requires golangci-lint)
-make lint
-
-# Install golangci-lint if not present
-make install-lint
-
-# Tidy dependencies
-make deps-tidy
-
-# Download dependencies
-make deps-download
-
-# Combined dependency management (tidy + download)
-make deps
-```
-
-### Clean Commands
-```bash
-# Clean build artifacts
-make clean
-
-# Clean everything including Go cache
-make clean-all
-```
-
-### Coverage Commands
-```bash
-# Generate test coverage report
-make coverage
-
-# Generate coverage for specific package
-make coverage-pkg PKG=schema/validation
-
-# Generate and view coverage report (opens in browser)
-make coverage-view
-```
-
-### Helpful CLI Commands
-```bash
-# List available examples
-ls cmd/examples/
-
-# Run the CLI binary directly after building
-./bin/go-llms
-
-# Run a specific example binary
-./bin/simple
-
-# Run model info fetcher example to check available models
-go run cmd/examples/modelinfo/main.go
+make fmt                       # Format code
+make vet                       # Run vet checks
+make lint                      # Run linting (requires golangci-lint)
+make coverage                  # Generate test coverage report
+make deps                      # Tidy and download dependencies
 ```
 
 ## Core Architecture
 
 Go-LLMs follows a vertical slicing approach where code is organized by feature:
 
-1. **Schema Validation** (`pkg/schema/`):
-   - Validates JSON data against predefined schemas
-   - Supports type coercion and conditional validation
-   - Key interfaces: `Validator`, `SchemaRepository`, `SchemaGenerator`
-   - Custom validators and complex validation rules (if/then/else, allOf, anyOf, oneOf)
-
-2. **LLM Integration** (`pkg/llm/`):
-   - Provider implementations for OpenAI, Anthropic, Google Gemini
-   - Multi-provider strategies (Fastest, Primary, Consensus)
-   - Interface-based provider option system for configuration
-   - Multimodal content support (text, images, files, videos, audio)
-   - Key interfaces: `Provider` (main interface), `ModelRegistry`
-   - Message format with support for multimodal content types
-
-3. **Structured Output Processing** (`pkg/structured/`):
-   - Extract structured data from LLM responses
-   - Validate against schemas and map to Go structs
-   - Schema-based prompt enhancement
-   - Key interfaces: `Processor`, `PromptEnhancer`
-   - JSON extraction with retries and validation
-
-4. **Agent Workflows** (`pkg/agent/`):
-   - Tool integration for function calling
-   - Message management and context handling
-   - Hooks for monitoring and logging
-   - Key interfaces: `Agent`, `Tool`, `Hook`
-   - Generic `RunContext[D]` for type-safe dependency injection
+1. **Schema Validation** (`pkg/schema/`): Validates JSON data against schemas with type coercion
+2. **LLM Integration** (`pkg/llm/`): Provider implementations with multi-provider strategies
+3. **Structured Output Processing** (`pkg/structured/`): Extract and validate structured data from LLM responses
+4. **Agent Workflows** (`pkg/agent/`): Tool integration, state management, hooks, and workflows
 
 ## Key Design Patterns
 
-1. **Interface-Based Provider Option System**:
-   The codebase uses a hierarchical interface system for type-safe provider configuration:
-   - Base interface: `ProviderOption`
-   - Provider-specific interfaces: `OpenAIOption`, `AnthropicOption`, `GeminiOption`
-   - Common interface: `CommonOption` (implements all provider interfaces)
-   
-   Options are applied via interface methods rather than type switches:
-   ```go
-   provider := provider.NewOpenAIProvider(
-       apiKey,
-       modelName,
-       domain.NewHTTPClientOption(httpClient),     // Common option
-       domain.NewOpenAIOrganizationOption("org"),  // Provider-specific option
-   )
-   ```
-
-2. **Multi-Provider Strategies**:
-   The codebase supports multiple strategies for working with several LLM providers concurrently:
-   - **Fastest Strategy**: Returns the first successful response
-   - **Primary Strategy**: Tries primary provider first, falls back to others on failure
-   - **Consensus Strategy**: Compares results from multiple providers for agreement
-   - **Sequential Strategy**: Tries providers in order until one succeeds
-
-3. **Memory Pooling**:
-   Extensive use of `sync.Pool` for improved performance:
-   - Schema validation objects are pooled and reused
-   - String builders and buffers are pooled
-   - Provider message objects are cached and pooled
-
-4. **Message Format and Caching**:
-   - Unified `Message` type supports multimodal content
-   - Provider-specific message conversions are cached
-   - Base64 encoding for binary content, URL references supported
+1. **Interface-Based Provider Options**: Type-safe configuration via interface methods
+2. **Multi-Provider Strategies**: Fastest, Primary, Consensus, Sequential
+3. **Memory Pooling**: Extensive use of `sync.Pool` for performance
+4. **State-Based Agents**: Agents operate on state rather than messages
 
 ## Testing Approach
 
-1. **Unit Tests**: Test individual components in isolation with mocks
-2. **Integration Tests**: Test interactions with actual LLM providers (require API keys)
-3. **Stress Tests**: Test behavior under high load and concurrency
-4. **Benchmark Tests**: Measure performance of key components
+1. **Unit Tests**: Test components in isolation with mocks
+2. **Integration Tests**: Test with actual providers (require API keys)
+3. **Stress Tests**: Test under high load and concurrency
+4. **Benchmark Tests**: Measure performance
 
-Integration tests with real providers are skipped by default unless the corresponding API key environment variables are set (e.g., OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY).
+Integration tests are skipped unless API keys are set (e.g., OPENAI_API_KEY).
 
-## Go Best Practices to Follow
+## Go Best Practices
 
-1. Always run `make fmt` and `make vet` before committing changes
-2. Follow the existing error handling patterns (returning errors as the last return value)
-3. Use sync.Pool for objects that are frequently created and disposed
+1. Always run `make fmt` and `make vet` before committing
+2. Follow existing error handling patterns (errors as last return value)
+3. Use sync.Pool for frequently created/disposed objects
 4. Use context.Context for timeout and cancellation
-5. Match the existing code style and patterns when adding new features
+5. Match existing code style and patterns
 6. Add comprehensive tests for new functionality
-7. Use benchmark tests to verify performance of optimizations
-8. Implement both the mock and real versions for any new provider
+7. Use benchmark tests to verify optimizations
 
 ## Logging Guidelines
 
-The codebase follows specific logging patterns to maintain performance and give users control:
-
-1. **Library Code (pkg/)**: No direct logging - return errors with context instead
-   ```go
-   // Good
-   return fmt.Errorf("failed to parse response: %w", err)
-   
-   // Bad - don't log in library
-   log.Printf("Error: %v", err)
-   ```
-
-2. **Examples**: Use `log` package for consistency
-   - Agent examples can use `slog` to demonstrate LoggingHook
-   - Don't mix `log` and `fmt` in the same example
-
+1. **Library Code (pkg/)**: No direct logging - return errors with context
+2. **Examples**: Use `log` package (agent examples can use `slog` for LoggingHook)
 3. **CLI Tools**: Use `fmt` for output control
-   - `fmt.Printf/Println` for normal output
-   - `fmt.Fprintf(os.Stderr, ...)` for errors
-
-4. **Thread Safety**: All logging approaches are concurrent-safe
-   - `slog` and `log` packages are thread-safe
-   - No shared mutable logging state
-
-5. **Debug Logging**: Use build tags (coming soon)
-   - Will replace commented debug prints
-   - Build with `-tags debug` for verbose logging
-
-See [docs/technical/logging.md](docs/technical/logging.md) for the complete logging strategy.
-
-## Debug Logging
-
-The codebase includes a debug logging infrastructure that compiles to zero-overhead no-ops in production:
-
-```bash
-# Build with debug support
-make build-debug
-
-# Run tests with debug logging
-make test-debug
-
-# Enable debug logging for specific components
-GO_LLMS_DEBUG=param_cache,schema make test-debug
-
-# Enable all debug logging
-GO_LLMS_DEBUG=all make test-debug
-```
-
-Debug logging is implemented using build tags, so there's no performance impact when not enabled. The debug infrastructure is in `pkg/internal/debug/`.
+4. **Debug Logging**: Use build tags with `make build-debug` and `GO_LLMS_DEBUG=all`
 
 ## Current Development Focus
 
-Based on the TODO.md file, these are the current development priorities:
+1. **Tool System Enhancement Phase 2**: Migrating all built-in tools to use ToolBuilder pattern with enhanced metadata (IN PROGRESS)
+2. **Model Context Protocol Support**: Add MCP Client/Server support for Agents
+3. **Phase 6: Advanced Features**: State persistence, agent discovery, advanced merge strategies
+4. **Built-in Agents**: Text, Research, Coding, Data, Feed agents (POSTPONED)
+5. **Performance Optimizations**: Benchmark harness, memory patterns (REVISIT)
+6. **Final Documentation**: Cross-link fixes, API refinement
 
-1. **Phase 7: Migration and Testing** (RENAMED FROM PHASE 6, HIGH PRIORITY - Currently Active):
-   - Week 1: Code Cleanup and Examples (IN PROGRESS)
-     - Day 1-2: Discovery and Analysis - COMPLETED
-     - Day 3-4: Code Removal and Cleanup - COMPLETED
-     - Day 5: Documentation Updates - COMPLETED
-   - Week 1-2: Examples Overhaul (IN PROGRESS)
-     - Example Analysis and Categorization - COMPLETED
-     - Example Updates - IN PROGRESS
-       - Basic examples updated (simple, agent-simple-llm, convenience)
-       - Need to verify provider examples
-       - Need to update advanced examples (multi, consensus, etc.)
-     - New Examples to Add - IN PROGRESS
-       - Created: state-persistence, error-handling, guardrails
-       - Completed ALL planned examples including: workflow composition, multi-agent coordination, agent handoff
-     - Example Cleanup - IN PROGRESS
-       - Removed 3 empty directories
-       - Need to ensure all examples have README.md files
-       - Need to verify all examples compile and run
-   - Week 2: Testing Migration - PENDING
-     - Integration tests need updating to core.LLMAgent
-     - Stress tests need updating
-     - Benchmarks moved to tests/benchmarks but need updating
-   
-2. **Model Context Protocol Support**:
-   - Add Model Context Protocol Client support for Agents
-   - Add Model Context Protocol Server support for Workflows or Agents
-   
-3. **Phase 6: Advanced Features** (MOVED TO PHASE 7) (LOW PRIORITY):
-   - State persistence and serialization
-   - Agent discovery and registry
-   - Advanced merge strategies for parallel agents
-   - Streaming support for long-running agents
-   
-4. **Built-in Agents** (POSTPONED until after architecture restructuring):
-   - Text Agents (summarize, extract, analyze, translate)
-   - Research Agents (web researcher, document analyzer, fact checker)
-   - Coding Agents (code reviewer, test generator, doc writer)
-   - Data Agents (analyst, report generator, data cleaner)
-   - Feed Agents (news monitor, aggregator, summarizer, curator)
-   
-5. **Performance Optimizations** (Marked for REVISIT):
-   - Create benchmark harness for A/B testing optimizations
-   - Implement visualization for memory allocation patterns
-   - Create real-world test scenarios for end-to-end performance
-   - Advanced optimizations including adaptive channel buffer sizing, pool prewarming, etc.
-   
-6. **Final Documentation and Release**:
-   - Fix identified cross-link issues (path inconsistencies, broken links) - REVISIT
-   - Perform final consistency check across all documentation - REVISIT
-   - API refinement based on usage feedback
-   - Final review and preparation for stable release
-   
-## Completed Development Items
+## Environment Variables
 
-1. **Agent Architecture Restructuring Phases 1-5 (Completed June 5, 2025)**:
-   - Phase 1: Core Infrastructure
-     - Created comprehensive domain interfaces and core implementations
-     - All components have thorough test coverage and pass linting
-     - Successfully laid foundation for LLM agents and workflow agents
-   - Phase 1.5: Enhanced Core Infrastructure
-     - Implemented Handoff, Guardrails, enhanced RunContext, FunctionalEventStream
-     - Implemented StateValidator, StateTransforms, and TracingHook components
-     - All 7 components have comprehensive tests with 100% coverage
-   - Phase 2: LLM Agent Migration
-     - Created new core.LLMAgent with state-based execution
-     - Implemented full hook system (metrics, logging)
-     - Ultra-simple agent creation from strings
-     - Removed deprecated workflow package
-     - Updated all production examples
-   - Phase 3: Workflow Agents
-     - Implemented complete workflow agent architecture with four agent types
-     - SequentialAgent: Step-by-step processing with error handling and state passthrough
-     - ParallelAgent: Concurrent processing with configurable merge strategies and concurrency limits
-     - ConditionalAgent: Branch-based execution with priority evaluation and multiple match support
-     - LoopAgent: Iterative processing with count/while/until loops, termination conditions, and result collection
-   - Phase 4: Agent-Tool Integration
-     - Implemented bidirectional agent-tool conversion utilities
-     - Created comprehensive tool context system with state access and event emission
-     - Updated all built-in tools to use new ToolContext interface
-     - Created agent-workflow-as-tool example demonstrating multi-stage research pipeline
-     - Fixed all test failures in agent/tools package
-   - Phase 5: Multi-Agent System Enhancement
-     - Implemented automatic sub-agent to tool conversion
-     - Created SharedStateContext for parent-child state sharing
-     - Added simplified API with builder patterns (NewLLMAgentWithSubAgents, WithSubAgents)
-     - Implemented convenience methods (TransferTo, GetSubAgentByName)
-     - Created new examples: agent-sub-agents, updated agent-handoff and agent-multi-coordination
-     - Created comprehensive migration guide at docs/MIGRATION_GUIDE_PHASE5.md
-     - Achieved feature parity with Google ADK's multi-agent approach
-   
-2. **Built-in Components Implementation (Completed Phases 1-2.6, February 2, 2025)**:
-   - Phase 1: Implemented comprehensive registry system with search and discovery
-   - Phase 2.0-2.3: Migrated and enhanced all web, file, and system tools
-   - Phase 2.4: Implemented data processing tools (JSON, CSV, XML, DataTransform)
-   - Phase 2.5: Implemented all 7 Date Time Tools (DateTimeNow, DateTimeInfo, DateTimeCalculate, DateTimeParse, DateTimeFormat, DateTimeConvert, DateTimeCompare)
-   - Created comprehensive examples for all tool categories
-   - Successfully deprecated and removed common_tools.go
-   - All tools have comprehensive tests and documentation
-   
-2. **Comprehensive Logging Strategy (Completed in v0.2.6)**:
-   - Created comprehensive logging documentation at docs/technical/logging.md
-   - Standardized all examples to use consistent logging patterns
-   - Added debug infrastructure with build tags and GO_LLMS_DEBUG support
-   - Removed all direct logging from library code (pkg/)
-   - Improved error messages with context and proper error wrapping
-   - Added Logger interface to profiling package for optional logging
-   - Verified thread safety in all logging paths
-   - Added ABOUTME comments to all Go source files
-   
-3. **Dependency Reduction Journey (Completed in v0.2.4)**:
-   - Successfully migrated from viper/cobra to koanf/kong, then to stdlib
-   - Reduced binary size from 14MB to 6.3MB (55% total reduction)  
-   - Documentation at docs/technical/dependency_reduction.md
-   - Full backward compatibility maintained
-   
-4. **CLI Examples Enhancement (Completed in v0.2.1-v0.2.3)**:
-   - Added comprehensive multimodal example application
-   - Improved CLI argument parsing (v0.2.3)
-   - Migrated through multiple CLI frameworks to find optimal solution
-   
-3. **Multimodal Support (Completed in v0.2.0)**:
-   - Full implementation with text, images, files, videos, and audio
-   - Complete example with CLI interface
-   - Comprehensive documentation and tests
-   
-4. **Documentation Consolidation (Completed)**:
-   - All documentation is consistent and properly linked
-   - REFERENCE.md updated with all documentation
-   - Navigation links verified
-   
-See TODO-DONE.md for full list of completed tasks
+### Provider Configuration
+- `GO_LLMS_OPENAI_API_KEY`, `GO_LLMS_OPENAI_MODEL`, etc.
+- `GO_LLMS_ANTHROPIC_API_KEY`, `GO_LLMS_ANTHROPIC_MODEL`, etc.
+- `GO_LLMS_GEMINI_API_KEY`, `GO_LLMS_GEMINI_MODEL`, etc.
 
-## CLI Migration Notes
+### Debug Logging
+- `GO_LLMS_DEBUG=all` - Enable all debug logging
+- `GO_LLMS_DEBUG=param_cache,schema` - Enable specific components
 
-The CLI migration has been completed with the following journey:
-1. Phase 1: Migrated from viper/cobra to koanf/kong (increased binary size)
-2. Phase 2: Analyzed the impact and identified stdlib approach
-3. Phase 3: Removed koanf/kong, replaced with stdlib flag package and direct YAML parsing
-4. Result: 36% binary size reduction (from 9.9MB to 6.3MB)
-5. Config file format remains YAML for backward compatibility
-6. Environment variable support is maintained with GO_LLMS_ prefix
-7. Shell completion feature was removed in favor of smaller binary size
+## Recent Major Completions
 
-For the full journey, see docs/technical/dependency_reduction.md
+- **Agent Architecture Restructuring** (Phases 1-5, 7): Complete rewrite with state-based agents, workflow agents, tool integration
+- **Built-in Components** (Phases 1-2.6): Registry system, all web/file/system/data/datetime/feed tools
+- **Comprehensive Logging Strategy**: Debug infrastructure, no library logging, ABOUTME comments
+- **Dependency Reduction**: 55% binary size reduction (14MB → 6.3MB)
 
-## Environment Variables for Provider Configuration
-
-The library supports automatic provider configuration through environment variables:
-
-### OpenAI Provider
-- `GO_LLMS_OPENAI_API_KEY`: API key
-- `GO_LLMS_OPENAI_BASE_URL`: Custom base URL
-- `GO_LLMS_OPENAI_ORGANIZATION`: Organization ID
-- `GO_LLMS_OPENAI_MODEL`: Default model
-
-### Anthropic Provider
-- `GO_LLMS_ANTHROPIC_API_KEY`: API key
-- `GO_LLMS_ANTHROPIC_BASE_URL`: Custom base URL
-- `GO_LLMS_ANTHROPIC_MODEL`: Default model
-
-### Gemini Provider
-- `GO_LLMS_GEMINI_API_KEY`: API key
-- `GO_LLMS_GEMINI_BASE_URL`: Custom base URL
-- `GO_LLMS_GEMINI_MODEL`: Default model
-
-### Using Environment Variables
-```go
-// Option factories automatically read from environment
-options := llmutil.BuildProviderOptions(
-    llmutil.GetEnvOptionFactory(),
-    // Additional options...
-)
-```
-
-## Model Information Feature
-
-The library includes a model discovery feature that fetches available models from providers:
-
-```bash
-# Run the model info example to see available models
-go run cmd/examples/modelinfo/main.go
-
-# Or use the built binary
-./bin/modelinfo
-```
-
-The model information service (`pkg/util/llmutil/modelinfo/`) provides:
-- Automatic discovery of available models from providers
-- Caching of model information to reduce API calls
-- File-based cache for persistence across runs
-- Model capability information (context length, features, etc.)
-
-## Recent Release Status
-
-### v0.2.6 (Current - January 30, 2025)
-- Documentation updates and consistency improvements
-- Package organization refinements
-- Linting and formatting updates
-
-### v0.2.4 (January 17, 2025)
-- Complete dependency reduction journey
-- Removed all heavy CLI dependencies (koanf, kong)
-- 55% total binary size reduction since v0.1.0
-- Maintained full backward compatibility
-
-### v0.2.3 (January 16, 2025)
-- Intermediate migration from viper/cobra to koanf/kong
-- Improved shell completion (later removed for size optimization)
-
-### v0.2.1 (January 15, 2025)
-- Added comprehensive multimodal example CLI
-- Enhanced documentation and examples
-
-### v0.2.0 (January 14, 2025)
-- Full multimodal content support
-- Support for text, images, files, videos, and audio
-
-See README.md for the complete changelog
+See TODO.md for detailed task tracking and TODO-DONE.md for completed items.
