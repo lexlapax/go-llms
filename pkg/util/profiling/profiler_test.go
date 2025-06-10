@@ -47,17 +47,17 @@ func TestEnableDisable(t *testing.T) {
 func TestProfilingWithEnvVar(t *testing.T) {
 	// Save original env and restore after test
 	origEnv := os.Getenv("GO_LLMS_ENABLE_PROFILING")
-	defer os.Setenv("GO_LLMS_ENABLE_PROFILING", origEnv)
+	defer func() { _ = os.Setenv("GO_LLMS_ENABLE_PROFILING", origEnv) }()
 
 	// Test with env var enabled
-	os.Setenv("GO_LLMS_ENABLE_PROFILING", "1")
+	_ = os.Setenv("GO_LLMS_ENABLE_PROFILING", "1")
 	profiler := NewProfiler("test_env")
 	if !profiler.IsEnabled() {
 		t.Error("Expected profiler to be enabled when GO_LLMS_ENABLE_PROFILING=1")
 	}
 
 	// Test with env var disabled
-	os.Setenv("GO_LLMS_ENABLE_PROFILING", "0")
+	_ = os.Setenv("GO_LLMS_ENABLE_PROFILING", "0")
 	profiler = NewProfiler("test_env2")
 	if profiler.IsEnabled() {
 		t.Error("Expected profiler to be disabled when GO_LLMS_ENABLE_PROFILING=0")
@@ -70,7 +70,7 @@ func TestStartCPUProfile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Save and restore original profile dir
 	origProfileDir := profileDir
@@ -111,7 +111,7 @@ func TestMemoryProfile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Save and restore original profile dir
 	origProfileDir := profileDir
@@ -149,7 +149,7 @@ func TestProfileOperation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Save and restore original profile dir
 	origProfileDir := profileDir
@@ -228,7 +228,7 @@ func TestSetProfileDir(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Test setting profile directory
 	SetProfileDir(tempDir)
@@ -248,22 +248,22 @@ func TestSetProfileDir(t *testing.T) {
 func TestIsProfilingEnabled(t *testing.T) {
 	// Save original env and restore after test
 	origEnv := os.Getenv("GO_LLMS_ENABLE_PROFILING")
-	defer os.Setenv("GO_LLMS_ENABLE_PROFILING", origEnv)
+	defer func() { _ = os.Setenv("GO_LLMS_ENABLE_PROFILING", origEnv) }()
 
 	// Test with env var enabled
-	os.Setenv("GO_LLMS_ENABLE_PROFILING", "1")
+	_ = os.Setenv("GO_LLMS_ENABLE_PROFILING", "1")
 	if !IsProfilingEnabled() {
 		t.Error("Expected IsProfilingEnabled() to return true when GO_LLMS_ENABLE_PROFILING=1")
 	}
 
 	// Test with env var disabled
-	os.Setenv("GO_LLMS_ENABLE_PROFILING", "0")
+	_ = os.Setenv("GO_LLMS_ENABLE_PROFILING", "0")
 	if IsProfilingEnabled() {
 		t.Error("Expected IsProfilingEnabled() to return false when GO_LLMS_ENABLE_PROFILING=0")
 	}
 
 	// Test with env var unset
-	os.Unsetenv("GO_LLMS_ENABLE_PROFILING")
+	_ = os.Unsetenv("GO_LLMS_ENABLE_PROFILING")
 	if IsProfilingEnabled() {
 		t.Error("Expected IsProfilingEnabled() to return false when GO_LLMS_ENABLE_PROFILING is unset")
 	}
@@ -281,7 +281,7 @@ func TestActualProfilingOutput(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Save and restore original profile dir
 	origProfileDir := profileDir

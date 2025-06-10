@@ -147,10 +147,7 @@ func FeedConvert() domain.Tool {
 
 func convertFeed(params FeedConvertParams) (*FeedConvertResult, error) {
 	// Default to including content
-	includeContent := true
-	if !params.IncludeContent {
-		includeContent = false
-	}
+	includeContent := params.IncludeContent
 
 	// Normalize target type
 	targetType := strings.ToLower(params.TargetType)

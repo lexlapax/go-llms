@@ -195,11 +195,11 @@ func TestOpenAPIParser_FetchSpec(t *testing.T) {
 			})
 		case "/not-found":
 			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte("Not found"))
+			_, _ = w.Write([]byte("Not found"))
 		case "/invalid-spec":
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"invalid": "spec"}`))
+			_, _ = w.Write([]byte(`{"invalid": "spec"}`))
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 		}

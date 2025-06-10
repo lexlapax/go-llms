@@ -33,7 +33,7 @@ func main() {
 	// Set up logging for profiling package
 	profiling.SetLogger(logAdapter{})
 	// Enable profiling via environment variable
-	os.Setenv("GO_LLMS_ENABLE_PROFILING", "1")
+	_ = os.Setenv("GO_LLMS_ENABLE_PROFILING", "1")
 
 	// Set a custom profile output directory (optional)
 	tempDir, err := os.MkdirTemp("", "profile_example")
@@ -41,7 +41,7 @@ func main() {
 		log.Printf("Warning: Could not create temp dir: %v\n", err)
 	} else {
 		profiling.SetProfileDir(tempDir)
-		defer os.RemoveAll(tempDir) // Clean up when done
+		defer func() { _ = os.RemoveAll(tempDir) }() // Clean up when done
 	}
 
 	// Get the global profiler

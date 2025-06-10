@@ -71,7 +71,7 @@ func (f *GoogleFetcher) FetchModels() ([]domain.Model, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request to Google AI API using custom client: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		errorBodyBytes, readErr := io.ReadAll(resp.Body)

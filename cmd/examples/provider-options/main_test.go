@@ -141,7 +141,7 @@ func TestProviderOptions(t *testing.T) {
 
 		// Restore environment variables after test
 		defer func() {
-			os.Setenv("LLM_HTTP_TIMEOUT", origTimeout)
+			_ = os.Setenv("LLM_HTTP_TIMEOUT", origTimeout)
 			os.Setenv("OPENAI_API_KEY", origOpenAIKey)
 			os.Setenv("OPENAI_ORGANIZATION", origOpenAIOrg)
 			os.Setenv("OPENAI_USE_CASE", origOpenAIUseCase)

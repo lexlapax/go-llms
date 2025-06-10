@@ -11,8 +11,7 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
-	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
+	datatools "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/data"
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
@@ -135,7 +134,7 @@ func main() {
 	})
 	if err != nil {
 		log.Printf("Failed to parse JSON: %v", err)
-	} else if output, ok := parseResult.(*data.JSONProcessOutput); ok {
+	} else if output, ok := parseResult.(*datatools.JSONProcessOutput); ok {
 		fmt.Printf("   ✓ Valid JSON parsed successfully\n")
 		fmt.Printf("   Result type: %s\n", output.ResultType)
 	}
@@ -149,7 +148,7 @@ func main() {
 	})
 	if err != nil {
 		log.Printf("Failed to query JSON: %v", err)
-	} else if output, ok := queryResult.(*data.JSONProcessOutput); ok {
+	} else if output, ok := queryResult.(*datatools.JSONProcessOutput); ok {
 		if user, ok := output.Result.(map[string]interface{}); ok {
 			fmt.Printf("   First user: %s (age: %.0f, city: %s)\n",
 				user["name"], user["age"], user["city"])
@@ -172,7 +171,7 @@ func main() {
 			"data":      jsonData,
 			"jsonpath":  path,
 		})
-		if output, ok := result.(*data.JSONProcessOutput); ok {
+		if output, ok := result.(*datatools.JSONProcessOutput); ok {
 			fmt.Printf("   %s: %v\n", desc, output.Result)
 		}
 	}
@@ -186,7 +185,7 @@ func main() {
 	})
 	if err != nil {
 		log.Printf("Failed to flatten JSON: %v", err)
-	} else if output, ok := flattenResult.(*data.JSONProcessOutput); ok {
+	} else if output, ok := flattenResult.(*datatools.JSONProcessOutput); ok {
 		// Pretty print flattened result
 		if jsonBytes, err := json.MarshalIndent(output.Result, "   ", "  "); err == nil {
 			fmt.Printf("   Flattened structure:\n   %s\n", string(jsonBytes))
@@ -202,7 +201,7 @@ func main() {
 	})
 	if err != nil {
 		log.Printf("Failed to extract users: %v", err)
-	} else if output, ok := extractResult.(*data.JSONProcessOutput); ok {
+	} else if output, ok := extractResult.(*datatools.JSONProcessOutput); ok {
 		if users, ok := output.Result.([]interface{}); ok {
 			fmt.Printf("   Extracted %d users\n", len(users))
 			// Show user names
@@ -244,7 +243,7 @@ Grace,31,Sales,62000,5,4.3`
 	})
 	if err != nil {
 		log.Printf("Failed to parse CSV: %v", err)
-	} else if output, ok := parseCSV.(*data.CSVProcessOutput); ok {
+	} else if output, ok := parseCSV.(*datatools.CSVProcessOutput); ok {
 		fmt.Printf("   ✓ Parsed %d rows\n", output.RowCount)
 		if len(output.Columns) > 0 {
 			fmt.Printf("   Columns: %v\n", output.Columns)
@@ -261,7 +260,7 @@ Grace,31,Sales,62000,5,4.3`
 	})
 	if err != nil {
 		log.Printf("Failed to filter CSV: %v", err)
-	} else if output, ok := filterResult.(*data.CSVProcessOutput); ok {
+	} else if output, ok := filterResult.(*datatools.CSVProcessOutput); ok {
 		fmt.Printf("   Found %d Engineering employees:\n", output.RowCount)
 		// Print the filtered results as a table
 		if rows, ok := output.Result.([][]string); ok {
@@ -286,7 +285,7 @@ Grace,31,Sales,62000,5,4.3`
 	})
 	if err != nil {
 		log.Printf("Failed to filter CSV: %v", err)
-	} else if output, ok := highSalaryFilter.(*data.CSVProcessOutput); ok {
+	} else if output, ok := highSalaryFilter.(*datatools.CSVProcessOutput); ok {
 		fmt.Printf("   Found %d employees with salary > $65,000\n", output.RowCount)
 		if rows, ok := output.Result.([][]string); ok && len(rows) > 1 {
 			// Skip header, show first few results
@@ -308,7 +307,7 @@ Grace,31,Sales,62000,5,4.3`
 	})
 	if err != nil {
 		log.Printf("Failed to convert CSV to JSON: %v", err)
-	} else if output, ok := csvToJson.(*data.CSVProcessOutput); ok {
+	} else if output, ok := csvToJson.(*datatools.CSVProcessOutput); ok {
 		// The result is already a JSON string
 		if jsonStr, ok := output.Result.(string); ok {
 			fmt.Println("   CSV converted to JSON:")
@@ -334,7 +333,7 @@ Grace,31,Sales,62000,5,4.3`
 	})
 	if err != nil {
 		log.Printf("Failed to get CSV statistics: %v", err)
-	} else if output, ok := statsResult.(*data.CSVProcessOutput); ok {
+	} else if output, ok := statsResult.(*datatools.CSVProcessOutput); ok {
 		fmt.Println("   Statistics:")
 		// Pretty print the statistics result
 		if jsonBytes, err := json.MarshalIndent(output.Result, "   ", "  "); err == nil {
@@ -397,7 +396,7 @@ Grace,31,Sales,62000,5,4.3`
 	})
 	if err != nil {
 		log.Printf("Failed to parse XML: %v", err)
-	} else if output, ok := parseXML.(*data.XMLProcessOutput); ok {
+	} else if output, ok := parseXML.(*datatools.XMLProcessOutput); ok {
 		fmt.Printf("   ✓ Valid XML parsed successfully\n")
 		if output.RootElement != "" {
 			fmt.Printf("   Root element: %s\n", output.RootElement)
@@ -423,7 +422,7 @@ Grace,31,Sales,62000,5,4.3`
 		})
 		if err != nil {
 			log.Printf("   Failed to query '%s': %v", desc, err)
-		} else if output, ok := result.(*data.XMLProcessOutput); ok {
+		} else if output, ok := result.(*datatools.XMLProcessOutput); ok {
 			fmt.Printf("   %s: %v\n", desc, output.Result)
 		}
 	}
@@ -437,7 +436,7 @@ Grace,31,Sales,62000,5,4.3`
 	})
 	if err != nil {
 		log.Printf("Failed to convert XML to JSON: %v", err)
-	} else if output, ok := xmlToJsonResult.(*data.XMLProcessOutput); ok {
+	} else if output, ok := xmlToJsonResult.(*datatools.XMLProcessOutput); ok {
 		// Pretty print a portion of the JSON
 		fmt.Println("   XML converted to JSON structure:")
 		if jsonBytes, err := json.MarshalIndent(output.Result, "   ", "  "); err == nil {
@@ -483,7 +482,7 @@ Grace,31,Sales,62000,5,4.3`
 	})
 	if err != nil {
 		log.Printf("Failed to filter data: %v", err)
-	} else if output, ok := filterHighScores.(*data.DataTransformOutput); ok {
+	} else if output, ok := filterHighScores.(*datatools.DataTransformOutput); ok {
 		fmt.Printf("   Found %d students with high scores\n", output.ItemCount)
 		if students, ok := output.Result.([]interface{}); ok {
 			for _, student := range students {
@@ -504,7 +503,7 @@ Grace,31,Sales,62000,5,4.3`
 	})
 	if err != nil {
 		log.Printf("Failed to map data: %v", err)
-	} else if output, ok := mapNames.(*data.DataTransformOutput); ok {
+	} else if output, ok := mapNames.(*datatools.DataTransformOutput); ok {
 		fmt.Printf("   Student names: %v\n", output.Result)
 	}
 
@@ -528,7 +527,7 @@ Grace,31,Sales,62000,5,4.3`
 			"reduce_type": op.reducer, // Fixed parameter name
 			"field":       "score",
 		})
-		if output, ok := result.(*data.DataTransformOutput); ok {
+		if output, ok := result.(*datatools.DataTransformOutput); ok {
 			fmt.Printf("   %s: %v\n", op.desc, output.Result)
 		}
 	}
@@ -542,7 +541,7 @@ Grace,31,Sales,62000,5,4.3`
 	})
 	if err != nil {
 		log.Printf("Failed to group data: %v", err)
-	} else if output, ok := groupByGrade.(*data.DataTransformOutput); ok {
+	} else if output, ok := groupByGrade.(*datatools.DataTransformOutput); ok {
 		if groups, ok := output.Result.(map[string]interface{}); ok {
 			for grade, students := range groups {
 				if studentList, ok := students.([]interface{}); ok {
@@ -559,7 +558,7 @@ Grace,31,Sales,62000,5,4.3`
 		"data":      string(transformDataJSON),
 		"field":     "subject",
 	})
-	if output, ok := groupBySubject.(*data.DataTransformOutput); ok {
+	if output, ok := groupBySubject.(*datatools.DataTransformOutput); ok {
 		if groups, ok := output.Result.(map[string]interface{}); ok {
 			for subject, students := range groups {
 				if studentList, ok := students.([]interface{}); ok {
@@ -579,7 +578,7 @@ Grace,31,Sales,62000,5,4.3`
 	})
 	if err != nil {
 		log.Printf("Failed to sort data: %v", err)
-	} else if output, ok := sortByScore.(*data.DataTransformOutput); ok {
+	} else if output, ok := sortByScore.(*datatools.DataTransformOutput); ok {
 		fmt.Printf("   Top 3 students:\n")
 		if students, ok := output.Result.([]interface{}); ok {
 			for i := 0; i < 3 && i < len(students); i++ {
@@ -597,7 +596,7 @@ Grace,31,Sales,62000,5,4.3`
 		"data":      string(transformDataJSON),
 		"field":     "grade",
 	})
-	if output, ok := uniqueGrades.(*data.DataTransformOutput); ok {
+	if output, ok := uniqueGrades.(*datatools.DataTransformOutput); ok {
 		fmt.Printf("   Unique grades: %v\n", output.Result)
 	}
 
@@ -609,7 +608,7 @@ Grace,31,Sales,62000,5,4.3`
 		"operation": "reverse",
 		"data":      string(firstThreeJSON),
 	})
-	if output, ok := reverseList.(*data.DataTransformOutput); ok {
+	if output, ok := reverseList.(*datatools.DataTransformOutput); ok {
 		fmt.Println("   Original order → Reversed order:")
 		if reversed, ok := output.Result.([]interface{}); ok {
 			for i, student := range reversed {

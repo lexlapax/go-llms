@@ -9,10 +9,39 @@ LLM agents can use tools to extend their capabilities beyond text generation. Th
 - Write effective system prompts that guide tool usage
 - Handle different tool categories for specific tasks
 - Monitor tool calls and results
+- Use mock provider support for testing without API keys
+- Enable debug logging for troubleshooting
+
+## Available Scenarios
+
+- `research` - Research assistant with web tools
+- `files` - File manager with file tools  
+- `system` - System admin with system tools
+- `data` - Data analyst with data tools
+- `datetime` - Scheduler with datetime tools
+- `feeds` - News curator with feed tools
+- `all-tools` - Demo agent with ALL tools
+
+## Mock Provider Support
+
+If no API keys are configured, the example automatically uses a mock provider that simulates realistic agent behavior for each scenario. This allows you to test the tool integration patterns without incurring API costs.
+
+## Debug Logging
+
+Enable detailed logging to see agent internals:
+```bash
+DEBUG=1 ./agent-llm-builtin-tools -llm research "Find information about Go generics"
+```
+
+This shows:
+- Tool execution details
+- State changes
+- Message flow
+- Decision making process
 
 ## Prerequisites
 
-You need at least one LLM provider configured:
+For real LLM usage, configure at least one provider:
 
 ```bash
 # Option 1: OpenAI
@@ -46,6 +75,9 @@ go build -o agent-llm-builtin-tools .
 
 # Run with all tools available
 ./agent-llm-builtin-tools all-tools "Show me what you can do"
+
+# Run with debug logging
+DEBUG=1 ./agent-llm-builtin-tools research "Research Go concurrency patterns"
 ```
 
 ## Available Scenarios

@@ -7,10 +7,10 @@ This example demonstrates how to collect detailed metrics from an LLM agent that
 The example showcases:
 
 1. **Real LLM Providers**: Works with OpenAI, Anthropic, Gemini, or falls back to mock provider
-2. **ToolContext Pattern**: All tools use the new `domain.ToolContext` for enhanced execution context
+2. **Built-in Tools**: Uses production-ready tools from the registry (calculator, web_fetch, file_list, datetime_now)
 3. **Metrics Collection**: Using the `MetricsHook` to gather statistics about agent operations
 4. **Detailed Logging**: Using the `LoggingHook` for real-time visibility into agent actions
-5. **Custom Tools**: Creating tools with configurable performance characteristics and event emission
+5. **LLMAgent Pattern**: Uses the new `core.NewLLMAgent` with LLMDeps structure
 6. **Combined Hooks**: Using multiple hooks simultaneously for comprehensive monitoring
 
 ## Key Components
@@ -33,18 +33,18 @@ The example uses two hook implementations:
    - Error events
    - Content details (configurable verbosity)
 
-### Tools with ToolContext
+### Built-in Tools
 
-The example includes test tools that demonstrate the new ToolContext pattern:
+The example uses production tools from the built-in registry:
 
-- **Calculator Tool**: A real functional tool for calculations with event emission
-- **Fast Tool**: Responds quickly (50ms) with progress events
-- **Slow Tool**: Simulates a high-latency external API (200ms)
-- **Unreliable Tool**: Simulates occasional failures (30% failure rate) with error events
+- **Calculator**: Performs mathematical operations (add, subtract, multiply, divide)
+- **Web Fetch**: Retrieves content from web URLs
+- **File List**: Lists files in directories with pattern matching
+- **DateTime Now**: Gets the current date and time
 
-All tools implement the updated signature:
+All tools are registered and available through:
 ```go
-func (t *Tool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error)
+tools.MustGetTool("calculator")
 ```
 
 ## How Hooks Work
@@ -131,13 +131,13 @@ Common hook use cases:
 With a real LLM provider, the metrics report shows actual tool execution:
 
 ```
-🚀 Using OpenAI provider
+Using openai provider with model gpt-4o-mini
 
 📊 Agent Metrics Report
 ====================
 Total Requests:      10
-Total Tool Calls:    5
-Error Count:         1
+Total Tool Calls:    8
+Error Count:         0
 Estimated Tokens:    3063
 Avg Generation Time: 953.90 ms
 
@@ -145,29 +145,31 @@ Avg Generation Time: 953.90 ms
 -----------------
 {
   "calculator": {
-    "Calls": 2,
+    "Calls": 4,
     "AverageTimeMs": 11,
-    "FastestCallMs": 11,
-    "SlowestCallMs": 11
+    "FastestCallMs": 10,
+    "SlowestCallMs": 12
   },
-  "fastTool": {
-    "Calls": 1,
-    "AverageTimeMs": 51,
-    "FastestCallMs": 51,
-    "SlowestCallMs": 51
+  "datetime_now": {
+    "Calls": 2,
+    "AverageTimeMs": 5,
+    "FastestCallMs": 4,
+    "SlowestCallMs": 6
   },
-  "slowTool": {
-    "Calls": 1,
-    "AverageTimeMs": 201,
-    "FastestCallMs": 201,
-    "SlowestCallMs": 201
+  "file_list": {
+    "Calls": 2,
+    "AverageTimeMs": 15,
+    "FastestCallMs": 14,
+    "SlowestCallMs": 16
   }
 }
 ```
 
-The calculator successfully performs operations like:
+The agent successfully performs operations like:
 - Calculate 123 + 456 = 579
 - Calculate 50 * 20 = 1000
+- Show current date and time
+- List files in directories
 
 ## Best Practices
 

@@ -280,7 +280,7 @@ func (p *AnthropicProvider) GenerateMessage(ctx context.Context, messages []doma
 	if err != nil {
 		return domain.Response{}, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
@@ -413,7 +413,7 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 
 	// Start a goroutine to read the stream
 	go func() {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		defer close(tokenCh)
 		// Return the channel to the pool when done
 		// Note: Put will avoid putting closed channels back

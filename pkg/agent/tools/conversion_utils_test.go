@@ -14,28 +14,12 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // Mock implementations for testing
-
-type mockTool struct {
-	name        string
-	description string
-	execFunc    func(ctx *domain.ToolContext, params interface{}) (interface{}, error)
-	schema      *sdomain.Schema
-}
-
-func (m *mockTool) Name() string        { return m.name }
-func (m *mockTool) Description() string { return m.description }
-func (m *mockTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
-	if m.execFunc != nil {
-		return m.execFunc(ctx, params)
-	}
-	return params, nil
-}
-func (m *mockTool) ParameterSchema() *sdomain.Schema { return m.schema }
 
 type mockAgent struct {
 	*core.BaseAgentImpl
@@ -100,17 +84,17 @@ func TestConvertToolCategoryToAgents(t *testing.T) {
 	// Create registry and add some tools
 	registry := builtins.NewRegistry[domain.Tool]()
 
-	tool1 := &mockTool{name: "tool1", description: "Tool 1"}
-	tool2 := &mockTool{name: "tool2", description: "Tool 2"}
+	tool1 := testutils.MockTool{ToolName: "tool1", ToolDescription: "Tool 1"}
+	tool2 := testutils.MockTool{ToolName: "tool2", ToolDescription: "Tool 2"}
 
-	err := registry.Register("tool1", tool1, builtins.Metadata{
+	err := registry.Register("tool1", &tool1, builtins.Metadata{
 		Name:     "tool1",
 		Category: "test-tools",
 		Tags:     []string{"test"},
 	})
 	require.NoError(t, err)
 
-	err = registry.Register("tool2", tool2, builtins.Metadata{
+	err = registry.Register("tool2", &tool2, builtins.Metadata{
 		Name:     "tool2",
 		Category: "test-tools",
 		Tags:     []string{"test"},
@@ -130,10 +114,10 @@ func TestConvertToolCategoryToAgents(t *testing.T) {
 }
 
 func TestNewToolAgentWithEvents(t *testing.T) {
-	tool := &mockTool{
-		name:        "event-tool",
-		description: "Tool with events",
-		execFunc: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+	tool := testutils.MockTool{
+		ToolName:        "event-tool",
+		ToolDescription: "Tool with events",
+		Executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 			if ctx.Events != nil {
 				ctx.Events.EmitMessage("Tool executed")
 			}
@@ -146,7 +130,7 @@ func TestNewToolAgentWithEvents(t *testing.T) {
 	defer dispatcher.Close() // Properly close the dispatcher
 
 	// Create ToolAgent with events
-	toolAgent := NewToolAgentWithEvents(tool, dispatcher)
+	toolAgent := NewToolAgentWithEvents(&tool, dispatcher)
 	assert.NotNil(t, toolAgent)
 
 	// Subscribe to events

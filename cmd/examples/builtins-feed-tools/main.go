@@ -11,12 +11,10 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/feed"
+	feedtools "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/feed"
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
-
-	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/feed"
 )
 
 // Helper types for creating a minimal ToolContext for standalone tool execution
@@ -150,7 +148,7 @@ func main() {
 		fetchResult = result
 	}
 
-	if fetchRes, ok := fetchResult.(*feed.FeedFetchResult); ok {
+	if fetchRes, ok := fetchResult.(*feedtools.FeedFetchResult); ok {
 		fmt.Printf("✓ Fetched feed successfully\n")
 		fmt.Printf("  Format: %s\n", fetchRes.Format)
 		fmt.Printf("  Status: %d\n", fetchRes.Status)
@@ -190,7 +188,7 @@ func main() {
 		fmt.Println("Using mock discovery data for demonstration")
 	}
 
-	if discoverRes, ok := discoverResult.(*feed.FeedDiscoverResult); ok {
+	if discoverRes, ok := discoverResult.(*feedtools.FeedDiscoverResult); ok {
 		fmt.Printf("✓ Feed discovery completed\n")
 		fmt.Printf("  Discovered %d feeds:\n", len(discoverRes.Feeds))
 		for i, discoveredFeed := range discoverRes.Feeds {
@@ -217,7 +215,7 @@ func main() {
 
 	// Get the fetch result for filtering
 	var feedForFilter interface{}
-	if fetchRes, ok := fetchResult.(*feed.FeedFetchResult); ok {
+	if fetchRes, ok := fetchResult.(*feedtools.FeedFetchResult); ok {
 		feedForFilter = fetchRes.Feed
 	} else {
 		feedForFilter = createMockFeedFetchResult().Feed
@@ -233,7 +231,7 @@ func main() {
 	if err != nil {
 		log.Printf("Warning: Feed filtering failed: %v", err)
 	} else {
-		if filterRes, ok := filterResult.(*feed.FeedFilterResult); ok {
+		if filterRes, ok := filterResult.(*feedtools.FeedFilterResult); ok {
 			fmt.Printf("✓ Feed filtering completed\n")
 			fmt.Printf("  Filtered items: %d\n", len(filterRes.Items))
 			fmt.Printf("  Total items processed: %d\n", filterRes.TotalItems)
@@ -261,7 +259,7 @@ func main() {
 
 	// Example 4: Aggregate multiple feeds
 	fmt.Println("=== Example 4: Feed Aggregation ===")
-	fmt.Println("Aggregating multiple feeds into one unified feed...")
+	fmt.Println("Aggregating multiple feeds into one unified feed..")
 
 	// Create multiple feeds for aggregation
 	feed1 := createMockFeedFetchResult().Feed
@@ -284,7 +282,7 @@ func main() {
 	if err != nil {
 		log.Printf("Warning: Feed aggregation failed: %v", err)
 	} else {
-		if aggregateRes, ok := aggregateResult.(*feed.FeedAggregateResult); ok {
+		if aggregateRes, ok := aggregateResult.(*feedtools.FeedAggregateResult); ok {
 			fmt.Printf("✓ Feed aggregation completed\n")
 			fmt.Printf("  Source feeds: %d\n", aggregateRes.SourceCount)
 			fmt.Printf("  Total items before deduplication: %d\n", aggregateRes.TotalItems)
@@ -322,7 +320,7 @@ func main() {
 	if err != nil {
 		log.Printf("Warning: Feed conversion failed: %v", err)
 	} else {
-		if convertRes, ok := convertResult.(*feed.FeedConvertResult); ok {
+		if convertRes, ok := convertResult.(*feedtools.FeedConvertResult); ok {
 			fmt.Printf("✓ Feed conversion completed\n")
 			fmt.Printf("  Target format: %s\n", convertRes.Format)
 			fmt.Printf("  Content type: %s\n", convertRes.ContentType)
@@ -358,7 +356,7 @@ func main() {
 	if err != nil {
 		log.Printf("Warning: Feed extraction failed: %v", err)
 	} else {
-		if extractRes, ok := extractResult.(*feed.FeedExtractResult); ok {
+		if extractRes, ok := extractResult.(*feedtools.FeedExtractResult); ok {
 			fmt.Printf("✓ Feed data extraction completed\n")
 			fmt.Printf("  Extracted fields: %v\n", extractRes.Fields)
 			fmt.Printf("  Items extracted: %d\n", extractRes.Count)
@@ -452,24 +450,24 @@ func main() {
 }
 
 // createMockFeedFetchResult creates a mock feed fetch result for demonstration
-func createMockFeedFetchResult() *feed.FeedFetchResult {
+func createMockFeedFetchResult() *feedtools.FeedFetchResult {
 	now := time.Now()
 	pub1 := now.Add(-24 * time.Hour)
 	pub2 := now.Add(-48 * time.Hour)
 	pub3 := now.Add(-72 * time.Hour)
 
-	return &feed.FeedFetchResult{
-		Feed: feed.UnifiedFeed{
+	return &feedtools.FeedFetchResult{
+		Feed: feedtools.UnifiedFeed{
 			Title:       "Mock Technology Feed",
 			Description: "A mock feed for demonstration purposes",
 			Link:        "https://example.com/feed",
 			Updated:     &now,
 			Language:    "en",
-			Author: &feed.Author{
+			Author: &feedtools.Author{
 				Name:  "Tech Team",
 				Email: "tech@example.com",
 			},
-			Items: []feed.FeedItem{
+			Items: []feedtools.FeedItem{
 				{
 					ID:          "item1",
 					Title:       "Go 1.22 Released with New Features",
@@ -478,7 +476,7 @@ func createMockFeedFetchResult() *feed.FeedFetchResult {
 					Link:        "https://example.com/go-1-22",
 					Published:   &pub1,
 					Updated:     &pub1,
-					Author: &feed.Author{
+					Author: &feedtools.Author{
 						Name: "Go Team",
 					},
 					Categories: []string{"golang", "programming", "technology", "release"},
@@ -491,7 +489,7 @@ func createMockFeedFetchResult() *feed.FeedFetchResult {
 					Link:        "https://example.com/microservices",
 					Published:   &pub2,
 					Updated:     &pub2,
-					Author: &feed.Author{
+					Author: &feedtools.Author{
 						Name: "Tech Writer",
 					},
 					Categories: []string{"golang", "microservices", "architecture", "programming"},
@@ -504,7 +502,7 @@ func createMockFeedFetchResult() *feed.FeedFetchResult {
 					Link:        "https://example.com/concurrency",
 					Published:   &pub3,
 					Updated:     &pub3,
-					Author: &feed.Author{
+					Author: &feedtools.Author{
 						Name:  "Go Expert",
 						Email: "expert@example.com",
 					},
@@ -524,11 +522,11 @@ func createMockFeedFetchResult() *feed.FeedFetchResult {
 }
 
 // createMockDiscoverResult creates a mock discover result
-func createMockDiscoverResult() *feed.FeedDiscoverResult {
-	return &feed.FeedDiscoverResult{
-		Feeds: []feed.DiscoveredFeed{
+func createMockDiscoverResult() *feedtools.FeedDiscoverResult {
+	return &feedtools.FeedDiscoverResult{
+		Feeds: []feedtools.DiscoveredFeed{
 			{
-				URL:    "https://example.com/blog/feed.xml",
+				URL:    "https://example.com/blog/feedtools.xml",
 				Type:   "RSS",
 				Title:  "Example Blog RSS Feed",
 				Source: "link_tag",
@@ -540,7 +538,7 @@ func createMockDiscoverResult() *feed.FeedDiscoverResult {
 				Source: "auto_discovery",
 			},
 			{
-				URL:    "https://example.com/podcast/feed.xml",
+				URL:    "https://example.com/podcast/feedtools.xml",
 				Type:   "Podcast",
 				Title:  "Example Podcast Feed",
 				Source: "common_path",

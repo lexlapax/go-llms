@@ -14,7 +14,7 @@ func TestProfileStructuredOp(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Save and restore original profile dir
 	origProfileDir := profileDir
@@ -59,7 +59,7 @@ func TestEnableProfilingForComponent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Save and restore original profile dir
 	origProfileDir := profileDir

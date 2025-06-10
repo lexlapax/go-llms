@@ -6,8 +6,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -18,16 +20,36 @@ import (
 	agenttools "github.com/lexlapax/go-llms/pkg/agent/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	ldomain "github.com/lexlapax/go-llms/pkg/llm/domain"
+	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	"github.com/lexlapax/go-llms/pkg/util/llmutil"
+
+	// Import built-in tools
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
 )
 
 func main() {
+	var llmMode bool
+	flag.BoolVar(&llmMode, "llm", false, "Run in LLM mode (default shows workflow structure)")
+	flag.Parse()
+
+	if !llmMode {
+		// Direct mode - show the workflow structure
+		runDirectMode()
+		return
+	}
+
+	// LLM mode
 	ctx := context.Background()
 
-	// Get provider from environment
+	// Get provider from environment or use mock
 	llmProvider, _, _, err := llmutil.ProviderFromEnv()
 	if err != nil {
-		log.Fatalf("Failed to get LLM provider: %v", err)
+		fmt.Println("Note: No LLM API keys found. Using mock provider for demonstration.")
+		fmt.Println("Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY for real LLM usage.")
+		fmt.Println("Tip: Set DEBUG=1 to see detailed logging of agent execution.")
+		fmt.Println()
+		llmProvider = createMockProvider()
 	}
 
 	// Create specialized agents for analysis pipeline
@@ -57,7 +79,10 @@ func main() {
 	comparisonTool := agenttools.NewAgentTool(comparisonAgent)
 
 	// Create main Research Coordinator
-	coordinator := core.NewAgent("research-coordinator", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	coordinator := core.NewLLMAgent("research-coordinator", "Research Coordinator", deps)
 
 	// Add tools to coordinator
 	coordinator.AddTool(tools.MustGetTool("web_search"))
@@ -88,13 +113,22 @@ For research tasks:
 
 Always provide thorough, fact-checked research with clear citations.`)
 
-	// Add logging hook to see what's happening
-	coordinator.WithHook(&core.LoggingHook{})
+	// Add logging if DEBUG is enabled
+	if os.Getenv("DEBUG") == "1" {
+		opts := &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}
+		logger := slog.New(slog.NewTextHandler(os.Stderr, opts))
+		loggingHook := core.NewLoggingHook(logger, core.LogLevelDebug)
+		coordinator.WithHook(loggingHook)
+		log.Println("Debug logging enabled")
+	}
 
 	// Execute research task
 	userQuery := "Research and compare perspectives on AI safety from two different authoritative sources"
-	if len(os.Args) > 1 {
-		userQuery = strings.Join(os.Args[1:], " ")
+	args := flag.Args()
+	if len(args) > 0 {
+		userQuery = strings.Join(args, " ")
 	}
 
 	fmt.Printf("Research Query: %s\n", userQuery)
@@ -103,10 +137,7 @@ Always provide thorough, fact-checked research with clear citations.`)
 
 	// Create initial state
 	initialState := domain.NewState()
-	initialState.AddMessage(domain.Message{
-		Role:    domain.RoleUser,
-		Content: userQuery,
-	})
+	initialState.Set("user_input", userQuery)
 
 	// Run the coordinator
 	result, err := coordinator.Run(ctx, initialState)
@@ -116,8 +147,9 @@ Always provide thorough, fact-checked research with clear citations.`)
 
 	// Display results
 	fmt.Println("\n=== Research Complete ===")
-	messages := result.Messages()
-	if len(messages) > 0 {
+	if response, exists := result.Get("response"); exists {
+		fmt.Printf("Final Report:\n%v\n", response)
+	} else if messages := result.Messages(); len(messages) > 0 {
 		lastMessage := messages[len(messages)-1]
 		fmt.Printf("Final Report:\n%s\n", lastMessage.Content)
 	}
@@ -130,7 +162,10 @@ Always provide thorough, fact-checked research with clear citations.`)
 
 // createContentAnalyzer creates an LLM agent that analyzes content
 func createContentAnalyzer(llmProvider ldomain.Provider) domain.BaseAgent {
-	agent := core.NewAgent("content-analyzer", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("content-analyzer", "Content Analyzer", deps)
 
 	agent.SetSystemPrompt(`You are a content analyzer. Extract and structure the following from the provided text:
 1. Key Points: Main arguments or claims
@@ -145,7 +180,10 @@ Format your response as a JSON object with these fields.`)
 
 // createFactChecker creates an LLM agent that fact-checks claims
 func createFactChecker(llmProvider ldomain.Provider) domain.BaseAgent {
-	agent := core.NewAgent("fact-checker", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("fact-checker", "Fact Checker", deps)
 
 	agent.SetSystemPrompt(`You are a fact checker. Review the analysis provided and:
 1. Identify specific claims that can be verified
@@ -160,7 +198,10 @@ Add your fact-checking results to the existing analysis.`)
 
 // createSummaryGenerator creates an LLM agent that generates summaries
 func createSummaryGenerator(llmProvider ldomain.Provider) domain.BaseAgent {
-	agent := core.NewAgent("summary-generator", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("summary-generator", "Summary Generator", deps)
 
 	agent.SetSystemPrompt(`You are a summary generator. Based on the analyzed and fact-checked content:
 1. Create a concise executive summary (2-3 paragraphs)
@@ -175,7 +216,10 @@ Format as a clear, readable summary suitable for decision-makers.`)
 
 // createSourceAnalyzer creates an LLM agent that analyzes a specific source
 func createSourceAnalyzer(label string, llmProvider ldomain.Provider) domain.BaseAgent {
-	agent := core.NewAgent(fmt.Sprintf("source-analyzer-%s", label), llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent(fmt.Sprintf("source-analyzer-%s", label), fmt.Sprintf("Source Analyzer %s", label), deps)
 
 	agent.SetSystemPrompt(fmt.Sprintf(`You are Source Analyzer %s. Analyze the provided content and extract:
 1. Main thesis or position
@@ -292,4 +336,105 @@ func findDifferences(a, b map[string]interface{}) []string {
 	}
 
 	return differences
+}
+
+// runDirectMode shows the workflow structure
+func runDirectMode() {
+	fmt.Println("=== Workflow-as-Tool Architecture ===")
+	fmt.Println("\nThis example demonstrates wrapping complex workflow agents as tools for an LLM coordinator.")
+
+	fmt.Println("Architecture:")
+	fmt.Println("┌─────────────────────────────────────┐")
+	fmt.Println("│     Research Coordinator (LLM)      │")
+	fmt.Println("│  • Orchestrates research process    │")
+	fmt.Println("│  • Uses workflow agents as tools    │")
+	fmt.Println("└─────────────────┬───────────────────┘")
+	fmt.Println("                  │")
+	fmt.Println("      ┌───────────┴───────────┐")
+	fmt.Println("      │                       │")
+	fmt.Println("┌─────▼─────────────┐ ┌──────▼──────────┐")
+	fmt.Println("│ Analysis Pipeline │ │ Comparison Tool │")
+	fmt.Println("│ (Sequential)      │ │ (Parallel)      │")
+	fmt.Println("├───────────────────┤ ├─────────────────┤")
+	fmt.Println("│ 1. Content Analyze│ │ • Source A      │")
+	fmt.Println("│ 2. Fact Check     │ │ • Source B      │")
+	fmt.Println("│ 3. Summarize      │ │ • Merge Results │")
+	fmt.Println("└───────────────────┘ └─────────────────┘")
+	fmt.Println()
+	fmt.Println("Available Tools:")
+	fmt.Println("• web_search - Search for information")
+	fmt.Println("• web_fetch - Retrieve web content")
+	fmt.Println("• analysis-pipeline - Multi-stage content analysis")
+	fmt.Println("• comparison-agent - Parallel source comparison")
+	fmt.Println("• file_write - Save research results")
+	fmt.Println()
+	fmt.Println("To run the research pipeline with an LLM:")
+	fmt.Println("  agent-workflow-as-tool -llm [research query]")
+	fmt.Println()
+	fmt.Println("Example:")
+	fmt.Println("  agent-workflow-as-tool -llm \"Compare approaches to renewable energy\"")
+}
+
+// createMockProvider creates a mock provider for demonstration
+func createMockProvider() ldomain.Provider {
+	mockProvider := provider.NewMockProvider()
+	toolCallCount := 0
+
+	mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.Response, error) {
+		// Extract the last user message
+		var lastUserMsg string
+		for i := len(messages) - 1; i >= 0; i-- {
+			if messages[i].Role == "user" {
+				for _, part := range messages[i].Content {
+					if part.Type == ldomain.ContentTypeText {
+						lastUserMsg = part.Text
+						break
+					}
+				}
+				if lastUserMsg != "" {
+					break
+				}
+			}
+		}
+
+		// Track tool calls
+		toolCallCount++
+
+		// Simulate workflow based on tool call sequence
+		if strings.Contains(lastUserMsg, "Tool results:") {
+			switch toolCallCount {
+			case 2: // After web_search
+				return ldomain.Response{
+					Content: `{"tool": "web_fetch", "params": {"url": "https://example.com/ai-safety-1"}}`,
+				}, nil
+			case 3: // After first web_fetch
+				return ldomain.Response{
+					Content: `{"tool": "web_fetch", "params": {"url": "https://example.com/ai-safety-2"}}`,
+				}, nil
+			case 4: // After second web_fetch, run comparison
+				return ldomain.Response{
+					Content: `{"tool": "comparison-agent", "params": {"source_a": "Content from first source about AI safety...", "source_b": "Content from second source about AI safety..."}}`,
+				}, nil
+			case 5: // After comparison, run analysis
+				return ldomain.Response{
+					Content: `{"tool": "analysis-pipeline", "params": {"content": "Combined analysis of both sources..."}}`,
+				}, nil
+			case 6: // After analysis, save report
+				return ldomain.Response{
+					Content: `{"tool": "file_write", "params": {"path": "ai_safety_research_report.md", "content": "# AI Safety Research Report\n\n## Executive Summary\n..."}}`,
+				}, nil
+			default:
+				return ldomain.Response{
+					Content: "I've completed the research and comparison of AI safety perspectives from two authoritative sources. The analysis pipeline identified key differences in approach, with one source focusing on alignment research while the other emphasizes robustness testing. Both sources agree on the importance of safety measures but differ in their proposed timelines and methodologies. The full report has been saved to ai_safety_research_report.md.",
+				}, nil
+			}
+		}
+
+		// Initial response - start with web search
+		return ldomain.Response{
+			Content: `{"tool": "web_search", "params": {"query": "AI safety research authoritative sources"}}`,
+		}, nil
+	})
+
+	return mockProvider
 }

@@ -15,9 +15,13 @@ import (
 
 func TestEnhancedToolImplementation(t *testing.T) {
 	t.Run("basic tool with new metadata", func(t *testing.T) {
-		// Create a simple function
-		fn := func(x, y int) int {
-			return x + y
+		// Create a simple function that accepts a struct
+		type AddParams struct {
+			X int `json:"x"`
+			Y int `json:"y"`
+		}
+		fn := func(params AddParams) int {
+			return params.X + params.Y
 		}
 
 		// Create schema
@@ -70,20 +74,25 @@ func TestEnhancedToolImplementation(t *testing.T) {
 	})
 
 	t.Run("tool with full LLM guidance", func(t *testing.T) {
-		// Create calculator function
-		calcFn := func(operation string, a, b float64) (float64, error) {
-			switch operation {
+		// Create calculator function that accepts a struct
+		type CalcParams struct {
+			Operation string  `json:"operation"`
+			A         float64 `json:"a"`
+			B         float64 `json:"b"`
+		}
+		calcFn := func(params CalcParams) (float64, error) {
+			switch params.Operation {
 			case "add":
-				return a + b, nil
+				return params.A + params.B, nil
 			case "subtract":
-				return a - b, nil
+				return params.A - params.B, nil
 			case "multiply":
-				return a * b, nil
+				return params.A * params.B, nil
 			case "divide":
-				if b == 0 {
+				if params.B == 0 {
 					return 0, errors.New("division_by_zero")
 				}
-				return a / b, nil
+				return params.A / params.B, nil
 			default:
 				return 0, errors.New("invalid_operation")
 			}
@@ -258,13 +267,16 @@ func TestEnhancedToolImplementation(t *testing.T) {
 
 	t.Run("tool with context support", func(t *testing.T) {
 		// Test function that uses ToolContext
-		contextFn := func(ctx *domain.ToolContext, msg string) string {
+		type GreetParams struct {
+			Msg string `json:"msg"`
+		}
+		contextFn := func(ctx *domain.ToolContext, params GreetParams) string {
 			if ctx.State != nil {
 				if greeting, ok := ctx.State.Get("greeting"); ok {
-					return greeting.(string) + " " + msg
+					return greeting.(string) + " " + params.Msg
 				}
 			}
-			return "Hello " + msg
+			return "Hello " + params.Msg
 		}
 
 		tool := tools.NewToolBuilder("greeter", "Greets with context").
@@ -448,7 +460,11 @@ func TestToolBuilderEdgeCases(t *testing.T) {
 
 	t.Run("legacy NewTool still works", func(t *testing.T) {
 		// Test that the old NewTool function still works
-		fn := func(a, b int) int { return a + b }
+		type LegacyParams struct {
+			A int `json:"a"`
+			B int `json:"b"`
+		}
+		fn := func(params LegacyParams) int { return params.A + params.B }
 		schema := &sdomain.Schema{
 			Type: "object",
 			Properties: map[string]sdomain.Property{

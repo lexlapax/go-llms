@@ -126,7 +126,7 @@ func main() {
 	// Get user input
 	fmt.Print("\nEnter your message (or 'quit' to exit): ")
 	var userInput string
-	fmt.Scanln(&userInput)
+	_, _ = fmt.Scanln(&userInput)
 
 	if userInput == "quit" {
 		fmt.Println("Goodbye!")

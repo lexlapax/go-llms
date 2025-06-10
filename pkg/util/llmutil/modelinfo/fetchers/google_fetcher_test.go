@@ -111,7 +111,7 @@ func TestGoogleFetcher_FetchModels_Success(t *testing.T) {
 
 func TestGoogleFetcher_FetchModels_APIKeyMissing(t *testing.T) {
 	originalApiKey := os.Getenv("GEMINI_API_KEY")
-	os.Unsetenv("GEMINI_API_KEY")
+	_ = os.Unsetenv("GEMINI_API_KEY")
 	defer os.Setenv("GEMINI_API_KEY", originalApiKey)
 
 	fetcher := NewGoogleFetcher("", http.DefaultClient) // API key check happens first
@@ -128,7 +128,7 @@ func TestGoogleFetcher_FetchModels_APIKeyMissing(t *testing.T) {
 func TestGoogleFetcher_FetchModels_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden) // Example: API key invalid or access denied
-		fmt.Fprintln(w, `{"error": {"message": "API key not valid. Please pass a valid API key.", "status": "PERMISSION_DENIED"}}`)
+		_, _ = fmt.Fprintln(w, `{"error": {"message": "API key not valid. Please pass a valid API key.", "status": "PERMISSION_DENIED"}}`)
 	}))
 	defer server.Close()
 
@@ -153,7 +153,7 @@ func TestGoogleFetcher_FetchModels_APIError(t *testing.T) {
 func TestGoogleFetcher_FetchModels_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, `{"models": [`) // Malformed JSON
+		_, _ = fmt.Fprintln(w, `{"models": [`) // Malformed JSON
 	}))
 	defer server.Close()
 

@@ -13,6 +13,7 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils"
 )
 
 // ExampleAgentTool demonstrates wrapping an agent as a tool
@@ -152,10 +153,10 @@ func (a *textProcessorAgent) Run(ctx context.Context, state *domain.State) (*dom
 }
 
 func createCalculatorTool() domain.Tool {
-	return &calculatorTool{
-		name:        "calculator",
-		description: "Performs basic arithmetic operations",
-		paramSchema: &sdomain.Schema{
+	return testutils.MockTool{
+		ToolName:        "calculator",
+		ToolDescription: "Performs basic arithmetic operations",
+		Schema: &sdomain.Schema{
 			Type: "object",
 			Properties: map[string]sdomain.Property{
 				"a":  {Type: "number", Description: "First number"},
@@ -164,62 +165,51 @@ func createCalculatorTool() domain.Tool {
 			},
 			Required: []string{"a", "b", "op"},
 		},
+		Executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+			p, ok := params.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("parameters must be a map")
+			}
+
+			a, ok := getFloat(p["a"])
+			if !ok {
+				return nil, fmt.Errorf("parameter 'a' must be a number")
+			}
+
+			b, ok := getFloat(p["b"])
+			if !ok {
+				return nil, fmt.Errorf("parameter 'b' must be a number")
+			}
+
+			op, ok := p["op"].(string)
+			if !ok {
+				return nil, fmt.Errorf("parameter 'op' must be a string")
+			}
+
+			var result float64
+			switch op {
+			case "add":
+				result = a + b
+			case "subtract":
+				result = a - b
+			case "multiply":
+				result = a * b
+			case "divide":
+				if b == 0 {
+					return nil, fmt.Errorf("division by zero")
+				}
+				result = a / b
+			default:
+				return nil, fmt.Errorf("unknown operation: %s", op)
+			}
+
+			// Return as integer if it's a whole number
+			if result == float64(int(result)) {
+				return int(result), nil
+			}
+			return result, nil
+		},
 	}
-}
-
-type calculatorTool struct {
-	name        string
-	description string
-	paramSchema *sdomain.Schema
-}
-
-func (t *calculatorTool) Name() string                     { return t.name }
-func (t *calculatorTool) Description() string              { return t.description }
-func (t *calculatorTool) ParameterSchema() *sdomain.Schema { return t.paramSchema }
-
-func (t *calculatorTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
-	p, ok := params.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("parameters must be a map")
-	}
-
-	a, ok := getFloat(p["a"])
-	if !ok {
-		return nil, fmt.Errorf("parameter 'a' must be a number")
-	}
-
-	b, ok := getFloat(p["b"])
-	if !ok {
-		return nil, fmt.Errorf("parameter 'b' must be a number")
-	}
-
-	op, ok := p["op"].(string)
-	if !ok {
-		return nil, fmt.Errorf("parameter 'op' must be a string")
-	}
-
-	var result float64
-	switch op {
-	case "add":
-		result = a + b
-	case "subtract":
-		result = a - b
-	case "multiply":
-		result = a * b
-	case "divide":
-		if b == 0 {
-			return nil, fmt.Errorf("division by zero")
-		}
-		result = a / b
-	default:
-		return nil, fmt.Errorf("unknown operation: %s", op)
-	}
-
-	// Return as integer if it's a whole number
-	if result == float64(int(result)) {
-		return int(result), nil
-	}
-	return result, nil
 }
 
 func getFloat(v interface{}) (float64, bool) {

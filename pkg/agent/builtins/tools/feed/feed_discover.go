@@ -219,7 +219,7 @@ func feedDiscoverExecute(ctx context.Context, params FeedDiscoverParams) (*FeedD
 			Error: fmt.Sprintf("error fetching page: %v", err),
 		}, nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return &FeedDiscoverResult{
@@ -394,7 +394,7 @@ func verifyFeedExists(ctx context.Context, feedURL string, client *http.Client) 
 	if err != nil {
 		return false
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check if status is OK and content type suggests a feed
 	if resp.StatusCode == http.StatusOK {

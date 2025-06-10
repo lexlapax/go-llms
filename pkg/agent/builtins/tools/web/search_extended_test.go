@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+	tools "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	. "github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
@@ -1002,7 +1002,7 @@ func TestSearchResultConversion(t *testing.T) {
 
 func TestWebSearchIntegrationWithEngineAPIKey(t *testing.T) {
 	// This is an integration test that validates the EngineAPIKey parameter
-	tool, ok := GetTool("web_search")
+	tool, ok := tools.GetTool("web_search")
 	if !ok {
 		t.Fatal("web_search tool not found")
 	}

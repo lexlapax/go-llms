@@ -381,12 +381,12 @@ func TestGetAvailableModels_DefaultCachePath(t *testing.T) {
 	if mkDirErr := os.MkdirAll(filepath.Dir(expectedDefaultPath), 0755); mkDirErr != nil {
 		t.Fatalf("Failed to create directory for default cache path %s: %v", expectedDefaultPath, mkDirErr)
 	}
-	os.Remove(expectedDefaultPath)
+	_ = os.Remove(expectedDefaultPath)
 	t.Cleanup(func() {
-		os.Remove(expectedDefaultPath)
-		os.Remove(filepath.Dir(expectedDefaultPath))
+		_ = os.Remove(expectedDefaultPath)
+		_ = os.Remove(filepath.Dir(expectedDefaultPath))
 		if cwd != "" && userCacheDir == filepath.Join(cwd, ".cache") {
-			os.Remove(userCacheDir)
+			_ = os.Remove(userCacheDir)
 		}
 	})
 

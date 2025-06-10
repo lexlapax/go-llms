@@ -153,9 +153,9 @@ func main() {
 Use the transfer_to_agent tool to delegate to the appropriate specialist.`)
 
 	// Register agents for handoff
-	core.Register(techSupport)
-	core.Register(billingSupport)
-	core.Register(seniorSupport)
+	_ = core.Register(techSupport)
+	_ = core.Register(billingSupport)
+	_ = core.Register(seniorSupport)
 
 	// Display available tools (shows automatic sub-agent registration)
 	fmt.Println("Coordinator's available tools:")

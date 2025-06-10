@@ -17,7 +17,7 @@ func TestAnthropicProvider(t *testing.T) {
 		// Check if authorization header is present
 		if r.Header.Get("x-api-key") != "test-api-key" {
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, `{"error":{"type":"auth_error","message":"Invalid API key"}}`)
+			_, _ = fmt.Fprintln(w, `{"error":{"type":"auth_error","message":"Invalid API key"}}`)
 			return
 		}
 
@@ -26,7 +26,7 @@ func TestAnthropicProvider(t *testing.T) {
 		case "/v1/messages":
 			// Standard completion response for messages API
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintln(w, `{
+			_, _ = fmt.Fprintln(w, `{
 				"id": "msg_123",
 				"type": "message",
 				"role": "assistant",
@@ -42,14 +42,14 @@ func TestAnthropicProvider(t *testing.T) {
 		case "/v1/complete":
 			// Legacy completion API
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintln(w, `{
+			_, _ = fmt.Fprintln(w, `{
 				"completion": "This is a test response from the Anthropic API.",
 				"stop_reason": "stop_sequence",
 				"model": "claude-2.0"
 			}`)
 		default:
 			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprintln(w, `{"error":{"type":"invalid_request_error","message":"Not found"}}`)
+			_, _ = fmt.Fprintln(w, `{"error":{"type":"invalid_request_error","message":"Not found"}}`)
 		}
 	}))
 	defer mockServer.Close()
@@ -135,14 +135,14 @@ func TestAnthropicProvider(t *testing.T) {
 		// Check if authorization header is present
 		if r.Header.Get("x-api-key") != "test-api-key" {
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, `{"error":{"type":"auth_error","message":"Invalid API key"}}`)
+			_, _ = fmt.Fprintln(w, `{"error":{"type":"auth_error","message":"Invalid API key"}}`)
 			return
 		}
 
 		// Check if correct content type and accept headers are set
 		if r.Header.Get("Content-Type") != "application/json" {
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, `{"error":{"type":"invalid_request_error","message":"Invalid content type"}}`)
+			_, _ = fmt.Fprintln(w, `{"error":{"type":"invalid_request_error","message":"Invalid content type"}}`)
 			return
 		}
 
@@ -152,16 +152,16 @@ func TestAnthropicProvider(t *testing.T) {
 		w.Header().Set("Connection", "keep-alive")
 
 		// Simulate a streaming response for Anthropic
-		fmt.Fprint(w, "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_123\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"claude-3-5-sonnet-latest\"}}\n\n")
-		fmt.Fprint(w, "event: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\"}}\n\n")
-		fmt.Fprint(w, "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"This \"}}\n\n")
-		fmt.Fprint(w, "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"is \"}}\n\n")
-		fmt.Fprint(w, "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"a \"}}\n\n")
-		fmt.Fprint(w, "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"streaming \"}}\n\n")
-		fmt.Fprint(w, "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"response.\"}}\n\n")
-		fmt.Fprint(w, "event: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\n")
-		fmt.Fprint(w, "event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":5}}\n\n")
-		fmt.Fprint(w, "event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n")
+		_, _ = fmt.Fprint(w, "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_123\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"claude-3-5-sonnet-latest\"}}\n\n")
+		_, _ = fmt.Fprint(w, "event: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\"}}\n\n")
+		_, _ = fmt.Fprint(w, "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"This \"}}\n\n")
+		_, _ = fmt.Fprint(w, "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"is \"}}\n\n")
+		_, _ = fmt.Fprint(w, "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"a \"}}\n\n")
+		_, _ = fmt.Fprint(w, "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"streaming \"}}\n\n")
+		_, _ = fmt.Fprint(w, "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"response.\"}}\n\n")
+		_, _ = fmt.Fprint(w, "event: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\n")
+		_, _ = fmt.Fprint(w, "event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":5}}\n\n")
+		_, _ = fmt.Fprint(w, "event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n")
 	}))
 	defer streamServer.Close()
 
@@ -237,7 +237,7 @@ func TestAnthropicProvider(t *testing.T) {
 	schemaServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Return a valid JSON response that conforms to our schema
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, `{
+		_, _ = fmt.Fprintln(w, `{
 			"id": "msg_123",
 			"type": "message",
 			"role": "assistant",

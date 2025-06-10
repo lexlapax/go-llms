@@ -1,7 +1,7 @@
 package main
 
-// ABOUTME: Example demonstrating metrics collection for provider operations with ToolContext
-// ABOUTME: Shows how to track latency, token usage, and tool execution with enhanced context
+// ABOUTME: Example demonstrating metrics collection for LLM agent operations with built-in tools
+// ABOUTME: Shows how to track latency, token usage, and tool execution metrics
 
 import (
 	"context"
@@ -9,213 +9,21 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strconv"
+	"strings"
 	"time"
 
+	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	llmdomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
-	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+
+	// Import tool categories
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/datetime"
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/math"
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
 )
-
-// DummyTool is a simple tool that just waits a bit and returns a result
-type DummyTool struct {
-	name        string
-	delay       time.Duration
-	failPercent int
-}
-
-// NewDummyTool creates a dummy tool
-func NewDummyTool(name string, delay time.Duration, failPercent int) *DummyTool {
-	return &DummyTool{
-		name:        name,
-		delay:       delay,
-		failPercent: failPercent,
-	}
-}
-
-// CalculatorTool is a simple calculator tool
-type CalculatorTool struct{}
-
-// NewCalculatorTool creates a new calculator tool
-func NewCalculatorTool() *CalculatorTool {
-	return &CalculatorTool{}
-}
-
-// Name returns the tool's name
-func (t *CalculatorTool) Name() string {
-	return "calculator"
-}
-
-// Description provides information about the tool
-func (t *CalculatorTool) Description() string {
-	return "A simple calculator that can add, subtract, multiply and divide numbers"
-}
-
-// CalculatorParams defines parameters for the calculator tool
-type CalculatorParams struct {
-	Operation string  `json:"operation"`
-	A         float64 `json:"a"`
-	B         float64 `json:"b"`
-}
-
-// Execute performs the calculation
-func (t *CalculatorTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
-	// Emit start event if available
-	if ctx.Events != nil {
-		ctx.Events.EmitMessage("Starting calculation")
-	}
-
-	// Quick simulation of processing time
-	time.Sleep(10 * time.Millisecond)
-
-	// Try to convert params to CalculatorParams
-	var calcParams CalculatorParams
-
-	// If params is a map, try to extract the values
-	if paramsMap, ok := params.(map[string]interface{}); ok {
-		if op, ok := paramsMap["operation"].(string); ok {
-			calcParams.Operation = op
-		}
-
-		if a, ok := paramsMap["a"].(float64); ok {
-			calcParams.A = a
-		} else if aInt, ok := paramsMap["a"].(int); ok {
-			calcParams.A = float64(aInt)
-		} else if aStr, ok := paramsMap["a"].(string); ok {
-			if aVal, err := strconv.ParseFloat(aStr, 64); err == nil {
-				calcParams.A = aVal
-			}
-		}
-
-		if b, ok := paramsMap["b"].(float64); ok {
-			calcParams.B = b
-		} else if bInt, ok := paramsMap["b"].(int); ok {
-			calcParams.B = float64(bInt)
-		} else if bStr, ok := paramsMap["b"].(string); ok {
-			if bVal, err := strconv.ParseFloat(bStr, 64); err == nil {
-				calcParams.B = bVal
-			}
-		}
-	}
-
-	// Perform the calculation
-	var result float64
-	switch calcParams.Operation {
-	case "add":
-		result = calcParams.A + calcParams.B
-		if ctx.Events != nil {
-			ctx.Events.EmitCustom("calculation_complete", map[string]interface{}{
-				"operation": "add",
-				"a":         calcParams.A,
-				"b":         calcParams.B,
-				"result":    result,
-			})
-		}
-		return map[string]interface{}{
-			"result": result,
-		}, nil
-	case "subtract":
-		return map[string]interface{}{
-			"result": calcParams.A - calcParams.B,
-		}, nil
-	case "multiply":
-		return map[string]interface{}{
-			"result": calcParams.A * calcParams.B,
-		}, nil
-	case "divide":
-		if calcParams.B == 0 {
-			return nil, fmt.Errorf("division by zero")
-		}
-		return map[string]interface{}{
-			"result": calcParams.A / calcParams.B,
-		}, nil
-	default:
-		return nil, fmt.Errorf("unknown operation: %s", calcParams.Operation)
-	}
-}
-
-// ParameterSchema returns the schema for the calculator parameters
-func (t *CalculatorTool) ParameterSchema() *sdomain.Schema {
-	return &sdomain.Schema{
-		Type: "object",
-		Properties: map[string]sdomain.Property{
-			"operation": {
-				Type:        "string",
-				Description: "The operation to perform (add, subtract, multiply, divide)",
-			},
-			"a": {
-				Type:        "number",
-				Description: "The first number",
-			},
-			"b": {
-				Type:        "number",
-				Description: "The second number",
-			},
-		},
-		Required: []string{"operation", "a", "b"},
-	}
-}
-
-// Name returns the tool's name
-func (t *DummyTool) Name() string {
-	return t.name
-}
-
-// Description provides information about the tool
-func (t *DummyTool) Description() string {
-	return fmt.Sprintf("A dummy tool that waits for %v and has a %d%% chance of failing", t.delay, t.failPercent)
-}
-
-// Execute runs the tool with parameters
-func (t *DummyTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
-	// Emit progress events
-	if ctx.Events != nil {
-		ctx.Events.EmitProgress(0, 100, fmt.Sprintf("Starting %s", t.name))
-	}
-
-	// Simulate processing time
-	select {
-	case <-time.After(t.delay):
-		// Continue execution
-		if ctx.Events != nil {
-			ctx.Events.EmitProgress(100, 100, fmt.Sprintf("Completed %s", t.name))
-		}
-	case <-ctx.Context.Done():
-		return nil, ctx.Context.Err()
-	}
-
-	// Random failure based on failPercent
-	if t.failPercent > 0 && time.Now().UnixNano()%100 < int64(t.failPercent) {
-		err := fmt.Errorf("tool %s failed (simulated failure)", t.name)
-		if ctx.Events != nil {
-			ctx.Events.EmitError(err)
-		}
-		return nil, err
-	}
-
-	// Return a dummy result
-	return map[string]interface{}{
-		"tool":      t.name,
-		"timestamp": time.Now().Format(time.RFC3339),
-		"params":    params,
-	}, nil
-}
-
-// ParameterSchema returns the schema for tool parameters
-func (t *DummyTool) ParameterSchema() *sdomain.Schema {
-	return &sdomain.Schema{
-		Type: "object",
-		Properties: map[string]sdomain.Property{
-			"query": {
-				Type:        "string",
-				Description: "The input query",
-			},
-		},
-		Required: []string{"query"},
-	}
-}
 
 func main() {
 	// Setup structured logging
@@ -227,22 +35,31 @@ func main() {
 
 	// Create provider - try to use a real provider if available
 	var llmProvider llmdomain.Provider
+	var providerName, modelName string
 
 	// Try OpenAI first
 	if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
-		fmt.Println("🚀 Using OpenAI provider")
-		llmProvider = provider.NewOpenAIProvider(apiKey, "gpt-4o-mini")
+		providerName = "openai"
+		modelName = "gpt-4o-mini"
+		llmProvider = provider.NewOpenAIProvider(apiKey, modelName)
 	} else if apiKey := os.Getenv("ANTHROPIC_API_KEY"); apiKey != "" {
-		fmt.Println("🚀 Using Anthropic provider")
-		llmProvider = provider.NewAnthropicProvider(apiKey, "claude-3-haiku-20240307")
+		providerName = "anthropic"
+		modelName = "claude-3-haiku-20240307"
+		llmProvider = provider.NewAnthropicProvider(apiKey, modelName)
 	} else if apiKey := os.Getenv("GEMINI_API_KEY"); apiKey != "" {
-		fmt.Println("🚀 Using Gemini provider")
-		llmProvider = provider.NewGeminiProvider(apiKey, "gemini-1.5-flash")
+		providerName = "gemini"
+		modelName = "gemini-1.5-flash"
+		llmProvider = provider.NewGeminiProvider(apiKey, modelName)
 	} else {
-		fmt.Println("⚠️  No API key found, using mock provider")
-		fmt.Println("   Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY to use a real provider")
-		llmProvider = provider.NewMockProvider()
+		fmt.Println("Note: No LLM API keys found. Using mock provider for demonstration.")
+		fmt.Println("Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY for real LLM usage.")
+		fmt.Println()
+		providerName = "mock"
+		modelName = "mock-model"
+		llmProvider = createMockProvider()
 	}
+
+	fmt.Printf("Using %s provider with model %s\n\n", providerName, modelName)
 
 	// Create the metrics hook
 	metricsHook := core.NewLLMMetricsHook()
@@ -251,25 +68,29 @@ func main() {
 	loggingHook := core.NewLoggingHook(logger, core.LogLevelDetailed)
 
 	// Create agent with both hooks
-	agent := core.NewAgent("metrics-agent", llmProvider).
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("metrics-agent", "Metrics Demo Agent", deps).
 		WithHook(metricsHook).
 		WithHook(loggingHook)
 
 	// Add some tools with different characteristics
-	agent.AddTool(NewDummyTool("fastTool", 50*time.Millisecond, 0))
-	agent.AddTool(NewDummyTool("slowTool", 200*time.Millisecond, 0))
-	agent.AddTool(NewDummyTool("unreliableTool", 100*time.Millisecond, 30))
-	agent.AddTool(NewCalculatorTool())
+	agent.AddTool(tools.MustGetTool("calculator"))
+	agent.AddTool(tools.MustGetTool("web_fetch"))
+	agent.AddTool(tools.MustGetTool("file_list"))
+	agent.AddTool(tools.MustGetTool("datetime_now"))
 
 	// Set a system prompt to help the agent understand the tools
 	agent.SetSystemPrompt(`You are a helpful assistant with access to several tools:
 - calculator: Can perform basic math operations (add, subtract, multiply, divide)
-- fastTool: A fast tool for quick queries
-- slowTool: A slower tool for more detailed analysis
-- unreliableTool: A tool that sometimes fails (use with caution)
+- web_fetch: Fetch content from web URLs
+- file_list: List files in directories
+- datetime_now: Get current date and time
 
 When asked to calculate, use the calculator tool.
-When asked to use a specific tool, use that tool with appropriate parameters.
+When asked about time, use the datetime_now tool.
+When asked about files, use the file_list tool.
 Be concise in your responses.`)
 
 	// Setup context
@@ -303,12 +124,12 @@ func runAgentOperations(ctx context.Context, agent *core.LLMAgent, count int) {
 	prompts := []string{
 		"Calculate 123 + 456 using the calculator",
 		"Calculate 50 * 20 using the calculator tool",
-		"Use the fastTool with query 'test data'",
-		"Use the slowTool with query 'detailed analysis'",
-		"Use the unreliableTool with query 'risky operation'",
+		"What time is it right now?",
+		"List files in the current directory",
 		"Calculate 100 / 4 using the calculator",
 		"Calculate 999 - 333 using the calculator tool",
-		"Use the fastTool to check the status of 'system'",
+		"Show me the current date and time",
+		"List .go files in the current directory",
 	}
 
 	for i := 0; i < count && i < len(prompts); i++ {
@@ -316,7 +137,7 @@ func runAgentOperations(ctx context.Context, agent *core.LLMAgent, count int) {
 
 		// Create state with the prompt
 		state := domain.NewState()
-		state.Set("prompt", prompts[i])
+		state.Set("user_input", prompts[i])
 
 		resultState, err := agent.Run(ctx, state)
 		if err != nil {
@@ -362,4 +183,92 @@ func truncateString(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen] + "..."
+}
+
+// createMockProvider creates a mock provider for demonstration
+func createMockProvider() llmdomain.Provider {
+	mockProvider := provider.NewMockProvider()
+	toolCallCount := 0
+
+	mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []llmdomain.Message, options ...llmdomain.Option) (llmdomain.Response, error) {
+		// Track tool calls
+		toolCallCount++
+
+		// Check if this is a tool result
+		var hasToolResult bool
+		for _, msg := range messages {
+			if msg.Role == "user" {
+				for _, part := range msg.Content {
+					if part.Type == llmdomain.ContentTypeText && strings.Contains(part.Text, "Tool results:") {
+						hasToolResult = true
+						break
+					}
+				}
+			}
+		}
+
+		if hasToolResult {
+			// Return final response after tool execution
+			return llmdomain.Response{
+				Content: "I've successfully executed the requested operation. The metrics show the tool execution time and results.",
+			}, nil
+		}
+
+		// Extract the last user message
+		var lastUserMsg string
+		for i := len(messages) - 1; i >= 0; i-- {
+			if messages[i].Role == "user" {
+				for _, part := range messages[i].Content {
+					if part.Type == llmdomain.ContentTypeText {
+						lastUserMsg = part.Text
+						break
+					}
+				}
+				if lastUserMsg != "" {
+					break
+				}
+			}
+		}
+
+		// Generate tool calls based on the prompt
+		if strings.Contains(lastUserMsg, "Calculate") || strings.Contains(lastUserMsg, "calculate") {
+			if strings.Contains(lastUserMsg, "+") || strings.Contains(lastUserMsg, "add") {
+				return llmdomain.Response{
+					Content: `{"tool": "calculator", "params": {"operation": "add", "a": 123, "b": 456}}`,
+				}, nil
+			} else if strings.Contains(lastUserMsg, "*") || strings.Contains(lastUserMsg, "multiply") {
+				return llmdomain.Response{
+					Content: `{"tool": "calculator", "params": {"operation": "multiply", "a": 50, "b": 20}}`,
+				}, nil
+			} else if strings.Contains(lastUserMsg, "/") || strings.Contains(lastUserMsg, "divide") {
+				return llmdomain.Response{
+					Content: `{"tool": "calculator", "params": {"operation": "divide", "a": 100, "b": 4}}`,
+				}, nil
+			} else if strings.Contains(lastUserMsg, "-") || strings.Contains(lastUserMsg, "subtract") {
+				return llmdomain.Response{
+					Content: `{"tool": "calculator", "params": {"operation": "subtract", "a": 999, "b": 333}}`,
+				}, nil
+			}
+		} else if strings.Contains(lastUserMsg, "time") || strings.Contains(lastUserMsg, "date") {
+			return llmdomain.Response{
+				Content: `{"tool": "datetime_now", "params": {}}`,
+			}, nil
+		} else if strings.Contains(lastUserMsg, "files") || strings.Contains(lastUserMsg, "List") {
+			if strings.Contains(lastUserMsg, ".go") {
+				return llmdomain.Response{
+					Content: `{"tool": "file_list", "params": {"path": ".", "pattern": "*.go"}}`,
+				}, nil
+			}
+			return llmdomain.Response{
+				Content: `{"tool": "file_list", "params": {"path": "."}}`,
+			}, nil
+		}
+
+		// Default response
+		return llmdomain.Response{
+			Content: "I understand your request. Let me help you with that.",
+		}, nil
+	})
+
+	return mockProvider
 }

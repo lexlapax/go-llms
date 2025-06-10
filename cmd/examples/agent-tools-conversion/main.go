@@ -95,12 +95,25 @@ func demonstrateBasicConversion() {
 	}
 
 	// Convert agent to tool
-	tool := tools.NewAgentTool(calculatorAgent)
-	fmt.Printf("Created tool: %s - %s\n", tool.Name(), tool.Description())
+	agentTool := tools.NewAgentTool(calculatorAgent)
+	fmt.Printf("Created tool: %s - %s\n", agentTool.Name(), agentTool.Description())
 
 	// Use the tool
-	ctx := domain.NewToolContext(context.Background(), nil, calculatorAgent, "example-run")
-	result, err := tool.Execute(ctx, map[string]interface{}{
+	agentInfo := domain.AgentInfo{
+		ID:          "demo-agent",
+		Name:        "Demo Agent",
+		Description: "Agent for demonstration",
+		Type:        domain.AgentTypeCustom,
+	}
+	state := domain.NewState()
+	ctx := &domain.ToolContext{
+		Context: context.Background(),
+		State:   domain.NewStateReader(state),
+		Agent:   agentInfo,
+		RunID:   "example-run",
+	}
+
+	result, err := agentTool.Execute(ctx, map[string]interface{}{
 		"operation": "add",
 		"a":         5,
 		"b":         3,
@@ -185,7 +198,8 @@ func demonstrateEventForwarding() {
 	state.Set("message", "Hello from event-forwarding example!")
 
 	fmt.Println("Running agent (watch for events)...")
-	result, err := toolAgent.Run(context.Background(), state)
+	ctx := context.Background()
+	result, err := toolAgent.Run(ctx, state)
 	if err != nil {
 		log.Printf("Error: %v", err)
 		return
@@ -238,7 +252,19 @@ func demonstrateSchemaMapping() {
 	}
 
 	// Use the tool
-	ctx := domain.NewToolContext(context.Background(), nil, agent, "schema-test")
+	agentInfo := domain.AgentInfo{
+		ID:          "schema-test",
+		Name:        "Schema Test Agent",
+		Description: "Testing schema mapping",
+		Type:        domain.AgentTypeCustom,
+	}
+	state := domain.NewState()
+	ctx := &domain.ToolContext{
+		Context: context.Background(),
+		State:   domain.NewStateReader(state),
+		Agent:   agentInfo,
+		RunID:   "schema-test",
+	}
 	result, err := agentTool.Execute(ctx, map[string]interface{}{
 		"name":     "Alice",
 		"language": "spanish",
@@ -285,7 +311,19 @@ func demonstrateToolChain() {
 	chainTool := tools.CreateToolChainFromAgents(agents...)
 
 	// Use the chain tool
-	ctx := domain.NewToolContext(context.Background(), nil, agents[0], "chain-test")
+	agentInfo := domain.AgentInfo{
+		ID:          "chain-test",
+		Name:        "Chain Test Agent",
+		Description: "Testing tool chains",
+		Type:        domain.AgentTypeCustom,
+	}
+	state := domain.NewState()
+	ctx := &domain.ToolContext{
+		Context: context.Background(),
+		State:   domain.NewStateReader(state),
+		Agent:   agentInfo,
+		RunID:   "chain-test",
+	}
 	result, err := chainTool.Execute(ctx, map[string]interface{}{
 		"input": "Hello World",
 	})
@@ -423,6 +461,26 @@ type eventEmittingTool struct {
 func (t *eventEmittingTool) Name() string                     { return t.name }
 func (t *eventEmittingTool) Description() string              { return t.description }
 func (t *eventEmittingTool) ParameterSchema() *sdomain.Schema { return nil }
+func (t *eventEmittingTool) Category() string                 { return "demo" }
+func (t *eventEmittingTool) Version() string                  { return "1.0.0" }
+func (t *eventEmittingTool) OutputSchema() *sdomain.Schema    { return nil }
+func (t *eventEmittingTool) UsageInstructions() string        { return "Demo tool for event emission" }
+func (t *eventEmittingTool) Examples() []domain.ToolExample   { return nil }
+func (t *eventEmittingTool) Constraints() []string            { return nil }
+func (t *eventEmittingTool) ErrorGuidance() map[string]string { return nil }
+func (t *eventEmittingTool) BehavioralHints() []string        { return nil }
+func (t *eventEmittingTool) IsDeterministic() bool            { return true }
+func (t *eventEmittingTool) IsDestructive() bool              { return false }
+func (t *eventEmittingTool) RequiresConfirmation() bool       { return false }
+func (t *eventEmittingTool) EstimatedLatency() string         { return "fast" }
+func (t *eventEmittingTool) Tags() []string                   { return []string{"demo", "events"} }
+func (t *eventEmittingTool) ToMCPDefinition() domain.MCPToolDefinition {
+	return domain.MCPToolDefinition{
+		Name:        t.name,
+		Description: t.description,
+		InputSchema: nil,
+	}
+}
 
 func (t *eventEmittingTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 	// Emit events if available

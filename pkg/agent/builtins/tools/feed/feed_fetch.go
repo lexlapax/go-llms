@@ -343,7 +343,7 @@ func FeedFetch() domain.Tool {
 			if err != nil {
 				return nil, fmt.Errorf("error fetching feed: %w", err)
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// Handle 304 Not Modified
 			if resp.StatusCode == http.StatusNotModified {

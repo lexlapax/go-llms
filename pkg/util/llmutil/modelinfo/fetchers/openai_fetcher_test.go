@@ -79,7 +79,7 @@ func TestOpenAIFetcher_FetchModels_Success(t *testing.T) {
 
 func TestOpenAIFetcher_FetchModels_APIKeyMissing(t *testing.T) {
 	originalApiKey := os.Getenv("OPENAI_API_KEY")
-	os.Unsetenv("OPENAI_API_KEY")
+	_ = os.Unsetenv("OPENAI_API_KEY")
 	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
 
 	// Instantiate with default or empty URL, as API key check happens first
@@ -97,7 +97,7 @@ func TestOpenAIFetcher_FetchModels_APIKeyMissing(t *testing.T) {
 func TestOpenAIFetcher_FetchModels_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, `{"error": {"message": "Internal server error", "type": "server_error"}}`)
+		_, _ = fmt.Fprintln(w, `{"error": {"message": "Internal server error", "type": "server_error"}}`)
 	}))
 	defer server.Close()
 
@@ -122,7 +122,7 @@ func TestOpenAIFetcher_FetchModels_APIError(t *testing.T) {
 func TestOpenAIFetcher_FetchModels_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, `{"object": "list", "data": [`) // Malformed JSON
+		_, _ = fmt.Fprintln(w, `{"object": "list", "data": [`) // Malformed JSON
 	}))
 	defer server.Close()
 

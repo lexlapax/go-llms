@@ -10,8 +10,7 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/datetime"
-	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/datetime" // for registration
+	datetime "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/datetime"
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 

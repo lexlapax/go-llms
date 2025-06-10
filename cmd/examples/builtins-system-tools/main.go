@@ -32,15 +32,15 @@ func createToolContext() *domain.ToolContext {
 		Description: "Testing system tools",
 		Type:        domain.AgentTypeCustom,
 	}
-	
+
 	state := domain.NewState()
 	// Enable all system info options for demos
 	state.Set("system_info_include_memory", true)
 	state.Set("system_info_include_runtime", true)
 	state.Set("system_info_include_environment", true)
-	
+
 	stateReader := domain.NewStateReader(state)
-	
+
 	return &domain.ToolContext{
 		Context: ctx,
 		State:   stateReader,
@@ -63,7 +63,7 @@ func printResult(operation string, result interface{}, err error) {
 func createMockProvider() ldomain.Provider {
 	mockProvider := provider.NewMockProvider()
 	hasToolResult := false
-	
+
 	mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.Response, error) {
 		// Extract the last user message
 		var lastUserMsg string
@@ -80,7 +80,7 @@ func createMockProvider() ldomain.Provider {
 				}
 			}
 		}
-		
+
 		// Check if this is a tool result response
 		if strings.Contains(lastUserMsg, "Tool results:") && strings.Contains(lastUserMsg, "Result:") {
 			hasToolResult = true
@@ -106,12 +106,12 @@ func createMockProvider() ldomain.Provider {
 					Content: "The current directory is /home/user/projects and contains: README.md, go.mod, go.sum, main.go, and several subdirectories.",
 				}, nil
 			}
-			
+
 			return ldomain.Response{
 				Content: "The system operation has been completed successfully.",
 			}, nil
 		}
-		
+
 		// Initial tool call based on the prompt
 		if lastUserMsg != "" && !hasToolResult {
 			if contains(lastUserMsg, "operating system") || contains(lastUserMsg, "architecture") {
@@ -140,12 +140,12 @@ func createMockProvider() ldomain.Provider {
 				}, nil
 			}
 		}
-		
+
 		return ldomain.Response{
 			Content: "I can help you with system information, environment variables, process management, and command execution.",
 		}, nil
 	})
-	
+
 	return mockProvider
 }
 
@@ -177,17 +177,17 @@ func runDirectExample() {
 	if !ok {
 		log.Fatal("Failed to get execute_command tool")
 	}
-	
+
 	envTool, ok := tools.GetTool("get_environment_variable")
 	if !ok {
 		log.Fatal("Failed to get environment variable tool")
 	}
-	
+
 	sysInfoTool, ok := tools.GetTool("get_system_info")
 	if !ok {
 		log.Fatal("Failed to get system info tool")
 	}
-	
+
 	procTool, ok := tools.GetTool("process_list")
 	if !ok {
 		log.Fatal("Failed to get process list tool")
@@ -504,7 +504,7 @@ When asked about the system, use the appropriate tools to get accurate informati
 			fmt.Printf("  Destructive: %v\n", tool.IsDestructive())
 			fmt.Printf("  Requires Confirmation: %v\n", tool.RequiresConfirmation())
 			fmt.Printf("  Estimated Latency: %s\n", tool.EstimatedLatency())
-			
+
 			if len(tool.Examples()) > 0 {
 				fmt.Printf("  Examples: %d available\n", len(tool.Examples()))
 			}

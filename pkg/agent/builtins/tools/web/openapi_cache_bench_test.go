@@ -62,7 +62,7 @@ func BenchmarkOpenAPIParser_FetchSpec_NoCache(b *testing.B) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(benchmarkSpec)
+		_, _ = w.Write(benchmarkSpec)
 	}))
 	defer server.Close()
 
@@ -81,7 +81,7 @@ func BenchmarkOpenAPIParser_FetchSpec_NoCache(b *testing.B) {
 				b.Fatal(err)
 			}
 			body := make([]byte, len(benchmarkSpec))
-			resp.Body.Read(body)
+			_, _ = resp.Body.Read(body)
 			resp.Body.Close()
 
 			_, err = parser.ParseSpec(body, server.URL)
@@ -96,7 +96,7 @@ func BenchmarkOpenAPIParser_FetchSpec_WithCache(b *testing.B) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(benchmarkSpec)
+		_, _ = w.Write(benchmarkSpec)
 	}))
 	defer server.Close()
 
@@ -104,7 +104,7 @@ func BenchmarkOpenAPIParser_FetchSpec_WithCache(b *testing.B) {
 	parser := NewOpenAPIParser()
 
 	// Prime the cache
-	parser.FetchSpec(server.URL)
+	_, _ = parser.FetchSpec(server.URL)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {

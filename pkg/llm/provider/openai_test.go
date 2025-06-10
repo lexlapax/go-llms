@@ -17,7 +17,7 @@ func TestOpenAIProvider(t *testing.T) {
 		// Check if authorization header is present
 		if r.Header.Get("Authorization") != "Bearer test-api-key" {
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, `{"error":{"message":"Invalid API key"}}`)
+			_, _ = fmt.Fprintln(w, `{"error":{"message":"Invalid API key"}}`)
 			return
 		}
 
@@ -26,7 +26,7 @@ func TestOpenAIProvider(t *testing.T) {
 		case "/v1/chat/completions":
 			// Standard completion response
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintln(w, `{
+			_, _ = fmt.Fprintln(w, `{
 				"id": "chatcmpl-123",
 				"object": "chat.completion",
 				"created": 1677652288,
@@ -48,7 +48,7 @@ func TestOpenAIProvider(t *testing.T) {
 		case "/v1/completions":
 			// Legacy completions API
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintln(w, `{
+			_, _ = fmt.Fprintln(w, `{
 				"id": "cmpl-123",
 				"object": "text_completion",
 				"created": 1677652288,
@@ -67,7 +67,7 @@ func TestOpenAIProvider(t *testing.T) {
 			}`)
 		default:
 			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprintln(w, `{"error":{"message":"Not found"}}`)
+			_, _ = fmt.Fprintln(w, `{"error":{"message":"Not found"}}`)
 		}
 	}))
 	defer mockServer.Close()
@@ -156,14 +156,14 @@ func TestOpenAIProvider(t *testing.T) {
 		// Check if authorization header is present
 		if r.Header.Get("Authorization") != "Bearer test-api-key" {
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, `{"error":{"message":"Invalid API key"}}`)
+			_, _ = fmt.Fprintln(w, `{"error":{"message":"Invalid API key"}}`)
 			return
 		}
 
 		// Check if correct content type and accept headers are set
 		if r.Header.Get("Content-Type") != "application/json" {
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, `{"error":{"message":"Invalid content type"}}`)
+			_, _ = fmt.Fprintln(w, `{"error":{"message":"Invalid content type"}}`)
 			return
 		}
 
@@ -173,13 +173,13 @@ func TestOpenAIProvider(t *testing.T) {
 		w.Header().Set("Connection", "keep-alive")
 
 		// Simulate a streaming response
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"This \"},\"finish_reason\":null}]}\n\n")
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"is \"},\"finish_reason\":null}]}\n\n")
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"a \"},\"finish_reason\":null}]}\n\n")
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"streaming \"},\"finish_reason\":null}]}\n\n")
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"response.\"},\"finish_reason\":null}]}\n\n")
-		fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n")
-		fmt.Fprint(w, "data: [DONE]\n\n")
+		_, _ = fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"This \"},\"finish_reason\":null}]}\n\n")
+		_, _ = fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"is \"},\"finish_reason\":null}]}\n\n")
+		_, _ = fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"a \"},\"finish_reason\":null}]}\n\n")
+		_, _ = fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"streaming \"},\"finish_reason\":null}]}\n\n")
+		_, _ = fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"response.\"},\"finish_reason\":null}]}\n\n")
+		_, _ = fmt.Fprint(w, "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-4o\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n")
+		_, _ = fmt.Fprint(w, "data: [DONE]\n\n")
 	}))
 	defer streamServer.Close()
 
@@ -261,7 +261,7 @@ func TestOpenAIProvider(t *testing.T) {
 	schemaServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Return a valid JSON response that conforms to our schema
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, `{
+		_, _ = fmt.Fprintln(w, `{
 			"id": "chatcmpl-123",
 			"object": "chat.completion",
 			"created": 1677652288,

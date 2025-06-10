@@ -205,13 +205,13 @@ func main() {
 	analysisCoordinator := NewAnalysisCoordinator()
 
 	// Register all agents for handoff
-	core.Register(webResearcher)
-	core.Register(academicResearcher)
-	core.Register(dataAnalyst)
-	core.Register(trendAnalyst)
-	core.Register(reportWriter)
-	core.Register(researchCoordinator)
-	core.Register(analysisCoordinator)
+	_ = core.Register(webResearcher)
+	_ = core.Register(academicResearcher)
+	_ = core.Register(dataAnalyst)
+	_ = core.Register(trendAnalyst)
+	_ = core.Register(reportWriter)
+	_ = core.Register(researchCoordinator)
+	_ = core.Register(analysisCoordinator)
 
 	// Create research team using workflow
 	researchTeam := workflow.NewParallelAgent("researchTeam").

@@ -256,8 +256,8 @@ func demoOptionsWithEnv() {
 
 	// Save original value to restore later
 	origUseCase := os.Getenv("OPENAI_USE_CASE")
-	os.Setenv("OPENAI_USE_CASE", "streaming")
-	defer os.Setenv("OPENAI_USE_CASE", origUseCase)
+	_ = os.Setenv("OPENAI_USE_CASE", "streaming")
+	defer func() { _ = os.Setenv("OPENAI_USE_CASE", origUseCase) }()
 
 	// Create a configuration that will use the streaming use case from environment
 	streamingConfig := llmutil.ModelConfig{

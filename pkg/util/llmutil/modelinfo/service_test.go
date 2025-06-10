@@ -202,12 +202,12 @@ func TestModelInfoService_AggregateModels_Success(t *testing.T) {
 
 		// If we assume GEMINI_API_KEY is missing, GoogleFetcher returns an error.
 		originalGoogleKey := os.Getenv("GEMINI_API_KEY")
-		os.Unsetenv("GEMINI_API_KEY")
+		_ = os.Unsetenv("GEMINI_API_KEY")
 		defer os.Setenv("GEMINI_API_KEY", originalGoogleKey)
 
 		// And OPENAI_API_KEY is also missing
 		originalOpenAIKey := os.Getenv("OPENAI_API_KEY")
-		os.Unsetenv("OPENAI_API_KEY")
+		_ = os.Unsetenv("OPENAI_API_KEY")
 		defer os.Setenv("OPENAI_API_KEY", originalOpenAIKey)
 
 		svc := NewModelInfoServiceFunc() // Use the func variable

@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
-	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/math"
 	toolmath "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/math"
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"

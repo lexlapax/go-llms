@@ -94,8 +94,8 @@
     - [x] get_system_info - Add output examples and cross-platform notes (5 examples)
     - [x] process_list - Add filtering guidance and platform differences (6 examples)
     - [x] All tests passing for system tools
-    - [ ] Update examples using system tools to follow new pattern
-      - [ ] agent-llm-builtin-tools (uses both system and file tools)
+    - [x] Update examples using system tools to follow new pattern - COMPLETED January 9, 2025
+      - [x] agent-llm-builtin-tools (uses both system and file tools)
       - [x] builtins-system-tools - COMPLETED January 9, 2025
   - [x] Day 3: Migrate file tools (6 tools) - COMPLETED January 9, 2025
     - [x] file_read - Add encoding guidance, size limits, binary file handling - COMPLETED (7 examples)
@@ -104,9 +104,9 @@
     - [x] file_delete - Add confirmation requirements (destructive: true, confirmation: true) - COMPLETED (7 examples)
     - [x] file_move - Add rollback guidance, cross-device limitations - COMPLETED (7 examples)
     - [x] file_search - Add regex examples, performance notes for large directories - COMPLETED (7 examples)
-    - [ ] Update examples using file tools to follow new pattern
-      - [ ] agent-llm-builtin-tools (uses both system and file tools)
-      - [ ] agent-workflow-as-tool (uses file tools in workflow)
+    - [x] Update examples using file tools to follow new pattern - COMPLETED January 9, 2025
+      - [x] agent-llm-builtin-tools (uses both system and file tools)
+      - [x] agent-workflow-as-tool (uses file tools in workflow)
       - [x] builtins-file-tools - COMPLETED January 9, 2025
   - [ ] Day 4: Migrate web tools (4 tools - api_client already done)
     - [ ] web_search - Multi-engine examples, API key guidance
@@ -153,11 +153,11 @@
     - [ ] Update example documentation
 
 - [ ] Phase 4: Documentation & Polish (Week 4)
-  - [ ] Day 1-2: Technical documentation
-    - [ ] Create docs/technical/tools.md
-    - [ ] Document new Tool interface
-    - [ ] Add architecture diagrams
-    - [ ] Include best practices
+  - [x] Day 1-2: Technical documentation - COMPLETED January 9, 2025
+    - [x] Create docs/technical/tools.md
+    - [x] Document new Tool interface
+    - [ ] Add architecture diagrams (SVG diagrams still needed)
+    - [x] Include best practices
   - [ ] Day 3-4: User guide updates
     - [ ] Create docs/user-guide/tool-development.md
     - [ ] Update docs/user-guide/builtin-tools.md
@@ -168,6 +168,7 @@
     - [ ] Performance validation
     - [ ] Create release notes
     - [ ] Tag release
+    - [ ] ensure all the documentation links are updated and correct, root README.md REFERENCE.md , the index READMES in docs/ and examples
 
 
 ### Previous Built-in Components Plan

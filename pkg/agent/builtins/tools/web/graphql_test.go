@@ -91,7 +91,7 @@ func TestGraphQLClientExecute(t *testing.T) {
 func TestGraphQLClientWithVariables(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req GraphQLRequest
-		json.NewDecoder(r.Body).Decode(&req)
+		_ = json.NewDecoder(r.Body).Decode(&req)
 
 		// Check variables
 		if req.Variables == nil {

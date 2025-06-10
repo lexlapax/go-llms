@@ -74,7 +74,7 @@ func main() {
 }
 
 // Alternative example with error handling
-func exampleWithErrorHandling() {
+func _exampleWithErrorHandling() {
 	ctx := context.Background()
 
 	// Create a workflow with custom error handling
@@ -83,9 +83,9 @@ func exampleWithErrorHandling() {
 	}
 
 	// Create agents using mock provider for demonstration
-	agent1 := createMockAgent("data-fetcher", "Fetch data from source")
-	agent2 := createMockAgent("data-processor", "Process the fetched data")
-	agent3 := createMockAgent("report-generator", "Generate report from processed data")
+	agent1 := _createMockAgent("data-fetcher", "Fetch data from source")
+	agent2 := _createMockAgent("data-processor", "Process the fetched data")
+	agent3 := _createMockAgent("report-generator", "Generate report from processed data")
 
 	// Create workflow
 	dataWorkflow := workflow.NewSequentialAgent("data-pipeline").
@@ -115,7 +115,7 @@ func exampleWithErrorHandling() {
 	}
 }
 
-func createMockAgent(name, prompt string) domain.BaseAgent {
+func _createMockAgent(name, prompt string) domain.BaseAgent {
 	// For demonstration - in real use, create actual LLM agents
 	agent := core.NewBaseAgent(name, prompt, domain.AgentTypeCustom)
 	return agent

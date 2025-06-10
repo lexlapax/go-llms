@@ -14,12 +14,9 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
+	webtools "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-
-	// Import tool categories to register them
-	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"
 )
 
 // ResearchAgent is a custom agent that extends BaseAgentImpl for full control
@@ -484,7 +481,7 @@ func (m *MultiSearchAgent) Run(ctx context.Context, state *domain.State) (*domai
 				}
 
 				// Extract results
-				if searchResults, ok := result.(*web.WebSearchResults); ok {
+				if searchResults, ok := result.(*webtools.WebSearchResults); ok {
 					mu.Lock()
 					for _, r := range searchResults.Results {
 						resultMap := map[string]interface{}{

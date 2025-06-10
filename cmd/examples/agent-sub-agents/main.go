@@ -38,7 +38,7 @@ func (c *CalculatorAgent) Run(ctx context.Context, state *domain.State) (*domain
 			fmt.Println("[Calculator] Parsing addition expression:", expr)
 			// Simple parsing (production code would use proper expression parser)
 			var x, y float64
-			fmt.Sscanf(expr, "%f + %f", &x, &y)
+			_, _ = fmt.Sscanf(expr, "%f + %f", &x, &y)
 			result := x + y
 
 			output := domain.NewState()
@@ -186,9 +186,9 @@ You can delegate tasks to these sub-agents using the transfer_to_agent tool.`)
 
 	// Register sub-agents for handoff to work
 	// Note: Only register sub-agents to avoid circular registration
-	core.Register(calculator)
-	core.Register(researcher)
-	core.Register(summarizer)
+	_ = core.Register(calculator)
+	_ = core.Register(researcher)
+	_ = core.Register(summarizer)
 
 	// Demonstrate automatic tool registration
 	fmt.Println("=== Automatic Tool Registration ===")

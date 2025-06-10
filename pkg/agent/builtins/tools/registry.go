@@ -260,7 +260,7 @@ func matchesResourceCriteriaEnhanced(info ResourceInfo, criteria ResourceCriteri
 }
 
 // matchesResourceCriteria checks if tags indicate matching resource usage
-func matchesResourceCriteria(tags []string, criteria ResourceCriteria) bool {
+func _matchesResourceCriteria(tags []string, criteria ResourceCriteria) bool {
 	// This is a simplified implementation using tags
 	// In a real implementation, we'd check against stored ResourceInfo
 

@@ -102,7 +102,7 @@ func (p *Profiler) Disable() {
 	// Stop CPU profiling if it's running
 	if p.cpuRunning && p.cpuFile != nil {
 		pprof.StopCPUProfile()
-		p.cpuFile.Close()
+		_ = p.cpuFile.Close()
 		p.cpuFile = nil
 		p.cpuRunning = false
 	}
@@ -130,7 +130,7 @@ func (p *Profiler) StartCPUProfile() error {
 	if p.cpuRunning {
 		pprof.StopCPUProfile()
 		if p.cpuFile != nil {
-			p.cpuFile.Close()
+			_ = p.cpuFile.Close()
 			p.cpuFile = nil
 		}
 		p.cpuRunning = false
@@ -146,7 +146,7 @@ func (p *Profiler) StartCPUProfile() error {
 
 	// Start the CPU profile
 	if err := pprof.StartCPUProfile(p.cpuFile); err != nil {
-		p.cpuFile.Close()
+		_ = p.cpuFile.Close()
 		p.cpuFile = nil
 		return fmt.Errorf("could not start CPU profile: %v", err)
 	}
@@ -163,7 +163,7 @@ func (p *Profiler) StopCPUProfile() {
 	if p.cpuRunning {
 		pprof.StopCPUProfile()
 		if p.cpuFile != nil {
-			p.cpuFile.Close()
+			_ = p.cpuFile.Close()
 			p.cpuFile = nil
 		}
 		p.cpuRunning = false
@@ -185,7 +185,7 @@ func (p *Profiler) WriteHeapProfile() error {
 	if err != nil {
 		return fmt.Errorf("could not create memory profile: %v", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Write the heap profile
 	if err := pprof.WriteHeapProfile(f); err != nil {
@@ -215,11 +215,11 @@ func (p *Profiler) ProfileOperation(ctx context.Context, opName string, fn func(
 	} else {
 		if err := pprof.StartCPUProfile(cpuFile); err != nil {
 			getLogger().Errorf("Warning: could not start CPU profile for %s: %v", opName, err)
-			cpuFile.Close()
+			_ = cpuFile.Close()
 		} else {
 			defer func() {
 				pprof.StopCPUProfile()
-				cpuFile.Close()
+				_ = cpuFile.Close()
 			}()
 		}
 	}
@@ -238,7 +238,7 @@ func (p *Profiler) ProfileOperation(ctx context.Context, opName string, fn func(
 		if memErr := pprof.WriteHeapProfile(memFile); memErr != nil {
 			getLogger().Errorf("Warning: could not write memory profile for %s: %v", opName, memErr)
 		}
-		memFile.Close()
+		_ = memFile.Close()
 	}
 
 	// Log duration and return result
@@ -275,8 +275,8 @@ func SetProfileDir(dir string) {
 		getLogger().Errorf("Warning: profile directory %s isn't writable: %v", dir, err)
 		return
 	}
-	f.Close()
-	os.Remove(testFile)
+	_ = f.Close()
+	_ = os.Remove(testFile)
 
 	// Set the profile directory
 	profileDir = dir

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -51,10 +52,18 @@ func main() {
 	}
 
 	// Create LLM provider from environment
-	llmProvider, err := createProvider()
+	llmProvider, providerName, modelName, err := createProvider()
 	if err != nil {
-		log.Fatalf("Failed to create LLM provider: %v", err)
+		fmt.Println("Note: No LLM API keys found. Using mock provider for demonstration.")
+		fmt.Println("Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY for real LLM usage.")
+		fmt.Println("Tip: Set DEBUG=1 to see detailed logging of agent execution.")
+		fmt.Println()
+		llmProvider = createMockProvider(scenario)
+		providerName = "mock"
+		modelName = "mock-model"
 	}
+
+	fmt.Printf("Using %s provider with model %s\n\n", providerName, modelName)
 
 	// Run the selected scenario
 	ctx := context.Background()
@@ -80,43 +89,46 @@ func main() {
 	}
 }
 
-func createProvider() (ldomain.Provider, error) {
+func createProvider() (ldomain.Provider, string, string, error) {
 	// Try to create provider from environment
 	if os.Getenv("OPENAI_API_KEY") != "" {
 		return provider.NewOpenAIProvider(
 			os.Getenv("OPENAI_API_KEY"),
-			"gpt-4-turbo-preview",
-		), nil
+			"gpt-4o",
+		), "openai", "gpt-4o", nil
 	}
 
 	if os.Getenv("ANTHROPIC_API_KEY") != "" {
 		return provider.NewAnthropicProvider(
 			os.Getenv("ANTHROPIC_API_KEY"),
-			"claude-3-opus-20240229",
-		), nil
+			"claude-3-7-sonnet-latest",
+		), "anthropic", "claude-3-7-sonnet-latest", nil
 	}
 
 	if os.Getenv("GEMINI_API_KEY") != "" {
 		return provider.NewGeminiProvider(
 			os.Getenv("GEMINI_API_KEY"),
-			"gemini-pro",
-		), nil
+			"gemini-2.0-flash",
+		), "gemini", "gemini-2.0-flash", nil
 	}
 
 	// Try to create from GO_LLMS environment variables
-	provider, _, _, err := llmutil.ProviderFromEnv()
+	llmProvider, providerName, modelName, err := llmutil.ProviderFromEnv()
 	if err == nil {
-		return provider, nil
+		return llmProvider, providerName, modelName, nil
 	}
 
-	return nil, fmt.Errorf("no LLM provider configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY")
+	return nil, "", "", fmt.Errorf("no LLM provider configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY")
 }
 
 // Research Assistant with Web Tools
 func runResearchAssistant(ctx context.Context, llmProvider ldomain.Provider, customPrompt string) {
 	fmt.Println("=== Research Assistant Demo ===")
 
-	agent := core.NewAgent("research-assistant", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("research-assistant", "Research Assistant", deps)
 
 	// Add web tools
 	agent.AddTool(tools.MustGetTool("web_search"))
@@ -152,7 +164,10 @@ Always cite your sources with URLs and verify information from multiple sources 
 func runFileManager(ctx context.Context, llmProvider ldomain.Provider, customPrompt string) {
 	fmt.Println("=== File Manager Demo ===")
 
-	agent := core.NewAgent("file-manager", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("file-manager", "File Manager", deps)
 
 	// Add file tools
 	agent.AddTool(tools.MustGetTool("file_list"))
@@ -188,7 +203,10 @@ Safety guidelines:
 func runSystemAdmin(ctx context.Context, llmProvider ldomain.Provider, customPrompt string) {
 	fmt.Println("=== System Admin Demo ===")
 
-	agent := core.NewAgent("system-admin", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("system-admin", "System Administrator", deps)
 
 	// Add system tools
 	agent.AddTool(tools.MustGetTool("get_system_info"))
@@ -223,7 +241,10 @@ Safety rules:
 func runDataAnalyst(ctx context.Context, llmProvider ldomain.Provider, customPrompt string) {
 	fmt.Println("=== Data Analyst Demo ===")
 
-	agent := core.NewAgent("data-analyst", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("data-analyst", "Data Analyst", deps)
 
 	// Add data tools
 	agent.AddTool(tools.MustGetTool("json_process"))
@@ -264,7 +285,10 @@ When analyzing data:
 func runScheduler(ctx context.Context, llmProvider ldomain.Provider, customPrompt string) {
 	fmt.Println("=== Scheduler Demo ===")
 
-	agent := core.NewAgent("scheduler", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("scheduler", "Scheduler", deps)
 
 	// Add datetime tools
 	agent.AddTool(tools.MustGetTool("datetime_now"))
@@ -304,7 +328,10 @@ When scheduling:
 func runNewsCurator(ctx context.Context, llmProvider ldomain.Provider, customPrompt string) {
 	fmt.Println("=== News Curator Demo ===")
 
-	agent := core.NewAgent("news-curator", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("news-curator", "News Curator", deps)
 
 	// Add feed tools
 	agent.AddTool(tools.MustGetTool("feed_discover"))
@@ -342,7 +369,10 @@ Always include publication dates and source attribution.`)
 func runAllToolsDemo(ctx context.Context, llmProvider ldomain.Provider, customPrompt string) {
 	fmt.Println("=== All Tools Demo ===")
 
-	agent := core.NewAgent("universal-assistant", llmProvider)
+	deps := core.LLMDeps{
+		Provider: llmProvider,
+	}
+	agent := core.NewLLMAgent("universal-assistant", "Universal Assistant", deps)
 
 	// Add ALL tools from all categories
 	allTools := tools.Tools.List()
@@ -381,10 +411,21 @@ func runAgent(ctx context.Context, agent *core.LLMAgent, prompt string) {
 
 	// Create initial state
 	state := domain.NewState()
-	state.Set("prompt", prompt)
+	state.Set("user_input", prompt)
 
 	// Add hook to see tool calls
 	agent.WithHook(&toolCallLogger{})
+
+	// Add debug logging if DEBUG is enabled
+	if os.Getenv("DEBUG") == "1" {
+		opts := &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}
+		logger := slog.New(slog.NewTextHandler(os.Stderr, opts))
+		loggingHook := core.NewLoggingHook(logger, core.LogLevelDebug)
+		agent.WithHook(loggingHook)
+		log.Println("Debug logging enabled")
+	}
 
 	// Run the agent
 	result, err := agent.Run(ctx, state)
@@ -436,4 +477,96 @@ func (h *toolCallLogger) AfterToolCall(ctx context.Context, tool string, result 
 		}
 		fmt.Printf("[Tool Result] %s: %s\n", tool, resultStr)
 	}
+}
+
+// createMockProvider creates a mock provider for the given scenario
+func createMockProvider(scenario string) ldomain.Provider {
+	mockProvider := provider.NewMockProvider()
+
+	mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.Response, error) {
+		// Extract the last user message
+		var lastUserMsg string
+		for i := len(messages) - 1; i >= 0; i-- {
+			if messages[i].Role == "user" {
+				for _, part := range messages[i].Content {
+					if part.Type == ldomain.ContentTypeText {
+						lastUserMsg = part.Text
+						break
+					}
+				}
+				if lastUserMsg != "" {
+					break
+				}
+			}
+		}
+
+		// Check if this is a tool result
+		if strings.Contains(lastUserMsg, "Tool results:") {
+			// Return appropriate response based on scenario
+			switch scenario {
+			case "research":
+				return ldomain.Response{
+					Content: "Based on my web search, I found that Go generics were introduced in Go 1.18. The key features include type parameters, type constraints, and type inference. This is a major addition to the language that enables writing more reusable code.",
+				}, nil
+			case "files":
+				return ldomain.Response{
+					Content: "I've listed the Go files in the current directory. I found main.go and several test files. The README.md contains project documentation about the go-llms library.",
+				}, nil
+			case "system":
+				return ldomain.Response{
+					Content: "The system is running Linux with 16GB of memory. The top 5 processes by memory usage are: Chrome (2.5GB), VS Code (1.8GB), Docker (1.2GB), Go compiler (800MB), and System processes (600MB).",
+				}, nil
+			case "data":
+				return ldomain.Response{
+					Content: "I analyzed the JSON data. The average age of the users is 30 years. Alice is 30, Bob is 25, and Charlie is 35.",
+				}, nil
+			case "datetime":
+				return ldomain.Response{
+					Content: "30 days from now will be a Tuesday. There are 22 business days between now and then (excluding weekends).",
+				}, nil
+			case "feeds":
+				return ldomain.Response{
+					Content: "I discovered the Hacker News RSS feed and fetched the latest 5 items. The top stories include discussions about AI, programming languages, and startup news.",
+				}, nil
+			default:
+				return ldomain.Response{
+					Content: "I've demonstrated using tools from each category. The system is working properly.",
+				}, nil
+			}
+		}
+
+		// Initial tool call based on scenario
+		switch scenario {
+		case "research":
+			return ldomain.Response{
+				Content: `{"tool": "web_search", "params": {"query": "Go generics introduction features"}}`,
+			}, nil
+		case "files":
+			return ldomain.Response{
+				Content: `{"tool": "file_list", "params": {"path": ".", "pattern": "*.go"}}`,
+			}, nil
+		case "system":
+			return ldomain.Response{
+				Content: `{"tool": "get_system_info", "params": {"include_memory": true}}`,
+			}, nil
+		case "data":
+			return ldomain.Response{
+				Content: `{"tool": "json_process", "params": {"data": "{\"users\": [{\"name\": \"Alice\", \"age\": 30}, {\"name\": \"Bob\", \"age\": 25}, {\"name\": \"Charlie\", \"age\": 35}]}", "operation": "query", "query": "$.users[*].age"}}`,
+			}, nil
+		case "datetime":
+			return ldomain.Response{
+				Content: `{"tool": "datetime_calculate", "params": {"operation": "add", "value": 30, "unit": "days"}}`,
+			}, nil
+		case "feeds":
+			return ldomain.Response{
+				Content: `{"tool": "feed_discover", "params": {"url": "https://news.ycombinator.com"}}`,
+			}, nil
+		default:
+			return ldomain.Response{
+				Content: `{"tool": "get_system_info", "params": {}}`,
+			}, nil
+		}
+	})
+
+	return mockProvider
 }
