@@ -18,12 +18,12 @@ func TestCreateProviderWithUseCase(t *testing.T) {
 
 	// Clean up environment after test
 	defer func() {
-		os.Setenv(EnvOpenAIAPIKey, origOpenAIKey)
-		os.Setenv(EnvAnthropicAPIKey, origAnthropicKey)
-		os.Setenv(EnvGeminiAPIKey, origGeminiKey)
-		os.Setenv(EnvOpenAIUseCase, origOpenAIUseCase)
-		os.Setenv(EnvAnthropicUseCase, origAnthropicUseCase)
-		os.Setenv(EnvGeminiUseCase, origGeminiUseCase)
+		_ = os.Setenv(EnvOpenAIAPIKey, origOpenAIKey)
+		_ = os.Setenv(EnvAnthropicAPIKey, origAnthropicKey)
+		_ = os.Setenv(EnvGeminiAPIKey, origGeminiKey)
+		_ = os.Setenv(EnvOpenAIUseCase, origOpenAIUseCase)
+		_ = os.Setenv(EnvAnthropicUseCase, origAnthropicUseCase)
+		_ = os.Setenv(EnvGeminiUseCase, origGeminiUseCase)
 	}()
 
 	// Clear environment variables

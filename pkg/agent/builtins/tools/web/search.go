@@ -539,7 +539,7 @@ func searchBrave(ctx *domain.ToolContext, client *http.Client, query string, max
 		braveKey, _, _, _ = getSearchAPIKeys()
 	}
 	if braveKey == "" {
-		return nil, fmt.Errorf("Brave Search API key required - set BRAVE_API_KEY environment variable")
+		return nil, fmt.Errorf("brave Search API key required - set BRAVE_API_KEY environment variable")
 	}
 
 	// Emit progress
@@ -634,7 +634,7 @@ func searchTavily(ctx *domain.ToolContext, client *http.Client, query string, ma
 		_, tavilyKey, _, _ = getSearchAPIKeys()
 	}
 	if tavilyKey == "" {
-		return nil, fmt.Errorf("Tavily API key required - set TAVILY_API_KEY environment variable")
+		return nil, fmt.Errorf("tavily API key required - set TAVILY_API_KEY environment variable")
 	}
 
 	// Emit progress
@@ -736,7 +736,7 @@ func searchSerpapi(ctx *domain.ToolContext, client *http.Client, query string, m
 		_, _, serpapiKey, _ = getSearchAPIKeys()
 	}
 	if serpapiKey == "" {
-		return nil, fmt.Errorf("Serpapi API key required - set SERPAPI_API_KEY environment variable")
+		return nil, fmt.Errorf("serpapi API key required - set SERPAPI_API_KEY environment variable")
 	}
 
 	// Emit progress
@@ -813,7 +813,7 @@ func searchSerperDev(ctx *domain.ToolContext, client *http.Client, query string,
 		_, _, _, serperdevKey = getSearchAPIKeys()
 	}
 	if serperdevKey == "" {
-		return nil, fmt.Errorf("Serper.dev API key required - set SERPERDEV_API_KEY environment variable")
+		return nil, fmt.Errorf("serper.dev API key required - set SERPERDEV_API_KEY environment variable")
 	}
 
 	// Emit progress

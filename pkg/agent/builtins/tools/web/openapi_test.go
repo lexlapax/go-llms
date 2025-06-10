@@ -174,7 +174,7 @@ func TestOpenAPIParser_FetchSpec(t *testing.T) {
 		case "/valid-spec":
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"openapi": "3.0.0",
 				"info": map[string]interface{}{
 					"title":   "Test API",

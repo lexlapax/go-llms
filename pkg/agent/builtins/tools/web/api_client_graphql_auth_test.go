@@ -27,7 +27,7 @@ func TestAPIClientTool_GraphQLAuthFromState(t *testing.T) {
 		// Allow requests without auth for the "without auth" test case
 		if auth == "" && strings.Contains(r.Header.Get("X-Test-Case"), "without_auth") {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"errors": []map[string]interface{}{
 					{
 						"message": "Authentication required",
@@ -39,7 +39,7 @@ func TestAPIClientTool_GraphQLAuthFromState(t *testing.T) {
 
 		if auth != expectedAuth && auth != "" {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"errors": []map[string]interface{}{
 					{
 						"message": "Authentication required",
@@ -60,7 +60,7 @@ func TestAPIClientTool_GraphQLAuthFromState(t *testing.T) {
 		if strings.Contains(query, "__schema") {
 			// Return introspection response
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": map[string]interface{}{
 					"__schema": map[string]interface{}{
 						"queryType": map[string]interface{}{
@@ -79,7 +79,7 @@ func TestAPIClientTool_GraphQLAuthFromState(t *testing.T) {
 		} else {
 			// Return query response
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": map[string]interface{}{
 					"viewer": map[string]interface{}{
 						"login": "testuser",

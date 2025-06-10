@@ -61,7 +61,7 @@ func TestGoogleFetcher_FetchModels_Success(t *testing.T) {
 
 	originalApiKey := os.Getenv("GEMINI_API_KEY")
 	_ = os.Setenv("GEMINI_API_KEY", "testapikey")
-	defer _ = os.Setenv("GEMINI_API_KEY", originalApiKey)
+	defer func() { _ = os.Setenv("GEMINI_API_KEY", originalApiKey) }()
 
 	fetcher := NewGoogleFetcher(server.URL, http.DefaultClient) // Use constructor with mock server URL
 	models, err := fetcher.FetchModels()
@@ -112,7 +112,7 @@ func TestGoogleFetcher_FetchModels_Success(t *testing.T) {
 func TestGoogleFetcher_FetchModels_APIKeyMissing(t *testing.T) {
 	originalApiKey := os.Getenv("GEMINI_API_KEY")
 	_ = os.Unsetenv("GEMINI_API_KEY")
-	defer _ = os.Setenv("GEMINI_API_KEY", originalApiKey)
+	defer func() { _ = os.Setenv("GEMINI_API_KEY", originalApiKey) }()
 
 	fetcher := NewGoogleFetcher("", http.DefaultClient) // API key check happens first
 	_, err := fetcher.FetchModels()
@@ -134,7 +134,7 @@ func TestGoogleFetcher_FetchModels_APIError(t *testing.T) {
 
 	originalApiKey := os.Getenv("GEMINI_API_KEY")
 	_ = os.Setenv("GEMINI_API_KEY", "invalidkey")
-	defer _ = os.Setenv("GEMINI_API_KEY", originalApiKey)
+	defer func() { _ = os.Setenv("GEMINI_API_KEY", originalApiKey) }()
 
 	fetcher := NewGoogleFetcher(server.URL, http.DefaultClient) // Use constructor
 	_, err := fetcher.FetchModels()
@@ -159,7 +159,7 @@ func TestGoogleFetcher_FetchModels_InvalidJSON(t *testing.T) {
 
 	originalApiKey := os.Getenv("GEMINI_API_KEY")
 	_ = os.Setenv("GEMINI_API_KEY", "testapikey")
-	defer _ = os.Setenv("GEMINI_API_KEY", originalApiKey)
+	defer func() { _ = os.Setenv("GEMINI_API_KEY", originalApiKey) }()
 
 	fetcher := NewGoogleFetcher(server.URL, http.DefaultClient) // Use constructor
 	_, err := fetcher.FetchModels()

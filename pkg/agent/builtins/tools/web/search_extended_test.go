@@ -35,7 +35,7 @@ func TestGetSearchAPIKeys(t *testing.T) {
 	// Test with no API keys
 	_ = os.Unsetenv("BRAVE_API_KEY")
 	_ = os.Unsetenv("TAVILY_API_KEY")
-	os.Unsetenv("SERPAPI_API_KEY")
+	_ = os.Unsetenv("SERPAPI_API_KEY")
 	_ = os.Unsetenv("SERPERDEV_API_KEY")
 
 	braveKey, tavilyKey, serpapiKey, serperdevKey := getSearchAPIKeys()
@@ -184,7 +184,7 @@ func TestSelectDefaultEngine(t *testing.T) {
 			if tc.serpapiKey != "" {
 				os.Setenv("SERPAPI_API_KEY", tc.serpapiKey)
 			} else {
-				os.Unsetenv("SERPAPI_API_KEY")
+				_ = os.Unsetenv("SERPAPI_API_KEY")
 			}
 
 			if tc.serperdevKey != "" {
@@ -255,7 +255,7 @@ func TestSearchBrave(t *testing.T) {
 
 	// Set test API key
 	os.Setenv("BRAVE_API_KEY", "test-brave-key")
-	defer _ = os.Unsetenv("BRAVE_API_KEY")
+	defer func() { _ = os.Unsetenv("BRAVE_API_KEY") }()
 
 	// Test search with mock server would require URL override
 	// For now, we're testing the parameter structure
@@ -317,7 +317,7 @@ func TestSearchTavily(t *testing.T) {
 
 	// Set test API key
 	os.Setenv("TAVILY_API_KEY", "test-tavily-key")
-	defer _ = os.Unsetenv("TAVILY_API_KEY")
+	defer func() { _ = os.Unsetenv("TAVILY_API_KEY") }()
 
 	// Test search (this will need the actual implementation)
 	// For now, we're just setting up the test structure
@@ -487,7 +487,7 @@ func TestWebSearchWithMultipleEngines(t *testing.T) {
 			if tc.serpapiKey != "" {
 				os.Setenv("SERPAPI_API_KEY", tc.serpapiKey)
 			} else {
-				os.Unsetenv("SERPAPI_API_KEY")
+				_ = os.Unsetenv("SERPAPI_API_KEY")
 			}
 
 			if tc.serperdevKey != "" {
@@ -546,7 +546,7 @@ func TestWebSearchErrorHandling(t *testing.T) {
 		{
 			name: "Serpapi without API key",
 			setupFunc: func() {
-				os.Unsetenv("SERPAPI_API_KEY")
+				_ = os.Unsetenv("SERPAPI_API_KEY")
 			},
 			params: map[string]interface{}{
 				"query":  "test",
@@ -602,7 +602,7 @@ func TestWebSearchWithEngineAPIKey(t *testing.T) {
 	// Clear all environment variables
 	_ = os.Unsetenv("BRAVE_API_KEY")
 	_ = os.Unsetenv("TAVILY_API_KEY")
-	os.Unsetenv("SERPAPI_API_KEY")
+	_ = os.Unsetenv("SERPAPI_API_KEY")
 	_ = os.Unsetenv("SERPERDEV_API_KEY")
 
 	testCases := []struct {
@@ -743,7 +743,7 @@ func TestWebSearchWithEngineAPIKey(t *testing.T) {
 			// Clear environment for next test
 			_ = os.Unsetenv("BRAVE_API_KEY")
 			_ = os.Unsetenv("TAVILY_API_KEY")
-			os.Unsetenv("SERPAPI_API_KEY")
+			_ = os.Unsetenv("SERPAPI_API_KEY")
 		})
 	}
 }
@@ -799,7 +799,7 @@ func TestEngineAPIKeyPrecedence(t *testing.T) {
 				os.Setenv("SERPAPI_API_KEY", "env-serpapi-key")
 			},
 			cleanupFunc: func() {
-				os.Unsetenv("SERPAPI_API_KEY")
+				_ = os.Unsetenv("SERPAPI_API_KEY")
 			},
 			params: map[string]interface{}{
 				"query":  "test",
@@ -910,7 +910,7 @@ func TestSearchSerpapi(t *testing.T) {
 
 	// Set test API key
 	os.Setenv("SERPAPI_API_KEY", "test-serpapi-key")
-	defer os.Unsetenv("SERPAPI_API_KEY")
+	defer func() { _ = os.Unsetenv("SERPAPI_API_KEY") }()
 
 	// Test search (this will need the actual implementation)
 	// For now, we're just setting up the test structure
@@ -968,7 +968,7 @@ func TestSearchSerperDev(t *testing.T) {
 
 	// Set test API key
 	os.Setenv("SERPERDEV_API_KEY", "test-serperdev-key")
-	defer _ = os.Unsetenv("SERPERDEV_API_KEY")
+	defer func() { _ = os.Unsetenv("SERPERDEV_API_KEY") }()
 
 	// Test search structure
 	t.Log("Serper.dev search test structure created - mock server: " + server.URL)

@@ -12,8 +12,8 @@ func TestGetAPIKey(t *testing.T) {
 
 	// Cleanup function to restore environment
 	defer func() {
-		os.Setenv("OPENAI_API_KEY", oldOpenAIKey)
-		os.Setenv("ANTHROPIC_API_KEY", oldAnthropicKey)
+		_ = os.Setenv("OPENAI_API_KEY", oldOpenAIKey)
+		_ = os.Setenv("ANTHROPIC_API_KEY", oldAnthropicKey)
 		// Reset config
 		config = Config{}
 		if err := InitOptimizedConfig(""); err != nil {
@@ -22,13 +22,13 @@ func TestGetAPIKey(t *testing.T) {
 	}()
 
 	// Clear environment variables for the test
-	os.Unsetenv("OPENAI_API_KEY")
-	os.Unsetenv("ANTHROPIC_API_KEY")
+	_ = os.Unsetenv("OPENAI_API_KEY")
+	_ = os.Unsetenv("ANTHROPIC_API_KEY")
 
 	// Test case 1: Get API key from environment variable - OpenAI
 	t.Run("GetFromEnvOpenAI", func(t *testing.T) {
 		// Set environment variable
-		os.Setenv("OPENAI_API_KEY", "test-openai-key")
+		_ = os.Setenv("OPENAI_API_KEY", "test-openai-key")
 		// Reset and reload config
 		config = Config{}
 		if err := InitOptimizedConfig(""); err != nil {
@@ -47,7 +47,7 @@ func TestGetAPIKey(t *testing.T) {
 	// Test case 2: Get API key from environment variable - Anthropic
 	t.Run("GetFromEnvAnthropic", func(t *testing.T) {
 		// Set environment variable
-		os.Setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
+		_ = os.Setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
 		// Reset and reload config
 		config = Config{}
 		if err := InitOptimizedConfig(""); err != nil {
@@ -66,7 +66,7 @@ func TestGetAPIKey(t *testing.T) {
 	// Test case 3: Get API key from config - OpenAI
 	t.Run("GetFromConfigOpenAI", func(t *testing.T) {
 		// Clear env var
-		os.Unsetenv("OPENAI_API_KEY")
+		_ = os.Unsetenv("OPENAI_API_KEY")
 		// Set config directly
 		config = Config{}
 		config.Providers.OpenAI.APIKey = "config-openai-key"
@@ -83,7 +83,7 @@ func TestGetAPIKey(t *testing.T) {
 	// Test case 4: Error when no API key is configured
 	t.Run("ErrorWhenNoAPIKey", func(t *testing.T) {
 		// Clear everything
-		os.Unsetenv("OPENAI_API_KEY")
+		_ = os.Unsetenv("OPENAI_API_KEY")
 		config = Config{}
 		if err := InitOptimizedConfig(""); err != nil {
 			t.Fatalf("Failed to initialize config: %v", err)

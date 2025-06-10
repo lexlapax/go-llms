@@ -142,15 +142,15 @@ func TestProviderOptions(t *testing.T) {
 		// Restore environment variables after test
 		defer func() {
 			_ = os.Setenv("LLM_HTTP_TIMEOUT", origTimeout)
-			os.Setenv("OPENAI_API_KEY", origOpenAIKey)
-			os.Setenv("OPENAI_ORGANIZATION", origOpenAIOrg)
-			os.Setenv("OPENAI_USE_CASE", origOpenAIUseCase)
+			_ = os.Setenv("OPENAI_API_KEY", origOpenAIKey)
+			_ = os.Setenv("OPENAI_ORGANIZATION", origOpenAIOrg)
+			_ = os.Setenv("OPENAI_USE_CASE", origOpenAIUseCase)
 		}()
 
 		// Set test environment variables
-		os.Setenv("LLM_HTTP_TIMEOUT", "15")
-		os.Setenv("OPENAI_API_KEY", "test-key-from-env")
-		os.Setenv("OPENAI_ORGANIZATION", "test-org-from-env")
+		_ = os.Setenv("LLM_HTTP_TIMEOUT", "15")
+		_ = os.Setenv("OPENAI_API_KEY", "test-key-from-env")
+		_ = os.Setenv("OPENAI_ORGANIZATION", "test-org-from-env")
 
 		// Create a ModelConfig without explicit options
 		config := llmutil.ModelConfig{
@@ -180,7 +180,7 @@ func TestProviderOptions(t *testing.T) {
 		}
 
 		// Test with use case-specific environment variables
-		os.Setenv("OPENAI_USE_CASE", "streaming")
+		_ = os.Setenv("OPENAI_USE_CASE", "streaming")
 
 		// Create a new config with the same parameters
 		streamingConfig := llmutil.ModelConfig{

@@ -81,7 +81,7 @@ func TestAPIClientTool_OpenAPIDiscovery(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/openapi.json" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(mockSpec)
+			_ = json.NewEncoder(w).Encode(mockSpec)
 			return
 		}
 		http.NotFound(w, r)
@@ -206,7 +206,7 @@ func TestAPIClientTool_OpenAPIValidation(t *testing.T) {
 	// Create test servers
 	specServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(mockSpec)
+		_ = json.NewEncoder(w).Encode(mockSpec)
 	}))
 	defer specServer.Close()
 
@@ -214,7 +214,7 @@ func TestAPIClientTool_OpenAPIValidation(t *testing.T) {
 		if r.URL.Path == "/pets" && r.Method == "POST" {
 			// Just return success for valid requests
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"id":      "123",
 				"message": "Pet created",
 			})

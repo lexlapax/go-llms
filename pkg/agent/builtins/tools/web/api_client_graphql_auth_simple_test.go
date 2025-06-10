@@ -32,7 +32,7 @@ func TestAPIClientTool_GraphQLAuthSimple(t *testing.T) {
 
 		// Return success response regardless of auth
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"data": map[string]interface{}{
 				"viewer": map[string]interface{}{
 					"login":  "testuser",

@@ -404,7 +404,7 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, ParseJSONError(body, resp.StatusCode, "anthropic", "StreamMessage")
 	}
 
