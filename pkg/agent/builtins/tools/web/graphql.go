@@ -107,7 +107,7 @@ func (c *GraphQLClient) Execute(ctx context.Context, query string, variables map
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute GraphQL request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response
 	body, err := io.ReadAll(resp.Body)

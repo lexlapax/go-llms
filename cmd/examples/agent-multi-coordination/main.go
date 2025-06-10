@@ -308,8 +308,8 @@ Coordinate these teams to produce comprehensive insights.`)
 	)
 
 	// Register the coordinators
-	core.Register(researchCoordWithTeam)
-	core.Register(analysisCoordWithTeam)
+	_ = core.Register(researchCoordWithTeam)
+	_ = core.Register(analysisCoordWithTeam)
 
 	// Create top-level coordinator
 	topCoordinator, _ := core.NewLLMAgentWithSubAgentsFromString(

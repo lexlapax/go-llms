@@ -20,7 +20,7 @@ func BenchmarkAPIClientTool_SimpleGET(b *testing.B) {
 	// Create test server that returns a simple JSON response
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"id":        123,
 			"message":   "Hello, World!",
 			"timestamp": time.Now().Unix(),
@@ -63,11 +63,11 @@ func BenchmarkAPIClientTool_SimpleGET(b *testing.B) {
 func BenchmarkAPIClientTool_POST(b *testing.B) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]interface{}
-		json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"id":      456,
 			"created": true,
 			"data":    body,
@@ -114,7 +114,7 @@ func BenchmarkAPIClientTool_POST(b *testing.B) {
 // BenchmarkAPIClientTool_PathParams benchmarks path parameter substitution
 func BenchmarkAPIClientTool_PathParams(b *testing.B) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"path": r.URL.Path,
 		})
 	}))
@@ -173,7 +173,7 @@ func BenchmarkAPIClientTool_LargeResponse(b *testing.B) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"total": len(largeData),
 			"items": largeData,
 		})
@@ -218,7 +218,7 @@ func BenchmarkAPIClientTool_Concurrent(b *testing.B) {
 		time.Sleep(10 * time.Millisecond)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"id":      r.URL.Query().Get("id"),
 			"message": "Concurrent response",
 		})

@@ -361,7 +361,7 @@ func HTTPRequest() domain.Tool {
 				}
 				return nil, fmt.Errorf("error executing request: %w", err)
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// Emit progress event
 			if ctx.Events != nil {
