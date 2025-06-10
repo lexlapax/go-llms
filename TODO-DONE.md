@@ -193,6 +193,38 @@
   - [x] Complete examples with documentation: Each agent type has a working example with README
   - [x] Production-ready features: Error handling, timeout support, hook integration, metadata collection
 
+## Tool System Enhancement Phase 2: Tool Migration (Completed - January 10, 2025 6:47 PM PST)
+- [x] Phase 2: Tool Migration to Enhanced Interface (Week 2)
+  - [x] Day 1-3: COMPLETED (calculator, math, system tools, file tools)
+  - [x] Day 4: Migrate web tools (4 tools - api_client already done)
+    - [x] web_search - Enhanced with multi-engine examples, API key guidance, auth support
+    - [x] web_fetch - Enhanced with timeout guidance, error handling examples, auth support  
+    - [x] web_scrape - Enhanced with selector examples, HTML parsing guidance, auth support
+    - [x] http_request - Enhanced with auth method examples, header formatting
+    - [x] Update all examples that use these tools to follow enhanced pattern
+  - [x] Day 5: Testing & fixes
+    - [x] Run all migrated tool tests - All 280+ tests PASSED
+    - [x] Verify ToolBuilder pattern is correctly applied - Confirmed for all 15 migrated tools
+    - [x] Test MCP export for all tools - All 15 tools successfully export to MCP format
+    - [x] Update integration tests if needed - All integration tests passing
+  - [x] Enhanced Authentication Support for Web Tools
+    - [x] Added comprehensive auth parameters to web_fetch, web_scrape, web_search
+    - [x] Support for bearer, basic, api_key, oauth2, custom authentication
+    - [x] Automatic auth detection from agent state
+    - [x] Updated examples with authentication usage
+    - [x] Enhanced tool schemas with auth parameters
+  - [x] Updated Documentation
+    - [x] Updated all README files for migrated tools to reflect ToolBuilder interface
+    - [x] Enhanced builtins-web-tools README with auth examples
+    - [x] Updated agent-llm-builtin-tools README to mention ToolBuilder interface
+    - [x] Verified all examples using migrated tools have correct documentation
+  - [x] Migration Results
+    - [x] 15 tools successfully migrated: calculator, web_search, web_fetch, web_scrape, http_request, file_read, file_write, file_list, file_delete, file_move, file_search, execute_command, get_environment_variable, get_system_info, process_list
+    - [x] All tools use ToolBuilder pattern with comprehensive metadata
+    - [x] Enhanced with 7+ examples, 5+ constraints, 10+ error guidance mappings per tool
+    - [x] Full MCP (Model Context Protocol) compatibility
+    - [x] Authentication support added to web tools
+
 ## Features (Completed)
 - [x] Implement interface-based provider option system
 - [x] Add multimodal content support to the llm core (completed in v0.2.0)

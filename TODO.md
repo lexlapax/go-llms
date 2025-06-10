@@ -83,19 +83,7 @@
       - [ ] Request Batching: Batch multiple requests for efficiency
     - Integration Testing - COMPLETED - see TODO-DONE.md
 
-- [ ] Phase 2: Tool Migration to Enhanced Interface (Week 2) - Update existing tools to use ToolBuilder pattern (IN PROGRESS)
-  - Day 1-3: COMPLETED - see TODO-DONE.md
-  - [ ] Day 4: Migrate web tools (4 tools - api_client already done)
-    - [ ] web_search - Multi-engine examples, API key guidance
-    - [ ] web_fetch - Add timeout guidance, error handling examples
-    - [ ] web_scrape - Selector examples, HTML parsing guidance
-    - [ ] http_request - Auth method examples, header formatting
-    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool
-  - [ ] Day 5: Testing & fixes
-    - [ ] Run all migrated tool tests
-    - [ ] Verify ToolBuilder pattern is correctly applied
-    - [ ] Test MCP export for all tools
-    - [ ] Update integration tests if needed
+- Phase 2: Tool Migration to Enhanced Interface (Week 2) - COMPLETED - see TODO-DONE.md
 
 - [ ] Phase 3: Tool Migration Part 2 (Week 3) - Continue migration to ToolBuilder pattern
   - [ ] Day 1: Migrate data tools (4 tools)

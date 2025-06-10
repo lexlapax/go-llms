@@ -129,7 +129,7 @@ func main() {
 	searchResult, err := searchTool.Execute(toolCtx, map[string]interface{}{
 		"query":       "golang generics tutorial",
 		"max_results": 3,
-		"safe_search": "moderate",
+		"safe_search": true,
 	})
 	if err != nil {
 		log.Printf("Failed to search web: %v", err)
@@ -141,15 +141,13 @@ func main() {
 	fmt.Println("=== Example 3: Web Scrape ===")
 	scrapeTool := tools.MustGetTool("web_scrape")
 	scrapeResult, err := scrapeTool.Execute(toolCtx, map[string]interface{}{
-		"url": "https://example.com",
-		"extract_options": map[string]interface{}{
-			"include_text":     true,
-			"include_links":    true,
-			"include_metadata": true,
-			"selectors": []string{
-				"h1",       // All h1 tags
-				".content", // Elements with class "content"
-			},
+		"url":           "https://example.com",
+		"extract_text":  true,
+		"extract_links": true,
+		"extract_meta":  true,
+		"selectors": []string{
+			"h1", // All h1 tags
+			"p",  // All p tags
 		},
 	})
 	if err != nil {
@@ -166,19 +164,16 @@ func main() {
 	httpTool := tools.MustGetTool("http_request")
 
 	// Example POST request to httpbin.org
+	postBody := `{"name":"John Doe","email":"john@example.com","message":"Hello from go-llms!"}`
 	postResult, err := httpTool.Execute(toolCtx, map[string]interface{}{
 		"url":    "https://httpbin.org/post",
 		"method": "POST",
 		"headers": map[string]string{
-			"Content-Type": "application/json",
-			"User-Agent":   "go-llms/1.0",
+			"User-Agent": "go-llms/1.0",
 		},
-		"body": map[string]interface{}{
-			"name":    "John Doe",
-			"email":   "john@example.com",
-			"message": "Hello from go-llms!",
-		},
-		"timeout": 10,
+		"body":      postBody,
+		"body_type": "json",
+		"timeout":   10,
 	})
 	if err != nil {
 		log.Printf("Failed to make POST request: %v", err)
@@ -189,11 +184,11 @@ func main() {
 	// Example 5: HTTP Request with Authentication
 	fmt.Println("=== Example 5: HTTP Request with Auth ===")
 	authResult, err := httpTool.Execute(toolCtx, map[string]interface{}{
-		"url":               "https://httpbin.org/bearer",
-		"method":            "GET",
-		"auth_type":         "bearer",
-		"auth_bearer_token": "example-token-123",
-		"timeout":           10,
+		"url":        "https://httpbin.org/bearer",
+		"method":     "GET",
+		"auth_type":  "bearer",
+		"auth_token": "example-token-123",
+		"timeout":    10,
 	})
 	if err != nil {
 		log.Printf("Failed to make authenticated request: %v", err)
@@ -218,5 +213,35 @@ func main() {
 		log.Printf("Failed to make request with query params: %v", err)
 	} else {
 		fmt.Printf("Query params response: %+v\n", queryResult)
+	}
+
+	// Example 7: Web Fetch with Authentication
+	fmt.Println("\n=== Example 7: Web Fetch with Auth ===")
+	authFetchResult, err := fetchTool.Execute(toolCtx, map[string]interface{}{
+		"url":        "https://httpbin.org/bearer",
+		"timeout":    10,
+		"auth_type":  "bearer",
+		"auth_token": "example-bearer-token-123",
+	})
+	if err != nil {
+		log.Printf("Failed to fetch with auth: %v", err)
+	} else {
+		fmt.Printf("Authenticated fetch result: %+v\n", authFetchResult)
+	}
+
+	// Example 8: Web Scrape with Authentication
+	fmt.Println("\n=== Example 8: Web Scrape with Auth ===")
+	authScrapeResult, err := scrapeTool.Execute(toolCtx, map[string]interface{}{
+		"url":           "https://httpbin.org/basic-auth/user/pass",
+		"auth_type":     "basic",
+		"auth_username": "user",
+		"auth_password": "pass",
+		"extract_text":  true,
+		"extract_meta":  true,
+	})
+	if err != nil {
+		log.Printf("Failed to scrape with auth: %v", err)
+	} else {
+		fmt.Printf("Authenticated scrape result: %+v\n", authScrapeResult)
 	}
 }

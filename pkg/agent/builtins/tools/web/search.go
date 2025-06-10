@@ -35,6 +35,18 @@ type WebSearchParams struct {
 	MaxResults   int    `json:"max_results,omitempty"`    // Maximum number of results (default: 10)
 	SafeSearch   bool   `json:"safe_search,omitempty"`    // Enable safe search (default: true)
 	TimeoutSecs  int    `json:"timeout,omitempty"`        // Timeout in seconds (default: 30)
+
+	// Authentication parameters (optional)
+	AuthType        string `json:"auth_type,omitempty"`         // "bearer", "basic", "api_key", "oauth2", "custom"
+	AuthToken       string `json:"auth_token,omitempty"`        // Bearer token or API token
+	AuthUsername    string `json:"auth_username,omitempty"`     // Username for basic auth
+	AuthPassword    string `json:"auth_password,omitempty"`     // Password for basic auth
+	AuthAPIKey      string `json:"auth_api_key,omitempty"`      // API key value
+	AuthKeyName     string `json:"auth_key_name,omitempty"`     // API key name (default: X-API-Key)
+	AuthKeyLocation string `json:"auth_key_location,omitempty"` // "header", "query", "cookie" (default: header)
+	AuthHeaderName  string `json:"auth_header_name,omitempty"`  // Custom header name for custom auth
+	AuthHeaderValue string `json:"auth_header_value,omitempty"` // Custom header value for custom auth
+	AuthPrefix      string `json:"auth_prefix,omitempty"`       // Optional prefix for custom auth (e.g., "Token")
 }
 
 // SearchResult defines a single search result
@@ -82,8 +94,98 @@ var webSearchParamSchema = &sdomain.Schema{
 			Type:        "number",
 			Description: "Request timeout in seconds (default: 30)",
 		},
+		"auth_type": {
+			Type:        "string",
+			Description: "Authentication type: 'bearer', 'basic', 'api_key', 'oauth2', 'custom'",
+		},
+		"auth_token": {
+			Type:        "string",
+			Description: "Bearer token or general authentication token",
+		},
+		"auth_username": {
+			Type:        "string",
+			Description: "Username for basic authentication",
+		},
+		"auth_password": {
+			Type:        "string",
+			Description: "Password for basic authentication",
+		},
+		"auth_api_key": {
+			Type:        "string",
+			Description: "API key value",
+		},
+		"auth_key_name": {
+			Type:        "string",
+			Description: "API key parameter name (default: X-API-Key)",
+		},
+		"auth_key_location": {
+			Type:        "string",
+			Description: "Where to place API key: 'header', 'query', or 'cookie' (default: header)",
+		},
+		"auth_header_name": {
+			Type:        "string",
+			Description: "Custom header name for custom authentication",
+		},
+		"auth_header_value": {
+			Type:        "string",
+			Description: "Custom header value for custom authentication",
+		},
+		"auth_prefix": {
+			Type:        "string",
+			Description: "Optional prefix for custom auth header value (e.g., 'Token')",
+		},
 	},
 	Required: []string{"query"},
+}
+
+// webSearchOutputSchema defines the output for the WebSearch tool
+var webSearchOutputSchema = &sdomain.Schema{
+	Type: "object",
+	Properties: map[string]sdomain.Property{
+		"query": {
+			Type:        "string",
+			Description: "The search query that was executed",
+		},
+		"engine": {
+			Type:        "string",
+			Description: "The search engine that was used",
+		},
+		"results": {
+			Type:        "array",
+			Description: "Array of search results",
+			Items: &sdomain.Property{
+				Type: "object",
+				Properties: map[string]sdomain.Property{
+					"title": {
+						Type:        "string",
+						Description: "Result title",
+					},
+					"url": {
+						Type:        "string",
+						Description: "Result URL",
+					},
+					"description": {
+						Type:        "string",
+						Description: "Result description",
+					},
+					"snippet": {
+						Type:        "string",
+						Description: "Optional result snippet or excerpt",
+					},
+				},
+				Required: []string{"title", "url", "description"},
+			},
+		},
+		"total_found": {
+			Type:        "number",
+			Description: "Total number of results found",
+		},
+		"time_ms": {
+			Type:        "number",
+			Description: "Search execution time in milliseconds",
+		},
+	},
+	Required: []string{"query", "engine", "results"},
 }
 
 // DuckDuckGoResult represents a search result from DuckDuckGo API
@@ -244,10 +346,8 @@ func init() {
 // - SERPAPI_API_KEY: Serpapi Search API key (Google search results)
 // - SERPERDEV_API_KEY: Serper.dev Search API key (Google search results)
 func WebSearch() domain.Tool {
-	return atools.NewTool(
-		"web_search",
-		"Performs web searches using various search engines with automatic API key detection",
-		func(ctx *domain.ToolContext, params WebSearchParams) (*WebSearchResults, error) {
+	builder := atools.NewToolBuilder("web_search", "Performs web searches using various search engines with automatic API key detection").
+		WithFunction(func(ctx *domain.ToolContext, params WebSearchParams) (*WebSearchResults, error) {
 			startTime := time.Now()
 
 			// Emit start event
@@ -346,9 +446,247 @@ func WebSearch() domain.Tool {
 				TotalFound: len(results),
 				TimeMs:     time.Since(startTime).Milliseconds(),
 			}, nil
-		},
-		webSearchParamSchema,
-	)
+		}).
+		WithParameterSchema(webSearchParamSchema).
+		WithOutputSchema(webSearchOutputSchema).
+		WithUsageInstructions(`Use this tool to search the web using various search engines with optional authentication. The tool automatically selects the best available search engine based on API keys.
+
+Available engines:
+- duckduckgo: Free, no API key required, limited results
+- brave: Comprehensive web search (requires BRAVE_API_KEY)
+- tavily: AI-optimized search with summaries (requires TAVILY_API_KEY) - best for LLM applications
+- serpapi: Google search results (requires SERPAPI_API_KEY)
+- serperdev: Fast Google search results (requires SERPERDEV_API_KEY)
+- searx: Privacy-focused metasearch (requires searx_url in state)
+
+The tool will automatically:
+- Select the best available engine based on API keys
+- Handle rate limiting and retries
+- Filter results based on safe search settings
+- Limit results to the requested maximum (up to 50)
+
+API Key Management:
+- Set API keys via environment variables (BRAVE_API_KEY, TAVILY_API_KEY, etc.)
+- Or provide engine_api_key parameter to override environment variables
+- Keys in state (search_api_key) also work for backward compatibility
+
+Authentication methods (for custom search endpoints):
+- bearer: Sends "Authorization: Bearer <token>" header
+- basic: Sends HTTP Basic Authentication with username/password
+- api_key: Sends API key in header, query, or cookie
+- oauth2: Sends OAuth2 access token as bearer token
+- custom: Sends custom header with optional prefix
+
+Authentication can be auto-detected from state or provided via parameters.`).
+		WithExamples([]domain.ToolExample{
+			{
+				Name:        "Basic web search",
+				Description: "Search for information using default engine",
+				Scenario:    "When you need to find information on any topic",
+				Input: map[string]interface{}{
+					"query": "latest AI developments 2024",
+				},
+				Output: map[string]interface{}{
+					"query":  "latest AI developments 2024",
+					"engine": "tavily", // Assuming Tavily is configured
+					"results": []map[string]interface{}{
+						{
+							"title":       "Major AI Breakthroughs in 2024",
+							"url":         "https://example.com/ai-2024",
+							"description": "Overview of significant AI advancements...",
+							"snippet":     "In 2024, artificial intelligence saw unprecedented growth...",
+						},
+					},
+					"total_found": 10,
+					"time_ms":     342,
+				},
+				Explanation: "Automatically selected Tavily for AI-optimized results",
+			},
+			{
+				Name:        "Search with specific engine",
+				Description: "Use a specific search engine",
+				Scenario:    "When you want to use a particular search provider",
+				Input: map[string]interface{}{
+					"query":       "python programming tutorials",
+					"engine":      "brave",
+					"max_results": 5,
+				},
+				Output: map[string]interface{}{
+					"query":  "python programming tutorials",
+					"engine": "brave",
+					"results": []map[string]interface{}{
+						{
+							"title":       "Python Tutorial - W3Schools",
+							"url":         "https://www.w3schools.com/python/",
+							"description": "Well organized and easy to understand Web building tutorials",
+						},
+					},
+					"total_found": 5,
+					"time_ms":     215,
+				},
+				Explanation: "Used Brave Search as requested",
+			},
+			{
+				Name:        "Search with API key override",
+				Description: "Provide API key directly",
+				Scenario:    "When using a different API key than environment variable",
+				Input: map[string]interface{}{
+					"query":          "climate change research papers",
+					"engine":         "serpapi",
+					"engine_api_key": "your-serpapi-key-here",
+					"max_results":    20,
+				},
+				Output: map[string]interface{}{
+					"query":       "climate change research papers",
+					"engine":      "serpapi",
+					"total_found": 20,
+					"time_ms":     523,
+				},
+				Explanation: "Used provided API key instead of environment variable",
+			},
+			{
+				Name:        "Search with safe search disabled",
+				Description: "Search without content filtering",
+				Scenario:    "When you need unfiltered results",
+				Input: map[string]interface{}{
+					"query":       "medical procedures",
+					"safe_search": false,
+				},
+				Output: map[string]interface{}{
+					"query":       "medical procedures",
+					"engine":      "duckduckgo",
+					"total_found": 10,
+					"time_ms":     189,
+				},
+				Explanation: "Safe search disabled for medical/scientific content",
+			},
+			{
+				Name:        "Handle missing API keys",
+				Description: "Fallback to free engine",
+				Scenario:    "When no API keys are configured",
+				Input: map[string]interface{}{
+					"query": "open source projects",
+				},
+				Output: map[string]interface{}{
+					"query":       "open source projects",
+					"engine":      "duckduckgo",
+					"total_found": 8,
+					"time_ms":     412,
+				},
+				Explanation: "Automatically fell back to DuckDuckGo (no API key required)",
+			},
+			{
+				Name:        "Search with custom timeout",
+				Description: "Set longer timeout for slow connections",
+				Scenario:    "When dealing with slow network or complex queries",
+				Input: map[string]interface{}{
+					"query":   "comprehensive market analysis reports 2024",
+					"timeout": 60,
+				},
+				Output: map[string]interface{}{
+					"query":       "comprehensive market analysis reports 2024",
+					"engine":      "tavily",
+					"total_found": 15,
+					"time_ms":     2341,
+				},
+				Explanation: "Extended timeout allowed for thorough search",
+			},
+			{
+				Name:        "Error: Invalid engine",
+				Description: "Handle unsupported engine",
+				Scenario:    "When requesting a non-existent search engine",
+				Input: map[string]interface{}{
+					"query":  "test query",
+					"engine": "invalid_engine",
+				},
+				Output: map[string]interface{}{
+					"error": "unsupported search engine: invalid_engine",
+				},
+				Explanation: "Clear error for invalid engine selection",
+			},
+			{
+				Name:        "Search with bearer token authentication",
+				Description: "Search protected custom search endpoint",
+				Scenario:    "When using a custom search service requiring bearer token",
+				Input: map[string]interface{}{
+					"query":      "internal documents",
+					"engine":     "custom",
+					"auth_type":  "bearer",
+					"auth_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+				},
+				Output: map[string]interface{}{
+					"query":       "internal documents",
+					"engine":      "custom",
+					"total_found": 5,
+					"time_ms":     452,
+				},
+				Explanation: "Bearer token added to Authorization header for authentication",
+			},
+			{
+				Name:        "Search with API key authentication",
+				Description: "Search with API key in custom header",
+				Scenario:    "When custom search service requires API key in header",
+				Input: map[string]interface{}{
+					"query":         "research papers",
+					"engine":        "custom",
+					"auth_type":     "api_key",
+					"auth_api_key":  "abc123xyz789",
+					"auth_key_name": "X-Custom-API-Key",
+				},
+				Output: map[string]interface{}{
+					"query":       "research papers",
+					"engine":      "custom",
+					"total_found": 12,
+					"time_ms":     523,
+				},
+				Explanation: "API key sent in X-Custom-API-Key header for access",
+			},
+		}).
+		WithConstraints([]string{
+			"Maximum 50 results per search (API limitations)",
+			"Safe search is enabled by default",
+			"DuckDuckGo provides limited results compared to other engines",
+			"API keys can be set via environment or engine_api_key parameter",
+			"Timeout defaults to 30 seconds if not specified",
+			"Some engines require paid API subscriptions",
+			"Search results may vary between engines",
+			"Rate limits apply based on API provider",
+			"Searx requires a running instance URL in state",
+			"Authentication is optional and supports bearer, basic, API key, OAuth2, and custom methods",
+			"Auth credentials should be kept secure and not logged",
+			"State-based auth detection looks for common token patterns",
+		}).
+		WithErrorGuidance(map[string]string{
+			"unsupported search engine":        "Use one of: duckduckgo, brave, tavily, serpapi, serperdev, searx",
+			"API key required":                 "Set the appropriate environment variable or use engine_api_key parameter",
+			"rate limit exceeded":              "Wait before making more requests or upgrade your API plan",
+			"timeout":                          "Increase timeout parameter or try a faster search engine",
+			"no results found":                 "Try different search terms or another search engine",
+			"invalid API key":                  "Check your API key is correct and has not expired",
+			"searx_url not found":              "Set searx_url in agent state to use Searx engine",
+			"context deadline exceeded":        "Search took too long - try reducing max_results or increasing timeout",
+			"connection refused":               "Check internet connection or firewall settings",
+			"API returned status":              "Check API service status or contact provider support",
+			"error parsing response":           "API response format may have changed - report this issue",
+			"brave Search API returned status": "Check Brave API key permissions and quota",
+			"tavily API error":                 "Verify Tavily API key and account status",
+			"serpapi request failed":           "Check Serpapi API key and request parameters",
+			"serperdev API error":              "Verify Serper.dev API key and quota",
+			"authentication failed":            "Check auth credentials are correct and match the expected format",
+			"401 Unauthorized":                 "Authentication required - check auth_type and credentials",
+			"403 Forbidden":                    "Access denied - credentials may be invalid or insufficient permissions",
+		}).
+		WithCategory("web").
+		WithTags([]string{"web", "search", "internet", "query", "research", "auth", "authentication"}).
+		WithVersion("3.0.0").
+		WithBehavior(
+			false,  // Not deterministic - results change over time
+			false,  // Not destructive
+			false,  // No confirmation needed
+			"fast", // Usually fast, depends on engine and network
+		)
+
+	return builder.Build()
 }
 
 // searchDuckDuckGo performs a search using DuckDuckGo Instant Answer API

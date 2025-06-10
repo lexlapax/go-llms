@@ -123,6 +123,46 @@ var httpRequestParamSchema = &sdomain.Schema{
 	Required: []string{"url"},
 }
 
+// httpRequestOutputSchema defines the output for the HTTPRequest tool
+var httpRequestOutputSchema = &sdomain.Schema{
+	Type: "object",
+	Properties: map[string]sdomain.Property{
+		"status_code": {
+			Type:        "number",
+			Description: "HTTP response status code",
+		},
+		"status": {
+			Type:        "string",
+			Description: "HTTP response status text",
+		},
+		"headers": {
+			Type:        "object",
+			Description: "Response headers",
+		},
+		"body": {
+			Type:        "string",
+			Description: "Response body content",
+		},
+		"content_type": {
+			Type:        "string",
+			Description: "Response Content-Type header",
+		},
+		"content_length": {
+			Type:        "number",
+			Description: "Response Content-Length in bytes",
+		},
+		"response_time_ms": {
+			Type:        "number",
+			Description: "Response time in milliseconds",
+		},
+		"redirect_url": {
+			Type:        "string",
+			Description: "Redirect Location header if present",
+		},
+	},
+	Required: []string{"status_code", "status", "headers", "body"},
+}
+
 // init automatically registers the tool on package import
 func init() {
 	tools.MustRegisterTool("http_request", HTTPRequest(), tools.ToolMetadata{
@@ -169,10 +209,8 @@ func init() {
 // - Redirect control
 // - Comprehensive response information
 func HTTPRequest() domain.Tool {
-	return atools.NewTool(
-		"http_request",
-		"Makes HTTP requests with full method and authentication support",
-		func(ctx *domain.ToolContext, params HTTPRequestParams) (*HTTPRequestResult, error) {
+	builder := atools.NewToolBuilder("http_request", "Makes HTTP requests with full method and authentication support").
+		WithFunction(func(ctx *domain.ToolContext, params HTTPRequestParams) (*HTTPRequestResult, error) {
 			startTime := time.Now()
 
 			// Emit start event
@@ -413,9 +451,267 @@ func HTTPRequest() domain.Tool {
 				ResponseTime:  time.Since(startTime).Milliseconds(),
 				RedirectURL:   redirectURL,
 			}, nil
-		},
-		httpRequestParamSchema,
-	)
+		}).
+		WithParameterSchema(httpRequestParamSchema).
+		WithOutputSchema(httpRequestOutputSchema).
+		WithUsageInstructions(`Use this tool to make HTTP requests with full control over method, headers, body, and authentication.
+
+Supported methods:
+- GET: Retrieve data
+- POST: Create new resources
+- PUT: Update existing resources
+- DELETE: Remove resources
+- PATCH: Partial updates
+- HEAD: Get headers only
+- OPTIONS: Get allowed methods
+
+Authentication methods:
+- Basic: Username/password authentication
+- Bearer: Token-based authentication (JWT, OAuth)
+- API Key: Key in header or query parameter
+
+Body types:
+- json: application/json
+- form: application/x-www-form-urlencoded
+- xml: application/xml
+- text: text/plain
+- (default): application/octet-stream
+
+State configuration:
+- default_auth_type: Default authentication method
+- api_key: Default API key for api_key auth
+- bearer_token: Default token for bearer auth
+- user_agent: Custom User-Agent header
+- http_headers: Default headers as map[string]string
+
+The tool will:
+- Automatically handle redirects (unless disabled)
+- Add query parameters to URL
+- Set appropriate Content-Type for body
+- Measure response time
+- Return comprehensive response information`).
+		WithExamples([]domain.ToolExample{
+			{
+				Name:        "Simple GET request",
+				Description: "Basic data retrieval",
+				Scenario:    "When you need to fetch data from an API",
+				Input: map[string]interface{}{
+					"url": "https://api.example.com/users",
+				},
+				Output: map[string]interface{}{
+					"status_code": 200,
+					"status":      "200 OK",
+					"headers": map[string]string{
+						"Content-Type": "application/json",
+					},
+					"body":             `[{"id":1,"name":"John"},{"id":2,"name":"Jane"}]`,
+					"content_type":     "application/json",
+					"response_time_ms": 125,
+				},
+				Explanation: "GET is the default method when not specified",
+			},
+			{
+				Name:        "POST with JSON body",
+				Description: "Create a new resource",
+				Scenario:    "When creating new data via API",
+				Input: map[string]interface{}{
+					"url":       "https://api.example.com/users",
+					"method":    "POST",
+					"body":      `{"name":"Alice","email":"alice@example.com"}`,
+					"body_type": "json",
+				},
+				Output: map[string]interface{}{
+					"status_code": 201,
+					"status":      "201 Created",
+					"headers": map[string]string{
+						"Location": "https://api.example.com/users/3",
+					},
+					"body":             `{"id":3,"name":"Alice","email":"alice@example.com"}`,
+					"response_time_ms": 230,
+				},
+				Explanation: "Content-Type is automatically set based on body_type",
+			},
+			{
+				Name:        "PUT with form data",
+				Description: "Update resource with form encoding",
+				Scenario:    "When updating via form submission",
+				Input: map[string]interface{}{
+					"url":       "https://api.example.com/profile",
+					"method":    "PUT",
+					"body":      "name=Bob&city=NYC&age=30",
+					"body_type": "form",
+				},
+				Output: map[string]interface{}{
+					"status_code":      200,
+					"status":           "200 OK",
+					"body":             `{"message":"Profile updated"}`,
+					"response_time_ms": 150,
+				},
+				Explanation: "Form data uses application/x-www-form-urlencoded",
+			},
+			{
+				Name:        "DELETE request",
+				Description: "Remove a resource",
+				Scenario:    "When deleting data",
+				Input: map[string]interface{}{
+					"url":    "https://api.example.com/users/123",
+					"method": "DELETE",
+				},
+				Output: map[string]interface{}{
+					"status_code":      204,
+					"status":           "204 No Content",
+					"body":             "",
+					"response_time_ms": 90,
+				},
+				Explanation: "DELETE often returns 204 with no body",
+			},
+			{
+				Name:        "Bearer token auth",
+				Description: "Authenticated API request",
+				Scenario:    "When accessing protected resources",
+				Input: map[string]interface{}{
+					"url":        "https://api.example.com/me",
+					"auth_type":  "bearer",
+					"auth_token": "eyJhbGciOiJIUzI1NiIs...",
+				},
+				Output: map[string]interface{}{
+					"status_code":      200,
+					"body":             `{"id":42,"username":"johndoe"}`,
+					"response_time_ms": 100,
+				},
+				Explanation: "Bearer token is added to Authorization header",
+			},
+			{
+				Name:        "Basic authentication",
+				Description: "Username/password auth",
+				Scenario:    "When using basic auth",
+				Input: map[string]interface{}{
+					"url":           "https://api.example.com/admin",
+					"auth_type":     "basic",
+					"auth_username": "admin",
+					"auth_password": "secret123",
+				},
+				Output: map[string]interface{}{
+					"status_code": 200,
+					"body":        `{"role":"admin","permissions":["read","write"]}`,
+				},
+				Explanation: "Credentials are base64 encoded in Authorization header",
+			},
+			{
+				Name:        "API key in header",
+				Description: "API key authentication",
+				Scenario:    "When using API key auth",
+				Input: map[string]interface{}{
+					"url":               "https://api.example.com/data",
+					"auth_type":         "api_key",
+					"auth_key_name":     "X-API-Key",
+					"auth_key_value":    "abc123xyz",
+					"auth_key_location": "header",
+				},
+				Output: map[string]interface{}{
+					"status_code": 200,
+					"body":        `{"data":[1,2,3,4,5]}`,
+				},
+				Explanation: "API key is added as custom header",
+			},
+			{
+				Name:        "Query parameters",
+				Description: "Add URL parameters",
+				Scenario:    "When filtering or paginating results",
+				Input: map[string]interface{}{
+					"url": "https://api.example.com/search",
+					"query_params": map[string]string{
+						"q":     "golang",
+						"limit": "10",
+						"page":  "2",
+					},
+				},
+				Output: map[string]interface{}{
+					"status_code": 200,
+					"body":        `{"results":[...],"page":2,"total":150}`,
+				},
+				Explanation: "Parameters are URL-encoded and appended",
+			},
+			{
+				Name:        "Custom headers",
+				Description: "Add custom HTTP headers",
+				Scenario:    "When API requires specific headers",
+				Input: map[string]interface{}{
+					"url":    "https://api.example.com/v2/data",
+					"method": "POST",
+					"headers": map[string]string{
+						"X-Request-ID":  "uuid-123",
+						"Accept":        "application/vnd.api+json",
+						"Cache-Control": "no-cache",
+					},
+					"body": `{"type":"query"}`,
+				},
+				Output: map[string]interface{}{
+					"status_code": 200,
+					"headers": map[string]string{
+						"X-Request-ID": "uuid-123",
+					},
+				},
+				Explanation: "Custom headers are merged with defaults",
+			},
+			{
+				Name:        "Handle redirects",
+				Description: "Control redirect behavior",
+				Scenario:    "When you need redirect information",
+				Input: map[string]interface{}{
+					"url":              "http://example.com/old-path",
+					"follow_redirects": false,
+				},
+				Output: map[string]interface{}{
+					"status_code":  301,
+					"status":       "301 Moved Permanently",
+					"redirect_url": "https://example.com/new-path",
+					"headers": map[string]string{
+						"Location": "https://example.com/new-path",
+					},
+				},
+				Explanation: "When redirects are disabled, returns redirect info",
+			},
+		}).
+		WithConstraints([]string{
+			"Only HTTP and HTTPS protocols are supported",
+			"Default timeout is 30 seconds",
+			"Default method is GET if not specified",
+			"Redirects are followed by default (up to 10)",
+			"Headers are case-insensitive but preserved as sent",
+			"Body is returned as string (binary data may be corrupted)",
+			"Auth credentials should be kept secure",
+			"Custom headers override default headers",
+			"User-Agent defaults to 'go-llms/1.0 (HTTPRequest)'",
+			"Response size limited by available memory",
+		}).
+		WithErrorGuidance(map[string]string{
+			"invalid URL":               "Ensure URL is properly formatted with protocol",
+			"invalid HTTP method":       "Use one of: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS",
+			"timeout":                   "Increase timeout parameter or check server response time",
+			"connection refused":        "Server may be down or firewall blocking connection",
+			"certificate verification":  "SSL certificate issue - server may use self-signed cert",
+			"401 Unauthorized":          "Check authentication credentials are correct",
+			"403 Forbidden":             "User lacks permission for this resource",
+			"404 Not Found":             "Check URL path is correct",
+			"405 Method Not Allowed":    "This HTTP method is not supported for this endpoint",
+			"500 Internal Server Error": "Server-side error - check API status",
+			"context deadline exceeded": "Request cancelled - increase timeout",
+			"no such host":              "Domain name cannot be resolved",
+			"malformed HTTP response":   "Server returned invalid HTTP",
+			"too many redirects":        "Redirect loop detected",
+		}).
+		WithCategory("web").
+		WithTags([]string{"web", "http", "api", "rest", "request", "post", "put", "delete"}).
+		WithVersion("2.0.0").
+		WithBehavior(
+			false,  // Not deterministic - responses can vary
+			false,  // Not destructive by default (but DELETE/PUT can be)
+			false,  // No confirmation needed
+			"fast", // Usually fast, depends on network and server
+		)
+
+	return builder.Build()
 }
 
 // MustGetHTTPRequest retrieves the registered HTTPRequest tool or panics

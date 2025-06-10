@@ -173,12 +173,15 @@ The system prompt is crucial for guiding the LLM's tool usage. A good system pro
 
 ### Tool Integration
 ```go
+// All tools use the enhanced ToolBuilder interface
+// with comprehensive metadata and LLM guidance
+
 // Add tools to an agent
 agent.AddTool(tools.MustGetTool("web_search"))
 
 // The LLM will automatically:
 // 1. Decide when to use the tool
-// 2. Format parameters correctly
+// 2. Format parameters correctly  
 // 3. Process the results
 // 4. Continue with the task
 ```
