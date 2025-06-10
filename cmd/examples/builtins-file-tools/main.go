@@ -1,168 +1,317 @@
-// ABOUTME: Example demonstrating the enhanced built-in file tools
-// ABOUTME: Shows file reading with metadata, line ranges, and atomic writing with backups
+// ABOUTME: Example demonstrating the built-in file tools
+// ABOUTME: Shows both direct tool usage and LLM agent integration with minimal prompting
 
 package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
-	// Import built-in file tools - this triggers auto-registration
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
-	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
+	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/file"
 	"github.com/lexlapax/go-llms/pkg/agent/core"
-	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
+	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	ldomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
+	"github.com/lexlapax/go-llms/pkg/util/llmutil"
 )
 
-// Helper types for creating a minimal ToolContext for standalone tool execution
-
-// minimalStateReader implements StateReader interface with empty state
-type minimalStateReader struct {
-	state *agentDomain.State
-}
-
-func (m *minimalStateReader) Get(key string) (interface{}, bool) {
-	return m.state.Get(key)
-}
-
-func (m *minimalStateReader) Values() map[string]interface{} {
-	return m.state.Values()
-}
-
-func (m *minimalStateReader) GetArtifact(id string) (*agentDomain.Artifact, bool) {
-	return m.state.GetArtifact(id)
-}
-
-func (m *minimalStateReader) Artifacts() map[string]*agentDomain.Artifact {
-	return m.state.Artifacts()
-}
-
-func (m *minimalStateReader) Messages() []agentDomain.Message {
-	return m.state.Messages()
-}
-
-func (m *minimalStateReader) GetMetadata(key string) (interface{}, bool) {
-	return m.state.GetMetadata(key)
-}
-
-func (m *minimalStateReader) Has(key string) bool {
-	return m.state.Has(key)
-}
-
-func (m *minimalStateReader) Keys() []string {
-	values := m.state.Values()
-	keys := make([]string, 0, len(values))
-	for k := range values {
-		keys = append(keys, k)
-	}
-	return keys
-}
-
-// minimalEventEmitter implements EventEmitter interface with no-op methods
-type minimalEventEmitter struct{}
-
-func (m *minimalEventEmitter) Emit(eventType agentDomain.EventType, data interface{}) {}
-func (m *minimalEventEmitter) EmitProgress(current, total int, message string)        {}
-func (m *minimalEventEmitter) EmitMessage(message string)                             {}
-func (m *minimalEventEmitter) EmitError(err error)                                    {}
-func (m *minimalEventEmitter) EmitCustom(eventName string, data interface{})          {}
-
-// createToolContext creates a minimal ToolContext for standalone tool execution
-func createToolContext(ctx context.Context) *agentDomain.ToolContext {
-	state := agentDomain.NewState()
-	stateReader := &minimalStateReader{state: state}
-
-	toolCtx := &agentDomain.ToolContext{
-		Context:   ctx,
-		State:     stateReader,
-		RunID:     "standalone-execution",
-		Retry:     0,
-		StartTime: time.Now(),
-		Events:    &minimalEventEmitter{},
-		Agent: agentDomain.AgentInfo{
-			ID:          "standalone",
-			Name:        "standalone-tool-executor",
-			Description: "Minimal agent for standalone tool execution",
-			Type:        agentDomain.AgentTypeLLM,
-			Metadata:    make(map[string]interface{}),
-		},
+// createToolContext creates a ToolContext for direct tool execution
+func createToolContext() *domain.ToolContext {
+	ctx := context.Background()
+	agentInfo := domain.AgentInfo{
+		ID:          "file-test-agent",
+		Name:        "File Tools Test",
+		Description: "Testing file tools",
+		Type:        domain.AgentTypeCustom,
 	}
 
-	return toolCtx
+	state := domain.NewState()
+	// Enable useful options for file operations
+	state.Set("file_read_include_meta", true)
+	state.Set("file_write_atomic", true)
+	state.Set("file_list_recursive", false)
+
+	stateReader := domain.NewStateReader(state)
+
+	return &domain.ToolContext{
+		Context: ctx,
+		State:   stateReader,
+		Agent:   agentInfo,
+		RunID:   "file-test-run-" + fmt.Sprintf("%d", time.Now().Unix()),
+	}
+}
+
+// printResult prints a tool execution result in a formatted way
+func printResult(operation string, result interface{}, err error) {
+	if err != nil {
+		fmt.Printf("❌ %s failed: %v\n", operation, err)
+		return
+	}
+	fmt.Printf("✓ %s successful\n", operation)
+	fmt.Printf("  Result: %+v\n", result)
+}
+
+// createMockProvider creates a mock provider that simulates file tool usage
+func createMockProvider() ldomain.Provider {
+	mockProvider := provider.NewMockProvider()
+	hasToolResult := false
+
+	mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.Response, error) {
+		// Extract the last user message
+		var lastUserMsg string
+		for i := len(messages) - 1; i >= 0; i-- {
+			if messages[i].Role == "user" {
+				for _, part := range messages[i].Content {
+					if part.Type == ldomain.ContentTypeText {
+						lastUserMsg = part.Text
+						break
+					}
+				}
+				if lastUserMsg != "" {
+					break
+				}
+			}
+		}
+
+		// Check if this is a tool result response
+		if strings.Contains(lastUserMsg, "Tool results:") && strings.Contains(lastUserMsg, "Result:") {
+			hasToolResult = true
+			// Extract result from tool result message
+			if strings.Contains(messages[len(messages)-3].Content[0].Text, "read") && strings.Contains(messages[len(messages)-3].Content[0].Text, "config") {
+				return ldomain.Response{
+					Content: "The configuration file has been successfully read. It contains JSON settings with debug mode enabled and log level set to 'info'.",
+				}, nil
+			} else if strings.Contains(messages[len(messages)-3].Content[0].Text, "write") || strings.Contains(messages[len(messages)-3].Content[0].Text, "create") {
+				return ldomain.Response{
+					Content: "I've successfully created the todo list file with 5 important tasks.",
+				}, nil
+			} else if strings.Contains(messages[len(messages)-3].Content[0].Text, "list") && strings.Contains(messages[len(messages)-3].Content[0].Text, "JSON") {
+				return ldomain.Response{
+					Content: "I found 2 JSON files in the directory: config.json and settings.json. Both files are configuration files for the application.",
+				}, nil
+			}
+
+			return ldomain.Response{
+				Content: "The file operation has been completed successfully.",
+			}, nil
+		}
+
+		// Initial tool call based on the prompt
+		if lastUserMsg != "" && !hasToolResult {
+			if contains(lastUserMsg, "read") && contains(lastUserMsg, "config") {
+				return ldomain.Response{
+					Content: `{"tool": "file_read", "params": {"path": "/tmp/demo/config.json", "include_meta": true}}`,
+				}, nil
+			} else if (contains(lastUserMsg, "create") || contains(lastUserMsg, "write")) && contains(lastUserMsg, "todo") {
+				return ldomain.Response{
+					Content: `{"tool": "file_write", "params": {"path": "/tmp/demo/todo.md", "content": "# TODO List\n\n1. Complete file tools migration\n2. Test all examples\n3. Update documentation\n4. Run benchmarks\n5. Create release notes\n", "atomic": true}}`,
+				}, nil
+			} else if contains(lastUserMsg, "list") && contains(lastUserMsg, "JSON") {
+				return ldomain.Response{
+					Content: `{"tool": "file_list", "params": {"path": "/tmp/demo", "pattern": "*.json"}}`,
+				}, nil
+			} else if contains(lastUserMsg, "search") && contains(lastUserMsg, "error") {
+				return ldomain.Response{
+					Content: `{"tool": "file_search", "params": {"path": "/tmp/demo", "pattern": "error", "file_pattern": "*.log"}}`,
+				}, nil
+			}
+		}
+
+		return ldomain.Response{
+			Content: "I can help you with file operations like reading, writing, listing, searching, moving, and deleting files.",
+		}, nil
+	})
+
+	return mockProvider
+}
+
+func contains(s, substr string) bool {
+	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }
 
 func main() {
-	fmt.Println("=== File Tools Example ===")
+	var llmMode bool
+	flag.BoolVar(&llmMode, "llm", false, "Run LLM agent examples instead of direct tool usage")
+	flag.Parse()
+
+	fmt.Println("=== Built-in File Tools Example ===")
 	fmt.Println()
 
-	// Demonstrate tool discovery
-	fmt.Println("Available file tools:")
-	fileTools := tools.Tools.ListByCategory("file")
-	fmt.Printf("Total file tools: %d\n", len(fileTools))
-	for _, entry := range fileTools {
-		fmt.Printf("  - %s: %s\n", entry.Metadata.Name, entry.Metadata.Description)
-		fmt.Printf("    Version: %s\n", entry.Metadata.Version)
-		fmt.Printf("    Tags: %v\n", entry.Metadata.Tags)
-		fmt.Println()
+	if llmMode {
+		runLLMExample()
+	} else {
+		runDirectExample()
+	}
+}
+
+func runDirectExample() {
+	fmt.Println("=== Direct Tool Usage Examples ===")
+	fmt.Println()
+
+	// Get all file tools
+	readTool, ok := tools.GetTool("file_read")
+	if !ok {
+		log.Fatal("Failed to get file_read tool")
 	}
 
-	// Get all the tools
-	readTool := tools.MustGetTool("file_read")
-	writeTool := tools.MustGetTool("file_write")
-	listTool := tools.MustGetTool("file_list")
-	deleteTool := tools.MustGetTool("file_delete")
-	moveTool := tools.MustGetTool("file_move")
-	searchTool := tools.MustGetTool("file_search")
+	writeTool, ok := tools.GetTool("file_write")
+	if !ok {
+		log.Fatal("Failed to get file_write tool")
+	}
 
-	// Demonstrate direct tool usage
-	ctx := context.Background()
-	toolCtx := createToolContext(ctx)
-	// Use a temp directory to avoid leaving files if interrupted
+	listTool, ok := tools.GetTool("file_list")
+	if !ok {
+		log.Fatal("Failed to get file_list tool")
+	}
+
+	deleteTool, ok := tools.GetTool("file_delete")
+	if !ok {
+		log.Fatal("Failed to get file_delete tool")
+	}
+
+	moveTool, ok := tools.GetTool("file_move")
+	if !ok {
+		log.Fatal("Failed to get file_move tool")
+	}
+
+	searchTool, ok := tools.GetTool("file_search")
+	if !ok {
+		log.Fatal("Failed to get file_search tool")
+	}
+
+	// Create demo directory
 	demoDir, err := os.MkdirTemp("", "file_tools_demo_*")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.RemoveAll(demoDir) // Clean up
+	defer func() {
+		if err := os.RemoveAll(demoDir); err != nil {
+			log.Printf("Failed to remove demo directory: %v", err)
+		}
+	}()
 	fmt.Printf("Using demo directory: %s\n\n", demoDir)
 
-	// Example 1: Write a file with atomic operation and backup
-	fmt.Println("=== Example 1: Atomic Write ===")
-	configFile := filepath.Join(demoDir, "config.json")
+	// Create tool context
+	toolCtx := createToolContext()
 
-	// Write initial config
-	initialConfig := `{
+	// Example 1: Write a configuration file
+	fmt.Println("--- Example 1: Write Configuration File ---")
+
+	configFile := filepath.Join(demoDir, "config.json")
+	configContent := `{
   "version": "1.0",
   "settings": {
-    "debug": false
+    "debug": true,
+    "log_level": "info",
+    "port": 8080
   }
 }`
 
 	result, err := writeTool.Execute(toolCtx, map[string]interface{}{
 		"path":    configFile,
-		"content": initialConfig,
+		"content": configContent,
+		"atomic":  true,
 	})
-	if err != nil {
-		log.Printf("Error writing initial config: %v", err)
-	} else {
-		if writeResult, ok := result.(*file.WriteFileResult); ok {
-			fmt.Printf("Initial write successful: %d bytes written\n", writeResult.BytesWritten)
-			fmt.Printf("File path: %s\n", writeResult.AbsolutePath)
-		} else {
-			fmt.Printf("Unexpected result type for write operation\n")
-		}
-	}
+	printResult("Write config.json", result, err)
+
+	// Example 2: Read file with metadata
+	fmt.Println("\n--- Example 2: Read with Metadata ---")
+
+	result, err = readTool.Execute(toolCtx, map[string]interface{}{
+		"path":         configFile,
+		"include_meta": true,
+	})
+	printResult("Read config with metadata", result, err)
+
+	// Example 3: Create and append to log file
+	fmt.Println("\n--- Example 3: Append to Log File ---")
+
+	logFile := filepath.Join(demoDir, "app.log")
+
+	// Initial log entry
+	result, err = writeTool.Execute(toolCtx, map[string]interface{}{
+		"path":    logFile,
+		"content": fmt.Sprintf("[%s] Application started\n", time.Now().Format("2006-01-02 15:04:05")),
+	})
+	printResult("Create log file", result, err)
+
+	// Append entries
+	result, err = writeTool.Execute(toolCtx, map[string]interface{}{
+		"path":    logFile,
+		"content": fmt.Sprintf("[%s] Configuration loaded\n", time.Now().Format("2006-01-02 15:04:05")),
+		"append":  true,
+	})
+	printResult("Append to log", result, err)
+
+	// Example 4: List directory contents
+	fmt.Println("\n--- Example 4: List Directory ---")
+
+	// Create a few more files for listing
+	_, _ = writeTool.Execute(toolCtx, map[string]interface{}{
+		"path":    filepath.Join(demoDir, "settings.json"),
+		"content": `{"theme": "dark"}`,
+	})
+
+	_, _ = writeTool.Execute(toolCtx, map[string]interface{}{
+		"path":    filepath.Join(demoDir, "README.md"),
+		"content": "# File Tools Demo\n\nThis is a demonstration.",
+	})
+
+	result, err = listTool.Execute(toolCtx, map[string]interface{}{
+		"path":      demoDir,
+		"pattern":   "*.json",
+		"recursive": false,
+	})
+	printResult("List JSON files", result, err)
+
+	// Example 5: Search file content
+	fmt.Println("\n--- Example 5: Search Content ---")
+
+	// Add some content to search
+	_, _ = writeTool.Execute(toolCtx, map[string]interface{}{
+		"path":    filepath.Join(demoDir, "errors.log"),
+		"content": "Error: Connection timeout\nWarning: Low memory\nError: File not found\n",
+	})
+
+	result, err = searchTool.Execute(toolCtx, map[string]interface{}{
+		"path":         demoDir,
+		"pattern":      "Error",
+		"file_pattern": "*.log",
+	})
+	printResult("Search for 'Error' in logs", result, err)
+
+	// Example 6: Move/Rename file
+	fmt.Println("\n--- Example 6: Move/Rename File ---")
+
+	oldPath := filepath.Join(demoDir, "settings.json")
+	newPath := filepath.Join(demoDir, "app-settings.json")
+
+	result, err = moveTool.Execute(toolCtx, map[string]interface{}{
+		"source":      oldPath,
+		"destination": newPath,
+	})
+	printResult("Rename settings.json", result, err)
+
+	// Example 7: Atomic write with backup
+	fmt.Println("\n--- Example 7: Atomic Write with Backup ---")
 
 	// Update config with backup
 	updatedConfig := `{
   "version": "1.1",
   "settings": {
-    "debug": true,
-    "log_level": "info"
+    "debug": false,
+    "log_level": "warn",
+    "port": 9090,
+    "new_feature": true
   }
 }`
 
@@ -172,307 +321,261 @@ func main() {
 		"atomic":  true,
 		"backup":  true,
 	})
-	if err != nil {
-		log.Printf("Error updating config: %v", err)
-	} else {
-		if writeResult, ok := result.(*file.WriteFileResult); ok {
-			fmt.Printf("Update successful with atomic write\n")
-			fmt.Printf("  Bytes written: %d\n", writeResult.BytesWritten)
-			fmt.Printf("  Backup created at: %s\n", writeResult.BackupPath)
-			fmt.Printf("  File existed before: %v\n", writeResult.FileExisted)
-		} else {
-			fmt.Printf("Unexpected result type for atomic write operation\n")
-		}
-	}
+	printResult("Update config with backup", result, err)
 
-	// Example 2: Read file with metadata
-	fmt.Println("\n=== Example 2: Read with Metadata ===")
-	result, err = readTool.Execute(toolCtx, map[string]interface{}{
-		"path":         configFile,
-		"include_meta": true,
-	})
-	if err != nil {
-		log.Printf("Error reading config: %v", err)
-	} else {
-		if readResult, ok := result.(*file.ReadFileResult); ok {
-			fmt.Printf("File content:\n%s\n", readResult.Content)
-			fmt.Printf("Characters read: %d\n", len(readResult.Content))
-			if readResult.Metadata != nil {
-				fmt.Printf("File metadata:\n")
-				fmt.Printf("  Size: %d bytes\n", readResult.Metadata.Size)
-				fmt.Printf("  Extension: %s\n", readResult.Metadata.Extension)
-				fmt.Printf("  Modified: %v\n", readResult.Metadata.ModTime)
-				fmt.Printf("  Is directory: %v\n", readResult.Metadata.IsDir)
-				fmt.Printf("  Permissions: %v\n", readResult.Metadata.Mode)
-			}
-		} else {
-			fmt.Printf("Unexpected result type for read operation\n")
-		}
-	}
-
-	// Example 3: Append to log file
-	fmt.Println("\n=== Example 3: Append Mode ===")
-	logFile := filepath.Join(demoDir, "app.log")
-
-	// Write initial log entry
-	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
-		"path":    logFile,
-		"content": "2024-01-31 10:00:00 - Application started\n",
-	})
-	if err != nil {
-		log.Printf("Error writing initial log entry: %v", err)
-	}
-
-	// Append more log entries
-	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
-		"path":    logFile,
-		"content": "2024-01-31 10:00:01 - Configuration loaded\n",
-		"append":  true,
-	})
-	if err != nil {
-		log.Printf("Error appending to log: %v", err)
-	}
-
-	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
-		"path":    logFile,
-		"content": "2024-01-31 10:00:02 - Server listening on port 8080\n",
-		"append":  true,
-	})
-	if err != nil {
-		log.Printf("Error appending to log: %v", err)
-	}
-
-	// Read the full log
-	result, err = readTool.Execute(toolCtx, map[string]interface{}{
-		"path": logFile,
-	})
-	if err != nil {
-		log.Printf("Error reading log: %v", err)
-	} else {
-		if readResult, ok := result.(*file.ReadFileResult); ok {
-			fmt.Printf("Full log:\n%s", readResult.Content)
-			fmt.Printf("Log file size: %d characters\n", len(readResult.Content))
-		} else {
-			fmt.Printf("Unexpected result type for log read operation\n")
-		}
-	}
-
-	// Example 4: Read specific lines from large file
-	fmt.Println("\n=== Example 4: Line Range Reading ===")
-	largeFile := filepath.Join(demoDir, "large.txt")
+	// Example 8: Read specific lines from large file
+	fmt.Println("\n--- Example 8: Read Line Range ---")
 
 	// Create a file with many lines
-	var content string
-	for i := 1; i <= 20; i++ {
-		content += fmt.Sprintf("Line %d: This is some content on line %d\n", i, i)
-	}
-	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
-		"path":    largeFile,
-		"content": content,
-	})
-	if err != nil {
-		log.Printf("Error creating large file: %v", err)
+	largeFile := filepath.Join(demoDir, "large.txt")
+	var content strings.Builder
+	for i := 1; i <= 50; i++ {
+		content.WriteString(fmt.Sprintf("Line %d: This is line number %d of the file\n", i, i))
 	}
 
-	// Read only lines 5-10
+	_, _ = writeTool.Execute(toolCtx, map[string]interface{}{
+		"path":    largeFile,
+		"content": content.String(),
+	})
+
+	// Read only lines 10-15
 	result, err = readTool.Execute(toolCtx, map[string]interface{}{
 		"path":       largeFile,
-		"line_start": 5,
-		"line_end":   10,
+		"line_start": 10,
+		"line_end":   15,
 	})
-	if err != nil {
-		log.Printf("Error reading lines: %v", err)
-	} else {
-		if readResult, ok := result.(*file.ReadFileResult); ok {
-			fmt.Printf("Lines 5-10:\n%s\n", readResult.Content)
-			fmt.Printf("Lines read: %d\n", readResult.Lines)
-			fmt.Printf("Character count: %d\n", len(readResult.Content))
-		} else {
-			fmt.Printf("Unexpected result type for line range read operation\n")
-		}
-	}
+	printResult("Read lines 10-15", result, err)
 
-	// Example 5: Using with an agent
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey != "" {
-		fmt.Println("\n=== Example 5: Agent with File Tools ===")
+	// Example 9: Safe delete
+	fmt.Println("\n--- Example 9: Safe Delete ---")
 
-		// Create provider and agent
-		p := provider.NewOpenAIProvider(apiKey, "gpt-4o-mini")
-		agent := core.NewAgent("file-tools-agent", p)
-		agent.SetSystemPrompt("You are a helpful assistant that can read and write files.")
-		agent.AddTool(readTool)
-		agent.AddTool(writeTool)
-
-		// Use the agent
-		todoFile := filepath.Join(demoDir, "todo.md")
-		state := agentDomain.NewState()
-		state.Set("prompt", fmt.Sprintf(
-			"Create a todo list file at %s with 3 tasks, then read it back and tell me what's in it.",
-			todoFile,
-		))
-		resultState, err := agent.Run(ctx, state)
-		if err != nil {
-			log.Printf("Error running agent: %v", err)
-		} else {
-			if result, exists := resultState.Get("result"); exists {
-				fmt.Printf("Agent response: %v\n", result)
-			}
-		}
-	} else {
-		fmt.Println("\n=== Agent Example Skipped (no API key) ===")
-	}
-
-	// Example 6: File List operation
-	fmt.Println("\n=== Example 6: File List ===")
-	result, err = listTool.Execute(toolCtx, map[string]interface{}{
-		"path":      demoDir,
-		"recursive": false,
+	// Create a temporary file to delete
+	tempFile := filepath.Join(demoDir, "temp.txt")
+	_, _ = writeTool.Execute(toolCtx, map[string]interface{}{
+		"path":    tempFile,
+		"content": "Temporary file",
 	})
-	if err != nil {
-		log.Printf("Error listing files: %v", err)
-	} else {
-		if listResult, ok := result.(*file.FileListResult); ok {
-			fmt.Printf("Found %d files:\n", len(listResult.Files))
-			var totalSize int64
-			for _, fileInfo := range listResult.Files {
-				fmt.Printf("  - %s (%d bytes, modified: %v)\n",
-					fileInfo.Name, fileInfo.Size, fileInfo.ModifiedTime.Format("2006-01-02 15:04:05"))
-				totalSize += fileInfo.Size
-			}
-			fmt.Printf("Total size: %d bytes\n", totalSize)
-		} else {
-			fmt.Printf("Unexpected result type for list operation\n")
-		}
-	}
 
-	// Example 7: File Search operation
-	fmt.Println("\n=== Example 7: File Search ===")
-	result, err = searchTool.Execute(toolCtx, map[string]interface{}{
-		"path":      demoDir,
-		"pattern":   "*.json",
-		"recursive": false,
-	})
-	if err != nil {
-		log.Printf("Error searching files: %v", err)
-	} else {
-		if searchResult, ok := result.(*file.FileSearchResult); ok {
-			fmt.Printf("Found %d JSON files:\n", len(searchResult.Matches))
-			for _, match := range searchResult.Matches {
-				fmt.Printf("  - %s\n", match.File)
-			}
-			fmt.Printf("Total matches: %d\n", searchResult.TotalMatches)
-			fmt.Printf("Files searched: %d\n", searchResult.FilesSearched)
-		} else {
-			fmt.Printf("Unexpected result type for search operation\n")
-		}
-	}
-
-	// Example 8: File Move operation
-	fmt.Println("\n=== Example 8: File Move ===")
-	// Create a test file to move
-	moveTestFile := filepath.Join(demoDir, "move_test.txt")
-	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
-		"path":    moveTestFile,
-		"content": "This file will be moved",
-	})
-	if err != nil {
-		log.Printf("Error creating test file for move: %v", err)
-	}
-
-	// Move the file
-	movedFile := filepath.Join(demoDir, "moved_file.txt")
-	result, err = moveTool.Execute(toolCtx, map[string]interface{}{
-		"source":      moveTestFile,
-		"destination": movedFile,
-	})
-	if err != nil {
-		log.Printf("Error moving file: %v", err)
-	} else {
-		if moveResult, ok := result.(*file.FileMoveResult); ok {
-			fmt.Printf("File moved successfully\n")
-			fmt.Printf("  From: %s\n", moveResult.Source)
-			fmt.Printf("  To: %s\n", moveResult.Destination)
-			fmt.Printf("  Was rename: %v\n", moveResult.WasRename)
-		} else {
-			fmt.Printf("Unexpected result type for move operation\n")
-		}
-	}
-
-	// Example 9: File Delete operation
-	fmt.Println("\n=== Example 9: File Delete ===")
-	// Create a test file to delete
-	deleteTestFile := filepath.Join(demoDir, "delete_test.txt")
-	_, err = writeTool.Execute(toolCtx, map[string]interface{}{
-		"path":    deleteTestFile,
-		"content": "This file will be deleted",
-	})
-	if err != nil {
-		log.Printf("Error creating test file for delete: %v", err)
-	}
-
-	// Delete the file
 	result, err = deleteTool.Execute(toolCtx, map[string]interface{}{
-		"path": deleteTestFile,
+		"path": tempFile,
 	})
-	if err != nil {
-		log.Printf("Error deleting file: %v", err)
-	} else {
-		if deleteResult, ok := result.(*file.FileDeleteResult); ok {
-			fmt.Printf("File deleted successfully\n")
-			fmt.Printf("  Path: %s\n", deleteResult.Path)
-			fmt.Printf("  Was deleted: %v\n", deleteResult.Deleted)
-			fmt.Printf("  Was directory: %v\n", deleteResult.WasDirectory)
-		} else {
-			fmt.Printf("Unexpected result type for delete operation\n")
-		}
-	}
+	printResult("Delete temp.txt", result, err)
 
-	// Example 10: Advanced read with content search
-	fmt.Println("\n=== Example 10: Content Search in Files ===")
-	result, err = searchTool.Execute(toolCtx, map[string]interface{}{
-		"path":         demoDir,
-		"pattern":      "Line",
-		"file_pattern": "*.txt",
-		"recursive":    false,
+	// Example 10: Error handling
+	fmt.Println("\n--- Example 10: Error Handling ---")
+
+	// Try to read non-existent file
+	result, err = readTool.Execute(toolCtx, map[string]interface{}{
+		"path": filepath.Join(demoDir, "nonexistent.txt"),
 	})
-	if err != nil {
-		log.Printf("Error searching file content: %v", err)
-	} else {
-		if searchResult, ok := result.(*file.FileSearchResult); ok {
-			fmt.Printf("Found %d content matches for 'Line':\n", len(searchResult.Matches))
-			for i, match := range searchResult.Matches {
-				if i < 5 { // Show first 5 matches
-					fmt.Printf("  - %s line %d: %s\n", match.File, match.LineNumber, match.Line)
-				}
-			}
-			if len(searchResult.Matches) > 5 {
-				fmt.Printf("  ... and %d more matches\n", len(searchResult.Matches)-5)
-			}
-			fmt.Printf("Total matches: %d\n", searchResult.TotalMatches)
-			fmt.Printf("Files searched: %d\n", searchResult.FilesSearched)
-		} else {
-			fmt.Printf("Unexpected result type for content search operation\n")
-		}
-	}
+	printResult("Read non-existent file", result, err)
 
-	// Show tool examples
-	fmt.Println("\n=== Tool Usage Examples ===")
+	// Try to write to invalid path
+	invalidPath := "/root/cannot-write-here.txt"
+	if runtime.GOOS == "windows" {
+		invalidPath = "C:\\Windows\\System32\\cannot-write.txt"
+	}
+	result, err = writeTool.Execute(toolCtx, map[string]interface{}{
+		"path":    invalidPath,
+		"content": "test",
+	})
+	printResult("Write to protected location", result, err)
+
+	// Display available operations from tool metadata
+	fmt.Println("\n--- Available File Tools ---")
+	fileTools := tools.Tools.ListByCategory("file")
 	for _, entry := range fileTools {
-		fmt.Printf("\n%s examples:\n", entry.Metadata.Name)
-		for _, example := range entry.Metadata.Examples {
-			fmt.Printf("  %s: %s\n", example.Name, example.Description)
-			fmt.Printf("    %s\n", example.Code)
+		fmt.Printf("\n%s (v%s): %s\n", entry.Metadata.Name, entry.Metadata.Version, entry.Metadata.Description)
+		fmt.Printf("  Tags: %v\n", entry.Metadata.Tags)
+		if entry.Component.EstimatedLatency() != "" {
+			fmt.Printf("  Latency: %s\n", entry.Component.EstimatedLatency())
+		}
+		if entry.Component.IsDestructive() {
+			fmt.Printf("  ⚠️  Destructive operation\n")
+		}
+		if entry.Component.RequiresConfirmation() {
+			fmt.Printf("  ⚠️  Requires confirmation\n")
+		}
+	}
+}
+
+func runLLMExample() {
+	fmt.Println("=== LLM Agent with File Tools ===")
+	fmt.Println()
+
+	// Try to get a real provider, fall back to mock
+	providerString := "anthropic/claude-3-7-sonnet-latest"
+	if os.Getenv("ANTHROPIC_API_KEY") != "" {
+		providerString = "anthropic/claude-3-7-sonnet-latest"
+	} else if os.Getenv("OPENAI_API_KEY") != "" {
+		providerString = "openai/gpt-4o"
+	} else if os.Getenv("GEMINI_API_KEY") != "" {
+		providerString = "gemini/gemini-2.0-flash"
+	}
+
+	provider, err := llmutil.NewProviderFromString(providerString)
+	if err != nil {
+		// Fall back to mock provider
+		fmt.Println("Note: No LLM API keys found. Using mock provider for demonstration.")
+		fmt.Println("The mock will simulate file tool usage.")
+		fmt.Println("Tip: Set DEBUG=1 to see detailed logging of agent execution.")
+		fmt.Println()
+		provider = createMockProvider()
+	}
+
+	// Parse provider info
+	providerName, modelName, _ := llmutil.ParseProviderModelString(providerString)
+	fmt.Printf("Provider: %s\n", providerName)
+	if modelName != "" {
+		fmt.Printf("Model: %s\n\n", modelName)
+	}
+
+	// Get file tools
+	readTool, _ := tools.GetTool("file_read")
+	writeTool, _ := tools.GetTool("file_write")
+	listTool, _ := tools.GetTool("file_list")
+	searchTool, _ := tools.GetTool("file_search")
+	moveTool, _ := tools.GetTool("file_move")
+	deleteTool, _ := tools.GetTool("file_delete")
+
+	// Create LLM agent
+	deps := core.LLMDeps{
+		Provider: provider,
+	}
+	agent := core.NewLLMAgent("file-assistant", "File Management Assistant", deps)
+
+	// Add logging if DEBUG is enabled
+	if os.Getenv("DEBUG") == "1" {
+		opts := &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}
+		logger := slog.New(slog.NewTextHandler(os.Stderr, opts))
+		loggingHook := core.NewLoggingHook(logger, core.LogLevelDebug)
+		agent.WithHook(loggingHook)
+		log.Println("Debug logging enabled")
+	}
+
+	// Add all file tools
+	agent.AddTool(readTool)
+	agent.AddTool(writeTool)
+	agent.AddTool(listTool)
+	agent.AddTool(searchTool)
+	agent.AddTool(moveTool)
+	agent.AddTool(deleteTool)
+
+	// Set minimal system prompt - let the tools guide the LLM
+	agent.SetSystemPrompt(`You are a helpful file management assistant. You have access to tools for:
+- Reading files with metadata and line ranges
+- Writing files with atomic operations and backups
+- Listing directory contents with pattern matching
+- Searching for files and content within files
+- Moving and renaming files safely
+- Deleting files with confirmation
+
+When asked about files, use the appropriate tools to perform the requested operations. The tools will guide you on their proper usage.`)
+
+	// Create a demo directory
+	demoDir, err := os.MkdirTemp("", "llm_file_demo_*")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := os.RemoveAll(demoDir); err != nil {
+			log.Printf("Failed to remove demo directory: %v", err)
+		}
+	}()
+
+	// Pre-populate with some files
+	configPath := filepath.Join(demoDir, "config.json")
+	_ = os.WriteFile(configPath, []byte(`{"debug": true, "log_level": "info"}`), 0644)
+
+	_ = os.WriteFile(filepath.Join(demoDir, "app.log"), []byte("[2024-01-01] Started\n[2024-01-01] Error: Connection failed\n"), 0644)
+	_ = os.WriteFile(filepath.Join(demoDir, "settings.json"), []byte(`{"theme": "dark"}`), 0644)
+
+	// Example queries
+	examples := []struct {
+		title  string
+		prompt string
+	}{
+		{
+			title:  "Read Configuration",
+			prompt: fmt.Sprintf("Read the configuration file at %s and tell me what settings are enabled", configPath),
+		},
+		{
+			title:  "Create TODO List",
+			prompt: fmt.Sprintf("Create a todo list file at %s with 5 important tasks", filepath.Join(demoDir, "todo.md")),
+		},
+		{
+			title:  "List JSON Files",
+			prompt: fmt.Sprintf("List all JSON files in %s and tell me what each one is for", demoDir),
+		},
+		{
+			title:  "Search for Errors",
+			prompt: fmt.Sprintf("Search for any errors in log files in %s", demoDir),
+		},
+		{
+			title:  "File Operations",
+			prompt: fmt.Sprintf("In %s: rename settings.json to app-settings.json, then verify it was renamed by listing JSON files", demoDir),
+		},
+		{
+			title:  "Multi-Step Task",
+			prompt: fmt.Sprintf("Read the config at %s, create a backup of it, then update the debug setting to false", configPath),
+		},
+	}
+
+	// Run examples
+	ctx := context.Background()
+	for i, example := range examples {
+		fmt.Printf("--- Example %d: %s ---\n", i+1, example.title)
+		fmt.Printf("Query: %s\n", example.prompt)
+
+		state := domain.NewState()
+		state.Set("user_input", example.prompt)
+
+		result, err := agent.Run(ctx, state)
+		if err != nil {
+			log.Printf("Error: %v", err)
+			continue
+		}
+
+		// Get the response
+		if response, exists := result.Get("response"); exists {
+			fmt.Printf("Response: %v\n\n", response)
+		} else if messages := result.Messages(); len(messages) > 0 {
+			// Check messages for response
+			lastMsg := messages[len(messages)-1]
+			fmt.Printf("Response: %s\n\n", lastMsg.Content)
+		}
+	}
+
+	// Display tool information if requested
+	if len(os.Args) > 2 && os.Args[2] == "info" {
+		fmt.Println("=== File Tool Information ===")
+		fileTools := tools.Tools.ListByCategory("file")
+		for _, entry := range fileTools {
+			tool := entry.Component
+			fmt.Printf("\n%s:\n", tool.Name())
+			fmt.Printf("  Description: %s\n", tool.Description())
+			fmt.Printf("  Version: %s\n", tool.Version())
+			fmt.Printf("  Category: %s\n", tool.Category())
+			fmt.Printf("  Tags: %v\n", tool.Tags())
+			fmt.Printf("  Deterministic: %v\n", tool.IsDeterministic())
+			fmt.Printf("  Destructive: %v\n", tool.IsDestructive())
+			fmt.Printf("  Requires Confirmation: %v\n", tool.RequiresConfirmation())
+			fmt.Printf("  Estimated Latency: %s\n", tool.EstimatedLatency())
+
+			if len(tool.Examples()) > 0 {
+				fmt.Printf("  Examples: %d available\n", len(tool.Examples()))
+			}
 		}
 	}
 
 	fmt.Println("\n=== Summary ===")
-	fmt.Println("This example demonstrated all 6 file tools:")
-	fmt.Println("• file_read: Read with metadata, line ranges, and content validation")
-	fmt.Println("• file_write: Atomic writes, append mode, and backup creation")
-	fmt.Println("• file_list: Directory listing with file metadata")
-	fmt.Println("• file_search: Pattern matching and content search")
-	fmt.Println("• file_move: File relocation with validation")
-	fmt.Println("• file_delete: Safe file removal with existence checks")
-	fmt.Println("\nAll operations include comprehensive error handling and result validation.")
+	fmt.Println("The LLM agent successfully used file tools to:")
+	fmt.Println("• Read files and extract configuration information")
+	fmt.Println("• Create new files with structured content")
+	fmt.Println("• List and analyze directory contents")
+	fmt.Println("• Search for patterns in files")
+	fmt.Println("• Perform multi-step file operations")
+	fmt.Println("\nThe tools' built-in documentation guided the LLM on proper usage.")
 }

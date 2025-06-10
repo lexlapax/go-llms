@@ -76,6 +76,38 @@ var writeFileParamSchema = &sdomain.Schema{
 	Required: []string{"path", "content"},
 }
 
+// writeFileOutputSchema defines the output schema for the WriteFile tool
+var writeFileOutputSchema = &sdomain.Schema{
+	Type: "object",
+	Properties: map[string]sdomain.Property{
+		"success": {
+			Type:        "boolean",
+			Description: "Whether the write operation succeeded",
+		},
+		"bytes_written": {
+			Type:        "number",
+			Description: "Number of bytes written",
+		},
+		"absolute_path": {
+			Type:        "string",
+			Description: "Absolute path to the written file",
+		},
+		"backup_path": {
+			Type:        "string",
+			Description: "Path to backup file if created",
+		},
+		"file_existed": {
+			Type:        "boolean",
+			Description: "Whether the file existed before writing",
+		},
+		"mod_time": {
+			Type:        "string",
+			Description: "Modification time after write",
+		},
+	},
+	Required: []string{"success", "bytes_written", "absolute_path", "file_existed", "mod_time"},
+}
+
 // init automatically registers the tool on package import
 func init() {
 	tools.MustRegisterTool("file_write", WriteFile(), tools.ToolMetadata{
@@ -118,168 +150,371 @@ func init() {
 	})
 }
 
-// WriteFile creates a tool for writing files with enhanced safety features
+// WriteFile creates a tool for writing files with enhanced capabilities
 func WriteFile() domain.Tool {
-	return atools.NewTool(
-		"file_write",
-		"Writes content to files with atomic operations, append mode, and backup support",
-		func(ctx *domain.ToolContext, params WriteFileParams) (*WriteFileResult, error) {
-			// Emit start event
+	builder := atools.NewToolBuilder("file_write", "Writes content to files with atomic operations, append mode, and backup support").
+		WithFunction(writeFileMain).
+		WithParameterSchema(writeFileParamSchema).
+		WithOutputSchema(writeFileOutputSchema).
+		WithUsageInstructions(`Use this tool to write content to files with advanced features.
+
+Features:
+- Atomic write operations for data integrity
+- Append mode for adding to existing files
+- Automatic parent directory creation
+- File backup before overwriting
+- Path access control via state configuration
+- Progress events for operation tracking
+
+Parameters:
+- path: File path to write (required)
+- content: Content to write (required)
+- mode: File permissions in octal (optional, default 0644)
+- append: Append to file instead of overwrite (optional)
+- create_dirs: Create parent directories if needed (optional)
+- atomic: Use atomic write operation (optional)
+- backup: Create backup of existing file (optional)
+
+Atomic Write:
+- Writes to temporary file first
+- Renames to target path on success
+- Prevents partial writes on failure
+- Recommended for critical files
+
+Backup Feature:
+- Creates timestamped backup before overwrite
+- Format: filename.backup-YYYYMMDD-HHMMSS.ext
+- Only backs up existing files
+- Can be auto-enabled via state
+
+State Configuration:
+- file_restricted_paths: Array of paths to block
+- file_allowed_paths: Array of allowed path prefixes
+- file_default_permissions: Default file mode
+- file_auto_backup: Enable automatic backups
+
+Security:
+- Path restrictions enforced via state
+- Parent directory creation requires explicit flag
+- Atomic writes prevent corruption
+- Proper permission setting
+
+Performance:
+- Atomic writes may be slower for large files
+- Direct writes are fastest
+- Progress events emitted for operations
+- Context cancellation supported`).
+		WithExamples([]domain.ToolExample{
+			{
+				Name:        "Simple file write",
+				Description: "Write text to a file",
+				Scenario:    "When creating or overwriting a file",
+				Input: map[string]interface{}{
+					"path":    "/home/user/notes.txt",
+					"content": "Meeting notes:\n- Discuss project timeline\n- Review budget",
+				},
+				Output: map[string]interface{}{
+					"success":       true,
+					"bytes_written": 48,
+					"absolute_path": "/home/user/notes.txt",
+					"file_existed":  false,
+					"mod_time":      "2024-01-15T10:30:00Z",
+				},
+				Explanation: "Creates new file with content, default permissions 0644",
+			},
+			{
+				Name:        "Append to log file",
+				Description: "Add entry to existing log",
+				Scenario:    "When logging events or data",
+				Input: map[string]interface{}{
+					"path":    "app.log",
+					"content": "[2024-01-15 10:30:00] User login successful\n",
+					"append":  true,
+				},
+				Output: map[string]interface{}{
+					"success":       true,
+					"bytes_written": 46,
+					"absolute_path": "/current/dir/app.log",
+					"file_existed":  true,
+					"mod_time":      "2024-01-15T10:30:00Z",
+				},
+				Explanation: "Appends to existing file without overwriting previous content",
+			},
+			{
+				Name:        "Atomic write with backup",
+				Description: "Safely update configuration file",
+				Scenario:    "When updating critical configuration",
+				Input: map[string]interface{}{
+					"path":    "config.json",
+					"content": `{"version": "2.0", "port": 8080, "debug": false}`,
+					"atomic":  true,
+					"backup":  true,
+				},
+				Output: map[string]interface{}{
+					"success":       true,
+					"bytes_written": 48,
+					"absolute_path": "/app/config.json",
+					"backup_path":   "/app/config.backup-20240115-103000.json",
+					"file_existed":  true,
+					"mod_time":      "2024-01-15T10:30:00Z",
+				},
+				Explanation: "Creates backup, writes atomically to prevent corruption",
+			},
+			{
+				Name:        "Create file with directories",
+				Description: "Write file in non-existent directory",
+				Scenario:    "When output directory doesn't exist",
+				Input: map[string]interface{}{
+					"path":        "output/reports/2024/january/sales.csv",
+					"content":     "Date,Product,Amount\n2024-01-15,Widget,100.00\n",
+					"create_dirs": true,
+				},
+				Output: map[string]interface{}{
+					"success":       true,
+					"bytes_written": 48,
+					"absolute_path": "/home/user/output/reports/2024/january/sales.csv",
+					"file_existed":  false,
+					"mod_time":      "2024-01-15T10:30:00Z",
+				},
+				Explanation: "Creates all parent directories before writing file",
+			},
+			{
+				Name:        "Write with custom permissions",
+				Description: "Create executable script",
+				Scenario:    "When creating scripts or executables",
+				Input: map[string]interface{}{
+					"path":    "deploy.sh",
+					"content": "#!/bin/bash\necho 'Deploying application...'\n",
+					"mode":    0755,
+				},
+				Output: map[string]interface{}{
+					"success":       true,
+					"bytes_written": 44,
+					"absolute_path": "/home/user/deploy.sh",
+					"file_existed":  false,
+					"mod_time":      "2024-01-15T10:30:00Z",
+				},
+				Explanation: "Creates file with executable permissions (755)",
+			},
+			{
+				Name:        "Handle write errors",
+				Description: "Attempt to write to read-only location",
+				Scenario:    "When lacking write permissions",
+				Input: map[string]interface{}{
+					"path":    "/etc/system.conf",
+					"content": "system config",
+				},
+				Output: map[string]interface{}{
+					"error": "error writing file: open /etc/system.conf: permission denied",
+				},
+				Explanation: "Returns clear error when write fails",
+			},
+			{
+				Name:        "Path restriction",
+				Description: "Blocked by security policy",
+				Scenario:    "When trying to write to restricted paths",
+				Input: map[string]interface{}{
+					"path":    "/etc/passwd",
+					"content": "malicious content",
+				},
+				Output: map[string]interface{}{
+					"error": "access denied: path /etc/passwd is restricted",
+				},
+				Explanation: "Path restrictions prevent writing to sensitive locations",
+			},
+		}).
+		WithConstraints([]string{
+			"Overwrites existing files unless append mode is used",
+			"Atomic writes use temporary files requiring extra space",
+			"Backup files are not automatically cleaned up",
+			"Parent directory creation requires explicit flag",
+			"File permissions default to 0644 (readable, not executable)",
+			"Large files may take time to write atomically",
+			"Path restrictions are enforced via state configuration",
+			"Binary content should be base64 encoded in content field",
+			"Line endings are preserved as provided",
+			"Context cancellation stops write immediately",
+		}).
+		WithErrorGuidance(map[string]string{
+			"permission denied":         "Check file and directory permissions, may need elevated privileges",
+			"no such file or directory": "Parent directory doesn't exist, use create_dirs: true",
+			"access denied":             "Path is restricted by security policy. Check allowed paths",
+			"disk full":                 "Insufficient disk space. Free up space or write elsewhere",
+			"file exists":               "File already exists and exclusive mode was requested",
+			"invalid argument":          "Check file path for invalid characters",
+			"too many open files":       "System file handle limit reached. Close other files",
+			"operation not permitted":   "File may be immutable or system-protected",
+			"cross-device link":         "Atomic rename failed across filesystems",
+			"context deadline exceeded": "Write operation took too long. Try smaller content",
+		}).
+		WithCategory("file").
+		WithTags([]string{"file", "write", "filesystem", "save", "create"}).
+		WithVersion("2.0.0").
+		WithBehavior(
+			true,   // Deterministic - same input produces same file
+			true,   // Destructive - overwrites existing files
+			true,   // Requires confirmation for overwrites
+			"fast", // Usually fast, can be slow for large files
+		)
+
+	return builder.Build()
+}
+
+// writeFileMain is the main function for the tool
+func writeFileMain(ctx *domain.ToolContext, params WriteFileParams) (*WriteFileResult, error) {
+	// Emit start event
+	if ctx.Events != nil {
+		ctx.Events.EmitMessage(fmt.Sprintf("Starting file write to %s", params.Path))
+	}
+
+	result := &WriteFileResult{
+		Success: false,
+	}
+
+	// Check file access restrictions from state
+	if ctx.State != nil {
+		// Check restricted paths
+		if restrictedPaths, exists := ctx.State.Get("file_restricted_paths"); exists {
+			if paths, ok := restrictedPaths.([]string); ok {
+				for _, restricted := range paths {
+					if strings.HasPrefix(params.Path, restricted) {
+						return nil, fmt.Errorf("access denied: path %s is restricted", params.Path)
+					}
+				}
+			}
+		}
+
+		// Check allowed paths if specified
+		if allowedPaths, exists := ctx.State.Get("file_allowed_paths"); exists {
+			if paths, ok := allowedPaths.([]string); ok && len(paths) > 0 {
+				allowed := false
+				for _, allowedPath := range paths {
+					if strings.HasPrefix(params.Path, allowedPath) {
+						allowed = true
+						break
+					}
+				}
+				if !allowed {
+					return nil, fmt.Errorf("access denied: path %s is not in allowed paths", params.Path)
+				}
+			}
+		}
+	}
+
+	// Set default mode if not specified
+	mode := params.Mode
+	if mode == 0 {
+		// Check state for default permissions
+		if ctx.State != nil {
+			if defaultMode, exists := ctx.State.Get("file_default_permissions"); exists {
+				if m, ok := defaultMode.(os.FileMode); ok {
+					mode = m
+				}
+			}
+		}
+		// Fall back to default if not in state
+		if mode == 0 {
+			mode = 0644
+		}
+	}
+
+	// Check if file exists
+	if _, err := os.Stat(params.Path); err == nil {
+		result.FileExisted = true
+	}
+
+	// Check backup preferences from state
+	shouldBackup := params.Backup
+	if !shouldBackup && result.FileExisted && ctx.State != nil {
+		// Check if auto-backup is enabled in state
+		if autoBackup, exists := ctx.State.Get("file_auto_backup"); exists {
+			if backup, ok := autoBackup.(bool); ok && backup {
+				shouldBackup = true
+			}
+		}
+	}
+
+	// Emit progress: Creating directories
+	if params.CreateDirs {
+		if ctx.Events != nil {
+			ctx.Events.EmitProgress(1, 4, "Creating parent directories")
+		}
+		dir := filepath.Dir(params.Path)
+		if err := os.MkdirAll(dir, 0755); err != nil {
 			if ctx.Events != nil {
-				ctx.Events.EmitMessage(fmt.Sprintf("Starting file write to %s", params.Path))
+				ctx.Events.EmitError(err)
 			}
+			return nil, fmt.Errorf("error creating directories: %w", err)
+		}
+	}
 
-			result := &WriteFileResult{
-				Success: false,
-			}
-
-			// Check file access restrictions from state
-			if ctx.State != nil {
-				// Check restricted paths
-				if restrictedPaths, exists := ctx.State.Get("file_restricted_paths"); exists {
-					if paths, ok := restrictedPaths.([]string); ok {
-						for _, restricted := range paths {
-							if strings.HasPrefix(params.Path, restricted) {
-								return nil, fmt.Errorf("access denied: path %s is restricted", params.Path)
-							}
-						}
-					}
-				}
-
-				// Check allowed paths if specified
-				if allowedPaths, exists := ctx.State.Get("file_allowed_paths"); exists {
-					if paths, ok := allowedPaths.([]string); ok && len(paths) > 0 {
-						allowed := false
-						for _, allowedPath := range paths {
-							if strings.HasPrefix(params.Path, allowedPath) {
-								allowed = true
-								break
-							}
-						}
-						if !allowed {
-							return nil, fmt.Errorf("access denied: path %s is not in allowed paths", params.Path)
-						}
-					}
-				}
-			}
-
-			// Set default mode if not specified
-			mode := params.Mode
-			if mode == 0 {
-				// Check state for default permissions
-				if ctx.State != nil {
-					if defaultMode, exists := ctx.State.Get("file_default_permissions"); exists {
-						if m, ok := defaultMode.(os.FileMode); ok {
-							mode = m
-						}
-					}
-				}
-				// Fall back to default if not in state
-				if mode == 0 {
-					mode = 0644
-				}
-			}
-
-			// Check if file exists
-			if _, err := os.Stat(params.Path); err == nil {
-				result.FileExisted = true
-			}
-
-			// Check backup preferences from state
-			shouldBackup := params.Backup
-			if !shouldBackup && result.FileExisted && ctx.State != nil {
-				// Check if auto-backup is enabled in state
-				if autoBackup, exists := ctx.State.Get("file_auto_backup"); exists {
-					if backup, ok := autoBackup.(bool); ok && backup {
-						shouldBackup = true
-					}
-				}
-			}
-
-			// Emit progress: Creating directories
-			if params.CreateDirs {
-				if ctx.Events != nil {
-					ctx.Events.EmitProgress(1, 4, "Creating parent directories")
-				}
-				dir := filepath.Dir(params.Path)
-				if err := os.MkdirAll(dir, 0755); err != nil {
-					if ctx.Events != nil {
-						ctx.Events.EmitError(err)
-					}
-					return nil, fmt.Errorf("error creating directories: %w", err)
-				}
-			}
-
-			// Emit progress: Creating backup
-			if shouldBackup && result.FileExisted {
-				if ctx.Events != nil {
-					ctx.Events.EmitProgress(2, 4, "Creating backup")
-				}
-				backupPath, err := createBackup(params.Path)
-				if err != nil {
-					if ctx.Events != nil {
-						ctx.Events.EmitError(err)
-					}
-					return nil, fmt.Errorf("error creating backup: %w", err)
-				}
-				result.BackupPath = backupPath
-			}
-
-			// Emit progress: Writing file
+	// Emit progress: Creating backup
+	if shouldBackup && result.FileExisted {
+		if ctx.Events != nil {
+			ctx.Events.EmitProgress(2, 4, "Creating backup")
+		}
+		backupPath, err := createBackup(params.Path)
+		if err != nil {
 			if ctx.Events != nil {
-				ctx.Events.EmitProgress(3, 4, "Writing file content")
+				ctx.Events.EmitError(err)
 			}
+			return nil, fmt.Errorf("error creating backup: %w", err)
+		}
+		result.BackupPath = backupPath
+	}
 
-			// Write the file
-			var bytesWritten int
-			var err error
+	// Emit progress: Writing file
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(3, 4, "Writing file content")
+	}
 
-			if params.Atomic {
-				bytesWritten, err = atomicWrite(ctx.Context, params.Path, params.Content, mode, params.Append)
-			} else if params.Append {
-				bytesWritten, err = appendToFile(ctx.Context, params.Path, params.Content, mode)
-			} else {
-				bytesWritten, err = writeFile(ctx.Context, params.Path, params.Content, mode)
-			}
+	// Write the file
+	var bytesWritten int
+	var err error
 
-			if err != nil {
-				if ctx.Events != nil {
-					ctx.Events.EmitError(err)
-				}
-				return nil, err
-			}
+	if params.Atomic {
+		bytesWritten, err = atomicWrite(ctx.Context, params.Path, params.Content, mode, params.Append)
+	} else if params.Append {
+		bytesWritten, err = appendToFile(ctx.Context, params.Path, params.Content, mode)
+	} else {
+		bytesWritten, err = writeFile(ctx.Context, params.Path, params.Content, mode)
+	}
 
-			// Get absolute path
-			absPath, _ := filepath.Abs(params.Path)
+	if err != nil {
+		if ctx.Events != nil {
+			ctx.Events.EmitError(err)
+		}
+		return nil, err
+	}
 
-			// Get file info for mod time
-			if info, err := os.Stat(params.Path); err == nil {
-				result.ModTime = info.ModTime()
-			}
+	// Get absolute path
+	absPath, _ := filepath.Abs(params.Path)
 
-			result.Success = true
-			result.BytesWritten = bytesWritten
-			result.AbsolutePath = absPath
+	// Get file info for mod time
+	if info, err := os.Stat(params.Path); err == nil {
+		result.ModTime = info.ModTime()
+	}
 
-			// Emit completion event with write operation details
-			if ctx.Events != nil {
-				ctx.Events.EmitProgress(4, 4, "File write complete")
-				ctx.Events.EmitCustom("file_write_complete", map[string]interface{}{
-					"path":          params.Path,
-					"absolute_path": absPath,
-					"bytes_written": bytesWritten,
-					"file_existed":  result.FileExisted,
-					"backup_path":   result.BackupPath,
-					"mode":          mode,
-					"atomic":        params.Atomic,
-					"append":        params.Append,
-				})
-			}
+	result.Success = true
+	result.BytesWritten = bytesWritten
+	result.AbsolutePath = absPath
 
-			return result, nil
-		},
-		writeFileParamSchema,
-	)
+	// Emit completion event with write operation details
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(4, 4, "File write complete")
+		ctx.Events.EmitCustom("file_write_complete", map[string]interface{}{
+			"path":          params.Path,
+			"absolute_path": absPath,
+			"bytes_written": bytesWritten,
+			"file_existed":  result.FileExisted,
+			"backup_path":   result.BackupPath,
+			"mode":          mode,
+			"atomic":        params.Atomic,
+			"append":        params.Append,
+		})
+	}
+
+	return result, nil
 }
 
 // writeFile performs a standard file write
@@ -307,7 +542,9 @@ func appendToFile(ctx context.Context, path, content string, mode os.FileMode) (
 		if err != nil {
 			return 0, fmt.Errorf("error opening file for append: %w", err)
 		}
-		defer file.Close()
+		defer func() {
+			_ = file.Close()
+		}()
 
 		n, err := file.WriteString(content)
 		if err != nil {
@@ -334,14 +571,16 @@ func atomicWrite(ctx context.Context, path, content string, mode os.FileMode, ap
 
 		// Ensure temp file is cleaned up
 		defer func() {
-			tempFile.Close()
-			os.Remove(tempPath)
+			_ = tempFile.Close()
+			_ = os.Remove(tempPath)
 		}()
 
 		// If appending, first copy existing content
 		if append {
 			if existingFile, err := os.Open(path); err == nil {
-				defer existingFile.Close()
+				defer func() {
+					_ = existingFile.Close()
+				}()
 				if _, err := io.Copy(tempFile, existingFile); err != nil {
 					return 0, fmt.Errorf("error copying existing content: %w", err)
 				}
@@ -360,7 +599,7 @@ func atomicWrite(ctx context.Context, path, content string, mode os.FileMode, ap
 		}
 
 		// Close temp file before rename
-		tempFile.Close()
+		_ = tempFile.Close()
 
 		// Set proper permissions
 		if err := os.Chmod(tempPath, mode); err != nil {
@@ -389,13 +628,17 @@ func createBackup(path string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error opening source file: %w", err)
 	}
-	defer source.Close()
+	defer func() {
+		_ = source.Close()
+	}()
 
 	dest, err := os.Create(backupPath)
 	if err != nil {
 		return "", fmt.Errorf("error creating backup file: %w", err)
 	}
-	defer dest.Close()
+	defer func() {
+		_ = dest.Close()
+	}()
 
 	if _, err := io.Copy(dest, source); err != nil {
 		return "", fmt.Errorf("error copying to backup: %w", err)

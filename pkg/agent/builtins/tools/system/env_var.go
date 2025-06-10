@@ -61,6 +61,44 @@ var getEnvironmentVariableParamSchema = &sdomain.Schema{
 	},
 }
 
+// getEnvironmentVariableOutputSchema defines the output schema for the GetEnvironmentVariable tool
+var getEnvironmentVariableOutputSchema = &sdomain.Schema{
+	Type: "object",
+	Properties: map[string]sdomain.Property{
+		"variables": {
+			Type:        "array",
+			Description: "List of environment variables matching the query",
+			Items: &sdomain.Property{
+				Type: "object",
+				Properties: map[string]sdomain.Property{
+					"name": {
+						Type:        "string",
+						Description: "Environment variable name",
+					},
+					"value": {
+						Type:        "string",
+						Description: "Environment variable value (if no_values is false)",
+					},
+					"masked": {
+						Type:        "boolean",
+						Description: "Whether the value was masked for security",
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		"count": {
+			Type:        "number",
+			Description: "Number of variables found",
+		},
+		"query": {
+			Type:        "string",
+			Description: "The name or pattern that was searched",
+		},
+	},
+	Required: []string{"variables", "count"},
+}
+
 // Sensitive variable patterns that should be masked by default
 var sensitivePatterns = []string{
 	"*KEY*", "*SECRET*", "*TOKEN*", "*PASSWORD*", "*PASS*",
@@ -104,6 +142,116 @@ func init() {
 	})
 }
 
+// getEnvironmentVariable is the main function for the tool
+func getEnvironmentVariable(ctx *domain.ToolContext, params GetEnvironmentVariableParams) (*GetEnvironmentVariableResult, error) {
+	// Emit start event
+	if ctx.Events != nil {
+		ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+			ToolName:   "get_environment_variable",
+			Parameters: params,
+			RequestID:  ctx.RunID,
+		})
+	}
+	var variables []EnvironmentVariable
+	query := params.Name
+	if query == "" {
+		query = params.Pattern
+	}
+
+	// By default, include values unless NoValues is true
+	includeValue := !params.NoValues
+
+	if params.Name != "" {
+		// Get specific variable
+		value := os.Getenv(params.Name)
+		if value == "" {
+			return &GetEnvironmentVariableResult{
+				Variables: []EnvironmentVariable{},
+				Count:     0,
+				Query:     params.Name,
+			}, nil
+		}
+
+		envVar := EnvironmentVariable{
+			Name: params.Name,
+		}
+
+		if includeValue {
+			if !params.Sensitive && isSensitiveVariable(params.Name, ctx) {
+				envVar.Value = maskValue(value)
+				envVar.Masked = true
+			} else {
+				envVar.Value = value
+			}
+		}
+
+		variables = append(variables, envVar)
+	} else {
+		// Get all or pattern-matched variables
+		environ := os.Environ()
+		pattern := params.Pattern
+		if pattern == "" {
+			pattern = "*"
+		}
+
+		for _, env := range environ {
+			// Split on first = to handle values with = in them
+			parts := strings.SplitN(env, "=", 2)
+			if len(parts) != 2 {
+				continue
+			}
+
+			name := parts[0]
+			value := parts[1]
+
+			// Check pattern match
+			if pattern != "*" {
+				matched, err := matchPattern(name, pattern)
+				if err != nil || !matched {
+					continue
+				}
+			}
+
+			envVar := EnvironmentVariable{
+				Name: name,
+			}
+
+			if includeValue {
+				if !params.Sensitive && isSensitiveVariable(name, ctx) {
+					envVar.Value = maskValue(value)
+					envVar.Masked = true
+				} else {
+					envVar.Value = value
+				}
+			}
+
+			variables = append(variables, envVar)
+		}
+
+		// Sort variables by name
+		sort.Slice(variables, func(i, j int) bool {
+			return variables[i].Name < variables[j].Name
+		})
+	}
+
+	result := &GetEnvironmentVariableResult{
+		Variables: variables,
+		Count:     len(variables),
+		Query:     query,
+	}
+
+	// Emit result event
+	if ctx.Events != nil {
+		ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+			ToolName:  "get_environment_variable",
+			Result:    result,
+			RequestID: ctx.RunID,
+		})
+	}
+
+	return result, nil
+}
+
 // GetEnvironmentVariable creates a tool for safely reading environment variables
 // This is a built-in tool optimized for:
 // - Safe access to environment configuration
@@ -111,119 +259,194 @@ func init() {
 // - Security through sensitive variable masking
 // - Filtered results for specific use cases
 func GetEnvironmentVariable() domain.Tool {
-	return atools.NewTool(
-		"get_environment_variable",
-		"Retrieves environment variables safely",
-		func(ctx *domain.ToolContext, params GetEnvironmentVariableParams) (*GetEnvironmentVariableResult, error) {
-			// Emit start event
-			if ctx.Events != nil {
-				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
-					ToolName:   "get_environment_variable",
-					Parameters: params,
-					RequestID:  ctx.RunID,
-				})
-			}
-			var variables []EnvironmentVariable
-			query := params.Name
-			if query == "" {
-				query = params.Pattern
-			}
+	builder := atools.NewToolBuilder("get_environment_variable", "Retrieves environment variables safely").
+		WithFunction(getEnvironmentVariable).
+		WithParameterSchema(getEnvironmentVariableParamSchema).
+		WithOutputSchema(getEnvironmentVariableOutputSchema).
+		WithUsageInstructions(`Use this tool to safely read environment variables from the system.
 
-			// By default, include values unless NoValues is true
-			includeValue := !params.NoValues
+Security Features:
+- Sensitive variables (containing KEY, SECRET, TOKEN, PASSWORD, etc.) are masked by default
+- Use 'sensitive: true' to see unmasked values when necessary
+- Add custom sensitive patterns via state: state.Set("sensitive_env_patterns", []string{"*PRIVATE*"})
 
-			if params.Name != "" {
-				// Get specific variable
-				value := os.Getenv(params.Name)
-				if value == "" {
-					return &GetEnvironmentVariableResult{
-						Variables: []EnvironmentVariable{},
-						Count:     0,
-						Query:     params.Name,
-					}, nil
-				}
+Parameters:
+- name: Retrieve a specific environment variable by exact name (optional)
+- pattern: Search for variables matching a pattern (optional)
+- no_values: Return only variable names without values (optional, default false)
+- sensitive: Allow unmasked retrieval of sensitive variables (optional, default false)
 
-				envVar := EnvironmentVariable{
-					Name: params.Name,
-				}
+Pattern Matching:
+- Use * as wildcard: "GO*" matches all variables starting with GO
+- "*_PATH" matches all variables ending with _PATH
+- "*API*" matches all variables containing API
+- "*" or empty pattern returns all variables
 
-				if includeValue {
-					if !params.Sensitive && isSensitiveVariable(params.Name, ctx) {
-						envVar.Value = maskValue(value)
-						envVar.Masked = true
-					} else {
-						envVar.Value = value
-					}
-				}
+Output:
+- variables: Array of found environment variables
+- count: Number of variables found
+- query: The search term used (name or pattern)
 
-				variables = append(variables, envVar)
-			} else {
-				// Get all or pattern-matched variables
-				environ := os.Environ()
-				pattern := params.Pattern
-				if pattern == "" {
-					pattern = "*"
-				}
+Security Masking:
+Sensitive values show only first 3 and last 3 characters:
+- Full value: "sk-abc123def456ghi789"
+- Masked: "sk-...789"`).
+		WithExamples([]domain.ToolExample{
+			{
+				Name:        "Get specific variable",
+				Description: "Retrieve the HOME environment variable",
+				Scenario:    "When you need the value of a specific environment variable",
+				Input: map[string]interface{}{
+					"name": "HOME",
+				},
+				Output: map[string]interface{}{
+					"variables": []map[string]interface{}{
+						{
+							"name":  "HOME",
+							"value": "/home/user",
+						},
+					},
+					"count": 1,
+					"query": "HOME",
+				},
+				Explanation: "Returns the exact variable if it exists",
+			},
+			{
+				Name:        "Find Go-related variables",
+				Description: "List all environment variables starting with GO",
+				Scenario:    "When you need to check Go language configuration",
+				Input: map[string]interface{}{
+					"pattern": "GO*",
+				},
+				Output: map[string]interface{}{
+					"variables": []map[string]interface{}{
+						{"name": "GOPATH", "value": "/home/user/go"},
+						{"name": "GOROOT", "value": "/usr/local/go"},
+						{"name": "GO111MODULE", "value": "on"},
+					},
+					"count": 3,
+					"query": "GO*",
+				},
+				Explanation: "Pattern matching returns all variables starting with GO",
+			},
+			{
+				Name:        "List PATH variables",
+				Description: "Find all variables ending with PATH",
+				Scenario:    "When you need to check system paths",
+				Input: map[string]interface{}{
+					"pattern": "*PATH",
+				},
+				Output: map[string]interface{}{
+					"variables": []map[string]interface{}{
+						{"name": "PATH", "value": "/usr/bin:/bin:/usr/local/bin"},
+						{"name": "GOPATH", "value": "/home/user/go"},
+						{"name": "PYTHONPATH", "value": "/usr/lib/python3"},
+					},
+					"count": 3,
+					"query": "*PATH",
+				},
+				Explanation: "Suffix pattern matching finds all *PATH variables",
+			},
+			{
+				Name:        "List variable names only",
+				Description: "Get all variable names without values",
+				Scenario:    "When you need to discover available variables without exposing values",
+				Input: map[string]interface{}{
+					"pattern":   "*",
+					"no_values": true,
+				},
+				Output: map[string]interface{}{
+					"variables": []map[string]interface{}{
+						{"name": "HOME"},
+						{"name": "PATH"},
+						{"name": "USER"},
+					},
+					"count": 3,
+					"query": "*",
+				},
+				Explanation: "no_values: true returns only variable names",
+			},
+			{
+				Name:        "Handle sensitive variables",
+				Description: "Retrieve API key with masked value",
+				Scenario:    "When checking if sensitive variables are set",
+				Input: map[string]interface{}{
+					"name": "OPENAI_API_KEY",
+				},
+				Output: map[string]interface{}{
+					"variables": []map[string]interface{}{
+						{
+							"name":   "OPENAI_API_KEY",
+							"value":  "sk-...789",
+							"masked": true,
+						},
+					},
+					"count": 1,
+					"query": "OPENAI_API_KEY",
+				},
+				Explanation: "Sensitive variables are automatically masked for security",
+			},
+			{
+				Name:        "Retrieve sensitive unmasked",
+				Description: "Get API key value unmasked when needed",
+				Scenario:    "When you explicitly need the full sensitive value",
+				Input: map[string]interface{}{
+					"name":      "OPENAI_API_KEY",
+					"sensitive": true,
+				},
+				Output: map[string]interface{}{
+					"variables": []map[string]interface{}{
+						{
+							"name":  "OPENAI_API_KEY",
+							"value": "sk-abc123def456ghi789",
+						},
+					},
+					"count": 1,
+					"query": "OPENAI_API_KEY",
+				},
+				Explanation: "sensitive: true allows full value retrieval",
+			},
+			{
+				Name:        "Non-existent variable",
+				Description: "Request a variable that doesn't exist",
+				Scenario:    "When checking if a variable is set",
+				Input: map[string]interface{}{
+					"name": "NONEXISTENT_VAR",
+				},
+				Output: map[string]interface{}{
+					"variables": []interface{}{},
+					"count":     0,
+					"query":     "NONEXISTENT_VAR",
+				},
+				Explanation: "Returns empty array when variable not found",
+			},
+		}).
+		WithConstraints([]string{
+			"Cannot modify environment variables, only read them",
+			"Pattern matching is case-insensitive",
+			"Sensitive variables are masked by default for security",
+			"Only simple glob patterns supported: *, prefix*, *suffix, *middle*",
+			"Variables are sorted alphabetically in results",
+			"Empty values are included in results",
+			"Masking shows first 3 and last 3 characters for values longer than 8 chars",
+			"Custom sensitive patterns can be added via state configuration",
+		}).
+		WithErrorGuidance(map[string]string{
+			"invalid pattern":    "Use simple patterns: *, prefix*, *suffix, or *contains*",
+			"no variables found": "Check the variable name or pattern spelling",
+			"access denied":      "Some systems may restrict environment variable access",
+		}).
+		WithCategory("system").
+		WithTags([]string{"environment", "config", "system", "variables"}).
+		WithVersion("2.0.0").
+		WithBehavior(
+			true,   // Deterministic - same query returns same variables
+			false,  // Not destructive - only reads
+			false,  // No confirmation needed
+			"fast", // Very fast operation
+		)
 
-				for _, env := range environ {
-					// Split on first = to handle values with = in them
-					parts := strings.SplitN(env, "=", 2)
-					if len(parts) != 2 {
-						continue
-					}
-
-					name := parts[0]
-					value := parts[1]
-
-					// Check pattern match
-					if pattern != "*" {
-						matched, err := matchPattern(name, pattern)
-						if err != nil || !matched {
-							continue
-						}
-					}
-
-					envVar := EnvironmentVariable{
-						Name: name,
-					}
-
-					if includeValue {
-						if !params.Sensitive && isSensitiveVariable(name, ctx) {
-							envVar.Value = maskValue(value)
-							envVar.Masked = true
-						} else {
-							envVar.Value = value
-						}
-					}
-
-					variables = append(variables, envVar)
-				}
-
-				// Sort variables by name
-				sort.Slice(variables, func(i, j int) bool {
-					return variables[i].Name < variables[j].Name
-				})
-			}
-
-			result := &GetEnvironmentVariableResult{
-				Variables: variables,
-				Count:     len(variables),
-				Query:     query,
-			}
-
-			// Emit result event
-			if ctx.Events != nil {
-				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
-					ToolName:  "get_environment_variable",
-					Result:    result,
-					RequestID: ctx.RunID,
-				})
-			}
-
-			return result, nil
-		},
-		getEnvironmentVariableParamSchema,
-	)
+	return builder.Build()
 }
 
 // matchPattern implements simple glob pattern matching

@@ -309,7 +309,7 @@ func TestWriteFile_Backup(t *testing.T) {
 	}
 
 	// Clean up backup
-	os.Remove(writeResult.BackupPath)
+	_ = os.Remove(writeResult.BackupPath)
 }
 
 func TestWriteFile_CustomPermissions(t *testing.T) {

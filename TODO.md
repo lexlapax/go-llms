@@ -76,35 +76,44 @@
 
 
 
-- [ ] Phase 2: Tool Migration to Enhanced Interface (Week 2) - Update existing tools to use ToolBuilder pattern
-  - [ ] Day 1: Migrate calculator tool (1 tool - template for others)
-    - [ ] Update calculator to use atools.NewToolBuilder() instead of atools.NewTool()
-    - [ ] Add WithUsageInstructions() - detailed guidance on when/how to use
-    - [ ] Add WithExamples() - convert existing examples to new ToolExample format
-    - [ ] Add WithConstraints() - limitations (e.g., factorial max n=170)
-    - [ ] Add WithErrorGuidance() - map error types to helpful messages
-    - [ ] Add WithOutputSchema() - define CalculatorResult schema
-    - [ ] Add WithBehavior() - (deterministic: true, destructive: false, confirmation: false, latency: "fast")
-    - [ ] Keep existing functionality unchanged
-    - [ ] Test MCP export functionality
-  - [ ] Day 2: Migrate system tools (4 tools)
-    - [ ] execute_command - Add safety constraints and confirmation (destructive: true, confirmation: true)
-    - [ ] get_environment_variable - Add pattern matching examples and security guidance
-    - [ ] get_system_info - Add output examples and cross-platform notes
-    - [ ] process_list - Add filtering guidance and platform differences
-  - [ ] Day 3: Migrate file tools (6 tools)
-    - [ ] file_read - Add encoding guidance, size limits, binary file handling
-    - [ ] file_write - Add destructive warnings (destructive: true), atomic write info
-    - [ ] file_list - Complex parameter examples, sorting options
-    - [ ] file_delete - Add confirmation requirements (destructive: true, confirmation: true)
-    - [ ] file_move - Add rollback guidance, cross-device limitations
-    - [ ] file_search - Add regex examples, performance notes for large directories
+- [ ] Phase 2: Tool Migration to Enhanced Interface (Week 2) - Update existing tools to use ToolBuilder pattern (IN PROGRESS)
+  - [x] Day 1: Migrate calculator tool (1 tool - template for others) - COMPLETED January 9, 2025
+    - [x] Update calculator to use atools.NewToolBuilder() instead of atools.NewTool()
+    - [x] Add WithUsageInstructions() - detailed guidance on when/how to use
+    - [x] Add WithExamples() - convert existing examples to new ToolExample format (7 examples)
+    - [x] Add WithConstraints() - limitations (e.g., factorial max n=170) (9 constraints)
+    - [x] Add WithErrorGuidance() - map error types to helpful messages (13 error mappings)
+    - [x] Add WithOutputSchema() - define CalculatorResult schema
+    - [x] Add WithBehavior() - (deterministic: true, destructive: false, confirmation: false, latency: "fast")
+    - [x] Keep existing functionality unchanged
+    - [x] Test MCP export functionality
+    - [x] Update agent-calculator example to follow builtins-web-api-client pattern
+  - [x] Day 2: Migrate system tools (4 tools) - COMPLETED January 9, 2025
+    - [x] execute_command - Add safety constraints and confirmation (destructive: true, confirmation: true) (7 examples)
+    - [x] get_environment_variable - Add pattern matching examples and security guidance (7 examples)
+    - [x] get_system_info - Add output examples and cross-platform notes (5 examples)
+    - [x] process_list - Add filtering guidance and platform differences (6 examples)
+    - [x] All tests passing for system tools
+    - [ ] Update examples using system tools to follow new pattern
+      - [ ] agent-llm-builtin-tools (uses both system and file tools)
+      - [x] builtins-system-tools - COMPLETED January 9, 2025
+  - [x] Day 3: Migrate file tools (6 tools) - COMPLETED January 9, 2025
+    - [x] file_read - Add encoding guidance, size limits, binary file handling - COMPLETED (7 examples)
+    - [x] file_write - Add destructive warnings (destructive: true), atomic write info - COMPLETED (7 examples)
+    - [x] file_list - Complex parameter examples, sorting options - COMPLETED (7 examples)
+    - [x] file_delete - Add confirmation requirements (destructive: true, confirmation: true) - COMPLETED (7 examples)
+    - [x] file_move - Add rollback guidance, cross-device limitations - COMPLETED (7 examples)
+    - [x] file_search - Add regex examples, performance notes for large directories - COMPLETED (7 examples)
+    - [ ] Update examples using file tools to follow new pattern
+      - [ ] agent-llm-builtin-tools (uses both system and file tools)
+      - [ ] agent-workflow-as-tool (uses file tools in workflow)
+      - [x] builtins-file-tools - COMPLETED January 9, 2025
   - [ ] Day 4: Migrate web tools (4 tools - api_client already done)
     - [ ] web_search - Multi-engine examples, API key guidance
     - [ ] web_fetch - Add timeout guidance, error handling examples
     - [ ] web_scrape - Selector examples, HTML parsing guidance
     - [ ] http_request - Auth method examples, header formatting
-  - [ ] Day 5: Testing & fixes
+    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool  - [ ] Day 5: Testing & fixes
     - [ ] Run all migrated tool tests
     - [ ] Verify ToolBuilder pattern is correctly applied
     - [ ] Test MCP export for all tools
@@ -116,7 +125,7 @@
     - [ ] csv_process - Add transformation examples, delimiter options
     - [ ] xml_process - Add XPath guidance, namespace handling
     - [ ] data_transform - Add operation chains, performance considerations
-  - [ ] Day 2: Migrate datetime tools (7 tools)
+    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool  - [ ] Day 2: Migrate datetime tools (7 tools)
     - [ ] datetime_now - Add timezone examples, format options
     - [ ] datetime_info - Add component extraction examples, week calculations
     - [ ] datetime_calculate - Add business days examples, date math
@@ -124,21 +133,21 @@
     - [ ] datetime_format - Add locale examples, custom formats
     - [ ] datetime_convert - Add timezone conversion examples
     - [ ] datetime_compare - Add comparison logic, relative time examples
-  - [ ] Day 3: Migrate feed tools (6 tools)
+    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool  - [ ] Day 3: Migrate feed tools (6 tools)
     - [ ] feed_fetch - Add format detection examples, encoding handling
     - [ ] feed_discover - Add auto-discovery examples, link parsing
     - [ ] feed_filter - Add complex query examples, date filtering
     - [ ] feed_aggregate - Add deduplication examples, merge strategies
     - [ ] feed_convert - Add format conversion examples
     - [ ] feed_extract - Add content extraction patterns
-  - [ ] Day 4: Update examples (first 15)
+    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool  - [ ] Day 4: Update examples (first 15)
     - [ ] agent-calculator - Remove manual prompt
     - [ ] agent-simple-llm - Use auto docs
     - [ ] agent-llm-builtin-tools - Showcase
     - [ ] agent-tools-conversion - Update
     - [ ] builtins-* examples (7) - Update all
     - [ ] Other agent examples (4)
-  - [ ] Day 5: Update examples (remaining 16)
+    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool  - [ ] Day 5: Update examples (remaining 16)
     - [ ] Update all remaining examples
     - [ ] Verify all examples work
     - [ ] Update example documentation

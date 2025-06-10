@@ -414,19 +414,19 @@ Special operand values:
 			"Results may have floating-point precision limitations",
 		}).
 		WithErrorGuidance(map[string]string{
-			"division by zero":                   "Cannot divide by zero. Check that operand2 is not zero for division",
-			"modulo by zero":                     "Cannot calculate modulo with zero divisor. Ensure operand2 is not zero",
+			"division by zero": "Cannot divide by zero. Check that operand2 is not zero for division",
+			"modulo by zero":   "Cannot calculate modulo with zero divisor. Ensure operand2 is not zero",
 			"cannot take square root of negative number": "Square root of negative numbers results in complex numbers, which this tool doesn't support. Use only non-negative values",
-			"logarithm of non-positive number":   "Logarithm is only defined for positive numbers. Ensure operand1 is greater than 0",
-			"invalid logarithm base":             "Logarithm base must be positive and not equal to 1",
-			"asin domain error":                  "asin requires input between -1 and 1 inclusive",
-			"acos domain error":                  "acos requires input between -1 and 1 inclusive",
-			"factorial requires non-negative integer": "Factorial is only defined for non-negative integers (0, 1, 2, ...)",
-			"gcd requires positive integers":     "GCD (Greatest Common Divisor) only works with positive whole numbers",
-			"lcm requires positive integers":     "LCM (Least Common Multiple) only works with positive whole numbers",
-			"unsupported operation":              "The operation you specified is not recognized. Check the usage instructions for valid operations",
-			"result is NaN":                      "The calculation resulted in 'Not a Number' - this typically happens with invalid operations like 0/0",
-			"result is infinite":                 "The calculation resulted in infinity - the result is too large to represent",
+			"logarithm of non-positive number":           "Logarithm is only defined for positive numbers. Ensure operand1 is greater than 0",
+			"invalid logarithm base":                     "Logarithm base must be positive and not equal to 1",
+			"asin domain error":                          "asin requires input between -1 and 1 inclusive",
+			"acos domain error":                          "acos requires input between -1 and 1 inclusive",
+			"factorial requires non-negative integer":    "Factorial is only defined for non-negative integers (0, 1, 2, ...)",
+			"gcd requires positive integers":             "GCD (Greatest Common Divisor) only works with positive whole numbers",
+			"lcm requires positive integers":             "LCM (Least Common Multiple) only works with positive whole numbers",
+			"unsupported operation":                      "The operation you specified is not recognized. Check the usage instructions for valid operations",
+			"result is NaN":                              "The calculation resulted in 'Not a Number' - this typically happens with invalid operations like 0/0",
+			"result is infinite":                         "The calculation resulted in infinity - the result is too large to represent",
 		}).
 		WithCategory("math").
 		WithTags([]string{"math", "calculation", "arithmetic", "trigonometry", "logarithm", "statistics"}).

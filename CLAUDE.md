@@ -139,26 +139,42 @@ Until we reach close to v1.. *no backward compatibility* do not add extra code f
     - GetToolDocumentation(name string) - Get comprehensive tool documentation
     - Enhanced ToolMetadata automatically populated from tool interface
 
+**Recent Updates** (January 9, 2025):
+- **Tool System Enhancement Phase 2: Tool Migration (IN PROGRESS)**
+  - Phase 2, Day 1: Calculator Tool Migration (COMPLETED)
+    - Successfully migrated calculator tool to use ToolBuilder pattern
+    - Added comprehensive metadata: 7 examples, 9 constraints, 13 error guidance mappings
+    - Enhanced with usage instructions, output schema, and behavioral hints
+    - Updated agent-calculator example to follow builtins-web-api-client pattern
+    - Added provider/model display, debug logging, and tool information mode
+    - All tests passing, MCP export verified
+  - Phase 2, Day 2: System Tools Migration (COMPLETED)
+    - Migrated all 4 system tools to ToolBuilder pattern:
+      - execute_command: Added safety constraints, confirmation required (7 examples)
+      - get_environment_variable: Added pattern matching and security guidance (7 examples)  
+      - get_system_info: Added cross-platform output examples (5 examples)
+      - process_list: Added filtering guidance and platform differences (6 examples)
+    - All system tool tests passing
+    - Each tool now has comprehensive metadata for LLM guidance
+  - Phase 2, Day 3: File Tools Migration (COMPLETED)
+    - Migrated all 6 file tools to ToolBuilder pattern:
+      - file_read: Added encoding detection, size limits, binary handling (7 examples)
+      - file_write: Added atomic operations, backup support, destructive warnings (7 examples)
+      - file_list: Added complex filtering, sorting, recursive options (7 examples)
+      - file_delete: Added confirmation requirements, safety checks, destructive flags (7 examples)
+      - file_move: Added cross-device support, overwrite protection (7 examples)
+      - file_search: Added regex patterns, context lines, performance notes (7 examples)
+    - All file tool tests passing
+    - Comprehensive metadata for safe file operations
+  - Phase 2, Day 3: File Tools Migration (IN PROGRESS - NEXT)
+
 **Recent Updates** (June 6, 2025):
-- **Tool System Enhancement with LLM Guidance (IN PROGRESS)**
-  - Phase 1, Day 1: Create new Tool interface (COMPLETED)
-    - Successfully created comprehensive Tool interface in pkg/agent/domain/interfaces.go
-    - Added ToolExample and MCPToolDefinition types for LLM guidance
-    - Created thorough test coverage in pkg/agent/domain/tool_test.go
-    - Interface includes: usage instructions, examples, constraints, error guidance, behavioral hints
+- **Tool System Enhancement with LLM Guidance**
+  - Phase 1, Day 1-2: Core Infrastructure (COMPLETED)
+    - Created comprehensive Tool interface with LLM guidance features
+    - Implemented ToolBuilder with fluent interface
     - Full MCP (Model Context Protocol) compatibility support
-    - All tests passing, code formatted and linted
-  - Phase 1, Day 2: Update Base Tool implementation (COMPLETED)
-    - Updated Tool struct in pkg/agent/tools/base_tool.go with all new fields
-    - Implemented all new interface methods (OutputSchema, UsageInstructions, Examples, etc.)
-    - Created ToolBuilder with fluent interface for easy tool construction
-    - Added validation in Build() method (panics if function not set)
-    - Set sensible defaults (version: "1.0.0", deterministic: true, latency: "medium")
-    - Created comprehensive tests in base_tool_test.go
     - Maintained backward compatibility with existing NewTool function
-    - Updated internal tools in llm_agent.go (subAgentTool, transferToAgentTool)
-    - Updated AgentTool wrapper to implement new interface
-    - Note: Many test mock tools still need updating for new interface
 - **Agent Custom Research Example Rewrite (COMPLETED)**
   - Successfully rewrote agent-custom-research to properly showcase custom agent development:
     - ResearchAgent now extends BaseAgentImpl (not LLMAgent) for full control

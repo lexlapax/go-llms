@@ -60,15 +60,72 @@ var processListParamSchema = &sdomain.Schema{
 		"sort_by": {
 			Type:        "string",
 			Description: "Sort results by: pid, name, cpu, memory",
-			Enum:        []string{"pid", "name", "cpu", "memory"},
 		},
 		"limit": {
-			Type:        "integer",
+			Type:        "number",
 			Description: "Maximum number of processes to return",
 			Minimum:     floatPtr(1),
 			Maximum:     floatPtr(1000),
 		},
 	},
+}
+
+// processListOutputSchema defines the output schema for the ProcessList tool
+var processListOutputSchema = &sdomain.Schema{
+	Type: "object",
+	Properties: map[string]sdomain.Property{
+		"processes": {
+			Type:        "array",
+			Description: "List of running processes",
+			Items: &sdomain.Property{
+				Type: "object",
+				Properties: map[string]sdomain.Property{
+					"pid": {
+						Type:        "number",
+						Description: "Process ID",
+					},
+					"name": {
+						Type:        "string",
+						Description: "Process name",
+					},
+					"command": {
+						Type:        "string",
+						Description: "Full command line",
+					},
+					"cpu_percent": {
+						Type:        "number",
+						Description: "CPU usage percentage",
+					},
+					"memory_kb": {
+						Type:        "number",
+						Description: "Memory usage in kilobytes",
+					},
+					"user": {
+						Type:        "string",
+						Description: "Process owner",
+					},
+					"start_time": {
+						Type:        "string",
+						Description: "Process start time",
+					},
+				},
+				Required: []string{"pid", "name"},
+			},
+		},
+		"count": {
+			Type:        "number",
+			Description: "Number of processes returned",
+		},
+		"platform": {
+			Type:        "string",
+			Description: "Operating system platform",
+		},
+		"timestamp": {
+			Type:        "string",
+			Description: "Timestamp when the list was generated (RFC3339)",
+		},
+	},
+	Required: []string{"processes", "count", "platform", "timestamp"},
 }
 
 // init automatically registers the tool on package import
@@ -108,6 +165,100 @@ func init() {
 	})
 }
 
+// processList is the main function for the tool
+func processList(ctx *domain.ToolContext, params ProcessListParams) (*ProcessListResult, error) {
+	// Emit start event
+	if ctx.Events != nil {
+		ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+			ToolName:   "process_list",
+			Parameters: params,
+			RequestID:  ctx.RunID,
+		})
+	}
+	// Get current PID for self-filtering
+	currentPID := os.Getpid()
+
+	// Check state for default limit if not provided
+	if params.Limit == 0 && ctx.State != nil {
+		if limit, ok := ctx.State.Get("process_list_default_limit"); ok {
+			if l, ok := limit.(int); ok && l > 0 {
+				params.Limit = l
+			}
+		}
+	}
+
+	// Get process list based on platform
+	var processes []ProcessInfo
+	var err error
+
+	switch runtime.GOOS {
+	case "darwin", "linux", "freebsd", "openbsd", "netbsd":
+		processes, err = getUnixProcesses()
+	case "windows":
+		processes, err = getWindowsProcesses()
+	default:
+		processes, err = getFallbackProcesses()
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter processes
+	if params.Filter != "" || !params.IncludeSelf {
+		filtered := make([]ProcessInfo, 0, len(processes))
+		filterUpper := strings.ToUpper(params.Filter)
+
+		for _, p := range processes {
+			// Skip self if requested
+			if !params.IncludeSelf && p.PID == currentPID {
+				continue
+			}
+
+			// Apply name filter
+			if params.Filter != "" {
+				nameUpper := strings.ToUpper(p.Name)
+				commandUpper := strings.ToUpper(p.Command)
+				if !strings.Contains(nameUpper, filterUpper) &&
+					!strings.Contains(commandUpper, filterUpper) {
+					continue
+				}
+			}
+
+			filtered = append(filtered, p)
+		}
+		processes = filtered
+	}
+
+	// Sort if requested
+	if params.SortBy != "" {
+		sortProcesses(processes, params.SortBy)
+	}
+
+	// Apply limit
+	if params.Limit > 0 && len(processes) > params.Limit {
+		processes = processes[:params.Limit]
+	}
+
+	result := &ProcessListResult{
+		Processes: processes,
+		Count:     len(processes),
+		Platform:  runtime.GOOS,
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+	}
+
+	// Emit result event
+	if ctx.Events != nil {
+		ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+			ToolName:  "process_list",
+			Result:    result,
+			RequestID: ctx.RunID,
+		})
+	}
+
+	return result, nil
+}
+
 // ProcessList creates a tool for listing running processes
 // This is a built-in tool optimized for:
 // - Cross-platform process enumeration
@@ -115,103 +266,223 @@ func init() {
 // - Resource usage monitoring
 // - System diagnostics
 func ProcessList() domain.Tool {
-	return atools.NewTool(
-		"process_list",
-		"Lists running processes with filtering and sorting",
-		func(ctx *domain.ToolContext, params ProcessListParams) (*ProcessListResult, error) {
-			// Emit start event
-			if ctx.Events != nil {
-				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
-					ToolName:   "process_list",
-					Parameters: params,
-					RequestID:  ctx.RunID,
-				})
-			}
-			// Get current PID for self-filtering
-			currentPID := os.Getpid()
+	builder := atools.NewToolBuilder("process_list", "Lists running processes with filtering and sorting").
+		WithFunction(processList).
+		WithParameterSchema(processListParamSchema).
+		WithOutputSchema(processListOutputSchema).
+		WithUsageInstructions(`Use this tool to list and analyze running processes on the system.
 
-			// Check state for default limit if not provided
-			if params.Limit == 0 && ctx.State != nil {
-				if limit, ok := ctx.State.Get("process_list_default_limit"); ok {
-					if l, ok := limit.(int); ok && l > 0 {
-						params.Limit = l
-					}
-				}
-			}
+Cross-Platform Support:
+- Unix/Linux/macOS: Uses 'ps aux' command for detailed process information
+- Windows: Uses 'tasklist' command (limited CPU info)
+- Other platforms: Returns minimal process information
 
-			// Get process list based on platform
-			var processes []ProcessInfo
-			var err error
+Parameters:
+- filter: Search for processes by name (case-insensitive, partial match)
+- include_self: Include the current process (default: false)
+- sort_by: Order results by pid, name, cpu, or memory
+- limit: Maximum processes to return (1-1000)
 
-			switch runtime.GOOS {
-			case "darwin", "linux", "freebsd", "openbsd", "netbsd":
-				processes, err = getUnixProcesses()
-			case "windows":
-				processes, err = getWindowsProcesses()
-			default:
-				processes, err = getFallbackProcesses()
-			}
+Output Information:
+- pid: Process identifier
+- name: Process executable name
+- command: Full command line (Unix only)
+- cpu_percent: CPU usage percentage (Unix only)
+- memory_kb: Memory usage in kilobytes
+- user: Process owner
+- start_time: When process started
 
-			if err != nil {
-				return nil, err
-			}
+Filtering:
+- Searches both process name and command line
+- Case-insensitive partial matching
+- Example: filter "chrome" matches "Google Chrome Helper"
 
-			// Filter processes
-			if params.Filter != "" || !params.IncludeSelf {
-				filtered := make([]ProcessInfo, 0, len(processes))
-				filterUpper := strings.ToUpper(params.Filter)
+Sorting:
+- pid: Ascending by process ID
+- name: Alphabetical by process name
+- cpu: Descending by CPU usage (highest first)
+- memory: Descending by memory usage (highest first)
 
-				for _, p := range processes {
-					// Skip self if requested
-					if !params.IncludeSelf && p.PID == currentPID {
-						continue
-					}
+State Configuration:
+Set default limit via state:
+state.Set("process_list_default_limit", 50)
 
-					// Apply name filter
-					if params.Filter != "" {
-						nameUpper := strings.ToUpper(p.Name)
-						commandUpper := strings.ToUpper(p.Command)
-						if !strings.Contains(nameUpper, filterUpper) &&
-							!strings.Contains(commandUpper, filterUpper) {
-							continue
-						}
-					}
+Platform Notes:
+- CPU percentage may be 0 on Windows
+- Command field may be empty on some platforms
+- Memory values are estimates on some systems`).
+		WithExamples([]domain.ToolExample{
+			{
+				Name:        "List all processes",
+				Description: "Get a complete process list",
+				Scenario:    "When you need to see all running processes",
+				Input:       map[string]interface{}{},
+				Output: map[string]interface{}{
+					"processes": []map[string]interface{}{
+						{
+							"pid":         1234,
+							"name":        "chrome",
+							"command":     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+							"cpu_percent": 5.2,
+							"memory_kb":   524288,
+							"user":        "john",
+							"start_time":  "10:30AM",
+						},
+						{
+							"pid":         5678,
+							"name":        "code",
+							"command":     "/usr/local/bin/code",
+							"cpu_percent": 2.1,
+							"memory_kb":   262144,
+							"user":        "john",
+							"start_time":  "09:15AM",
+						},
+					},
+					"count":     2,
+					"platform":  "darwin",
+					"timestamp": "2024-01-15T10:30:00Z",
+				},
+				Explanation: "Returns all processes with available information",
+			},
+			{
+				Name:        "Find specific processes",
+				Description: "Search for Chrome processes",
+				Scenario:    "When troubleshooting a specific application",
+				Input: map[string]interface{}{
+					"filter": "chrome",
+				},
+				Output: map[string]interface{}{
+					"processes": []map[string]interface{}{
+						{
+							"pid":       1234,
+							"name":      "chrome",
+							"memory_kb": 524288,
+						},
+						{
+							"pid":       1235,
+							"name":      "chrome_crashpad",
+							"memory_kb": 8192,
+						},
+					},
+					"count":     2,
+					"platform":  "linux",
+					"timestamp": "2024-01-15T10:30:00Z",
+				},
+				Explanation: "Filter matches any process containing 'chrome' in name or command",
+			},
+			{
+				Name:        "Top CPU consumers",
+				Description: "Find processes using most CPU",
+				Scenario:    "When system is running slow",
+				Input: map[string]interface{}{
+					"sort_by": "cpu",
+					"limit":   5,
+				},
+				Output: map[string]interface{}{
+					"processes": []map[string]interface{}{
+						{"pid": 9999, "name": "video_encoder", "cpu_percent": 95.5},
+						{"pid": 8888, "name": "chrome", "cpu_percent": 45.2},
+						{"pid": 7777, "name": "spotlight", "cpu_percent": 25.0},
+						{"pid": 6666, "name": "docker", "cpu_percent": 15.3},
+						{"pid": 5555, "name": "vscode", "cpu_percent": 10.1},
+					},
+					"count":     5,
+					"platform":  "darwin",
+					"timestamp": "2024-01-15T10:30:00Z",
+				},
+				Explanation: "Sorted by CPU usage descending, limited to top 5",
+			},
+			{
+				Name:        "Memory usage analysis",
+				Description: "Find memory-hungry processes",
+				Scenario:    "When investigating high memory usage",
+				Input: map[string]interface{}{
+					"sort_by": "memory",
+					"limit":   10,
+				},
+				Output: map[string]interface{}{
+					"processes": []map[string]interface{}{
+						{"pid": 1111, "name": "docker", "memory_kb": 2097152},
+						{"pid": 2222, "name": "chrome", "memory_kb": 1048576},
+						{"pid": 3333, "name": "slack", "memory_kb": 524288},
+					},
+					"count":     3,
+					"platform":  "linux",
+					"timestamp": "2024-01-15T10:30:00Z",
+				},
+				Explanation: "Shows top memory consumers in descending order",
+			},
+			{
+				Name:        "Include current process",
+				Description: "List processes including self",
+				Scenario:    "When debugging the current application",
+				Input: map[string]interface{}{
+					"include_self": true,
+					"filter":       "go",
+				},
+				Output: map[string]interface{}{
+					"processes": []map[string]interface{}{
+						{"pid": 12345, "name": "go", "command": "go run main.go"},
+						{"pid": 12346, "name": "gopls", "command": "gopls serve"},
+						{"pid": os.Getpid(), "name": "go-llms", "command": "./go-llms"},
+					},
+					"count":     3,
+					"platform":  "linux",
+					"timestamp": "2024-01-15T10:30:00Z",
+				},
+				Explanation: "include_self: true includes the current process in results",
+			},
+			{
+				Name:        "Windows process list",
+				Description: "List processes on Windows",
+				Scenario:    "When running on Windows platform",
+				Input: map[string]interface{}{
+					"limit": 3,
+				},
+				Output: map[string]interface{}{
+					"processes": []map[string]interface{}{
+						{"pid": 1000, "name": "chrome.exe", "memory_kb": 512000, "user": "SYSTEM"},
+						{"pid": 2000, "name": "svchost.exe", "memory_kb": 64000, "user": "SYSTEM"},
+						{"pid": 3000, "name": "explorer.exe", "memory_kb": 128000, "user": "User"},
+					},
+					"count":     3,
+					"platform":  "windows",
+					"timestamp": "2024-01-15T10:30:00Z",
+				},
+				Explanation: "Windows may have limited CPU info but includes memory and user",
+			},
+		}).
+		WithConstraints([]string{
+			"Requires appropriate permissions to see all processes",
+			"CPU percentages may be instantaneous snapshots",
+			"Memory values are estimates and may vary by platform",
+			"Some fields may be empty depending on OS and permissions",
+			"Process information is a point-in-time snapshot",
+			"Filtering is case-insensitive partial string matching",
+			"Sort by CPU/memory may not work on all platforms",
+			"Maximum limit is 1000 processes",
+			"Windows has limited CPU usage information",
+			"Start time format varies by platform",
+		}).
+		WithErrorGuidance(map[string]string{
+			"command not found":      "ps or tasklist command not available on this system",
+			"permission denied":      "Insufficient permissions to list processes. May need elevated privileges",
+			"invalid sort field":     "Use one of: pid, name, cpu, memory",
+			"limit out of range":     "Limit must be between 1 and 1000",
+			"no processes found":     "No processes match the filter criteria",
+			"platform not supported": "Process listing not available on this platform",
+		}).
+		WithCategory("system").
+		WithTags([]string{"process", "system", "monitoring", "ps"}).
+		WithVersion("2.0.0").
+		WithBehavior(
+			false,    // Not deterministic - process list changes
+			false,    // Not destructive - only reads
+			false,    // No confirmation needed
+			"medium", // Medium latency - depends on process count
+		)
 
-					filtered = append(filtered, p)
-				}
-				processes = filtered
-			}
-
-			// Sort if requested
-			if params.SortBy != "" {
-				sortProcesses(processes, params.SortBy)
-			}
-
-			// Apply limit
-			if params.Limit > 0 && len(processes) > params.Limit {
-				processes = processes[:params.Limit]
-			}
-
-			result := &ProcessListResult{
-				Processes: processes,
-				Count:     len(processes),
-				Platform:  runtime.GOOS,
-				Timestamp: time.Now().UTC().Format(time.RFC3339),
-			}
-
-			// Emit result event
-			if ctx.Events != nil {
-				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
-					ToolName:  "process_list",
-					Result:    result,
-					RequestID: ctx.RunID,
-				})
-			}
-
-			return result, nil
-		},
-		processListParamSchema,
-	)
+	return builder.Build()
 }
 
 // getUnixProcesses gets process list on Unix-like systems

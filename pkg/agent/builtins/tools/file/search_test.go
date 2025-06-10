@@ -373,8 +373,10 @@ func TestFileSearchErrors(t *testing.T) {
 
 	// Test invalid regex
 	tempFile, _ := os.CreateTemp("", "test")
-	tempFile.Close()
-	defer os.Remove(tempFile.Name())
+	_ = tempFile.Close()
+	defer func() {
+		_ = os.Remove(tempFile.Name())
+	}()
 
 	_, err = tool.Execute(ctx, map[string]interface{}{
 		"path":     tempFile.Name(),

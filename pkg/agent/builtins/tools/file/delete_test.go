@@ -100,10 +100,10 @@ func TestFileDeleteBasic(t *testing.T) {
 	tempPath := tempFile.Name()
 	_, err = tempFile.Write([]byte("test content"))
 	if err != nil {
-		tempFile.Close()
+		_ = tempFile.Close()
 		t.Fatal(err)
 	}
-	tempFile.Close()
+	_ = tempFile.Close()
 
 	// Verify file exists
 	if _, err := os.Stat(tempPath); os.IsNotExist(err) {
@@ -182,7 +182,9 @@ func TestFileDeleteDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tempDir2) // Clean up
+	defer func() {
+		_ = os.RemoveAll(tempDir2) // Clean up
+	}()
 
 	// Create a file in the directory
 	testFile := filepath.Join(tempDir2, "test.txt")
@@ -237,8 +239,10 @@ func TestFileDeleteConfirmation(t *testing.T) {
 		t.Fatal(err)
 	}
 	tempPath := tempFile.Name()
-	tempFile.Close()
-	defer os.Remove(tempPath) // Clean up if test fails
+	_ = tempFile.Close()
+	defer func() {
+		_ = os.Remove(tempPath) // Clean up if test fails
+	}()
 
 	// Test 1: Wrong confirmation
 	result, err := tool.Execute(ctx, map[string]interface{}{
@@ -277,7 +281,7 @@ func TestFileDeleteConfirmation(t *testing.T) {
 		t.Fatal(err)
 	}
 	tempPath2 := tempFile2.Name()
-	tempFile2.Close()
+	_ = tempFile2.Close()
 
 	result, err = tool.Execute(ctx, map[string]interface{}{
 		"path":            tempPath2,
@@ -346,7 +350,9 @@ func TestFileDeleteForce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tempDir) // Clean up
+	defer func() {
+		_ = os.RemoveAll(tempDir) // Clean up
+	}()
 
 	// Create some files
 	for i := 0; i < 3; i++ {

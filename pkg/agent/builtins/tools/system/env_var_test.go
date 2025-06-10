@@ -50,8 +50,10 @@ func TestGetEnvironmentVariableBasic(t *testing.T) {
 	}
 
 	for name, value := range testVars {
-		os.Setenv(name, value)
-		defer os.Unsetenv(name)
+		_ = os.Setenv(name, value)
+		defer func(n string) {
+			_ = os.Unsetenv(n)
+		}(name)
 	}
 
 	// Test 1: Get specific variable
@@ -119,8 +121,10 @@ func TestGetEnvironmentVariablePattern(t *testing.T) {
 	}
 
 	for name, value := range testVars {
-		os.Setenv(name, value)
-		defer os.Unsetenv(name)
+		_ = os.Setenv(name, value)
+		defer func(n string) {
+			_ = os.Unsetenv(n)
+		}(name)
 	}
 
 	// Test 1: Prefix pattern
@@ -180,8 +184,10 @@ func TestGetEnvironmentVariableSensitive(t *testing.T) {
 	}
 
 	for name, value := range sensitiveVars {
-		os.Setenv(name, value)
-		defer os.Unsetenv(name)
+		_ = os.Setenv(name, value)
+		defer func(n string) {
+			_ = os.Unsetenv(n)
+		}(name)
 	}
 
 	// Test 1: Get sensitive variable without sensitive flag (should be masked)

@@ -349,8 +349,10 @@ func TestFileListErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tempFile.Name())
-	tempFile.Close()
+	defer func() {
+		_ = os.Remove(tempFile.Name())
+	}()
+	_ = tempFile.Close()
 
 	_, err = tool.Execute(ctx, map[string]interface{}{
 		"path": tempFile.Name(),

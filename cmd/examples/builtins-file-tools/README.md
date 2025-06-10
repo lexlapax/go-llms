@@ -1,6 +1,6 @@
 # Built-in File Tools Example
 
-This comprehensive example demonstrates all 6 file operation tools available in the go-llms library, showcasing their full capabilities with practical examples.
+This example demonstrates all 6 file operation tools available in the go-llms library, showing both direct tool usage and LLM agent integration.
 
 ## Overview
 
@@ -14,58 +14,132 @@ The built-in file tools provide advanced features beyond basic file I/O:
 
 ## Running the Example
 
+### Direct Tool Usage (Default)
 ```bash
-# Optional: Set API key for agent demonstration
-export OPENAI_API_KEY="your-api-key"
-
-# Run the example
 go run main.go
 ```
 
-## Features Demonstrated
+### LLM Agent Mode
+```bash
+go run main.go -llm
+```
 
-### 1. Enhanced File Reading (file_read)
-- **Large file streaming**: Handles files larger than memory
-- **Binary detection**: Automatically detects binary vs text files
-- **Line range reading**: Read specific line ranges (e.g., lines 10-20)
-- **File metadata**: Size, permissions, modification time, directory status
-- **Encoding handling**: Proper UTF-8 validation
+### Tool Information Display
+```bash
+go run main.go -llm info
+```
 
-### 2. Atomic File Writing (file_write)
-- **Write-rename pattern**: Ensures file integrity
-- **Automatic backups**: Creates timestamped backups before overwriting
-- **Directory creation**: Creates parent directories as needed
-- **Custom permissions**: Set file mode on creation
-- **Append mode**: Add content to existing files
+### With Debug Logging
+```bash
+DEBUG=1 go run main.go -llm
+```
 
-### 3. Directory Operations (file_list)
-- **Recursive listing**: Traverse directory trees
-- **File filtering**: Filter by type, size, or modification time
-- **Metadata collection**: Get comprehensive file information
-- **Total size calculation**: Sum up directory contents
+## Available File Tools
 
-### 4. File Search (file_search)
-- **Pattern matching**: Use glob patterns for file selection
-- **Content search**: Search within file contents
-- **Line number tracking**: Show exact match locations
-- **Recursive search**: Search through directory hierarchies
+1. **file_read** (v2.0.0) - Read files with advanced features
+   - Large file streaming support
+   - Binary file detection
+   - Line range reading
+   - File metadata extraction
+   - UTF-8 encoding validation
 
-### 5. File Movement (file_move)
-- **Safe relocation**: Validates source and destination
-- **Cross-directory moves**: Handle moves across filesystems
-- **Existence checking**: Prevents overwriting without confirmation
-- **Byte counting**: Track exactly how much data was moved
+2. **file_write** (v2.0.0) - Write files safely
+   - Atomic write operations
+   - Automatic backup creation
+   - Directory auto-creation
+   - Append mode support
+   - Custom permissions
+   - ⚠️ Destructive operation
 
-### 6. File Deletion (file_delete)
-- **Existence validation**: Check if file exists before deletion
-- **Safe removal**: Proper error handling and reporting
-- **Path validation**: Ensure deletion targets are correct
+3. **file_list** (v2.0.0) - List directory contents
+   - Recursive directory traversal
+   - Pattern-based filtering
+   - File metadata collection
+   - Size calculations
 
-### 7. Agent Integration
-Shows how to use file tools with agents for complex file operations:
-- Reading and summarizing files
-- Transforming file content
-- Creating reports from multiple files
+4. **file_search** (v2.0.0) - Search files and content
+   - File name pattern matching
+   - Content search within files
+   - Line number tracking
+   - Recursive search support
+
+5. **file_move** (v2.0.0) - Move/rename files
+   - Safe file relocation
+   - Cross-filesystem support
+   - Validation and error handling
+   - Byte counting
+   - ⚠️ Destructive operation
+
+6. **file_delete** (v2.0.0) - Delete files safely
+   - Existence validation
+   - Safe removal with error handling
+   - Path validation
+   - ⚠️ Destructive operation
+   - ⚠️ Requires confirmation
+
+## Example Modes
+
+### Direct Tool Usage
+
+The default mode demonstrates direct usage of all file tools:
+
+```go
+// Get all file tools
+readTool, _ := tools.GetTool("file_read")
+writeTool, _ := tools.GetTool("file_write")
+listTool, _ := tools.GetTool("file_list")
+searchTool, _ := tools.GetTool("file_search")
+moveTool, _ := tools.GetTool("file_move")
+deleteTool, _ := tools.GetTool("file_delete")
+
+// Write a configuration file
+result, err := writeTool.Execute(toolCtx, map[string]interface{}{
+    "path":    "config.json",
+    "content": configContent,
+    "atomic":  true,
+})
+```
+
+### LLM Agent Mode
+
+The `-llm` flag demonstrates using file tools with an LLM agent:
+
+```go
+// Create LLM agent with file tools
+agent := core.NewLLMAgent("file-assistant", "File Management Assistant", deps)
+agent.AddTool(readTool)
+agent.AddTool(writeTool)
+agent.AddTool(listTool)
+agent.AddTool(searchTool)
+agent.AddTool(moveTool)
+agent.AddTool(deleteTool)
+
+// The agent uses minimal prompting and relies on tool documentation
+agent.SetSystemPrompt(`You are a helpful file management assistant...`)
+```
+
+The LLM mode includes example queries like:
+- "Read the configuration file and tell me what settings are enabled"
+- "Create a todo list file with 5 important tasks"
+- "List all JSON files and tell me what each one is for"
+- "Search for any errors in log files"
+- "Rename settings.json to app-settings.json"
+
+## Key Features
+
+### Two Execution Modes
+- **Direct Mode**: Demonstrates all tool capabilities with comprehensive examples
+- **LLM Mode**: Shows how tools integrate with LLM agents using minimal prompting
+
+### Mock Provider Support
+- If no API keys are set, the example uses a mock provider
+- Mock provider simulates tool usage for demonstration purposes
+- Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY for real LLM usage
+
+### Tool Documentation
+- All tools include comprehensive metadata and usage instructions
+- Tools provide examples, constraints, and error guidance
+- LLM agents can leverage this built-in documentation
 
 ## Example Operations
 
@@ -73,19 +147,15 @@ Shows how to use file tools with agents for complex file operations:
 ```go
 result, _ := readTool.Execute(ctx, map[string]interface{}{
     "path":         "config.json",
-    "include_meta": true,  // Fixed parameter name
+    "include_meta": true,
 })
-if readResult, ok := result.(*file.ReadFileResult); ok {
-    fmt.Printf("Content: %s\n", readResult.Content)
-    fmt.Printf("Size: %d bytes\n", readResult.Metadata.Size)
-}
 ```
 
 ### Line Range Reading
 ```go
 result, _ := readTool.Execute(ctx, map[string]interface{}{
     "path":       "large.log",
-    "line_start": 100,  // Fixed parameter names
+    "line_start": 100,
     "line_end":   200,
 })
 ```
@@ -95,27 +165,8 @@ result, _ := readTool.Execute(ctx, map[string]interface{}{
 result, _ := writeTool.Execute(ctx, map[string]interface{}{
     "path":    "config.json",
     "content": newConfig,
-    "backup":  true,  // Fixed parameter name
+    "backup":  true,
     "atomic":  true,
-})
-```
-
-### Directory Listing
-```go
-result, _ := listTool.Execute(ctx, map[string]interface{}{
-    "path":      "/path/to/directory",
-    "recursive": false,
-})
-if listResult, ok := result.(*file.FileListResult); ok {
-    fmt.Printf("Found %d files\n", len(listResult.Files))
-}
-```
-
-### Pattern Search
-```go
-result, _ := searchTool.Execute(ctx, map[string]interface{}{
-    "path":    "/path/to/search",
-    "pattern": "*.json",
 })
 ```
 
@@ -124,22 +175,7 @@ result, _ := searchTool.Execute(ctx, map[string]interface{}{
 result, _ := searchTool.Execute(ctx, map[string]interface{}{
     "path":         "/path/to/search",
     "pattern":      "error",      // Search pattern (content to find)
-    "file_pattern": "*.txt",      // File name pattern
-})
-```
-
-### File Move
-```go
-result, _ := moveTool.Execute(ctx, map[string]interface{}{
-    "source":      "/path/to/source.txt",
-    "destination": "/path/to/destination.txt",  // Fixed parameter name
-})
-```
-
-### File Delete
-```go
-result, _ := deleteTool.Execute(ctx, map[string]interface{}{
-    "path": "/path/to/file.txt",
+    "file_pattern": "*.log",      // File name pattern
 })
 ```
 
@@ -149,7 +185,7 @@ Each file tool uses specific parameter names that must be matched exactly:
 
 ### file_read Tool
 - `path`: File path to read (required)
-- `include_meta`: Include file metadata (not `include_metadata`)
+- `include_meta`: Include file metadata
 - `line_start`: Starting line number for range reading
 - `line_end`: Ending line number for range reading
 
@@ -159,15 +195,18 @@ Each file tool uses specific parameter names that must be matched exactly:
 - `atomic`: Use atomic write operation
 - `backup`: Create backup before overwriting
 - `append`: Append to existing file
+- `mode`: File permissions (Unix mode)
+- `create_dirs`: Create parent directories if needed
 
 ### file_list Tool
 - `path`: Directory path to list (required)
+- `pattern`: Glob pattern for filtering
 - `recursive`: Recursively list subdirectories
 
 ### file_search Tool
 - `path`: Directory path to search (required)
 - `pattern`: Search pattern (content to find)
-- `file_pattern`: Glob pattern for file name matching (e.g., "*.txt")
+- `file_pattern`: Glob pattern for file name matching
 - `recursive`: Search recursively
 
 ### file_move Tool
@@ -177,58 +216,36 @@ Each file tool uses specific parameter names that must be matched exactly:
 ### file_delete Tool
 - `path`: File path to delete (required)
 
-## Type Assertions
-
-When handling file tool outputs, use the correct struct types:
-
-```go
-// file_read results
-if readResult, ok := result.(*file.ReadFileResult); ok {
-    fmt.Printf("Content: %s\n", readResult.Content)
-    fmt.Printf("Lines: %d\n", readResult.Lines)
-    if readResult.Metadata != nil {
-        fmt.Printf("Size: %d\n", readResult.Metadata.Size)
-    }
-}
-
-// file_write results
-if writeResult, ok := result.(*file.WriteFileResult); ok {
-    fmt.Printf("Bytes written: %d\n", writeResult.BytesWritten)
-    fmt.Printf("Backup path: %s\n", writeResult.BackupPath)
-}
-
-// file_list results
-if listResult, ok := result.(*file.FileListResult); ok {
-    fmt.Printf("Found %d files\n", len(listResult.Files))
-    fmt.Printf("Total size: %d bytes\n", listResult.TotalSize)
-}
-
-// file_search results
-if searchResult, ok := result.(*file.FileSearchResult); ok {
-    fmt.Printf("Found %d matches\n", len(searchResult.Matches))
-    for _, match := range searchResult.Matches {
-        fmt.Printf("- %s (%d bytes)\n", match.Path, match.Size)
-    }
-}
-
-// file_move results
-if moveResult, ok := result.(*file.FileMoveResult); ok {
-    fmt.Printf("Moved from %s to %s\n", moveResult.SourcePath, moveResult.DestPath)
-    fmt.Printf("Bytes moved: %d\n", moveResult.BytesMoved)
-}
-
-// file_delete results
-if deleteResult, ok := result.(*file.FileDeleteResult); ok {
-    fmt.Printf("Deleted: %s (existed: %v)\n", deleteResult.Path, deleteResult.Existed)
-}
-```
-
 ## Performance Benefits
 
 - **Streaming**: 4KB buffer for efficient memory usage
 - **Lazy loading**: Only reads what's needed
 - **Concurrent safe**: Multiple agents can use tools simultaneously
 - **Memory efficient**: Large files don't consume excessive memory
+
+## Security Considerations
+
+- **Atomic writes**: Prevent partial file corruption
+- **Backup creation**: Preserve original data before modifications
+- **Path validation**: Prevent directory traversal attacks
+- **Safe deletion**: Confirmation required for destructive operations
+
+## Integration with New Architecture
+
+This example uses the new agent architecture:
+
+```go
+// Uses core.NewLLMAgent instead of workflow.NewAgent
+agent := core.NewLLMAgent("file-assistant", "File Management Assistant", deps)
+
+// Tools are added individually
+agent.AddTool(tool)
+
+// State-based execution
+state := domain.NewState()
+state.Set("user_input", prompt)
+result, err := agent.Run(ctx, state)
+```
 
 ## Use Cases
 
@@ -239,24 +256,19 @@ if deleteResult, ok := result.(*file.FileDeleteResult); ok {
 5. **File System Maintenance**: Organize, move, and clean up files
 6. **Content Analysis**: Search and analyze file contents
 
-## Integration with Agents
+## Best Practices
 
-```go
-agent := workflow.NewAgent(provider).
-    SetSystemPrompt("You are a file management assistant.").
-    AddTool(tools.MustGetTool("file_read")).
-    AddTool(tools.MustGetTool("file_write")).
-    AddTool(tools.MustGetTool("file_list")).
-    AddTool(tools.MustGetTool("file_search")).
-    AddTool(tools.MustGetTool("file_move")).
-    AddTool(tools.MustGetTool("file_delete"))
-
-result, _ := agent.Run(ctx, "Organize all .txt files in /tmp into subdirectories by creation date")
-```
+1. Always use atomic writes for critical files
+2. Create backups before modifying important data
+3. Use line ranges for large file processing
+4. Validate paths before file operations
+5. Handle errors appropriately in production
+6. Let tools guide the LLM with their built-in documentation
+7. Use DEBUG=1 to see detailed agent execution logs
 
 ## Next Steps
 
-- Explore the [discovery example](../builtins-discovery/) to find more tools
+- Explore the [system tools example](../builtins-system-tools/) for system operations
 - Check the [data tools example](../builtins-data-tools/) for data processing
 - Review the [built-in components guide](../../../docs/user-guide/built-in-components.md) for all tools
 - Examine tool source code in `pkg/agent/builtins/tools/file/` for advanced usage
