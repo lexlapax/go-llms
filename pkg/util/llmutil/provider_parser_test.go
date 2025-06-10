@@ -112,15 +112,17 @@ func TestParseProviderModelWithOptions(t *testing.T) {
 
 func TestNewProviderFromString(t *testing.T) {
 	// Set up mock API key for testing
-	os.Setenv("OPENAI_API_KEY", "test-key")
-	defer os.Unsetenv("OPENAI_API_KEY")
+	_ = os.Setenv("OPENAI_API_KEY", "test-key")
+	defer func() {
+		_ = os.Unsetenv("OPENAI_API_KEY")
+	}()
 
 	// Ensure Anthropic key is not set
 	oldAnthropicKey := os.Getenv("ANTHROPIC_API_KEY")
-	os.Unsetenv("ANTHROPIC_API_KEY")
+	_ = os.Unsetenv("ANTHROPIC_API_KEY")
 	defer func() {
 		if oldAnthropicKey != "" {
-			os.Setenv("ANTHROPIC_API_KEY", oldAnthropicKey)
+			_ = os.Setenv("ANTHROPIC_API_KEY", oldAnthropicKey)
 		}
 	}()
 

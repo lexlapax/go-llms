@@ -124,7 +124,7 @@ Go-llms provides a comprehensive set of built-in tools organized by category:
 - `web_fetch` - Fetch and process web content
 - `web_scrape` - Scrape web pages with selectors
 - `http_request` - Make HTTP requests
-- `api_client` - Advanced API client with REST, OpenAPI, and GraphQL support
+- `api_client` - Advanced API client with REST, OpenAPI, and GraphQL support (see [Authentication](authentication.md) for auth details)
 
 ### Data Tools (`pkg/agent/builtins/tools/data/`)
 - `json_process` - Parse and query JSON with JSONPath

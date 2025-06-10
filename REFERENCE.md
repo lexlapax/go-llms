@@ -27,6 +27,7 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Architecture](/docs/technical/architecture.md) - Overview of the library architecture
 - [Agent Architecture](/docs/technical/agents.md) - Complete agent architecture and implementation details
 - [Built-in Components](/docs/technical/built-in-components.md) - Architecture and design of built-in tools, agents, and workflows
+- [Authentication](/docs/technical/authentication.md) - Unified authentication system for HTTP requests with state-based credential management
 - [Performance Optimization](/docs/technical/performance.md) - Performance optimization strategies
 - [Multimodal Content Implementation](/docs/technical/multimodal-content.md) - Implementation details for multimodal support
 - [Testing Framework](/docs/technical/testing.md) - Error condition testing and stress testing
@@ -57,6 +58,10 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Built-in Tools Discovery](/cmd/examples/builtins-discovery/README.md) - Discover and use built-in tools
 - [Built-in File Tools](/cmd/examples/builtins-file-tools/README.md) - Enhanced file operations with built-in tools
 - [Built-in Web Tools](/cmd/examples/builtins-web-tools/README.md) - Web operations (fetch, search, scrape, HTTP requests)
+- [Built-in Web API Client](/cmd/examples/builtins-web-api-client/README.md) - Advanced API client with REST, OpenAPI, and GraphQL support
+- [Built-in API Client Auth](/cmd/examples/builtins-api-client-auth/README.md) - Comprehensive authentication examples (API key, Bearer, Basic, OAuth2)
+- [Built-in OpenAPI Discovery](/cmd/examples/builtins-openapi-discovery/README.md) - OpenAPI spec discovery and automatic configuration
+- [Built-in GraphQL Client](/cmd/examples/builtins-graphql-client/README.md) - GraphQL queries with schema introspection
 - [Built-ins Web Search Parallel](/cmd/examples/builtins-web-search-parallel/README.md) - Production API key management with parallel web searches
 - [Built-in System Tools](/cmd/examples/builtins-system-tools/README.md) - System operations (execute commands, environment variables, process list)
 - [Built-in Data Tools](/cmd/examples/builtins-data-tools/README.md) - Data processing (JSON, CSV, XML, transformations)

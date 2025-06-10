@@ -217,16 +217,16 @@ const (
 
 // GuessArtifactType attempts to determine artifact type from MIME type
 func GuessArtifactType(mimeType string) ArtifactType {
-	switch {
-	case mimeType == MimeTypePDF || mimeType == MimeTypeHTML || mimeType == MimeTypeMarkdown:
+	switch mimeType {
+	case MimeTypePDF, MimeTypeHTML, MimeTypeMarkdown:
 		return ArtifactTypeDocument
-	case mimeType == MimeTypePNG || mimeType == MimeTypeJPEG || mimeType == MimeTypeGIF:
+	case MimeTypePNG, MimeTypeJPEG, MimeTypeGIF:
 		return ArtifactTypeImage
-	case mimeType == MimeTypeMP4:
+	case MimeTypeMP4:
 		return ArtifactTypeVideo
-	case mimeType == MimeTypeMP3 || mimeType == MimeTypeWAV:
+	case MimeTypeMP3, MimeTypeWAV:
 		return ArtifactTypeAudio
-	case mimeType == MimeTypeJSON:
+	case MimeTypeJSON:
 		return ArtifactTypeData
 	default:
 		return ArtifactTypeFile

@@ -438,11 +438,11 @@ func (c *counterStep) Name() string {
 
 func (c *counterStep) Execute(ctx context.Context, state *WorkflowState) (*WorkflowState, error) {
 	currentCounter := 0
-	if counter, exists := state.State.Get("counter"); exists {
+	if counter, exists := state.Get("counter"); exists {
 		currentCounter = counter.(int)
 	}
 
-	newState := state.State.Clone()
+	newState := state.Clone()
 	newState.Set("counter", currentCounter+1)
 
 	return &WorkflowState{

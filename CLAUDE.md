@@ -10,6 +10,12 @@ Until we reach close to v1.. *no backward compatibility* do not add extra code f
 
 **Current Version**: v0.3.1 (Active Development - January 2025)
 
+**Latest Updates** (January 10, 2025):
+- **Authentication System Improvements**: Fixed hardcoded URL detection, implemented generic token detection
+- **Tool System Enhancement Phase 2**: Migrated calculator, system, and file tools to ToolBuilder pattern
+- **Documentation**: Created docs/technical/authentication.md and updated all references
+- **All tests passing**: 0 linting issues, successful builds
+
 ## Common Development Commands
 
 ### Build Commands

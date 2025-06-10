@@ -65,9 +65,9 @@ func TestGetAPIKeyFromEnv(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clear environment variables first
-			os.Unsetenv(EnvOpenAIAPIKey)
-			os.Unsetenv(EnvAnthropicAPIKey)
-			os.Unsetenv(EnvGeminiAPIKey)
+			_ = os.Unsetenv(EnvOpenAIAPIKey)
+			_ = os.Unsetenv(EnvAnthropicAPIKey)
+			_ = os.Unsetenv(EnvGeminiAPIKey)
 
 			// Set environment variables for test
 			for k, v := range tt.envVars {
@@ -157,9 +157,9 @@ func TestGetModelFromEnv(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clear environment variables first
-			os.Unsetenv(EnvOpenAIModel)
-			os.Unsetenv(EnvAnthropicModel)
-			os.Unsetenv(EnvGeminiModel)
+			_ = os.Unsetenv(EnvOpenAIModel)
+			_ = os.Unsetenv(EnvAnthropicModel)
+			_ = os.Unsetenv(EnvGeminiModel)
 
 			// Set environment variables for test
 			for k, v := range tt.envVars {
@@ -244,9 +244,9 @@ func TestGetCommonOptionsFromEnv(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clear environment variables first
-			os.Unsetenv(EnvHTTPTimeout)
-			os.Unsetenv(EnvRetryAttempts)
-			os.Unsetenv(EnvRetryDelay)
+			_ = os.Unsetenv(EnvHTTPTimeout)
+			_ = os.Unsetenv(EnvRetryAttempts)
+			_ = os.Unsetenv(EnvRetryDelay)
 
 			// Set environment variables for test
 			for k, v := range tt.envVars {
@@ -357,7 +357,7 @@ func TestGetProviderOptionsFromEnv(t *testing.T) {
 				EnvHTTPTimeout, EnvAnthropicSystemPrompt, EnvOpenAIOrganization,
 			}
 			for _, v := range clearEnvVars {
-				os.Unsetenv(v)
+				_ = os.Unsetenv(v)
 			}
 
 			// Set environment variables for test

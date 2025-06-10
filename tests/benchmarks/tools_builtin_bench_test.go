@@ -79,7 +79,7 @@ func BenchmarkBuiltinFileWrite(b *testing.B) {
 			b.Fatal(err)
 		}
 		_ = result
-		os.Remove(testFile) // Clean up for next iteration
+		_ = os.Remove(testFile) // Clean up for next iteration
 	}
 }
 

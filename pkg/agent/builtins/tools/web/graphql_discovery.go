@@ -133,6 +133,11 @@ func processOperationType(schema *ast.Schema, typeDef *ast.Definition, operation
 			continue
 		}
 
+		// Skip introspection fields
+		if strings.HasPrefix(field.Name, "__") {
+			continue
+		}
+
 		op := GraphQLOperationInfo{
 			Name:        field.Name,
 			Description: field.Description,

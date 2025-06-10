@@ -394,7 +394,9 @@ func TestGeminiAltSSEParameter(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		// Check response code
 		t.Logf("Response Status with alt=sse: %s", resp.Status)
@@ -461,7 +463,9 @@ func TestGeminiAltSSEParameter(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		// Check response code
 		t.Logf("Response Status without alt=sse: %s", resp.Status)
@@ -543,7 +547,9 @@ func TestGeminiStreamingLive(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		// Check response code
 		t.Logf("Response Status: %s", resp.Status)

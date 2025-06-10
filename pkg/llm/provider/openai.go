@@ -177,7 +177,7 @@ func (p *OpenAIProvider) ConvertMessagesToOpenAIFormat(messages []domain.Message
 		} else if msg.Role == domain.RoleTool {
 			// Special handling for tool messages - they must follow an assistant message with tool_calls
 			// Find the last assistant message index
-			var lastAssistantIdx int = -1
+			var lastAssistantIdx = -1
 			for j, m := range messages {
 				if m.Role == domain.RoleAssistant {
 					lastAssistantIdx = j
@@ -362,7 +362,9 @@ func (p *OpenAIProvider) GenerateMessage(ctx context.Context, messages []domain.
 	if err != nil {
 		return domain.Response{}, fmt.Errorf("failed to make request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
@@ -488,7 +490,7 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, ParseJSONError(body, resp.StatusCode, "openai", "StreamMessage")
 	}
 
@@ -497,7 +499,9 @@ func (p *OpenAIProvider) StreamMessage(ctx context.Context, messages []domain.Me
 
 	// Start a goroutine to read the stream
 	go func() {
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 		defer close(tokenCh)
 		// Return the channel to the pool when done
 		// Note: Put will avoid putting closed channels back

@@ -30,6 +30,7 @@ func EstimateSchemaCapacity(schema *schemaDomain.Schema, prompt string, includeS
 	capacity += 50 // "Type: object", etc.
 
 	// If it's an object schema, calculate property space more accurately
+	// nolint:staticcheck // QF1003: single value check doesn't need switch
 	if schema.Type == "object" {
 		// Space for required fields list
 		if len(schema.Required) > 0 {

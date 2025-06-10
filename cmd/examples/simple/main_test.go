@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"testing"
 
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
@@ -14,7 +15,7 @@ func TestSimpleExample(t *testing.T) {
 
 	// Test text generation
 	t.Run("TextGeneration", func(t *testing.T) {
-		response, err := mockProvider.Generate(nil, "Tell me a joke")
+		response, err := mockProvider.Generate(context.TODO(), "Tell me a joke")
 		if err != nil {
 			t.Fatalf("Expected no error, got: %v", err)
 		}
@@ -35,7 +36,7 @@ func TestSimpleExample(t *testing.T) {
 			Required: []string{"name"},
 		}
 
-		_, err := mockProvider.GenerateWithSchema(nil, "Generate a person", schema)
+		_, err := mockProvider.GenerateWithSchema(context.TODO(), "Generate a person", schema)
 		if err != nil {
 			t.Fatalf("Expected no error, got: %v", err)
 		}

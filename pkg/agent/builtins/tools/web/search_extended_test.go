@@ -26,10 +26,10 @@ func TestGetSearchAPIKeys(t *testing.T) {
 	oldSerpapi := os.Getenv("SERPAPI_API_KEY")
 	oldSerperDev := os.Getenv("SERPERDEV_API_KEY")
 	defer func() {
-		os.Setenv("BRAVE_API_KEY", oldBrave)
-		os.Setenv("TAVILY_API_KEY", oldTavily)
-		os.Setenv("SERPAPI_API_KEY", oldSerpapi)
-		os.Setenv("SERPERDEV_API_KEY", oldSerperDev)
+		_ = os.Setenv("BRAVE_API_KEY", oldBrave)
+		_ = os.Setenv("TAVILY_API_KEY", oldTavily)
+		_ = os.Setenv("SERPAPI_API_KEY", oldSerpapi)
+		_ = os.Setenv("SERPERDEV_API_KEY", oldSerperDev)
 	}()
 
 	// Test with no API keys
@@ -44,7 +44,7 @@ func TestGetSearchAPIKeys(t *testing.T) {
 	}
 
 	// Test with Brave key only
-	os.Setenv("BRAVE_API_KEY", "test-brave-key")
+	_ = os.Setenv("BRAVE_API_KEY", "test-brave-key")
 	_ = os.Unsetenv("TAVILY_API_KEY")
 
 	braveKey, tavilyKey, serpapiKey, serperdevKey = getSearchAPIKeys()
@@ -62,8 +62,8 @@ func TestGetSearchAPIKeys(t *testing.T) {
 	}
 
 	// Test with both keys
-	os.Setenv("BRAVE_API_KEY", "test-brave-key")
-	os.Setenv("TAVILY_API_KEY", "test-tavily-key")
+	_ = os.Setenv("BRAVE_API_KEY", "test-brave-key")
+	_ = os.Setenv("TAVILY_API_KEY", "test-tavily-key")
 
 	braveKey, tavilyKey, serpapiKey, serperdevKey = getSearchAPIKeys()
 	if braveKey != "test-brave-key" {
@@ -87,10 +87,10 @@ func TestSelectDefaultEngine(t *testing.T) {
 	oldSerpapi := os.Getenv("SERPAPI_API_KEY")
 	oldSerperDev := os.Getenv("SERPERDEV_API_KEY")
 	defer func() {
-		os.Setenv("BRAVE_API_KEY", oldBrave)
-		os.Setenv("TAVILY_API_KEY", oldTavily)
-		os.Setenv("SERPAPI_API_KEY", oldSerpapi)
-		os.Setenv("SERPERDEV_API_KEY", oldSerperDev)
+		_ = os.Setenv("BRAVE_API_KEY", oldBrave)
+		_ = os.Setenv("TAVILY_API_KEY", oldTavily)
+		_ = os.Setenv("SERPAPI_API_KEY", oldSerpapi)
+		_ = os.Setenv("SERPERDEV_API_KEY", oldSerperDev)
 	}()
 
 	testCases := []struct {
@@ -170,25 +170,25 @@ func TestSelectDefaultEngine(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.braveKey != "" {
-				os.Setenv("BRAVE_API_KEY", tc.braveKey)
+				_ = os.Setenv("BRAVE_API_KEY", tc.braveKey)
 			} else {
 				_ = os.Unsetenv("BRAVE_API_KEY")
 			}
 
 			if tc.tavilyKey != "" {
-				os.Setenv("TAVILY_API_KEY", tc.tavilyKey)
+				_ = os.Setenv("TAVILY_API_KEY", tc.tavilyKey)
 			} else {
 				_ = os.Unsetenv("TAVILY_API_KEY")
 			}
 
 			if tc.serpapiKey != "" {
-				os.Setenv("SERPAPI_API_KEY", tc.serpapiKey)
+				_ = os.Setenv("SERPAPI_API_KEY", tc.serpapiKey)
 			} else {
 				_ = os.Unsetenv("SERPAPI_API_KEY")
 			}
 
 			if tc.serperdevKey != "" {
-				os.Setenv("SERPERDEV_API_KEY", tc.serperdevKey)
+				_ = os.Setenv("SERPERDEV_API_KEY", tc.serperdevKey)
 			} else {
 				_ = os.Unsetenv("SERPERDEV_API_KEY")
 			}
@@ -254,7 +254,7 @@ func TestSearchBrave(t *testing.T) {
 	defer server.Close()
 
 	// Set test API key
-	os.Setenv("BRAVE_API_KEY", "test-brave-key")
+	_ = os.Setenv("BRAVE_API_KEY", "test-brave-key")
 	defer func() { _ = os.Unsetenv("BRAVE_API_KEY") }()
 
 	// Test search with mock server would require URL override
@@ -316,7 +316,7 @@ func TestSearchTavily(t *testing.T) {
 	defer server.Close()
 
 	// Set test API key
-	os.Setenv("TAVILY_API_KEY", "test-tavily-key")
+	_ = os.Setenv("TAVILY_API_KEY", "test-tavily-key")
 	defer func() { _ = os.Unsetenv("TAVILY_API_KEY") }()
 
 	// Test search (this will need the actual implementation)
@@ -331,10 +331,10 @@ func TestWebSearchWithMultipleEngines(t *testing.T) {
 	oldSerpapi := os.Getenv("SERPAPI_API_KEY")
 	oldSerperDev := os.Getenv("SERPERDEV_API_KEY")
 	defer func() {
-		os.Setenv("BRAVE_API_KEY", oldBrave)
-		os.Setenv("TAVILY_API_KEY", oldTavily)
-		os.Setenv("SERPAPI_API_KEY", oldSerpapi)
-		os.Setenv("SERPERDEV_API_KEY", oldSerperDev)
+		_ = os.Setenv("BRAVE_API_KEY", oldBrave)
+		_ = os.Setenv("TAVILY_API_KEY", oldTavily)
+		_ = os.Setenv("SERPAPI_API_KEY", oldSerpapi)
+		_ = os.Setenv("SERPERDEV_API_KEY", oldSerperDev)
 	}()
 
 	testCases := []struct {
@@ -473,25 +473,25 @@ func TestWebSearchWithMultipleEngines(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Set environment
 			if tc.braveKey != "" {
-				os.Setenv("BRAVE_API_KEY", tc.braveKey)
+				_ = os.Setenv("BRAVE_API_KEY", tc.braveKey)
 			} else {
 				_ = os.Unsetenv("BRAVE_API_KEY")
 			}
 
 			if tc.tavilyKey != "" {
-				os.Setenv("TAVILY_API_KEY", tc.tavilyKey)
+				_ = os.Setenv("TAVILY_API_KEY", tc.tavilyKey)
 			} else {
 				_ = os.Unsetenv("TAVILY_API_KEY")
 			}
 
 			if tc.serpapiKey != "" {
-				os.Setenv("SERPAPI_API_KEY", tc.serpapiKey)
+				_ = os.Setenv("SERPAPI_API_KEY", tc.serpapiKey)
 			} else {
 				_ = os.Unsetenv("SERPAPI_API_KEY")
 			}
 
 			if tc.serperdevKey != "" {
-				os.Setenv("SERPERDEV_API_KEY", tc.serperdevKey)
+				_ = os.Setenv("SERPERDEV_API_KEY", tc.serperdevKey)
 			} else {
 				_ = os.Unsetenv("SERPERDEV_API_KEY")
 			}
@@ -593,10 +593,10 @@ func TestWebSearchWithEngineAPIKey(t *testing.T) {
 	oldSerpapi := os.Getenv("SERPAPI_API_KEY")
 	oldSerperDev := os.Getenv("SERPERDEV_API_KEY")
 	defer func() {
-		os.Setenv("BRAVE_API_KEY", oldBrave)
-		os.Setenv("TAVILY_API_KEY", oldTavily)
-		os.Setenv("SERPAPI_API_KEY", oldSerpapi)
-		os.Setenv("SERPERDEV_API_KEY", oldSerperDev)
+		_ = os.Setenv("BRAVE_API_KEY", oldBrave)
+		_ = os.Setenv("TAVILY_API_KEY", oldTavily)
+		_ = os.Setenv("SERPAPI_API_KEY", oldSerpapi)
+		_ = os.Setenv("SERPERDEV_API_KEY", oldSerperDev)
 	}()
 
 	// Clear all environment variables
@@ -712,13 +712,13 @@ func TestWebSearchWithEngineAPIKey(t *testing.T) {
 			if tc.envKey != "" {
 				switch tc.engine {
 				case "brave":
-					os.Setenv("BRAVE_API_KEY", tc.envKey)
+					_ = os.Setenv("BRAVE_API_KEY", tc.envKey)
 				case "tavily":
-					os.Setenv("TAVILY_API_KEY", tc.envKey)
+					_ = os.Setenv("TAVILY_API_KEY", tc.envKey)
 				case "serpapi":
-					os.Setenv("SERPAPI_API_KEY", tc.envKey)
+					_ = os.Setenv("SERPAPI_API_KEY", tc.envKey)
 				case "serperdev":
-					os.Setenv("SERPERDEV_API_KEY", tc.envKey)
+					_ = os.Setenv("SERPERDEV_API_KEY", tc.envKey)
 				}
 			}
 
@@ -760,7 +760,7 @@ func TestEngineAPIKeyPrecedence(t *testing.T) {
 		{
 			name: "Explicit key overrides environment for Brave",
 			setupFunc: func() {
-				os.Setenv("BRAVE_API_KEY", "env-key")
+				_ = os.Setenv("BRAVE_API_KEY", "env-key")
 			},
 			cleanupFunc: func() {
 				_ = os.Unsetenv("BRAVE_API_KEY")
@@ -778,7 +778,7 @@ func TestEngineAPIKeyPrecedence(t *testing.T) {
 		{
 			name: "Empty explicit key falls back to environment",
 			setupFunc: func() {
-				os.Setenv("TAVILY_API_KEY", "env-tavily-key")
+				_ = os.Setenv("TAVILY_API_KEY", "env-tavily-key")
 			},
 			cleanupFunc: func() {
 				_ = os.Unsetenv("TAVILY_API_KEY")
@@ -796,7 +796,7 @@ func TestEngineAPIKeyPrecedence(t *testing.T) {
 		{
 			name: "No explicit key uses environment",
 			setupFunc: func() {
-				os.Setenv("SERPAPI_API_KEY", "env-serpapi-key")
+				_ = os.Setenv("SERPAPI_API_KEY", "env-serpapi-key")
 			},
 			cleanupFunc: func() {
 				_ = os.Unsetenv("SERPAPI_API_KEY")
@@ -909,7 +909,7 @@ func TestSearchSerpapi(t *testing.T) {
 	defer server.Close()
 
 	// Set test API key
-	os.Setenv("SERPAPI_API_KEY", "test-serpapi-key")
+	_ = os.Setenv("SERPAPI_API_KEY", "test-serpapi-key")
 	defer func() { _ = os.Unsetenv("SERPAPI_API_KEY") }()
 
 	// Test search (this will need the actual implementation)
@@ -967,7 +967,7 @@ func TestSearchSerperDev(t *testing.T) {
 	defer server.Close()
 
 	// Set test API key
-	os.Setenv("SERPERDEV_API_KEY", "test-serperdev-key")
+	_ = os.Setenv("SERPERDEV_API_KEY", "test-serperdev-key")
 	defer func() { _ = os.Unsetenv("SERPERDEV_API_KEY") }()
 
 	// Test search structure
@@ -1046,7 +1046,7 @@ func TestWebSearchIntegrationWithEngineAPIKey(t *testing.T) {
 			},
 			cleanupEnv:    func() {},
 			expectError:   true, // Will fail with real API
-			errorContains: "Brave Search API",
+			errorContains: "brave Search API",
 		},
 		{
 			name: "Brave without any API key",

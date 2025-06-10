@@ -492,9 +492,10 @@ func BenchmarkEventFilter(b *testing.B) {
 	events := make([]domain.Event, 1000)
 	for i := 0; i < 1000; i++ {
 		eventType := domain.EventAgentStart
-		if i%3 == 0 {
+		switch i % 3 {
+		case 0:
 			eventType = domain.EventAgentComplete
-		} else if i%3 == 1 {
+		case 1:
 			eventType = domain.EventToolCall
 		}
 

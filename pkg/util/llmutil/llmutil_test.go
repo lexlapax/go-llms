@@ -21,15 +21,15 @@ func TestCreateProvider(t *testing.T) {
 
 	// Clean up environment after test
 	defer func() {
-		os.Setenv("OPENAI_API_KEY", origOpenAIKey)
-		os.Setenv("ANTHROPIC_API_KEY", origAnthropicKey)
-		os.Setenv("GEMINI_API_KEY", origGeminiKey)
+		_ = os.Setenv("OPENAI_API_KEY", origOpenAIKey)
+		_ = os.Setenv("ANTHROPIC_API_KEY", origAnthropicKey)
+		_ = os.Setenv("GEMINI_API_KEY", origGeminiKey)
 	}()
 
 	// Clear all API keys to prevent environment interference
-	os.Unsetenv("OPENAI_API_KEY")
-	os.Unsetenv("ANTHROPIC_API_KEY")
-	os.Unsetenv("GEMINI_API_KEY")
+	_ = os.Unsetenv("OPENAI_API_KEY")
+	_ = os.Unsetenv("ANTHROPIC_API_KEY")
+	_ = os.Unsetenv("GEMINI_API_KEY")
 
 	tests := []struct {
 		name          string
@@ -137,13 +137,13 @@ func TestCreateProvider(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clear all API keys for each test to ensure consistent environment
-			os.Unsetenv("OPENAI_API_KEY")
-			os.Unsetenv("ANTHROPIC_API_KEY")
-			os.Unsetenv("GEMINI_API_KEY")
+			_ = os.Unsetenv("OPENAI_API_KEY")
+			_ = os.Unsetenv("ANTHROPIC_API_KEY")
+			_ = os.Unsetenv("GEMINI_API_KEY")
 
 			// Set environment variables for this test
 			for k, v := range tt.envSetup {
-				os.Setenv(k, v)
+				_ = os.Setenv(k, v)
 			}
 
 			provider, err := CreateProvider(tt.config)
@@ -370,13 +370,13 @@ func TestWithProviderOptions(t *testing.T) {
 
 	// Clean up environment after test
 	defer func() {
-		os.Setenv(EnvOpenAIOrganization, origOpenAIOrg)
-		os.Setenv(EnvAnthropicSystemPrompt, origAnthropicSystemPrompt)
+		_ = os.Setenv(EnvOpenAIOrganization, origOpenAIOrg)
+		_ = os.Setenv(EnvAnthropicSystemPrompt, origAnthropicSystemPrompt)
 	}()
 
 	// Set environment variables for test
-	os.Setenv(EnvOpenAIOrganization, "env-org-id")
-	os.Setenv(EnvAnthropicSystemPrompt, "env-system-prompt")
+	_ = os.Setenv(EnvOpenAIOrganization, "env-org-id")
+	_ = os.Setenv(EnvAnthropicSystemPrompt, "env-system-prompt")
 
 	tests := []struct {
 		name            string
@@ -561,16 +561,16 @@ func TestProviderFromEnv(t *testing.T) {
 
 	// Clean up environment after the test
 	defer func() {
-		os.Setenv("OPENAI_API_KEY", originalOpenAI)
-		os.Setenv("ANTHROPIC_API_KEY", originalAnthropic)
-		os.Setenv("GEMINI_API_KEY", originalGemini)
-		os.Setenv("OPENAI_BASE_URL", originalOpenAIBaseURL)
-		os.Setenv("ANTHROPIC_BASE_URL", originalAnthropicBaseURL)
-		os.Setenv("GEMINI_BASE_URL", originalGeminiBaseURL)
-		os.Setenv("OPENAI_ORGANIZATION", originalOpenAIOrg)
-		os.Setenv("ANTHROPIC_SYSTEM_PROMPT", originalAnthropicSystemPrompt)
-		os.Setenv("LLM_HTTP_TIMEOUT", originalHTTPTimeout)
-		os.Setenv("LLM_RETRY_ATTEMPTS", originalRetryAttempts)
+		_ = os.Setenv("OPENAI_API_KEY", originalOpenAI)
+		_ = os.Setenv("ANTHROPIC_API_KEY", originalAnthropic)
+		_ = os.Setenv("GEMINI_API_KEY", originalGemini)
+		_ = os.Setenv("OPENAI_BASE_URL", originalOpenAIBaseURL)
+		_ = os.Setenv("ANTHROPIC_BASE_URL", originalAnthropicBaseURL)
+		_ = os.Setenv("GEMINI_BASE_URL", originalGeminiBaseURL)
+		_ = os.Setenv("OPENAI_ORGANIZATION", originalOpenAIOrg)
+		_ = os.Setenv("ANTHROPIC_SYSTEM_PROMPT", originalAnthropicSystemPrompt)
+		_ = os.Setenv("LLM_HTTP_TIMEOUT", originalHTTPTimeout)
+		_ = os.Setenv("LLM_RETRY_ATTEMPTS", originalRetryAttempts)
 	}()
 
 	// Clear all environment variables for clean testing
@@ -581,7 +581,7 @@ func TestProviderFromEnv(t *testing.T) {
 		"LLM_HTTP_TIMEOUT", "LLM_RETRY_ATTEMPTS",
 	}
 	for _, v := range envVars {
-		os.Unsetenv(v)
+		_ = os.Unsetenv(v)
 	}
 
 	// Test with no API keys (should return mock provider)
@@ -594,7 +594,7 @@ func TestProviderFromEnv(t *testing.T) {
 	}
 
 	// Test with Gemini API key set
-	os.Setenv("GEMINI_API_KEY", "test-gemini-key")
+	_ = os.Setenv("GEMINI_API_KEY", "test-gemini-key")
 	prov, provName, modelName, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
@@ -614,13 +614,13 @@ func TestProviderFromEnv(t *testing.T) {
 
 	// Clean up environment for next tests
 	for _, v := range envVars {
-		os.Unsetenv(v)
+		_ = os.Unsetenv(v)
 	}
 
 	// Test OpenAI provider with custom base URL and organization
-	os.Setenv("OPENAI_API_KEY", "test-openai-key")
-	os.Setenv("OPENAI_BASE_URL", "https://custom-openai.example.com")
-	os.Setenv("OPENAI_ORGANIZATION", "test-org")
+	_ = os.Setenv("OPENAI_API_KEY", "test-openai-key")
+	_ = os.Setenv("OPENAI_BASE_URL", "https://custom-openai.example.com")
+	_ = os.Setenv("OPENAI_ORGANIZATION", "test-org")
 	prov, provName, _, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
@@ -637,13 +637,13 @@ func TestProviderFromEnv(t *testing.T) {
 
 	// Clean up environment for next tests
 	for _, v := range envVars {
-		os.Unsetenv(v)
+		_ = os.Unsetenv(v)
 	}
 
 	// Test Anthropic provider with custom base URL and system prompt
-	os.Setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
-	os.Setenv("ANTHROPIC_BASE_URL", "https://custom-anthropic.example.com")
-	os.Setenv("ANTHROPIC_SYSTEM_PROMPT", "Test system prompt")
+	_ = os.Setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
+	_ = os.Setenv("ANTHROPIC_BASE_URL", "https://custom-anthropic.example.com")
+	_ = os.Setenv("ANTHROPIC_SYSTEM_PROMPT", "Test system prompt")
 	prov, provName, _, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
@@ -660,13 +660,13 @@ func TestProviderFromEnv(t *testing.T) {
 
 	// Clean up environment for next tests
 	for _, v := range envVars {
-		os.Unsetenv(v)
+		_ = os.Unsetenv(v)
 	}
 
 	// Test provider with common options
-	os.Setenv("OPENAI_API_KEY", "test-openai-key")
-	os.Setenv("LLM_HTTP_TIMEOUT", "15")
-	os.Setenv("LLM_RETRY_ATTEMPTS", "3")
+	_ = os.Setenv("OPENAI_API_KEY", "test-openai-key")
+	_ = os.Setenv("LLM_HTTP_TIMEOUT", "15")
+	_ = os.Setenv("LLM_RETRY_ATTEMPTS", "3")
 	prov, provName, _, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)

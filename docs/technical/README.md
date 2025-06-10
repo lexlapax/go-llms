@@ -21,6 +21,7 @@ This directory contains technical documentation for the Go-LLMs library, focusin
 - [Dependency Reduction Journey](dependency_reduction.md) - Complete chronicle of our dependency reduction efforts from viper/cobra to stdlib
 - [Logging](logging.md) - Comprehensive guide to logging patterns and best practices in go-llms
 - [Built-in Components](built-in-components.md) - Architecture and design of the built-in components system (tools, agents, workflows)
+- [Authentication](authentication.md) - Unified authentication system for HTTP requests with state-based credential management
 
 ## Target Audience
 

@@ -354,12 +354,12 @@ func TestCreateOptionFactoryFromEnv(t *testing.T) {
 
 	// Clean up environment after test
 	defer func() {
-		os.Setenv(EnvOpenAIOrganization, origOpenAIOrg)
-		os.Setenv(EnvAnthropicSystemPrompt, origAnthropicSystemPrompt)
-		os.Setenv(EnvHTTPTimeout, origHTTPTimeout)
-		os.Setenv(EnvOpenAIUseCase, origOpenAIUseCase)
-		os.Setenv(EnvAnthropicUseCase, origAnthropicUseCase)
-		os.Setenv(EnvGeminiUseCase, origGeminiUseCase)
+		_ = os.Setenv(EnvOpenAIOrganization, origOpenAIOrg)
+		_ = os.Setenv(EnvAnthropicSystemPrompt, origAnthropicSystemPrompt)
+		_ = os.Setenv(EnvHTTPTimeout, origHTTPTimeout)
+		_ = os.Setenv(EnvOpenAIUseCase, origOpenAIUseCase)
+		_ = os.Setenv(EnvAnthropicUseCase, origAnthropicUseCase)
+		_ = os.Setenv(EnvGeminiUseCase, origGeminiUseCase)
 	}()
 
 	tests := []struct {
@@ -478,12 +478,12 @@ func TestCreateOptionFactoryFromEnv(t *testing.T) {
 				EnvGeminiUseCase,
 			}
 			for _, v := range varsToUnset {
-				os.Unsetenv(v)
+				_ = os.Unsetenv(v)
 			}
 
 			// Set environment variables for test
 			for k, v := range tt.envVars {
-				os.Setenv(k, v)
+				_ = os.Setenv(k, v)
 			}
 
 			// Call function

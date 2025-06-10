@@ -82,7 +82,7 @@ func BenchmarkOpenAPIParser_FetchSpec_NoCache(b *testing.B) {
 			}
 			body := make([]byte, len(benchmarkSpec))
 			_, _ = resp.Body.Read(body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 
 			_, err = parser.ParseSpec(body, server.URL)
 			if err != nil {

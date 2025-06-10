@@ -162,10 +162,10 @@ func providerSupportsContent(providerName, mode string, mimeTypes []string) erro
 	case "anthropic":
 		for _, mimeType := range mimeTypes {
 			if strings.HasPrefix(mimeType, "audio/") {
-				return fmt.Errorf("Anthropic doesn't support audio inputs")
+				return fmt.Errorf("anthropic doesn't support audio inputs")
 			}
 			if strings.HasPrefix(mimeType, "video/") {
-				return fmt.Errorf("Anthropic doesn't support video inputs")
+				return fmt.Errorf("anthropic doesn't support video inputs")
 			}
 		}
 	case "gemini":

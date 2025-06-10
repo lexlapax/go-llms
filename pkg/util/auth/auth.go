@@ -6,7 +6,6 @@ package auth
 import (
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 // AuthConfig represents authentication configuration
@@ -54,11 +53,8 @@ func ApplyAuth(req *http.Request, auth map[string]interface{}) error {
 
 // DetectAuthFromState attempts to detect authentication based on URL and state
 func DetectAuthFromState(state StateReader, baseURL string, schemes map[string]AuthScheme) *AuthConfig {
-	// Normalize URL for pattern matching
-	normalizedURL := strings.ToLower(strings.TrimRight(baseURL, "/"))
-
-	// Try URL-specific detection first
-	if auth := detectURLSpecificAuth(state, normalizedURL); auth != nil {
+	// Try generic auth detection first, which includes provider-specific tokens
+	if auth := detectGenericAuthWithProviderTokens(state); auth != nil {
 		return auth
 	}
 
@@ -67,7 +63,7 @@ func DetectAuthFromState(state StateReader, baseURL string, schemes map[string]A
 		return detectFromSchemes(state, schemes)
 	}
 
-	// Fall back to generic auth detection
+	// Fall back to basic generic auth detection
 	return detectGenericAuth(state)
 }
 
@@ -124,62 +120,6 @@ func applyBasicAuth(req *http.Request, auth map[string]interface{}) error {
 		return fmt.Errorf("username and password are required for basic auth")
 	}
 	req.SetBasicAuth(username, password)
-	return nil
-}
-
-// detectURLSpecificAuth detects auth for known API providers
-func detectURLSpecificAuth(state StateReader, normalizedURL string) *AuthConfig {
-	// GitHub
-	if strings.Contains(normalizedURL, "github") {
-		tokenKeys := []string{
-			"github_token",
-			"github_api_key",
-			"GITHUB_TOKEN",
-			"GITHUB_API_KEY",
-			"github_personal_access_token",
-			"github_pat",
-		}
-
-		for _, key := range tokenKeys {
-			if value, exists := state.Get(key); exists {
-				if token, ok := value.(string); ok && token != "" {
-					return &AuthConfig{
-						Type: "bearer",
-						Data: map[string]interface{}{
-							"token": token,
-						},
-					}
-				}
-			}
-		}
-	}
-
-	// GitLab
-	if strings.Contains(normalizedURL, "gitlab") {
-		tokenKeys := []string{
-			"gitlab_token",
-			"gitlab_api_key",
-			"GITLAB_TOKEN",
-			"GITLAB_API_KEY",
-			"gitlab_personal_access_token",
-		}
-
-		for _, key := range tokenKeys {
-			if value, exists := state.Get(key); exists {
-				if token, ok := value.(string); ok && token != "" {
-					return &AuthConfig{
-						Type: "bearer",
-						Data: map[string]interface{}{
-							"token": token,
-						},
-					}
-				}
-			}
-		}
-	}
-
-	// Add more providers as needed
-
 	return nil
 }
 
@@ -295,6 +235,57 @@ func detectHTTPAuthFromState(state StateReader, schemeName string, scheme AuthSc
 					"username": username,
 					"password": password,
 				},
+			}
+		}
+	}
+
+	return nil
+}
+
+// detectGenericAuthWithProviderTokens tries both generic and provider-specific token patterns
+func detectGenericAuthWithProviderTokens(state StateReader) *AuthConfig {
+	// Combined list of all possible token keys, including provider-specific ones
+	tokenKeys := []string{
+		// GitHub tokens
+		"github_token",
+		"github_api_key",
+		"GITHUB_TOKEN",
+		"GITHUB_API_KEY",
+		"github_personal_access_token",
+		"github_pat",
+		"gh_token",
+
+		// GitLab tokens
+		"gitlab_token",
+		"gitlab_api_key",
+		"GITLAB_TOKEN",
+		"GITLAB_API_KEY",
+		"gitlab_personal_access_token",
+		"gitlab_pat",
+
+		// Generic tokens
+		"api_token",
+		"access_token",
+		"bearer_token",
+		"auth_token",
+		"token",
+		"API_TOKEN",
+		"ACCESS_TOKEN",
+		"BEARER_TOKEN",
+		"AUTH_TOKEN",
+		"TOKEN",
+	}
+
+	// Try each token key
+	for _, key := range tokenKeys {
+		if value, exists := state.Get(key); exists {
+			if token, ok := value.(string); ok && token != "" {
+				return &AuthConfig{
+					Type: "bearer",
+					Data: map[string]interface{}{
+						"token": token,
+					},
+				}
 			}
 		}
 	}

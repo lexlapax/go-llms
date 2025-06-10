@@ -283,8 +283,11 @@ func WebSearch() domain.Tool {
 			}
 
 			// Set safe search default to true
+			// nolint:staticcheck // QF1007: Can't merge because we need default true behavior
 			safeSearch := true
 			if !params.SafeSearch {
+				// Only set to false if explicitly disabled
+				// TODO: Consider using *bool to distinguish between unset and false
 				safeSearch = false
 			}
 
@@ -389,7 +392,9 @@ func searchDuckDuckGo(ctx *domain.ToolContext, client *http.Client, query string
 	if err != nil {
 		return nil, fmt.Errorf("error executing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Emit progress
 	if ctx.Events != nil {
@@ -574,12 +579,14 @@ func searchBrave(ctx *domain.ToolContext, client *http.Client, query string, max
 	if err != nil {
 		return nil, fmt.Errorf("error executing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Check status
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Brave Search API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("brave Search API returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Emit progress
@@ -669,12 +676,14 @@ func searchTavily(ctx *domain.ToolContext, client *http.Client, query string, ma
 	if err != nil {
 		return nil, fmt.Errorf("error executing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Check status
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Tavily API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("tavily API returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Emit progress
@@ -769,12 +778,14 @@ func searchSerpapi(ctx *domain.ToolContext, client *http.Client, query string, m
 	if err != nil {
 		return nil, fmt.Errorf("error executing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Check status
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Serpapi API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("serpapi API returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Emit progress
@@ -853,12 +864,14 @@ func searchSerperDev(ctx *domain.ToolContext, client *http.Client, query string,
 	if err != nil {
 		return nil, fmt.Errorf("error executing request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Check status
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Serper.dev API returned status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("serper.dev API returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Emit progress

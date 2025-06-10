@@ -317,11 +317,12 @@ func formatRelativeTime(t, now time.Time, includeWeekday bool) string {
 	tDate := t.Truncate(24 * time.Hour)
 	daysDiff := int(nowDate.Sub(tDate).Hours() / 24)
 
-	if daysDiff == 0 {
+	switch daysDiff {
+	case 0:
 		return addWeekday(fmt.Sprintf("today at %s", t.Format("15:04")))
-	} else if daysDiff == 1 {
+	case 1:
 		return addWeekday(fmt.Sprintf("yesterday at %s", t.Format("15:04")))
-	} else if daysDiff == -1 {
+	case -1:
 		return addWeekday(fmt.Sprintf("tomorrow at %s", t.Format("15:04")))
 	}
 

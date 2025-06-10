@@ -539,7 +539,7 @@ func runAgentWithEventMonitoring(ctx context.Context, agent *core.LLMAgent, prom
 	}))
 
 	// Attach dispatcher to agent
-	agent.BaseAgentImpl.SetEventDispatcher(dispatcher)
+	agent.SetEventDispatcher(dispatcher)
 
 	// Create initial state
 	state := domain.NewState()
@@ -608,7 +608,7 @@ func runAgentWithState(ctx context.Context, agent *core.LLMAgent, state *domain.
 		return nil
 	}))
 
-	agent.BaseAgentImpl.SetEventDispatcher(dispatcher)
+	agent.SetEventDispatcher(dispatcher)
 	agent.WithHook(&enhancedToolLogger{})
 
 	// Run with the provided state

@@ -1410,11 +1410,12 @@ func generateDiscoveryGuidance(spec *OpenAPISpec, operations []EnhancedOperation
 			case "apiKey":
 				guidance += fmt.Sprintf("- %s: API key in %s '%s'\n", name, scheme.In, scheme.Name)
 			case "http":
-				if scheme.Scheme == "bearer" {
+				switch scheme.Scheme {
+				case "bearer":
 					guidance += fmt.Sprintf("- %s: Bearer token authentication\n", name)
-				} else if scheme.Scheme == "basic" {
+				case "basic":
 					guidance += fmt.Sprintf("- %s: Basic authentication (username/password)\n", name)
-				} else {
+				default:
 					guidance += fmt.Sprintf("- %s: HTTP %s authentication\n", name, scheme.Scheme)
 				}
 			case "oauth2":
@@ -1612,11 +1613,12 @@ func getAuthSchemeNames(securityReqs []SecurityRequirement, schemes map[string]S
 					case "apiKey":
 						desc = fmt.Sprintf("%s (API key in %s '%s')", schemeName, scheme.In, scheme.Name)
 					case "http":
-						if scheme.Scheme == "bearer" {
+						switch scheme.Scheme {
+						case "bearer":
 							desc = fmt.Sprintf("%s (Bearer token)", schemeName)
-						} else if scheme.Scheme == "basic" {
+						case "basic":
 							desc = fmt.Sprintf("%s (Basic auth)", schemeName)
-						} else {
+						default:
 							desc = fmt.Sprintf("%s (HTTP %s)", schemeName, scheme.Scheme)
 						}
 					case "oauth2":

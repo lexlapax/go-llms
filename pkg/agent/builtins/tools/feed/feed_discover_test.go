@@ -39,19 +39,20 @@ func TestFeedDiscoverFromHTML(t *testing.T) {
 
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
+		switch r.URL.Path {
+		case "/":
 			w.Header().Set("Content-Type", "text/html")
 			_, _ = w.Write([]byte(htmlContent))
-		} else if r.URL.Path == "/blog/feed.xml" {
+		case "/blog/feed.xml":
 			w.Header().Set("Content-Type", "application/rss+xml")
 			w.WriteHeader(http.StatusOK)
-		} else if r.URL.Path == "/blog/atom.xml" {
+		case "/blog/atom.xml":
 			w.Header().Set("Content-Type", "application/atom+xml")
 			w.WriteHeader(http.StatusOK)
-		} else if r.URL.Path == "/blog/feed.json" {
+		case "/blog/feed.json":
 			w.Header().Set("Content-Type", "application/feed+json")
 			w.WriteHeader(http.StatusOK)
-		} else {
+		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
 	}))
@@ -306,10 +307,11 @@ func TestFeedDiscoverNoFollowRedirects(t *testing.T) {
 	// Simple test: when follow_redirects is false and we get a redirect,
 	// we should get an error in the result
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/page-with-redirect" {
+		switch r.URL.Path {
+		case "/page-with-redirect":
 			w.Header().Set("Location", "/target")
 			w.WriteHeader(http.StatusFound)
-		} else if r.URL.Path == "/page-with-feeds" {
+		case "/page-with-feeds":
 			w.Header().Set("Content-Type", "text/html")
 			_, _ = w.Write([]byte(`<html>
 				<head>
@@ -317,7 +319,7 @@ func TestFeedDiscoverNoFollowRedirects(t *testing.T) {
 				</head>
 				<body>Page with feeds</body>
 			</html>`))
-		} else {
+		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
 	}))

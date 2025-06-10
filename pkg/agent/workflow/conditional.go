@@ -160,7 +160,7 @@ func (c *ConditionalAgent) Run(ctx context.Context, input *domain.State) (*domai
 
 	// Evaluate conditions and execute matching branches
 	var executedBranches []string
-	var lastResult *WorkflowState = workflowState
+	var lastResult = workflowState
 	var hasMatch bool
 
 	for _, branch := range branches {

@@ -36,8 +36,10 @@ func TestOpenAIFetcher_FetchModels_Success(t *testing.T) {
 	defer server.Close()
 
 	originalApiKey := os.Getenv("OPENAI_API_KEY")
-	os.Setenv("OPENAI_API_KEY", "testapikey")
-	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
+	_ = os.Setenv("OPENAI_API_KEY", "testapikey")
+	defer func() {
+		_ = os.Setenv("OPENAI_API_KEY", originalApiKey)
+	}()
 
 	fetcher := NewOpenAIFetcher(server.URL, http.DefaultClient) // Use constructor with mock server URL
 	models, err := fetcher.FetchModels()
@@ -80,7 +82,9 @@ func TestOpenAIFetcher_FetchModels_Success(t *testing.T) {
 func TestOpenAIFetcher_FetchModels_APIKeyMissing(t *testing.T) {
 	originalApiKey := os.Getenv("OPENAI_API_KEY")
 	_ = os.Unsetenv("OPENAI_API_KEY")
-	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
+	defer func() {
+		_ = os.Setenv("OPENAI_API_KEY", originalApiKey)
+	}()
 
 	// Instantiate with default or empty URL, as API key check happens first
 	fetcher := NewOpenAIFetcher("", http.DefaultClient)
@@ -102,8 +106,10 @@ func TestOpenAIFetcher_FetchModels_APIError(t *testing.T) {
 	defer server.Close()
 
 	originalApiKey := os.Getenv("OPENAI_API_KEY")
-	os.Setenv("OPENAI_API_KEY", "testapikey")
-	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
+	_ = os.Setenv("OPENAI_API_KEY", "testapikey")
+	defer func() {
+		_ = os.Setenv("OPENAI_API_KEY", originalApiKey)
+	}()
 
 	fetcher := NewOpenAIFetcher(server.URL, http.DefaultClient) // Use constructor
 	_, err := fetcher.FetchModels()
@@ -127,8 +133,10 @@ func TestOpenAIFetcher_FetchModels_InvalidJSON(t *testing.T) {
 	defer server.Close()
 
 	originalApiKey := os.Getenv("OPENAI_API_KEY")
-	os.Setenv("OPENAI_API_KEY", "testapikey")
-	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
+	_ = os.Setenv("OPENAI_API_KEY", "testapikey")
+	defer func() {
+		_ = os.Setenv("OPENAI_API_KEY", originalApiKey)
+	}()
 
 	fetcher := NewOpenAIFetcher(server.URL, http.DefaultClient) // Use constructor
 	_, err := fetcher.FetchModels()

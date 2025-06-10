@@ -121,6 +121,7 @@ func ValidateAlphanumeric(value interface{}, displayPath string) []string {
 
 	if str, ok := value.(string); ok {
 		for _, char := range str {
+			// nolint:staticcheck // QF1001: De Morgan's law would make this less readable
 			if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9')) {
 				errors = append(errors, fmt.Sprintf("%s must contain only alphanumeric characters", displayPath))
 				break

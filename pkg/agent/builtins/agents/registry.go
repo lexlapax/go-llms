@@ -115,7 +115,7 @@ func (r *agentRegistry) RegisterAgent(name string, template AgentTemplate, metad
 	// Store metadata in template for later retrieval
 	// This would typically be done by having the template store the metadata
 
-	return r.Registry.Register(name, template, baseMetadata)
+	return r.Register(name, template, baseMetadata)
 }
 
 // ListByCapability returns agents with specific capability

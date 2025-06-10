@@ -83,7 +83,7 @@ func TestProviderSupportsContent(t *testing.T) {
 			mode:         "audio",
 			mimeTypes:    []string{"audio/mp3"},
 			expectError:  true,
-			errorMessage: "Anthropic doesn't support audio inputs",
+			errorMessage: "anthropic doesn't support audio inputs",
 		},
 		{
 			name:         "Anthropic video mode not supported",
@@ -91,7 +91,7 @@ func TestProviderSupportsContent(t *testing.T) {
 			mode:         "video",
 			mimeTypes:    []string{"video/mp4"},
 			expectError:  true,
-			errorMessage: "Anthropic doesn't support video inputs",
+			errorMessage: "anthropic doesn't support video inputs",
 		},
 
 		// Gemini tests
@@ -147,12 +147,12 @@ func TestGetMimeType(t *testing.T) {
 		{"picture.png", "image/png"},
 		{"animation.gif", "image/gif"},
 		{"audio.mp3", "audio/mpeg"},
-		{"sound.wav", "audio/x-wav"},
+		{"sound.wav", "audio/vnd.wave"},
 		{"video.mp4", "video/mp4"},
-		{"movie.avi", "video/x-msvideo"},
+		{"movie.avi", "video/vnd.avi"},
 		{"clip.mov", "video/quicktime"},
 		{"document.pdf", "application/pdf"},
-		{"unknown.xyz", "chemical/x-xyz"},
+		{"unknown.xyz", "application/octet-stream"},
 		{"file", "application/octet-stream"}, // No extension
 	}
 

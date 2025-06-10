@@ -22,12 +22,13 @@ func TestWebToolsRegistration(t *testing.T) {
 		}
 	}
 
-	// We now have 4 web tools
+	// We now have 5 web tools
 	expectedTools := []string{
 		"web_fetch",
 		"web_search",
 		"web_scrape",
 		"http_request",
+		"api_client",
 	}
 
 	if webToolCount != len(expectedTools) {

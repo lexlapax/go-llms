@@ -84,7 +84,7 @@ func TestConditionalAgent_Priority(t *testing.T) {
 		name: "low-priority",
 		exec: func(ctx context.Context, state *WorkflowState) (*WorkflowState, error) {
 			executionOrder = append(executionOrder, "low")
-			newState := state.State.Clone()
+			newState := state.Clone()
 			newState.Set("executed", append(getExecuted(newState), "low"))
 			return &WorkflowState{State: newState, Metadata: make(map[string]interface{})}, nil
 		},
@@ -94,7 +94,7 @@ func TestConditionalAgent_Priority(t *testing.T) {
 		name: "high-priority",
 		exec: func(ctx context.Context, state *WorkflowState) (*WorkflowState, error) {
 			executionOrder = append(executionOrder, "high")
-			newState := state.State.Clone()
+			newState := state.Clone()
 			newState.Set("executed", append(getExecuted(newState), "high"))
 			return &WorkflowState{State: newState, Metadata: make(map[string]interface{})}, nil
 		},

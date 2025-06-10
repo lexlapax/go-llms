@@ -82,6 +82,9 @@ func main() {
 		time.Sleep(30 * time.Millisecond) // Simulate work
 		return true, nil
 	})
+	if err != nil {
+		log.Printf("Error profiling schema validation: %v\n", err)
+	}
 
 	// Profile a component with the component enabler
 	log.Println("\nProfiling a specific component:")

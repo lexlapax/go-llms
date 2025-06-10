@@ -70,11 +70,11 @@ func TestGetAvailableModels_CacheMiss_ThenHit(t *testing.T) {
 
 	// Set API keys
 	originalOpenAIKey := os.Getenv("OPENAI_API_KEY")
-	os.Setenv("OPENAI_API_KEY", "testopenaikey")
-	defer os.Setenv("OPENAI_API_KEY", originalOpenAIKey)
+	_ = os.Setenv("OPENAI_API_KEY", "testopenaikey")
+	t.Cleanup(func() { _ = os.Setenv("OPENAI_API_KEY", originalOpenAIKey) })
 	originalGoogleKey := os.Getenv("GEMINI_API_KEY")
-	os.Setenv("GEMINI_API_KEY", "testgooglekey")
-	defer os.Setenv("GEMINI_API_KEY", originalGoogleKey)
+	_ = os.Setenv("GEMINI_API_KEY", "testgooglekey")
+	t.Cleanup(func() { _ = os.Setenv("GEMINI_API_KEY", originalGoogleKey) })
 
 	// --- First call (Cache Miss) ---
 	opts1 := &GetAvailableModelsOptions{
@@ -219,11 +219,13 @@ func TestGetAvailableModels_CacheDisabled(t *testing.T) {
 	t.Cleanup(func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc })
 
 	originalOpenAIKey := os.Getenv("OPENAI_API_KEY")
-	os.Setenv("OPENAI_API_KEY", "testkey")
-	defer os.Setenv("OPENAI_API_KEY", originalOpenAIKey)
+	_ = os.Setenv("OPENAI_API_KEY", "testkey")
 	originalGoogleKey := os.Getenv("GEMINI_API_KEY")
-	os.Setenv("GEMINI_API_KEY", "testkey")
-	defer os.Setenv("GEMINI_API_KEY", originalGoogleKey)
+	_ = os.Setenv("GEMINI_API_KEY", "testkey")
+	defer func() {
+		_ = os.Setenv("OPENAI_API_KEY", originalOpenAIKey)
+		_ = os.Setenv("GEMINI_API_KEY", originalGoogleKey)
+	}()
 
 	opts := &GetAvailableModelsOptions{
 		UseCache:  false,
@@ -277,11 +279,15 @@ func TestGetAvailableModels_CacheExpired(t *testing.T) {
 	defer func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc }()
 
 	originalOpenAIKey := os.Getenv("OPENAI_API_KEY")
-	os.Setenv("OPENAI_API_KEY", "testkey")
-	defer os.Setenv("OPENAI_API_KEY", originalOpenAIKey)
+	_ = os.Setenv("OPENAI_API_KEY", "testkey")
+	defer func() {
+		_ = os.Setenv("OPENAI_API_KEY", originalOpenAIKey)
+	}()
 	originalGoogleKey := os.Getenv("GEMINI_API_KEY")
-	os.Setenv("GEMINI_API_KEY", "testkey")
-	defer os.Setenv("GEMINI_API_KEY", originalGoogleKey)
+	_ = os.Setenv("GEMINI_API_KEY", "testkey")
+	defer func() {
+		_ = os.Setenv("GEMINI_API_KEY", originalGoogleKey)
+	}()
 
 	// --- First call (populate cache) ---
 	openaiServer1 := httptest.NewServer(openAISuccessHandler(t, "gpt-v1-expire"))
@@ -358,11 +364,15 @@ func TestGetAvailableModels_DefaultCachePath(t *testing.T) {
 	t.Cleanup(func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc })
 
 	originalOpenAIKey := os.Getenv("OPENAI_API_KEY")
-	os.Setenv("OPENAI_API_KEY", "testkey")
-	defer os.Setenv("OPENAI_API_KEY", originalOpenAIKey)
+	_ = os.Setenv("OPENAI_API_KEY", "testkey")
+	defer func() {
+		_ = os.Setenv("OPENAI_API_KEY", originalOpenAIKey)
+	}()
 	originalGoogleKey := os.Getenv("GEMINI_API_KEY")
-	os.Setenv("GEMINI_API_KEY", "testkey")
-	defer os.Setenv("GEMINI_API_KEY", originalGoogleKey)
+	_ = os.Setenv("GEMINI_API_KEY", "testkey")
+	defer func() {
+		_ = os.Setenv("GEMINI_API_KEY", originalGoogleKey)
+	}()
 
 	// Determine expected default path
 	userCacheDir, err := os.UserCacheDir()
@@ -427,11 +437,15 @@ func TestGetAvailableModels_FetcherError_Propagation(t *testing.T) {
 	t.Cleanup(func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc })
 
 	originalOpenAIKey := os.Getenv("OPENAI_API_KEY")
-	os.Setenv("OPENAI_API_KEY", "testkey")
-	defer os.Setenv("OPENAI_API_KEY", originalOpenAIKey)
+	_ = os.Setenv("OPENAI_API_KEY", "testkey")
+	defer func() {
+		_ = os.Setenv("OPENAI_API_KEY", originalOpenAIKey)
+	}()
 	originalGoogleKey := os.Getenv("GEMINI_API_KEY")
-	os.Setenv("GEMINI_API_KEY", "testkey")
-	defer os.Setenv("GEMINI_API_KEY", originalGoogleKey)
+	_ = os.Setenv("GEMINI_API_KEY", "testkey")
+	defer func() {
+		_ = os.Setenv("GEMINI_API_KEY", originalGoogleKey)
+	}()
 
 	opts := &GetAvailableModelsOptions{
 		CachePath: cachePath,

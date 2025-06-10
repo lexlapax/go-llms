@@ -329,6 +329,7 @@ func CoerceToHostname(value interface{}) (string, bool) {
 				return "", false
 			}
 			for _, r := range label {
+				// nolint:staticcheck // QF1001: De Morgan's law would make this less readable
 				if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-') {
 					return "", false
 				}

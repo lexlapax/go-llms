@@ -115,7 +115,7 @@ func (s *SeniorSupportAgent) Run(ctx context.Context, state *domain.State) (*dom
 		customerID, issue, escalationReason)
 
 	output := domain.NewState()
-	output.Set("output", fmt.Sprintf("As a senior support specialist, I've reviewed your case. I'm providing a custom solution and have added a service credit to your account for the inconvenience."))
+	output.Set("output", "As a senior support specialist, I've reviewed your case. I'm providing a custom solution and have added a service credit to your account for the inconvenience.")
 	output.Set("resolution", "escalated_resolved")
 	output.Set("service_credit", 25.00)
 	output.Set("customer_id", customerID)

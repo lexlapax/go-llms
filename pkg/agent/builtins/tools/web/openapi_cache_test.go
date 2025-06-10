@@ -41,6 +41,7 @@ func TestOpenAPICache_Basic(t *testing.T) {
 	}
 	if spec == nil || discovery == nil {
 		t.Error("Expected non-nil results from cache")
+		return
 	}
 	if spec.Info.Title != "Test API" {
 		t.Errorf("Expected title 'Test API', got '%s'", spec.Info.Title)

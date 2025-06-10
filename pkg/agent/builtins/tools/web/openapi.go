@@ -1124,11 +1124,12 @@ func (od *OperationDiscovery) generateExampleValue(schema SchemaInfo) interface{
 
 	switch schema.Type {
 	case "string":
-		if schema.Format == "email" {
+		switch schema.Format {
+		case "email":
 			return "user@example.com"
-		} else if schema.Format == "date" {
+		case "date":
 			return "2023-01-01"
-		} else if schema.Format == "date-time" {
+		case "date-time":
 			return "2023-01-01T12:00:00Z"
 		}
 		return "example"

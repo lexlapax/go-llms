@@ -886,3 +886,62 @@ After analyzing Google's Agent Development Kit (ADK), we identified key features
   - [x] Auth detection based on URL and state context
   - [x] Credentials applied only at HTTP request execution
   - [x] Follows Google ADK's approach to authentication
+
+## Tool System Enhancement Phase 1: Core Infrastructure (Completed - January 9, 2025)
+- [x] Day 1-4: Core Infrastructure (COMPLETED)
+  - [x] Created comprehensive Tool interface with LLM guidance features
+  - [x] Implemented ToolBuilder with fluent interface
+  - [x] Full MCP (Model Context Protocol) compatibility support
+  - [x] Maintained backward compatibility with existing NewTool function
+- [x] Day 5: API Client Tool & Integration testing
+  - [x] Phase 1-4: Basic REST Client, OpenAPI Integration, GraphQL Support, Advanced Authentication (COMPLETED)
+  - [x] Integration Testing (COMPLETED)
+    - [x] Verify all built-in tools are registered
+    - [x] Test tool registry search functionality
+    - [x] Test MCP export for selected tools
+    - [x] Test with real agent + tool interactions
+    - [x] Create integration tests for common tool patterns
+    - [x] All tests passing with 72.8% coverage
+
+## Tool System Enhancement Phase 2: Tool Migration (Completed - January 10, 2025)
+- [x] Phase 2, Day 1: Calculator Tool Migration (COMPLETED)
+  - [x] Successfully migrated calculator tool to use ToolBuilder pattern
+  - [x] Added comprehensive metadata: 7 examples, 9 constraints, 13 error guidance mappings
+  - [x] Enhanced with usage instructions, output schema, and behavioral hints
+  - [x] Updated agent-calculator example to follow builtins-web-api-client pattern
+  - [x] Added provider/model display, debug logging, and tool information mode
+  - [x] All tests passing, MCP export verified
+- [x] Phase 2, Day 2: System Tools Migration (COMPLETED)
+  - [x] Migrated all 4 system tools to ToolBuilder pattern:
+    - [x] execute_command: Added safety constraints, confirmation required (7 examples)
+    - [x] get_environment_variable: Added pattern matching and security guidance (7 examples)  
+    - [x] get_system_info: Added cross-platform output examples (5 examples)
+    - [x] process_list: Added filtering guidance and platform differences (6 examples)
+  - [x] All system tool tests passing
+  - [x] Each tool now has comprehensive metadata for LLM guidance
+- [x] Phase 2, Day 3: File Tools Migration (COMPLETED - January 10, 2025)
+  - [x] Migrated all 6 file tools to ToolBuilder pattern:
+    - [x] file_read: Added encoding detection, size limits, binary handling (7 examples)
+    - [x] file_write: Added atomic operations, backup support, destructive warnings (7 examples)
+    - [x] file_list: Added complex filtering, sorting, recursive options (7 examples)
+    - [x] file_delete: Added confirmation requirements, safety checks, destructive flags (7 examples)
+    - [x] file_move: Added cross-device support, overwrite protection (7 examples)
+    - [x] file_search: Added regex patterns, context lines, performance notes (7 examples)
+  - [x] All file tool tests passing
+  - [x] Comprehensive metadata for safe file operations
+
+## Authentication System Improvements (Completed - January 10, 2025)
+- [x] Fixed hardcoded URL detection issues in auth.go
+  - [x] Removed detectURLSpecificAuth function that had hardcoded GitHub/GitLab URLs
+  - [x] Implemented detectGenericAuthWithProviderTokens that works with any URL
+  - [x] Added comprehensive list of provider-specific token keys
+  - [x] Maintained backward compatibility while fixing test server issues
+- [x] Updated documentation
+  - [x] Created docs/technical/authentication.md documenting the authentication system
+  - [x] Updated REFERENCE.md with authentication documentation link
+  - [x] Updated all relevant READMEs to reference the new documentation
+- [x] All tests passing
+  - [x] make test: All unit tests passing
+  - [x] make test-integration: All integration tests passing
+  - [x] make build: Binary builds successfully
+  - [x] 0 linting issues

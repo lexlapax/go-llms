@@ -4,6 +4,30 @@
 - [ ] Add Model Context Protocol Client support for Agents
 - [ ] Add Model Context Protocol Server support for Workflows or Agents
 
+## Authentication System Improvements
+- [ ] Implement provider registry pattern for auth detection (MEDIUM PRIORITY)
+  - [ ] Create AuthProvider interface with Name(), CanHandle(), Configure() methods
+  - [ ] Implement AuthRegistry for managing multiple providers
+  - [ ] Add configuration file support for custom auth mappings (YAML/JSON)
+  - [ ] Support provider patterns:
+    - [ ] URL pattern matching (regex support)
+    - [ ] Response-based detection (401 + WWW-Authenticate header)
+    - [ ] OpenAPI security scheme integration
+    - [ ] OAuth2 discovery via .well-known endpoints
+  - [ ] Create default providers for common services:
+    - [ ] GitHub (including Enterprise)
+    - [ ] GitLab (including self-hosted)
+    - [ ] Generic Bearer token
+    - [ ] Generic API key
+    - [ ] Basic auth
+  - [ ] Ensure backward compatibility with existing detectURLSpecificAuth
+  - [ ] Add examples and documentation
+  - [ ] Benefits:
+    - [ ] Works with any URL including test servers
+    - [ ] Extensible without code changes
+    - [ ] User-configurable auth providers
+    - [ ] Standards-based approach
+
 ## Testing & Performance
 - [ ] Performance profiling and optimization:
   - [ ] Phase 1: Baseline Profiling Infrastructure (Prerequisites)
@@ -11,7 +35,7 @@
     - [ ] P2: Implement visualization for memory allocation patterns (REVISIT)
     - [ ] P2: Create real-world test scenarios for end-to-end performance (REVISIT)
 
-  - [ ] Phase 2: High-Impact Optimizations (Quick Wins)
+  - Phase 2: High-Impact Optimizations (Quick Wins)
     (All P0 and P1 items completed - see TODO-DONE.md)
 
   - [ ] Phase 3: Advanced Optimizations (After Initial Improvements)
@@ -32,11 +56,7 @@
 ## Architecture & Built-in Components for next release
 
 ### Agent Architecture Restructuring
-- [x] Phase 1 & 1.5: Core Infrastructure - COMPLETED - see TODO-DONE.md
-- [x] Phase 2: LLM Agent Migration - COMPLETED - see TODO-DONE.md
-- [x] Phase 3: Workflow Agents - COMPLETED - see TODO-DONE.md
-- [x] Phase 4: Agent-Tool Integration - COMPLETED - see TODO-DONE.md
-- [x] Phase 5: Multi-Agent System Enhancement - COMPLETED - see TODO-DONE.md
+- Agent Architecture Restructuring - All phases completed - see TODO-DONE.md
 
 - [ ] Phase 6: Advanced Features (MOVED TO PHASE 7) (low priority)
   - [ ] State persistence and serialization, present plan before implementation
@@ -44,16 +64,11 @@
   - [ ] Advanced merge strategies for parallel agents
   - [ ] Streaming support for long-running agents
 
-- [x] Phase 7: Migration and Testing - COMPLETED - see TODO-DONE.md
-
 ### Tool System Enhancement with LLM Guidance (HIGHEST PRIORITY - IN PROGRESS)
-- [ ] Phase 1: Core Infrastructure (Week 1)
-  - [x] Day 1-4: COMPLETED - see TODO-DONE.md
-  - [ ] Day 5: API Client Tool & Integration testing
-    - [x] Phase 1: Basic REST Client Implementation - COMPLETED January 5, 2025 - see TODO-DONE.md
-    - [x] Phase 2: OpenAPI/Swagger Integration - COMPLETED January 8, 2025 - see TODO-DONE.md
-    - [x] Phase 3: GraphQL Support (high Priority) - COMPLETED January 8, 2025 - see TODO-DONE.md
-    - [x] Phase 4: Advanced Authentication (high Priority) - COMPLETED January 9, 2025 - see TODO-DONE.md
+- Phase 1: Core Infrastructure (Week 1)
+  - Day 1-4: COMPLETED - see TODO-DONE.md
+  - Day 5: API Client Tool & Integration testing
+    - Phase 1-4: COMPLETED - see TODO-DONE.md
     - [ ] Phase 5: Advanced Capabilities for web-api-client tool (medium priority)
       - [ ] Auto-Pagination: Automatically follow pagination links
       - [ ] Rate Limiting: Respect rate limit headers with intelligent backoff
@@ -66,54 +81,17 @@
       - [ ] Request/Response Middleware: Plugin system for custom processing
       - [ ] Multi-tenancy: Support multiple API configurations
       - [ ] Request Batching: Batch multiple requests for efficiency
-    - [x] Integration Testing
-      - [x] Test tool with LLM Agent
-      - [x] Verify MCP export functionality
-      - [x] Run performance benchmarks
-      - [x] Fix any integration issues
-      - [x] Write an example builtins-web-api-client with demonstrates various aspects of the tool
-      - [x] Update tools documentation in docs/ with about this tool.
-
-
+    - Integration Testing - COMPLETED - see TODO-DONE.md
 
 - [ ] Phase 2: Tool Migration to Enhanced Interface (Week 2) - Update existing tools to use ToolBuilder pattern (IN PROGRESS)
-  - [x] Day 1: Migrate calculator tool (1 tool - template for others) - COMPLETED January 9, 2025
-    - [x] Update calculator to use atools.NewToolBuilder() instead of atools.NewTool()
-    - [x] Add WithUsageInstructions() - detailed guidance on when/how to use
-    - [x] Add WithExamples() - convert existing examples to new ToolExample format (7 examples)
-    - [x] Add WithConstraints() - limitations (e.g., factorial max n=170) (9 constraints)
-    - [x] Add WithErrorGuidance() - map error types to helpful messages (13 error mappings)
-    - [x] Add WithOutputSchema() - define CalculatorResult schema
-    - [x] Add WithBehavior() - (deterministic: true, destructive: false, confirmation: false, latency: "fast")
-    - [x] Keep existing functionality unchanged
-    - [x] Test MCP export functionality
-    - [x] Update agent-calculator example to follow builtins-web-api-client pattern
-  - [x] Day 2: Migrate system tools (4 tools) - COMPLETED January 9, 2025
-    - [x] execute_command - Add safety constraints and confirmation (destructive: true, confirmation: true) (7 examples)
-    - [x] get_environment_variable - Add pattern matching examples and security guidance (7 examples)
-    - [x] get_system_info - Add output examples and cross-platform notes (5 examples)
-    - [x] process_list - Add filtering guidance and platform differences (6 examples)
-    - [x] All tests passing for system tools
-    - [x] Update examples using system tools to follow new pattern - COMPLETED January 9, 2025
-      - [x] agent-llm-builtin-tools (uses both system and file tools)
-      - [x] builtins-system-tools - COMPLETED January 9, 2025
-  - [x] Day 3: Migrate file tools (6 tools) - COMPLETED January 9, 2025
-    - [x] file_read - Add encoding guidance, size limits, binary file handling - COMPLETED (7 examples)
-    - [x] file_write - Add destructive warnings (destructive: true), atomic write info - COMPLETED (7 examples)
-    - [x] file_list - Complex parameter examples, sorting options - COMPLETED (7 examples)
-    - [x] file_delete - Add confirmation requirements (destructive: true, confirmation: true) - COMPLETED (7 examples)
-    - [x] file_move - Add rollback guidance, cross-device limitations - COMPLETED (7 examples)
-    - [x] file_search - Add regex examples, performance notes for large directories - COMPLETED (7 examples)
-    - [x] Update examples using file tools to follow new pattern - COMPLETED January 9, 2025
-      - [x] agent-llm-builtin-tools (uses both system and file tools)
-      - [x] agent-workflow-as-tool (uses file tools in workflow)
-      - [x] builtins-file-tools - COMPLETED January 9, 2025
+  - Day 1-3: COMPLETED - see TODO-DONE.md
   - [ ] Day 4: Migrate web tools (4 tools - api_client already done)
     - [ ] web_search - Multi-engine examples, API key guidance
     - [ ] web_fetch - Add timeout guidance, error handling examples
     - [ ] web_scrape - Selector examples, HTML parsing guidance
     - [ ] http_request - Auth method examples, header formatting
-    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool  - [ ] Day 5: Testing & fixes
+    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool
+  - [ ] Day 5: Testing & fixes
     - [ ] Run all migrated tool tests
     - [ ] Verify ToolBuilder pattern is correctly applied
     - [ ] Test MCP export for all tools
@@ -125,7 +103,8 @@
     - [ ] csv_process - Add transformation examples, delimiter options
     - [ ] xml_process - Add XPath guidance, namespace handling
     - [ ] data_transform - Add operation chains, performance considerations
-    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool  - [ ] Day 2: Migrate datetime tools (7 tools)
+    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool
+  - [ ] Day 2: Migrate datetime tools (7 tools)
     - [ ] datetime_now - Add timezone examples, format options
     - [ ] datetime_info - Add component extraction examples, week calculations
     - [ ] datetime_calculate - Add business days examples, date math
@@ -133,31 +112,32 @@
     - [ ] datetime_format - Add locale examples, custom formats
     - [ ] datetime_convert - Add timezone conversion examples
     - [ ] datetime_compare - Add comparison logic, relative time examples
-    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool  - [ ] Day 3: Migrate feed tools (6 tools)
+    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool
+  - [ ] Day 3: Migrate feed tools (6 tools)
     - [ ] feed_fetch - Add format detection examples, encoding handling
     - [ ] feed_discover - Add auto-discovery examples, link parsing
     - [ ] feed_filter - Add complex query examples, date filtering
     - [ ] feed_aggregate - Add deduplication examples, merge strategies
     - [ ] feed_convert - Add format conversion examples
     - [ ] feed_extract - Add content extraction patterns
-    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool  - [ ] Day 4: Update examples (first 15)
+    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool
+  - [ ] Day 4: Update examples (first 15)
     - [ ] agent-calculator - Remove manual prompt
     - [ ] agent-simple-llm - Use auto docs
     - [ ] agent-llm-builtin-tools - Showcase
     - [ ] agent-tools-conversion - Update
     - [ ] builtins-* examples (7) - Update all
     - [ ] Other agent examples (4)
-    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool  - [ ] Day 5: Update examples (remaining 16)
+    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool
+  - [ ] Day 5: Update examples (remaining 16)
     - [ ] Update all remaining examples
     - [ ] Verify all examples work
     - [ ] Update example documentation
 
 - [ ] Phase 4: Documentation & Polish (Week 4)
-  - [x] Day 1-2: Technical documentation - COMPLETED January 9, 2025
-    - [x] Create docs/technical/tools.md
-    - [x] Document new Tool interface
+  - Day 1-2: Technical documentation - COMPLETED January 9, 2025
+    - Technical documentation for tools.md created
     - [ ] Add architecture diagrams (SVG diagrams still needed)
-    - [x] Include best practices
   - [ ] Day 3-4: User guide updates
     - [ ] Create docs/user-guide/tool-development.md
     - [ ] Update docs/user-guide/builtin-tools.md
@@ -170,9 +150,8 @@
     - [ ] Tag release
     - [ ] ensure all the documentation links are updated and correct, root README.md REFERENCE.md , the index READMES in docs/ and examples
 
-
 ### Previous Built-in Components Plan
-- [x] P2: Build useful built-in tools - COMPLETED - see TODO-DONE.md
+- P2: Build useful built-in tools - COMPLETED - see TODO-DONE.md
 
 - [ ] P3: Build useful built-in agents (Phase 3 - POSTPONED until after architecture restructuring)
   - [ ] Text Agents

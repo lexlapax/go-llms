@@ -24,20 +24,8 @@ func TestAPIClientTool_GraphQLAuthFromState(t *testing.T) {
 		auth := r.Header.Get("Authorization")
 		expectedAuth := "Bearer " + authToken
 
-		// Allow requests without auth for the "without auth" test case
-		if auth == "" && strings.Contains(r.Header.Get("X-Test-Case"), "without_auth") {
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"errors": []map[string]interface{}{
-					{
-						"message": "Authentication required",
-					},
-				},
-			})
-			return
-		}
-
-		if auth != expectedAuth && auth != "" {
+		// If no auth header or wrong auth, return 401
+		if auth == "" || (auth != expectedAuth) {
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"errors": []map[string]interface{}{
@@ -143,7 +131,7 @@ func TestAPIClientTool_GraphQLAuthFromState(t *testing.T) {
 				"github_token": authToken,
 			},
 			params: map[string]interface{}{
-				"base_url":         strings.Replace(server.URL, "127.0.0.1", "api.github.com", 1),
+				"base_url":         server.URL,
 				"endpoint":         "/graphql",
 				"discover_graphql": true,
 			},

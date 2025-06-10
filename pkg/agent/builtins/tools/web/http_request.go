@@ -191,8 +191,11 @@ func HTTPRequest() domain.Tool {
 			}
 
 			// Default to following redirects
+			// nolint:staticcheck // QF1007: Can't merge because we need default true behavior
 			followRedirects := true
 			if !params.FollowRedirects {
+				// Only set to false if explicitly disabled
+				// TODO: Consider using *bool to distinguish between unset and false
 				followRedirects = false
 			}
 

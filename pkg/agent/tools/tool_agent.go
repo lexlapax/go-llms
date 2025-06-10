@@ -50,7 +50,7 @@ func NewToolAgent(tool domain.Tool) *ToolAgent {
 // Run executes the tool agent
 func (ta *ToolAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
 	// Call lifecycle hooks from BaseAgentImpl
-	if err := ta.BaseAgentImpl.BeforeRun(ctx, input); err != nil {
+	if err := ta.BeforeRun(ctx, input); err != nil {
 		return nil, err
 	}
 
@@ -58,7 +58,7 @@ func (ta *ToolAgent) Run(ctx context.Context, input *domain.State) (*domain.Stat
 	result, err := ta.executeFunc(ctx, input)
 
 	// Call after hook
-	if afterErr := ta.BaseAgentImpl.AfterRun(ctx, input, result, err); afterErr != nil {
+	if afterErr := ta.AfterRun(ctx, input, result, err); afterErr != nil {
 		if err != nil {
 			return nil, fmt.Errorf("execution failed: %w, after hook also failed: %v", err, afterErr)
 		}
