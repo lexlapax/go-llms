@@ -2,78 +2,204 @@
 
 ## v0.3.1 Release ✅ COMPLETED (January 10, 2025)
 
-## v0.3.2 Release (Ready - Documentation Update) COMPLETED (January 11, 2025)
+## v0.3.2 Release (Ready - Documentation Update) ✅ COMPLETED (January 11, 2025)
 
 ## v0.3.2 Documentation simplification and refactoring ✅ COMPLETED (January 11, 2025)
 
 ## v0.3.3 Additional Providers in llm library
-### 0.3.3.1: Ollama local hosted provider (https://ollama.com/)
-- [x] Research how to add Ollama provider and update this todo.md list
-  - **Research Findings**: Ollama already has FULL support through the OpenAI-compatible provider
-  - **Implementation**: Use `provider.NewOpenAIProvider()` with custom base URL and dummy API key
-  - **Tests**: Already exist in `tests/integration/ollama_integration_test.go`
-  - **Example**: Already exists in `cmd/examples/provider-openai-compatible/main.go`
-- [x] Add dedicated `NewOllamaProvider()` convenience function in `pkg/llm/provider/ollama.go`
-  - [x] Create wrapper that uses OpenAI provider with proper defaults (base URL, dummy key, timeout)
-  - [x] Add Ollama-specific options (e.g., WithOllamaHost(), WithOllamaTimeout())
-  - [x] Document that it's a convenience wrapper around OpenAI provider
-- [x] Add model discovery/listing support for Ollama
-  - [x] Implement Ollama's `/api/tags` endpoint to list available models
-  - [x] Add to modelinfo fetchers as `ollama_fetcher.go`
-- [x] Create dedicated Ollama example in `cmd/examples/provider-ollama/`
-  - [x] Show basic usage with the new convenience provider
-  - [x] Demonstrate model listing
-  - [x] Show streaming and multimodal capabilities
-- [x] Enhance existing integration tests
-  - [x] Add tests for the new convenience provider
-  - [x] Test model listing functionality
-  - [x] Add multimodal tests (if Ollama models support it)
-- [x] Update provider integration code
-  - [x] Update `pkg/util/llmutil/provider_parser.go`
-    - [x] Add "ollama" to `isKnownProvider` function
-    - [x] Add ollama model patterns to provider detection maps
-    - [x] Add ollama-specific model aliases
-  - [x] Update `pkg/util/llmutil/provider_parser_test.go`
-    - [x] Add test cases for ollama provider parsing
-    - [x] Add test cases for ollama model inference
-  - [x] Update `pkg/util/llmutil/llmutil.go`
-    - [x] Add "ollama" case in `CreateProvider` function
-    - [x] Add ollama handling in `ProviderFromEnv` function
-  - [x] Update `pkg/util/llmutil/llmutil_test.go`
-    - [x] Add test cases for creating ollama provider
-    - [x] Add test cases for ollama environment variable handling
-  - [x] Update `pkg/util/llmutil/env_vars.go`
-    - [x] Add ollama-specific environment variable constants
-    - [x] Add `GetOllamaOptionsFromEnv` function
-    - [x] Update provider option functions to include ollama
-  - [x] Update `pkg/util/llmutil/env_vars_test.go`
-    - [x] Add test cases for ollama environment variables
-  - [x] Update `pkg/util/llmutil/option_factories.go`
-    - [x] Add `WithOllamaDefaultOptions` function
-    - [x] Add `WithOllamaStreamingOptions` function
-    - [x] Update `CreateOptionFactoryFromEnv` to include ollama
-  - [x] Update `pkg/util/llmutil/option_factories_test.go`
-    - [x] Add test cases for ollama option factories
-  - [x] Update `pkg/llm/provider/errors.go`
-    - [x] Add `mapOllamaErrorToStandard` function
-    - [x] Update `ParseJSONError` to include ollama case
-  - [x] Update `cmd/cli.go`
-    - [x] Add "ollama" case in `createProvider` function
-  - [x] Update `cmd/cli_test.go`
-    - [x] Add test case for ollama provider creation
-  - [x] Update `cmd/config.go`
-    - [x] Add ollama to supported providers list if needed
-- [x] Update documentation
-  - [x] Add Ollama section to `docs/user-guide/providers.md`
-  - [x] Update `docs/technical/provider-implementation.md` with Ollama details
-  - [x] Document Ollama-specific features and limitations
-- [x] Update `docs/technical/provider-implementation.md` with all the steps above that we went through with ollama in a generic way 
+### 0.3.3.1: Ollama local hosted provider (https://ollama.com/) ✅ COMPLETED (January 11, 2025) 
 
-### 0.3.3.2: openrouter provider (https://openrouter.ai)
-### 0.3.3.3: mistral provider (https://mistral.ai/)
-### 0.3.3.4: AWS Bedrock Cloud provider (https://aws.amazon.com/bedrock/)
-### 0.3.3.5: Azure AI Cloud provider (https://azure.microsoft.com/en-us/products/ai-services/)
-### 0.3.3.6: Google Vertex Cloud provider (https://cloud.google.com/vertex-ai)
+### 0.3.3.2: OpenRouter provider (https://openrouter.ai)
+- [ ] Research OpenRouter API and update this todo.md list
+  - [ ] Investigate API authentication method (API keys, OAuth, etc.)
+  - [ ] Check if OpenRouter is OpenAI-compatible or has custom API format
+  - [ ] Document available models and their naming conventions
+  - [ ] Identify any special features or limitations
+  - [ ] Determine if model discovery/listing is supported
+- [ ] Add dedicated provider implementation
+  - [ ] Create `pkg/llm/provider/openrouter.go`
+  - [ ] Add OpenRouter-specific options if needed
+  - [ ] Write unit tests in `pkg/llm/provider/openrouter_test.go`
+- [ ] Add model discovery/listing support (if available)
+  - [ ] Implement fetcher in `pkg/util/llmutil/modelinfo/fetchers/openrouter_fetcher.go`
+  - [ ] Add tests for the fetcher
+  - [ ] Integrate with modelinfo service
+- [ ] Create dedicated example in `cmd/examples/provider-openrouter/`
+  - [ ] Show basic usage with the provider
+  - [ ] Demonstrate any OpenRouter-specific features
+  - [ ] Add streaming examples if supported
+- [ ] Add integration tests
+  - [ ] Create `tests/integration/openrouter_integration_test.go`
+  - [ ] Test basic generation, streaming, and error handling
+  - [ ] Add agent integration tests if applicable
+- [ ] Update provider integration code
+  - [ ] Update `pkg/util/llmutil/provider_parser.go` and tests
+  - [ ] Update `pkg/util/llmutil/llmutil.go` and tests
+  - [ ] Update `pkg/util/llmutil/env_vars.go` and tests
+  - [ ] Update `pkg/util/llmutil/option_factories.go` and tests
+  - [ ] Update `pkg/llm/provider/errors.go` for OpenRouter-specific errors
+  - [ ] Update `cmd/cli.go` and `cmd/config.go`
+- [ ] Update documentation
+  - [ ] Add OpenRouter section to `docs/user-guide/providers.md`
+  - [ ] Document authentication, features, and limitations
+  - [ ] Update main README.md to include OpenRouter
+
+### 0.3.3.3: Google Vertex AI provider (https://cloud.google.com/vertex-ai)
+- [ ] Research Google Vertex AI and update this todo.md list
+  - [ ] Investigate authentication (service accounts, OAuth, ADC)
+  - [ ] Study Vertex AI model APIs and endpoints
+  - [ ] Document available models (PaLM, Gemini variants)
+  - [ ] Check differences from consumer Gemini API
+  - [ ] Identify region-specific requirements
+  - [ ] Determine if model discovery is supported
+- [ ] Add dedicated provider implementation
+  - [ ] Create `pkg/llm/provider/vertexai.go`
+  - [ ] Handle Google Cloud authentication
+  - [ ] Add region/project configuration options
+  - [ ] Write unit tests in `pkg/llm/provider/vertexai_test.go`
+- [ ] Add model discovery/listing support (if available)
+  - [ ] Implement fetcher in `pkg/util/llmutil/modelinfo/fetchers/vertexai_fetcher.go`
+  - [ ] Handle authentication for discovery
+  - [ ] Add tests for the fetcher
+- [ ] Create dedicated example in `cmd/examples/provider-vertexai/`
+  - [ ] Show authentication setup (ADC, service account)
+  - [ ] Demonstrate basic usage
+  - [ ] Include region/project configuration
+- [ ] Add integration tests
+  - [ ] Create `tests/integration/vertexai_integration_test.go`
+  - [ ] Test with different authentication methods
+  - [ ] Test region-specific functionality
+- [ ] Update provider integration code
+  - [ ] Update `pkg/util/llmutil/provider_parser.go` and tests
+  - [ ] Update `pkg/util/llmutil/llmutil.go` and tests
+  - [ ] Update `pkg/util/llmutil/env_vars.go` and tests
+  - [ ] Update `pkg/util/llmutil/option_factories.go` and tests
+  - [ ] Update `pkg/llm/provider/errors.go` for Vertex AI errors
+  - [ ] Update `cmd/cli.go` and `cmd/config.go`
+- [ ] Update documentation
+  - [ ] Add Vertex AI section to `docs/user-guide/providers.md`
+  - [ ] Document authentication methods
+  - [ ] Explain differences from consumer Gemini API
+  - [ ] Include region/project setup instructions
+
+### 0.3.3.4: Mistral AI provider (https://mistral.ai/)
+- [ ] Research Mistral AI API and update this todo.md list
+  - [ ] Investigate API authentication method
+  - [ ] Check API format (custom or OpenAI-compatible)
+  - [ ] Document available models (Mistral 7B, Mixtral, etc.)
+  - [ ] Identify streaming support and special features
+  - [ ] Check for model listing/discovery endpoints
+- [ ] Add dedicated provider implementation
+  - [ ] Create `pkg/llm/provider/mistral.go`
+  - [ ] Add Mistral-specific options if needed
+  - [ ] Write unit tests in `pkg/llm/provider/mistral_test.go`
+- [ ] Add model discovery/listing support (if available)
+  - [ ] Implement fetcher in `pkg/util/llmutil/modelinfo/fetchers/mistral_fetcher.go`
+  - [ ] Add tests for the fetcher
+  - [ ] Integrate with modelinfo service
+- [ ] Create dedicated example in `cmd/examples/provider-mistral/`
+  - [ ] Show basic usage with the provider
+  - [ ] Demonstrate function calling if supported
+  - [ ] Add streaming examples
+- [ ] Add integration tests
+  - [ ] Create `tests/integration/mistral_integration_test.go`
+  - [ ] Test all provider methods
+  - [ ] Add error handling tests
+- [ ] Update provider integration code
+  - [ ] Update `pkg/util/llmutil/provider_parser.go` and tests
+  - [ ] Update `pkg/util/llmutil/llmutil.go` and tests
+  - [ ] Update `pkg/util/llmutil/env_vars.go` and tests
+  - [ ] Update `pkg/util/llmutil/option_factories.go` and tests
+  - [ ] Update `pkg/llm/provider/errors.go` for Mistral errors
+  - [ ] Update `cmd/cli.go` and `cmd/config.go`
+- [ ] Update documentation
+  - [ ] Add Mistral section to `docs/user-guide/providers.md`
+  - [ ] Document available models and features
+  - [ ] Update main README.md
+
+### 0.3.3.5: AWS Bedrock provider (https://aws.amazon.com/bedrock/)
+- [ ] Research AWS Bedrock API and update this todo.md list
+  - [ ] Investigate AWS authentication (IAM roles, access keys)
+  - [ ] Study Bedrock's unified API for multiple models
+  - [ ] Document available models (Claude, Llama 2, Jurassic, etc.)
+  - [ ] Check streaming and function calling support
+  - [ ] Identify region availability and restrictions
+  - [ ] Determine model listing capabilities
+- [ ] Add dedicated provider implementation
+  - [ ] Create `pkg/llm/provider/bedrock.go`
+  - [ ] Integrate AWS SDK for Go v2
+  - [ ] Handle AWS authentication and region selection
+  - [ ] Support multiple model families through unified API
+  - [ ] Write unit tests in `pkg/llm/provider/bedrock_test.go`
+- [ ] Add model discovery/listing support
+  - [ ] Implement fetcher in `pkg/util/llmutil/modelinfo/fetchers/bedrock_fetcher.go`
+  - [ ] Use AWS SDK to list available models
+  - [ ] Handle region-specific model availability
+  - [ ] Add tests for the fetcher
+- [ ] Create dedicated example in `cmd/examples/provider-bedrock/`
+  - [ ] Show AWS authentication setup
+  - [ ] Demonstrate usage with different model families
+  - [ ] Include region configuration
+  - [ ] Show streaming if supported
+- [ ] Add integration tests
+  - [ ] Create `tests/integration/bedrock_integration_test.go`
+  - [ ] Test with different AWS authentication methods
+  - [ ] Test multiple model families
+  - [ ] Test region-specific functionality
+- [ ] Update provider integration code
+  - [ ] Update `pkg/util/llmutil/provider_parser.go` and tests
+  - [ ] Update `pkg/util/llmutil/llmutil.go` and tests
+  - [ ] Update `pkg/util/llmutil/env_vars.go` and tests
+  - [ ] Update `pkg/util/llmutil/option_factories.go` and tests
+  - [ ] Update `pkg/llm/provider/errors.go` for AWS errors
+  - [ ] Update `cmd/cli.go` and `cmd/config.go`
+- [ ] Update documentation
+  - [ ] Add Bedrock section to `docs/user-guide/providers.md`
+  - [ ] Document AWS authentication setup
+  - [ ] List supported models and regions
+  - [ ] Include IAM permission requirements
+
+### 0.3.3.6: Azure AI provider (https://azure.microsoft.com/en-us/products/ai-services/)
+- [ ] Research Azure AI/OpenAI Service and update this todo.md list
+  - [ ] Investigate Azure authentication (API keys, Azure AD)
+  - [ ] Study Azure OpenAI Service API differences
+  - [ ] Document deployment model vs standard model names
+  - [ ] Check for Azure-specific features
+  - [ ] Identify endpoint format and regions
+  - [ ] Determine model/deployment listing capabilities
+- [ ] Add dedicated provider implementation
+  - [ ] Create `pkg/llm/provider/azure.go`
+  - [ ] Handle Azure-specific endpoint format
+  - [ ] Support deployment names vs model names
+  - [ ] Add Azure AD authentication support
+  - [ ] Write unit tests in `pkg/llm/provider/azure_test.go`
+- [ ] Add deployment discovery/listing support (if available)
+  - [ ] Implement fetcher in `pkg/util/llmutil/modelinfo/fetchers/azure_fetcher.go`
+  - [ ] Handle Azure authentication for discovery
+  - [ ] Map deployments to model capabilities
+  - [ ] Add tests for the fetcher
+- [ ] Create dedicated example in `cmd/examples/provider-azure/`
+  - [ ] Show API key and Azure AD authentication
+  - [ ] Demonstrate deployment configuration
+  - [ ] Include endpoint customization
+  - [ ] Show Azure-specific features
+- [ ] Add integration tests
+  - [ ] Create `tests/integration/azure_integration_test.go`
+  - [ ] Test both authentication methods
+  - [ ] Test deployment name handling
+  - [ ] Test region-specific endpoints
+- [ ] Update provider integration code
+  - [ ] Update `pkg/util/llmutil/provider_parser.go` and tests
+  - [ ] Update `pkg/util/llmutil/llmutil.go` and tests
+  - [ ] Update `pkg/util/llmutil/env_vars.go` and tests
+  - [ ] Update `pkg/util/llmutil/option_factories.go` and tests
+  - [ ] Update `pkg/llm/provider/errors.go` for Azure errors
+  - [ ] Update `cmd/cli.go` and `cmd/config.go`
+- [ ] Update documentation
+  - [ ] Add Azure section to `docs/user-guide/providers.md`
+  - [ ] Document authentication options
+  - [ ] Explain deployment vs model concepts
+  - [ ] Include endpoint configuration
 
 ## v0.3.5: Enhanced Tool Capabilities
 ### 0.3.5.1: Web API Client Advanced Features 

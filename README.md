@@ -4,7 +4,7 @@ A lightweight Go library providing a simplified, unified interface to interact w
 
 ## Features
 
-- **Unified API** across OpenAI, Anthropic, Google Gemini, and compatible providers
+- **Unified API** across OpenAI, Anthropic, Google Gemini, Ollama, and compatible providers
 - **Structured outputs** with JSON schema validation and type coercion
 - **Agent system** with state management, hooks, and workflow patterns
 - **32 built-in tools** for web, file, system, data, datetime, and feed operations

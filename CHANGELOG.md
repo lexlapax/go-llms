@@ -5,6 +5,17 @@ All notable changes to the Go-LLMs project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Ollama Provider Support** (v0.3.3.1 - January 11, 2025)
+  - New `NewOllamaProvider()` convenience function for easy local LLM integration
+  - Model discovery support via `/api/tags` endpoint
+  - Full integration with utility systems (env vars, option factories, CLI)
+  - Ollama-specific error handling including OOM detection
+  - Example application demonstrating Ollama usage
+  - Documentation in user guide and provider implementation guide
+
 ## [v0.3.2] - 2025-01-11
 
 ### Overview

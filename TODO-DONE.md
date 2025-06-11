@@ -1,5 +1,67 @@
 # Go-LLMs Completed Tasks
 
+## v0.3.3.1: Ollama local hosted provider (Completed - January 11, 2025)
+- [x] Research how to add Ollama provider and update this todo.md list
+  - **Research Findings**: Ollama already has FULL support through the OpenAI-compatible provider
+  - **Implementation**: Use `provider.NewOpenAIProvider()` with custom base URL and dummy API key
+  - **Tests**: Already exist in `tests/integration/ollama_integration_test.go`
+  - **Example**: Already exists in `cmd/examples/provider-openai-compatible/main.go`
+- [x] Add dedicated `NewOllamaProvider()` convenience function in `pkg/llm/provider/ollama.go`
+  - [x] Create wrapper that uses OpenAI provider with proper defaults (base URL, dummy key, timeout)
+  - [x] Add Ollama-specific options (e.g., WithOllamaHost(), WithOllamaTimeout())
+  - [x] Document that it's a convenience wrapper around OpenAI provider
+- [x] Add model discovery/listing support for Ollama
+  - [x] Implement Ollama's `/api/tags` endpoint to list available models
+  - [x] Add to modelinfo fetchers as `ollama_fetcher.go`
+- [x] Create dedicated Ollama example in `cmd/examples/provider-ollama/`
+  - [x] Show basic usage with the new convenience provider
+  - [x] Demonstrate model listing
+  - [x] Show streaming and multimodal capabilities
+- [x] Enhance existing integration tests
+  - [x] Add tests for the new convenience provider
+  - [x] Test model listing functionality
+  - [x] Add multimodal tests (if Ollama models support it)
+- [x] Update provider integration code
+  - [x] Update `pkg/util/llmutil/provider_parser.go`
+    - [x] Add "ollama" to `isKnownProvider` function
+    - [x] Add ollama model patterns to provider detection maps
+    - [x] Add ollama-specific model aliases
+  - [x] Update `pkg/util/llmutil/provider_parser_test.go`
+    - [x] Add test cases for ollama provider parsing
+    - [x] Add test cases for ollama model inference
+  - [x] Update `pkg/util/llmutil/llmutil.go`
+    - [x] Add "ollama" case in `CreateProvider` function
+    - [x] Add ollama handling in `ProviderFromEnv` function
+  - [x] Update `pkg/util/llmutil/llmutil_test.go`
+    - [x] Add test cases for creating ollama provider
+    - [x] Add test cases for ollama environment variable handling
+  - [x] Update `pkg/util/llmutil/env_vars.go`
+    - [x] Add ollama-specific environment variable constants
+    - [x] Add `GetOllamaOptionsFromEnv` function
+    - [x] Update provider option functions to include ollama
+  - [x] Update `pkg/util/llmutil/env_vars_test.go`
+    - [x] Add test cases for ollama environment variables
+  - [x] Update `pkg/util/llmutil/option_factories.go`
+    - [x] Add `WithOllamaDefaultOptions` function
+    - [x] Add `WithOllamaStreamingOptions` function
+    - [x] Update `CreateOptionFactoryFromEnv` to include ollama
+  - [x] Update `pkg/util/llmutil/option_factories_test.go`
+    - [x] Add test cases for ollama option factories
+  - [x] Update `pkg/llm/provider/errors.go`
+    - [x] Add `mapOllamaErrorToStandard` function
+    - [x] Update `ParseJSONError` to include ollama case
+  - [x] Update `cmd/cli.go`
+    - [x] Add "ollama" case in `createProvider` function
+  - [x] Update `cmd/cli_test.go`
+    - [x] Add test case for ollama provider creation
+  - [x] Update `cmd/config.go`
+    - [x] Add ollama to supported providers list if needed
+- [x] Update documentation
+  - [x] Add Ollama section to `docs/user-guide/providers.md`
+  - [x] Update `docs/technical/provider-implementation.md` with Ollama details
+  - [x] Document Ollama-specific features and limitations
+- [x] Update `docs/technical/provider-implementation.md` with all the steps above that we went through with ollama in a generic way
+
 ## v0.3.2 Documentation Update (Completed - January 11, 2025)
 - [x] 0.3.2.1: Tag release v0.3.2 (ready for tagging)
 - [x] Documentation simplification and refactoring:
