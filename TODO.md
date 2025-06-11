@@ -86,11 +86,11 @@
 - Phase 2: Tool Migration to Enhanced Interface (Week 2) - COMPLETED - see TODO-DONE.md
 
 - [ ] Phase 3: Tool Migration Part 2 (Week 3) - Continue migration to ToolBuilder pattern
-  - [ ] Day 1: Migrate data tools (4 tools)
-    - [ ] json_process - Update to ToolBuilder with JSONPath query examples
-    - [ ] csv_process - Add transformation examples, delimiter options
-    - [ ] xml_process - Add XPath guidance, namespace handling
-    - [ ] data_transform - Add operation chains, performance considerations
+  - [x] Day 1: Migrate data tools (4 tools) - COMPLETED January 10, 2025
+    - [x] json_process - Update to ToolBuilder with JSONPath query examples
+    - [x] csv_process - Add transformation examples, delimiter options
+    - [x] xml_process - Add XPath guidance, namespace handling
+    - [x] data_transform - Add operation chains, performance considerations
     - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool
   - [ ] Day 2: Migrate datetime tools (7 tools)
     - [ ] datetime_now - Add timezone examples, format options

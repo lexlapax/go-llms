@@ -96,86 +96,364 @@ var csvProcessParamSchema = &sdomain.Schema{
 
 // CSVProcess creates a tool for processing CSV data
 func CSVProcess() domain.Tool {
-	return atools.NewTool(
-		"csv_process",
-		"Process CSV data: parse, filter, transform, or convert to JSON",
-		func(ctx *domain.ToolContext, input CSVProcessInput) (*CSVProcessOutput, error) {
-			// Emit start event
-			if ctx.Events != nil {
-				ctx.Events.EmitMessage(fmt.Sprintf("Starting CSV processing with operation: %s", input.Operation))
-			}
-
-			// Set default delimiter from state or use comma
-			if input.Delimiter == "" {
-				if ctx.State != nil {
-					if defaultDelimiter, exists := ctx.State.Get("csv_default_delimiter"); exists {
-						if delim, ok := defaultDelimiter.(string); ok && len(delim) > 0 {
-							input.Delimiter = delim
-						}
-					}
-				}
-				if input.Delimiter == "" {
-					input.Delimiter = ","
-				}
-			}
-
-			// Check for max row limit from state
-			var maxRows int
-			if ctx.State != nil {
-				if limit, exists := ctx.State.Get("csv_max_rows"); exists {
-					if rows, ok := limit.(int); ok && rows > 0 {
-						maxRows = rows
-					}
-				}
-			}
-
-			var result *CSVProcessOutput
-			var err error
-
-			switch input.Operation {
-			case "parse":
-				result, err = parseCSV(input.Data, input.Delimiter, input.HasHeaders)
-			case "filter":
-				if input.FilterCondition == "" {
-					err = fmt.Errorf("filter condition required for filter operation")
-				} else {
-					result, err = filterCSV(input.Data, input.Delimiter, input.HasHeaders, input.FilterCondition)
-				}
-			case "transform":
-				if input.Transform == "" {
-					err = fmt.Errorf("transform type required for transform operation")
-				} else {
-					result, err = transformCSV(input.Data, input.Delimiter, input.HasHeaders, input.Transform, input.Params)
-				}
-			case "to_json":
-				result, err = csvToJSON(input.Data, input.Delimiter, input.HasHeaders)
-			default:
-				err = fmt.Errorf("invalid operation: %s", input.Operation)
-			}
-
-			// Apply row limit if specified
-			if err == nil && maxRows > 0 && result != nil {
-				if rows, ok := result.Result.([][]string); ok && len(rows) > maxRows {
-					result.Result = rows[:maxRows]
-					if result.RowCount > maxRows {
-						result.RowCount = maxRows
-					}
-				}
-			}
-
-			// Emit completion or error event
-			if ctx.Events != nil {
-				if err != nil {
-					ctx.Events.EmitError(err)
-				} else {
-					ctx.Events.EmitMessage(fmt.Sprintf("CSV processing completed. Processed %d rows", result.RowCount))
-				}
-			}
-
-			return result, err
+	// Create output schema for CSVProcessOutput
+	outputSchema := &sdomain.Schema{
+		Type: "object",
+		Properties: map[string]sdomain.Property{
+			"result": {
+				Type:        "any",
+				Description: "The processed result (can be array of arrays, JSON string, statistics, etc.)",
+			},
+			"error": {
+				Type:        "string",
+				Description: "Error message if any",
+			},
+			"row_count": {
+				Type:        "integer",
+				Description: "Number of rows processed (excluding headers if applicable)",
+			},
+			"columns": {
+				Type:        "array",
+				Description: "Column names if headers are present",
+				Items: &sdomain.Property{
+					Type: "string",
+				},
+			},
 		},
-		csvProcessParamSchema,
-	)
+		Required: []string{},
+	}
+
+	builder := atools.NewToolBuilder("csv_process", "Process CSV data: parse, filter, transform, or convert to JSON").
+		WithFunction(csvProcessExecute).
+		WithParameterSchema(csvProcessParamSchema).
+		WithOutputSchema(outputSchema).
+		WithUsageInstructions(`Use this tool to process CSV (Comma-Separated Values) data in various ways:
+
+Parse Operation:
+- Validates and parses CSV data into a structured format
+- Detects headers if has_headers is true
+- Returns array of arrays representing rows and columns
+- Supports custom delimiters (comma by default)
+
+Filter Operation:
+- Filter rows based on conditions using column:operator:value format
+- Supported operators:
+  - eq, =, ==: Equal to
+  - ne, !=, <>: Not equal to
+  - contains: Contains substring
+  - starts_with: Starts with string
+  - ends_with: Ends with string
+  - gt, >: Greater than (numeric comparison)
+  - lt, <: Less than (numeric comparison)
+  - gte, >=: Greater than or equal to
+  - lte, <=: Less than or equal to
+- Column can be header name (if has_headers) or index (0-based)
+
+Transform Operations:
+- select_columns: Select specific columns by name or index
+  - Requires params.columns as array or comma-separated string
+- sort: Sort records (basic implementation)
+- count_rows: Count number of data rows (excluding headers)
+- statistics: Calculate statistics for numeric columns
+  - Optional params.columns to specify which columns to analyze
+  - Returns count, sum, min, max, avg, variance, std_dev
+
+Convert to JSON:
+- to_json: Convert CSV to JSON format
+  - With headers: Returns array of objects with column names as keys
+  - Without headers: Returns array of arrays
+
+Delimiter Support:
+- Default is comma (,)
+- Can specify any single character delimiter (tab, pipe, semicolon, etc.)
+- Common delimiters: "," (comma), "\t" (tab), "|" (pipe), ";" (semicolon)
+
+State Integration:
+- csv_default_delimiter: Default delimiter from agent state
+- csv_max_rows: Maximum rows to process (for performance limits)`).
+		WithExamples([]domain.ToolExample{
+			{
+				Name:        "Parse CSV with headers",
+				Description: "Parse a simple CSV file with column headers",
+				Scenario:    "When you need to load and structure CSV data",
+				Input: map[string]interface{}{
+					"data":        "name,age,city\nJohn,30,New York\nJane,25,Boston\nBob,35,Chicago",
+					"operation":   "parse",
+					"has_headers": true,
+				},
+				Output: map[string]interface{}{
+					"result": [][]string{
+						{"name", "age", "city"},
+						{"John", "30", "New York"},
+						{"Jane", "25", "Boston"},
+						{"Bob", "35", "Chicago"},
+					},
+					"row_count": 3,
+					"columns":   []string{"name", "age", "city"},
+				},
+				Explanation: "The tool returns structured data with headers identified separately",
+			},
+			{
+				Name:        "Filter by numeric condition",
+				Description: "Filter rows where age is greater than 25",
+				Scenario:    "When you need to extract rows meeting specific criteria",
+				Input: map[string]interface{}{
+					"data":             "name,age,city\nJohn,30,New York\nJane,25,Boston\nBob,35,Chicago",
+					"operation":        "filter",
+					"has_headers":      true,
+					"filter_condition": "age:gt:25",
+				},
+				Output: map[string]interface{}{
+					"result": [][]string{
+						{"name", "age", "city"},
+						{"John", "30", "New York"},
+						{"Bob", "35", "Chicago"},
+					},
+					"row_count": 2,
+					"columns":   []string{"name", "age", "city"},
+				},
+				Explanation: "Numeric comparisons work on string values that can be parsed as numbers",
+			},
+			{
+				Name:        "Select specific columns",
+				Description: "Extract only name and city columns",
+				Scenario:    "When you need to work with a subset of columns",
+				Input: map[string]interface{}{
+					"data":        "name,age,city,country\nJohn,30,New York,USA\nJane,25,Boston,USA",
+					"operation":   "transform",
+					"transform":   "select_columns",
+					"has_headers": true,
+					"params": map[string]interface{}{
+						"columns": []string{"name", "city"},
+					},
+				},
+				Output: map[string]interface{}{
+					"result": [][]string{
+						{"name", "city"},
+						{"John", "New York"},
+						{"Jane", "Boston"},
+					},
+					"row_count": 2,
+					"columns":   []string{"name", "city"},
+				},
+				Explanation: "Column selection preserves order and can be used to reorder columns",
+			},
+			{
+				Name:        "Convert to JSON with headers",
+				Description: "Transform CSV into JSON array of objects",
+				Scenario:    "When you need to work with CSV data as JSON",
+				Input: map[string]interface{}{
+					"data":        "id,name,score\n1,Alice,95\n2,Bob,87",
+					"operation":   "to_json",
+					"has_headers": true,
+				},
+				Output: map[string]interface{}{
+					"result": `[
+  {
+    "id": "1",
+    "name": "Alice",
+    "score": "95"
+  },
+  {
+    "id": "2",
+    "name": "Bob",
+    "score": "87"
+  }
+]`,
+					"row_count": 2,
+					"columns":   []string{"id", "name", "score"},
+				},
+				Explanation: "JSON conversion with headers creates objects with column names as keys",
+			},
+			{
+				Name:        "Calculate statistics",
+				Description: "Get statistics for numeric columns",
+				Scenario:    "When you need to analyze numeric data in CSV",
+				Input: map[string]interface{}{
+					"data":        "product,price,quantity\nA,10.5,100\nB,20.0,150\nC,15.75,200",
+					"operation":   "transform",
+					"transform":   "statistics",
+					"has_headers": true,
+					"params": map[string]interface{}{
+						"columns": []string{"price", "quantity"},
+					},
+				},
+				Output: map[string]interface{}{
+					"result": map[string]interface{}{
+						"row_count":    3,
+						"column_count": 3,
+						"price": map[string]interface{}{
+							"count":    3,
+							"sum":      46.25,
+							"min":      10.5,
+							"max":      20.0,
+							"avg":      15.416666666666666,
+							"variance": 19.326388888888886,
+							"std_dev":  19.326388888888886,
+						},
+						"quantity": map[string]interface{}{
+							"count":    3,
+							"sum":      450.0,
+							"min":      100.0,
+							"max":      200.0,
+							"avg":      150.0,
+							"variance": 2500.0,
+							"std_dev":  2500.0,
+						},
+					},
+					"row_count": 3,
+				},
+				Explanation: "Statistics include count, sum, min, max, average, variance, and standard deviation",
+			},
+			{
+				Name:        "Parse with custom delimiter",
+				Description: "Parse tab-separated values",
+				Scenario:    "When working with TSV or other delimited formats",
+				Input: map[string]interface{}{
+					"data":        "name\tage\tcity\nJohn\t30\tNew York\nJane\t25\tBoston",
+					"operation":   "parse",
+					"has_headers": true,
+					"delimiter":   "\t",
+				},
+				Output: map[string]interface{}{
+					"result": [][]string{
+						{"name", "age", "city"},
+						{"John", "30", "New York"},
+						{"Jane", "25", "Boston"},
+					},
+					"row_count": 2,
+					"columns":   []string{"name", "age", "city"},
+				},
+				Explanation: "Custom delimiters allow processing TSV, pipe-delimited, and other formats",
+			},
+			{
+				Name:        "Filter with string contains",
+				Description: "Find all rows where city contains 'New'",
+				Scenario:    "When searching for partial string matches",
+				Input: map[string]interface{}{
+					"data":             "name,city\nJohn,New York\nJane,Boston\nBob,New Orleans",
+					"operation":        "filter",
+					"has_headers":      true,
+					"filter_condition": "city:contains:New",
+				},
+				Output: map[string]interface{}{
+					"result": [][]string{
+						{"name", "city"},
+						{"John", "New York"},
+						{"Bob", "New Orleans"},
+					},
+					"row_count": 2,
+					"columns":   []string{"name", "city"},
+				},
+				Explanation: "String operators work on exact substrings, case-sensitive",
+			},
+		}).
+		WithConstraints([]string{
+			"Delimiter must be a single character",
+			"Large CSV files may be limited by memory or state-configured row limits",
+			"Statistics are only calculated for columns with numeric values",
+			"Filter conditions use case-sensitive string matching",
+			"Column indices are 0-based when headers are not used",
+			"Sorting is a basic implementation and may not handle all edge cases",
+			"CSV parsing follows RFC 4180 standards with some flexibility",
+			"Empty cells are preserved as empty strings",
+		}).
+		WithErrorGuidance(map[string]string{
+			"failed to parse CSV":                    "The CSV data is malformed. Check for unclosed quotes or invalid characters",
+			"invalid filter condition format":        "Filter condition must be in format 'column:operator:value'",
+			"column not found or index out of range": "The specified column doesn't exist. Check column names or indices",
+			"unsupported operator":                   "Use one of: eq, ne, contains, starts_with, ends_with, gt, lt, gte, lte",
+			"columns parameter required":             "select_columns transform requires a 'columns' parameter in params",
+			"columns parameter must be an array":     "Provide columns as an array of strings or comma-separated string",
+			"filter condition required":              "Filter operation requires a 'filter_condition' parameter",
+			"transform type required":                "Transform operation requires a 'transform' parameter",
+			"invalid operation":                      "Operation must be one of: parse, filter, transform, to_json",
+			"unsupported transform type":             "Transform must be one of: select_columns, sort, count_rows, statistics",
+			"failed to convert to JSON":              "Unable to convert the CSV data to JSON format",
+		}).
+		WithCategory("data").
+		WithTags([]string{"data", "csv", "parse", "filter", "transform", "tabular", "tsv", "delimited"}).
+		WithVersion("2.0.0").
+		WithBehavior(true, false, false, "fast")
+
+	return builder.Build()
+}
+
+// csvProcessExecute is the main processing logic
+func csvProcessExecute(ctx *domain.ToolContext, input CSVProcessInput) (*CSVProcessOutput, error) {
+	// Emit start event
+	if ctx.Events != nil {
+		ctx.Events.EmitMessage(fmt.Sprintf("Starting CSV processing with operation: %s", input.Operation))
+	}
+
+	// Set default delimiter from state or use comma
+	if input.Delimiter == "" {
+		if ctx.State != nil {
+			if defaultDelimiter, exists := ctx.State.Get("csv_default_delimiter"); exists {
+				if delim, ok := defaultDelimiter.(string); ok && len(delim) > 0 {
+					input.Delimiter = delim
+				}
+			}
+		}
+		if input.Delimiter == "" {
+			input.Delimiter = ","
+		}
+	}
+
+	// Check for max row limit from state
+	var maxRows int
+	if ctx.State != nil {
+		if limit, exists := ctx.State.Get("csv_max_rows"); exists {
+			if rows, ok := limit.(int); ok && rows > 0 {
+				maxRows = rows
+			}
+		}
+	}
+
+	var result *CSVProcessOutput
+	var err error
+
+	switch input.Operation {
+	case "parse":
+		result, err = parseCSV(input.Data, input.Delimiter, input.HasHeaders)
+	case "filter":
+		if input.FilterCondition == "" {
+			err = fmt.Errorf("filter condition required for filter operation")
+		} else {
+			result, err = filterCSV(input.Data, input.Delimiter, input.HasHeaders, input.FilterCondition)
+		}
+	case "transform":
+		if input.Transform == "" {
+			err = fmt.Errorf("transform type required for transform operation")
+		} else {
+			result, err = transformCSV(input.Data, input.Delimiter, input.HasHeaders, input.Transform, input.Params)
+		}
+	case "to_json":
+		result, err = csvToJSON(input.Data, input.Delimiter, input.HasHeaders)
+	default:
+		err = fmt.Errorf("invalid operation: %s", input.Operation)
+	}
+
+	// Apply row limit if specified
+	if err == nil && maxRows > 0 && result != nil {
+		if rows, ok := result.Result.([][]string); ok && len(rows) > maxRows {
+			result.Result = rows[:maxRows]
+			if result.RowCount > maxRows {
+				result.RowCount = maxRows
+			}
+		}
+	}
+
+	// Emit completion or error event
+	if ctx.Events != nil {
+		if err != nil {
+			ctx.Events.EmitError(err)
+		} else {
+			ctx.Events.EmitMessage(fmt.Sprintf("CSV processing completed. Processed %d rows", result.RowCount))
+		}
+	}
+
+	return result, err
 }
 
 // parseCSV validates and parses CSV data

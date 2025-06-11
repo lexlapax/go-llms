@@ -99,135 +99,448 @@ var dataTransformParamSchema = &sdomain.Schema{
 
 // DataTransform creates a tool for performing data transformations
 func DataTransform() domain.Tool {
-	return atools.NewTool(
-		"data_transform",
-		"Transform data: filter, map, reduce, sort, group_by, unique, or reverse",
-		func(ctx *domain.ToolContext, input DataTransformInput) (*DataTransformOutput, error) {
-			// Emit start event
-			if ctx.Events != nil {
-				ctx.Events.EmitMessage(fmt.Sprintf("Starting data transformation with operation: %s", input.Operation))
-			}
-
-			// Check for required parameters based on operation
-			switch input.Operation {
-			case "filter":
-				if input.Condition == "" {
-					return nil, fmt.Errorf("condition required for filter operation")
-				}
-			case "map":
-				if input.MapType == "" {
-					return nil, fmt.Errorf("map_type required for map operation")
-				}
-			case "reduce":
-				if input.ReduceType == "" {
-					return nil, fmt.Errorf("reduce_type required for reduce operation")
-				}
-			case "group_by":
-				if input.Field == "" {
-					return nil, fmt.Errorf("field required for group_by operation")
-				}
-			}
-
-			// Check for any transformation defaults in state
-			if ctx.State != nil {
-				// Check for default sort order
-				if input.Operation == "sort" && input.SortOrder == "" {
-					if defaultOrder, exists := ctx.State.Get("data_transform_default_sort_order"); exists {
-						if order, ok := defaultOrder.(string); ok && (order == "asc" || order == "desc") {
-							input.SortOrder = order
-						}
-					}
-				}
-			}
-
-			// Set default sort order if not specified
-			if input.Operation == "sort" && input.SortOrder == "" {
-				input.SortOrder = "asc"
-			}
-
-			// Parse input data
-			var data interface{}
-			if err := json.Unmarshal([]byte(input.Data), &data); err != nil {
-				if ctx.Events != nil {
-					ctx.Events.EmitError(err)
-				}
-				return &DataTransformOutput{
-					Error: fmt.Sprintf("invalid JSON data: %v", err),
-				}, nil
-			}
-
-			// Ensure data is an array
-			dataArray, ok := data.([]interface{})
-			if !ok {
-				// Try to convert single item to array
-				dataArray = []interface{}{data}
-			}
-
-			// Emit progress event
-			if ctx.Events != nil {
-				ctx.Events.EmitProgress(1, 2, fmt.Sprintf("Processing %d items", len(dataArray)))
-			}
-
-			var result interface{}
-			var err error
-
-			switch input.Operation {
-			case "filter":
-				result, err = filterData(dataArray, input.Field, input.Condition)
-			case "map":
-				result, err = mapData(dataArray, input.Field, input.MapType)
-			case "reduce":
-				result, err = reduceData(dataArray, input.Field, input.ReduceType)
-			case "sort":
-				result, err = sortData(dataArray, input.Field, input.SortOrder)
-			case "group_by":
-				result, err = groupByData(dataArray, input.Field)
-			case "unique":
-				result, err = uniqueData(dataArray, input.Field)
-			case "reverse":
-				result, err = reverseData(dataArray)
-			default:
-				err = fmt.Errorf("invalid operation: %s", input.Operation)
-			}
-
-			// Emit completion or error event
-			if ctx.Events != nil {
-				if err != nil {
-					ctx.Events.EmitError(err)
-				} else {
-					ctx.Events.EmitProgress(2, 2, "Transformation complete")
-				}
-			}
-
-			if err != nil {
-				return &DataTransformOutput{
-					Error: err.Error(),
-				}, nil
-			}
-
-			itemCount := 0
-			switch v := result.(type) {
-			case []interface{}:
-				itemCount = len(v)
-			case map[string]interface{}:
-				itemCount = len(v)
-			default:
-				itemCount = 1
-			}
-
-			// Emit final result details
-			if ctx.Events != nil {
-				ctx.Events.EmitMessage(fmt.Sprintf("Transformation complete. Result contains %d items", itemCount))
-			}
-
-			return &DataTransformOutput{
-				Result:     result,
-				ItemCount:  itemCount,
-				ResultType: fmt.Sprintf("%T", result),
-			}, nil
+	// Create output schema for DataTransformOutput
+	outputSchema := &sdomain.Schema{
+		Type: "object",
+		Properties: map[string]sdomain.Property{
+			"result": {
+				Type:        "any",
+				Description: "The transformed result (can be array, single value, or object)",
+			},
+			"error": {
+				Type:        "string",
+				Description: "Error message if any",
+			},
+			"item_count": {
+				Type:        "integer",
+				Description: "Number of items in the result",
+			},
+			"result_type": {
+				Type:        "string",
+				Description: "The type of the result (e.g., '[]interface{}', 'float64', 'map[string]interface{}')",
+			},
 		},
-		dataTransformParamSchema,
-	)
+		Required: []string{"result_type"},
+	}
+
+	builder := atools.NewToolBuilder("data_transform", "Transform data: filter, map, reduce, sort, group_by, unique, or reverse").
+		WithFunction(dataTransformExecute).
+		WithParameterSchema(dataTransformParamSchema).
+		WithOutputSchema(outputSchema).
+		WithUsageInstructions(`Use this tool to perform common data transformation operations on JSON arrays:
+
+Filter Operation:
+- Extract items matching specific conditions
+- Condition format: "operator:value"
+- Supported operators:
+  - eq, =, ==: Equal to
+  - ne, !=, <>: Not equal to
+  - gt, >: Greater than
+  - gte, >=: Greater than or equal to
+  - lt, <: Less than
+  - lte, <=: Less than or equal to
+  - contains: Contains substring
+  - starts_with: Starts with string
+  - ends_with: Ends with string
+  - exists: Field exists (value should be "true" or "false")
+- Field can be nested using dots: "address.city"
+
+Map Operation:
+- Transform each item in the array
+- Map types:
+  - extract_field: Extract specific field from objects
+  - to_upper: Convert to uppercase
+  - to_lower: Convert to lowercase
+  - to_number: Convert to numeric value
+  - to_string: Convert to string representation
+
+Reduce Operation:
+- Aggregate array to a single value
+- Reduce types:
+  - sum: Sum numeric values
+  - count: Count items
+  - min: Find minimum value
+  - max: Find maximum value
+  - average: Calculate average of numeric values
+  - concat: Concatenate as comma-separated string
+
+Sort Operation:
+- Sort array by value or field
+- Order: "asc" (ascending) or "desc" (descending)
+- Supports numeric and string sorting
+
+Group By Operation:
+- Group items by field value
+- Returns object with field values as keys
+- Each key contains array of matching items
+
+Unique Operation:
+- Remove duplicate items
+- Can use field for uniqueness check
+- Preserves first occurrence
+
+Reverse Operation:
+- Reverse the order of array items
+- Simple operation, no parameters needed
+
+Operation Chaining:
+- For complex transformations, consider chaining multiple operations
+- Example: filter → map → sort → unique
+
+State Integration:
+- data_transform_default_sort_order: Default sort order from agent state`).
+		WithExamples([]domain.ToolExample{
+			{
+				Name:        "Filter by numeric condition",
+				Description: "Filter users older than 25",
+				Scenario:    "When you need to extract items meeting numeric criteria",
+				Input: map[string]interface{}{
+					"data":      `[{"name":"Alice","age":30},{"name":"Bob","age":22},{"name":"Carol","age":28}]`,
+					"operation": "filter",
+					"field":     "age",
+					"condition": "gt:25",
+				},
+				Output: map[string]interface{}{
+					"result": []interface{}{
+						map[string]interface{}{"name": "Alice", "age": float64(30)},
+						map[string]interface{}{"name": "Carol", "age": float64(28)},
+					},
+					"item_count":  2,
+					"result_type": "[]interface {}",
+				},
+				Explanation: "Filters return a new array containing only matching items",
+			},
+			{
+				Name:        "Map to extract field",
+				Description: "Extract names from user objects",
+				Scenario:    "When you need just specific fields from objects",
+				Input: map[string]interface{}{
+					"data":      `[{"name":"Alice","age":30},{"name":"Bob","age":22}]`,
+					"operation": "map",
+					"field":     "name",
+					"map_type":  "extract_field",
+				},
+				Output: map[string]interface{}{
+					"result":      []interface{}{"Alice", "Bob"},
+					"item_count":  2,
+					"result_type": "[]interface {}",
+				},
+				Explanation: "Extract field creates an array of just the specified field values",
+			},
+			{
+				Name:        "Reduce to sum prices",
+				Description: "Calculate total price from product list",
+				Scenario:    "When you need to aggregate numeric values",
+				Input: map[string]interface{}{
+					"data":        `[{"product":"A","price":10.5},{"product":"B","price":20},{"product":"C","price":15.5}]`,
+					"operation":   "reduce",
+					"field":       "price",
+					"reduce_type": "sum",
+				},
+				Output: map[string]interface{}{
+					"result":      float64(46),
+					"item_count":  1,
+					"result_type": "float64",
+				},
+				Explanation: "Reduce operations return a single aggregated value",
+			},
+			{
+				Name:        "Sort by field descending",
+				Description: "Sort products by price from high to low",
+				Scenario:    "When you need ordered data",
+				Input: map[string]interface{}{
+					"data":       `[{"name":"A","price":30},{"name":"B","price":10},{"name":"C","price":20}]`,
+					"operation":  "sort",
+					"field":      "price",
+					"sort_order": "desc",
+				},
+				Output: map[string]interface{}{
+					"result": []interface{}{
+						map[string]interface{}{"name": "A", "price": float64(30)},
+						map[string]interface{}{"name": "C", "price": float64(20)},
+						map[string]interface{}{"name": "B", "price": float64(10)},
+					},
+					"item_count":  3,
+					"result_type": "[]interface {}",
+				},
+				Explanation: "Sort maintains the original objects but reorders them",
+			},
+			{
+				Name:        "Group by category",
+				Description: "Group products by their category",
+				Scenario:    "When you need to organize data by a common field",
+				Input: map[string]interface{}{
+					"data":      `[{"name":"Apple","category":"fruit"},{"name":"Carrot","category":"vegetable"},{"name":"Banana","category":"fruit"}]`,
+					"operation": "group_by",
+					"field":     "category",
+				},
+				Output: map[string]interface{}{
+					"result": map[string]interface{}{
+						"fruit": []interface{}{
+							map[string]interface{}{"name": "Apple", "category": "fruit"},
+							map[string]interface{}{"name": "Banana", "category": "fruit"},
+						},
+						"vegetable": []interface{}{
+							map[string]interface{}{"name": "Carrot", "category": "vegetable"},
+						},
+					},
+					"item_count":  2,
+					"result_type": "map[string]interface {}",
+				},
+				Explanation: "Group by returns an object with arrays for each unique field value",
+			},
+			{
+				Name:        "Get unique values",
+				Description: "Remove duplicate tags",
+				Scenario:    "When you need distinct values",
+				Input: map[string]interface{}{
+					"data":      `["python","javascript","python","go","javascript","rust"]`,
+					"operation": "unique",
+				},
+				Output: map[string]interface{}{
+					"result":      []interface{}{"python", "javascript", "go", "rust"},
+					"item_count":  4,
+					"result_type": "[]interface {}",
+				},
+				Explanation: "Unique preserves order but removes duplicates",
+			},
+			{
+				Name:        "Transform strings to uppercase",
+				Description: "Convert all strings to uppercase",
+				Scenario:    "When you need consistent string formatting",
+				Input: map[string]interface{}{
+					"data":      `["hello","world","data","transform"]`,
+					"operation": "map",
+					"map_type":  "to_upper",
+				},
+				Output: map[string]interface{}{
+					"result":      []interface{}{"HELLO", "WORLD", "DATA", "TRANSFORM"},
+					"item_count":  4,
+					"result_type": "[]interface {}",
+				},
+				Explanation: "String transformations work on entire items or specific fields",
+			},
+			{
+				Name:        "Filter with nested field",
+				Description: "Filter by nested object property",
+				Scenario:    "When working with complex nested structures",
+				Input: map[string]interface{}{
+					"data":      `[{"user":"A","profile":{"city":"NYC"}},{"user":"B","profile":{"city":"LA"}}]`,
+					"operation": "filter",
+					"field":     "profile.city",
+					"condition": "eq:NYC",
+				},
+				Output: map[string]interface{}{
+					"result": []interface{}{
+						map[string]interface{}{
+							"user": "A",
+							"profile": map[string]interface{}{
+								"city": "NYC",
+							},
+						},
+					},
+					"item_count":  1,
+					"result_type": "[]interface {}",
+				},
+				Explanation: "Dot notation allows access to nested object properties",
+			},
+			{
+				Name:        "Calculate average",
+				Description: "Find average score",
+				Scenario:    "When you need statistical calculations",
+				Input: map[string]interface{}{
+					"data":        `[{"name":"Test1","score":85},{"name":"Test2","score":90},{"name":"Test3","score":78}]`,
+					"operation":   "reduce",
+					"field":       "score",
+					"reduce_type": "average",
+				},
+				Output: map[string]interface{}{
+					"result":      float64(84.33333333333333),
+					"item_count":  1,
+					"result_type": "float64",
+				},
+				Explanation: "Average calculation handles numeric fields automatically",
+			},
+			{
+				Name:        "Operation chain example",
+				Description: "First filter, then map (requires two operations)",
+				Scenario:    "Complex transformations need multiple steps",
+				Input: map[string]interface{}{
+					"data":      `[{"name":"Alice","age":30,"active":true},{"name":"Bob","age":22,"active":false}]`,
+					"operation": "filter",
+					"field":     "active",
+					"condition": "eq:true",
+				},
+				Output: map[string]interface{}{
+					"result": []interface{}{
+						map[string]interface{}{"name": "Alice", "age": float64(30), "active": true},
+					},
+					"item_count":  1,
+					"result_type": "[]interface {}",
+				},
+				Explanation: "Use the output of one transformation as input to the next",
+			},
+		}).
+		WithConstraints([]string{
+			"Input data must be valid JSON",
+			"Single values are converted to single-item arrays",
+			"Numeric comparisons attempt type conversion",
+			"String comparisons are case-sensitive",
+			"Nested field access uses dot notation",
+			"Missing fields are skipped in most operations",
+			"Sort order defaults to ascending if not specified",
+			"Group by returns an object, not an array",
+			"Empty arrays may return null for some reduce operations",
+		}).
+		WithErrorGuidance(map[string]string{
+			"invalid JSON data":                 "The input data is not valid JSON. Check syntax and formatting",
+			"invalid condition format":          "Condition must be in format 'operator:value'",
+			"condition required":                "Filter operation requires a 'condition' parameter",
+			"map_type required":                 "Map operation requires a 'map_type' parameter",
+			"reduce_type required":              "Reduce operation requires a 'reduce_type' parameter",
+			"field required for group_by":       "Group by operation requires a 'field' parameter",
+			"field required for extract_field":  "Extract field mapping requires a 'field' parameter",
+			"unknown operator":                  "Use one of: eq, ne, gt, gte, lt, lte, contains, starts_with, ends_with, exists",
+			"unknown map type":                  "Use one of: extract_field, to_upper, to_lower, to_number, to_string",
+			"unknown reduce type":               "Use one of: sum, count, min, max, average, concat",
+			"invalid operation":                 "Operation must be one of: filter, map, reduce, sort, group_by, unique, reverse",
+			"field not found":                   "The specified field doesn't exist in the data structure",
+			"cannot access field on non-map":    "Field access requires object/map data structures",
+			"cannot access field on non-struct": "Field access is not supported on this data type",
+			"cannot convert to number":          "Value cannot be converted to a numeric type",
+		}).
+		WithCategory("data").
+		WithTags([]string{"data", "transform", "filter", "map", "reduce", "sort", "group", "aggregate", "array"}).
+		WithVersion("2.0.0").
+		WithBehavior(true, false, false, "fast")
+
+	return builder.Build()
+}
+
+// dataTransformExecute is the main execution logic
+func dataTransformExecute(ctx *domain.ToolContext, input DataTransformInput) (*DataTransformOutput, error) {
+	// Emit start event
+	if ctx.Events != nil {
+		ctx.Events.EmitMessage(fmt.Sprintf("Starting data transformation with operation: %s", input.Operation))
+	}
+
+	// Check for required parameters based on operation
+	switch input.Operation {
+	case "filter":
+		if input.Condition == "" {
+			return nil, fmt.Errorf("condition required for filter operation")
+		}
+	case "map":
+		if input.MapType == "" {
+			return nil, fmt.Errorf("map_type required for map operation")
+		}
+	case "reduce":
+		if input.ReduceType == "" {
+			return nil, fmt.Errorf("reduce_type required for reduce operation")
+		}
+	case "group_by":
+		if input.Field == "" {
+			return nil, fmt.Errorf("field required for group_by operation")
+		}
+	}
+
+	// Check for any transformation defaults in state
+	if ctx.State != nil {
+		// Check for default sort order
+		if input.Operation == "sort" && input.SortOrder == "" {
+			if defaultOrder, exists := ctx.State.Get("data_transform_default_sort_order"); exists {
+				if order, ok := defaultOrder.(string); ok && (order == "asc" || order == "desc") {
+					input.SortOrder = order
+				}
+			}
+		}
+	}
+
+	// Set default sort order if not specified
+	if input.Operation == "sort" && input.SortOrder == "" {
+		input.SortOrder = "asc"
+	}
+
+	// Parse input data
+	var data interface{}
+	if err := json.Unmarshal([]byte(input.Data), &data); err != nil {
+		if ctx.Events != nil {
+			ctx.Events.EmitError(err)
+		}
+		return &DataTransformOutput{
+			Error: fmt.Sprintf("invalid JSON data: %v", err),
+		}, nil
+	}
+
+	// Ensure data is an array
+	dataArray, ok := data.([]interface{})
+	if !ok {
+		// Try to convert single item to array
+		dataArray = []interface{}{data}
+	}
+
+	// Emit progress event
+	if ctx.Events != nil {
+		ctx.Events.EmitProgress(1, 2, fmt.Sprintf("Processing %d items", len(dataArray)))
+	}
+
+	var result interface{}
+	var err error
+
+	switch input.Operation {
+	case "filter":
+		result, err = filterData(dataArray, input.Field, input.Condition)
+	case "map":
+		result, err = mapData(dataArray, input.Field, input.MapType)
+	case "reduce":
+		result, err = reduceData(dataArray, input.Field, input.ReduceType)
+	case "sort":
+		result, err = sortData(dataArray, input.Field, input.SortOrder)
+	case "group_by":
+		result, err = groupByData(dataArray, input.Field)
+	case "unique":
+		result, err = uniqueData(dataArray, input.Field)
+	case "reverse":
+		result, err = reverseData(dataArray)
+	default:
+		err = fmt.Errorf("invalid operation: %s", input.Operation)
+	}
+
+	// Emit completion or error event
+	if ctx.Events != nil {
+		if err != nil {
+			ctx.Events.EmitError(err)
+		} else {
+			ctx.Events.EmitProgress(2, 2, "Transformation complete")
+		}
+	}
+
+	if err != nil {
+		return &DataTransformOutput{
+			Error: err.Error(),
+		}, nil
+	}
+
+	itemCount := 0
+	switch v := result.(type) {
+	case []interface{}:
+		itemCount = len(v)
+	case map[string]interface{}:
+		itemCount = len(v)
+	default:
+		itemCount = 1
+	}
+
+	// Emit final result details
+	if ctx.Events != nil {
+		ctx.Events.EmitMessage(fmt.Sprintf("Transformation complete. Result contains %d items", itemCount))
+	}
+
+	return &DataTransformOutput{
+		Result:     result,
+		ItemCount:  itemCount,
+		ResultType: fmt.Sprintf("%T", result),
+	}, nil
 }
 
 // filterData applies filtering to the data
