@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .phase { fill: #f0f4ff; stroke: #2196F3; stroke-width: 2; }
+      .step { fill: #e8f5e9; stroke: #4CAF50; stroke-width: 2; }
+      .decision { fill: #fff3e0; stroke: #FF9800; stroke-width: 2; }
+      .error { fill: #ffebee; stroke: #f44336; stroke-width: 2; }
+      .text { font-family: Arial, sans-serif; font-size: 14px; text-anchor: middle; }
+      .title { font-size: 18px; font-weight: bold; }
+      .small { font-size: 12px; }
+      .arrow { fill: none; stroke: #333; stroke-width: 2; marker-end: url(#arrowhead); }
+      .dashedarrow { fill: none; stroke: #666; stroke-width: 2; stroke-dasharray: 5,5; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" class="text title">Tool Lifecycle and Execution Flow</text>
+
+  <!-- Creation Phase -->
+  <rect x="50" y="60" width="200" height="60" class="phase" rx="5"/>
+  <text x="150" y="85" class="text" font-weight="bold">1. Tool Creation</text>
+  <text x="150" y="105" class="text small">ToolBuilder Pattern</text>
+
+  <!-- Registration Phase -->
+  <rect x="300" y="60" width="200" height="60" class="phase" rx="5"/>
+  <text x="400" y="85" class="text" font-weight="bold">2. Registration</text>
+  <text x="400" y="105" class="text small">tools.RegisterTool()</text>
+
+  <!-- Discovery Phase -->
+  <rect x="550" y="60" width="200" height="60" class="phase" rx="5"/>
+  <text x="650" y="85" class="text" font-weight="bold">3. Discovery</text>
+  <text x="650" y="105" class="text small">Agent.AddTool()</text>
+
+  <!-- Arrows between phases -->
+  <path d="M 250 90 L 300 90" class="arrow"/>
+  <path d="M 500 90 L 550 90" class="arrow"/>
+
+  <!-- Execution Flow -->
+  <text x="400" y="160" class="text title">Tool Execution Flow</text>
+
+  <!-- Agent calls tool -->
+  <rect x="50" y="180" width="200" height="50" class="step" rx="5"/>
+  <text x="150" y="210" class="text">Agent Invokes Tool</text>
+
+  <!-- Create context -->
+  <rect x="300" y="180" width="200" height="50" class="step" rx="5"/>
+  <text x="400" y="210" class="text">Create ToolContext</text>
+
+  <!-- Validate parameters -->
+  <rect x="550" y="180" width="200" height="50" class="decision" rx="5"/>
+  <text x="650" y="210" class="text">Validate Parameters</text>
+
+  <!-- Arrows -->
+  <path d="M 250 205 L 300 205" class="arrow"/>
+  <path d="M 500 205 L 550 205" class="arrow"/>
+
+  <!-- Validation branches -->
+  <rect x="550" y="260" width="200" height="50" class="error" rx="5"/>
+  <text x="650" y="290" class="text">Return Validation Error</text>
+
+  <rect x="300" y="260" width="200" height="50" class="step" rx="5"/>
+  <text x="400" y="290" class="text">Execute Function</text>
+
+  <!-- Arrows from validation -->
+  <path d="M 650 230 L 650 260" class="arrow"/>
+  <text x="680" y="245" class="text small">Invalid</text>
+  
+  <path d="M 550 205 L 500 205 L 500 285 L 500 285" class="arrow"/>
+  <text x="520" y="245" class="text small">Valid</text>
+
+  <!-- Execution details -->
+  <rect x="50" y="340" width="150" height="40" class="step" rx="5"/>
+  <text x="125" y="365" class="text small">Emit Start Event</text>
+
+  <rect x="220" y="340" width="150" height="40" class="step" rx="5"/>
+  <text x="295" y="365" class="text small">Access State</text>
+
+  <rect x="390" y="340" width="150" height="40" class="step" rx="5"/>
+  <text x="465" y="365" class="text small">Process Data</text>
+
+  <rect x="560" y="340" width="150" height="40" class="step" rx="5"/>
+  <text x="635" y="365" class="text small">Emit Complete Event</text>
+
+  <!-- Arrows from Execute Function -->
+  <path d="M 400 310 L 125 340" class="arrow"/>
+  <path d="M 400 310 L 295 340" class="arrow"/>
+  <path d="M 400 310 L 465 340" class="arrow"/>
+  <path d="M 400 310 L 635 340" class="arrow"/>
+
+  <!-- Result -->
+  <rect x="300" y="420" width="200" height="50" class="phase" rx="5"/>
+  <text x="400" y="450" class="text">Return Result</text>
+
+  <!-- Arrows to result -->
+  <path d="M 125 380 L 400 420" class="arrow"/>
+  <path d="M 295 380 L 400 420" class="arrow"/>
+  <path d="M 465 380 L 400 420" class="arrow"/>
+  <path d="M 635 380 L 400 420" class="arrow"/>
+  <path d="M 650 310 L 650 445 L 500 445" class="dashedarrow"/>
+</svg>

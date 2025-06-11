@@ -912,24 +912,736 @@ result, _ = agent.ExecuteTool("api_client", map[string]interface{}{
 
 ## Web Tools
 
-[Documentation for other web tools like web_fetch, web_search, etc.]
+### Web Search Tool
+
+**Tool Name**: `web_search`  
+**Version**: `2.0.0`
+
+Search the web using multiple search engines (DuckDuckGo, Brave, Tavily, Serpapi, Serper.dev).
+
+**Key Features:**
+- Multiple search engine support with automatic fallback
+- Configurable result count and safe search
+- API key support for premium engines
+- Automatic result deduplication
+
+**Parameters:**
+- `query` (string, required): Search query
+- `max_results` (integer): Maximum results (default: 10)
+- `engine` (string): Search engine to use
+- `safe_search` (string): Safe search level (strict/moderate/off)
+- `api_key` (string): API key for premium engines
+
+### Web Fetch Tool
+
+**Tool Name**: `web_fetch`  
+**Version**: `2.0.0`
+
+Fetch and extract content from web pages.
+
+**Key Features:**
+- Clean text extraction from HTML
+- Metadata extraction (title, description, author)
+- Custom user agent support
+- Timeout control
+- Following redirects
+
+**Parameters:**
+- `url` (string, required): URL to fetch
+- `timeout` (integer): Timeout in seconds (default: 30)
+- `user_agent` (string): Custom user agent
+- `follow_redirects` (boolean): Follow HTTP redirects (default: true)
+- `extract_metadata` (boolean): Extract page metadata (default: true)
+
+### Web Scrape Tool
+
+**Tool Name**: `web_scrape`  
+**Version**: `2.0.0`
+
+Extract structured data from web pages using CSS selectors.
+
+**Key Features:**
+- CSS selector support for precise data extraction
+- Multiple selector support
+- Attribute extraction
+- Table extraction to JSON
+- Custom extraction patterns
+
+**Parameters:**
+- `url` (string, required): URL to scrape
+- `selectors` (map): CSS selectors for extraction
+- `extract_tables` (boolean): Extract tables as JSON
+- `timeout` (integer): Timeout in seconds
+- `user_agent` (string): Custom user agent
+
+### HTTP Request Tool
+
+**Tool Name**: `http_request`  
+**Version**: `2.0.0`
+
+Make raw HTTP requests with full control.
+
+**Key Features:**
+- All HTTP methods support
+- Custom headers and body
+- Response header access
+- Binary and text response handling
+- Detailed timing information
+
+**Parameters:**
+- `url` (string, required): Target URL
+- `method` (string): HTTP method (default: GET)
+- `headers` (map): Custom headers
+- `body` (string): Request body
+- `timeout` (integer): Timeout in seconds
+- `follow_redirects` (boolean): Follow redirects
 
 ## File Tools
 
-[Documentation for file tools]
+### File Read Tool
+
+**Tool Name**: `file_read`  
+**Version**: `2.0.0`
+
+Read files with advanced options for large files and specific ranges.
+
+**Key Features:**
+- Large file support with streaming
+- Line range selection
+- Binary file detection
+- Encoding detection
+- Metadata extraction
+
+**Parameters:**
+- `path` (string, required): File path to read
+- `start_line` (integer): Starting line number
+- `end_line` (integer): Ending line number
+- `encoding` (string): File encoding (default: UTF-8)
+- `binary_mode` (boolean): Read as binary
+
+### File Write Tool
+
+**Tool Name**: `file_write`  
+**Version**: `2.0.0`
+
+Write files with safety features and atomic operations.
+
+**Key Features:**
+- Atomic writes with temporary files
+- Automatic backup creation
+- Append mode support
+- Directory creation
+- Permission preservation
+
+**Parameters:**
+- `path` (string, required): File path to write
+- `content` (string, required): Content to write
+- `mode` (string): Write mode (overwrite/append)
+- `create_dirs` (boolean): Create parent directories
+- `backup` (boolean): Create backup before overwriting
+
+### File List Tool
+
+**Tool Name**: `file_list`  
+**Version**: `2.0.0`
+
+List files and directories with filtering options.
+
+**Key Features:**
+- Pattern matching (glob)
+- Size and date filtering
+- Recursive listing
+- Hidden file inclusion
+- Detailed file information
+
+**Parameters:**
+- `path` (string, required): Directory path
+- `pattern` (string): File pattern (e.g., *.txt)
+- `recursive` (boolean): Include subdirectories
+- `include_hidden` (boolean): Include hidden files
+- `min_size` (integer): Minimum file size
+- `max_size` (integer): Maximum file size
+
+### File Delete Tool
+
+**Tool Name**: `file_delete`  
+**Version**: `2.0.0`
+
+Safely delete files with confirmation options.
+
+**Key Features:**
+- Safe deletion with checks
+- Pattern-based deletion
+- Recursive directory deletion
+- Dry run mode
+- Deletion logging
+
+**Parameters:**
+- `path` (string, required): File or directory path
+- `pattern` (string): Pattern for multiple files
+- `recursive` (boolean): Delete directories recursively
+- `dry_run` (boolean): Preview without deleting
+- `force` (boolean): Skip safety checks
+
+### File Move Tool
+
+**Tool Name**: `file_move`  
+**Version**: `2.0.0`
+
+Move or rename files and directories.
+
+**Key Features:**
+- Atomic move operations
+- Cross-filesystem support
+- Overwrite protection
+- Directory moving
+- Batch operations
+
+**Parameters:**
+- `source` (string, required): Source path
+- `destination` (string, required): Destination path
+- `overwrite` (boolean): Overwrite if exists
+- `create_dirs` (boolean): Create parent directories
+
+### File Search Tool
+
+**Tool Name**: `file_search`  
+**Version**: `2.0.0`
+
+Search for content within files.
+
+**Key Features:**
+- Regular expression support
+- Multi-file search
+- Context lines
+- Binary file skipping
+- Performance optimization
+
+**Parameters:**
+- `path` (string, required): Search path
+- `pattern` (string, required): Search pattern (regex)
+- `file_pattern` (string): File name pattern
+- `recursive` (boolean): Search subdirectories
+- `case_sensitive` (boolean): Case sensitive search
+- `context_lines` (integer): Lines of context
 
 ## System Tools
 
-[Documentation for system tools]
+### Execute Command Tool
+
+**Tool Name**: `execute_command`  
+**Version**: `2.0.0`
+
+Execute system commands safely with timeouts and constraints.
+
+**Key Features:**
+- Command timeout support
+- Working directory control
+- Environment variable setting
+- Output capture (stdout/stderr)
+- Safe command validation
+
+**Parameters:**
+- `command` (string, required): Command to execute
+- `args` (array): Command arguments
+- `working_dir` (string): Working directory
+- `env` (map): Environment variables
+- `timeout` (integer): Timeout in seconds
+- `shell` (boolean): Use shell execution
+
+### Get Environment Variable Tool
+
+**Tool Name**: `get_environment_variable`  
+**Version**: `2.0.0`
+
+Read environment variables with pattern matching.
+
+**Key Features:**
+- Single variable reading
+- Pattern matching for multiple variables
+- Default value support
+- Variable expansion
+- Security filtering
+
+**Parameters:**
+- `name` (string): Variable name
+- `pattern` (string): Pattern for multiple variables
+- `default` (string): Default value if not found
+- `expand` (boolean): Expand variable references
+
+### Get System Info Tool
+
+**Tool Name**: `get_system_info`  
+**Version**: `2.0.0`
+
+Gather comprehensive system information.
+
+**Key Features:**
+- OS and architecture details
+- Memory and CPU information
+- Disk usage statistics
+- Network interface data
+- Runtime environment info
+
+**Parameters:**
+- `include_env` (boolean): Include environment variables
+- `include_network` (boolean): Include network info
+- `include_disk` (boolean): Include disk usage
+- `include_memory` (boolean): Include memory stats
+
+### Process List Tool
+
+**Tool Name**: `process_list`  
+**Version**: `2.0.0`
+
+List and filter system processes.
+
+**Key Features:**
+- Process filtering by name/PID
+- CPU and memory usage
+- Process tree display
+- Sorting options
+- Command line arguments
+
+**Parameters:**
+- `filter` (string): Filter by process name
+- `sort_by` (string): Sort field (cpu/memory/pid)
+- `limit` (integer): Maximum processes to return
+- `include_threads` (boolean): Include thread count
+- `include_children` (boolean): Include child processes
 
 ## Data Tools
 
-[Documentation for data processing tools]
+### JSON Process Tool
 
-## Date Time Tools
+**Tool Name**: `json_process`  
+**Version**: `2.0.0`
 
-[Documentation for date/time tools]
+Process JSON data with JSONPath queries and transformations.
+
+**Key Features:**
+- JSONPath query support
+- JSON validation and formatting
+- Flattening and unflattening
+- Key/value extraction
+- Schema validation
+
+**Parameters:**
+- `data` (string, required): JSON data to process
+- `operation` (string, required): Operation type
+- `query` (string): JSONPath query
+- `indent` (integer): Pretty print indentation
+- `sort_keys` (boolean): Sort object keys
+
+**Operations:**
+- `parse`: Validate and parse JSON
+- `query`: Execute JSONPath query
+- `flatten`: Flatten nested structure
+- `prettify`: Format with indentation
+- `minify`: Remove whitespace
+- `extract_keys`: Get all keys
+- `extract_values`: Get all values
+
+### CSV Process Tool
+
+**Tool Name**: `csv_process`  
+**Version**: `2.0.0`
+
+Process CSV data with filtering and statistics.
+
+**Key Features:**
+- CSV parsing with custom delimiters
+- Column filtering and transformation
+- Statistical calculations
+- Data type inference
+- Header handling
+
+**Parameters:**
+- `data` (string, required): CSV data
+- `operation` (string, required): Operation type
+- `delimiter` (string): Field delimiter
+- `headers` (boolean): First row is headers
+- `columns` (array): Columns to process
+
+**Operations:**
+- `parse`: Parse CSV to JSON
+- `filter`: Filter rows by conditions
+- `transform`: Transform column values
+- `stats`: Calculate statistics
+
+### XML Process Tool
+
+**Tool Name**: `xml_process`  
+**Version**: `2.0.0`
+
+Process XML data with XPath queries.
+
+**Key Features:**
+- XPath 1.0 query support
+- XML to JSON conversion
+- Namespace handling
+- Pretty printing
+- Validation
+
+**Parameters:**
+- `data` (string, required): XML data
+- `operation` (string, required): Operation type
+- `xpath` (string): XPath query
+- `namespaces` (map): Namespace mappings
+
+**Operations:**
+- `parse`: Validate XML
+- `query`: Execute XPath query
+- `to_json`: Convert to JSON
+
+### Data Transform Tool
+
+**Tool Name**: `data_transform`  
+**Version**: `2.0.0`
+
+Apply functional transformations to data collections.
+
+**Key Features:**
+- Functional operations (map, filter, reduce)
+- Sorting and grouping
+- Aggregations
+- Type conversions
+- Unique value extraction
+
+**Parameters:**
+- `data` (array, required): Input data array
+- `operation` (string, required): Transform operation
+- `expression` (string): Transformation expression
+- `field` (string): Field for operations
+- `ascending` (boolean): Sort order
+
+**Operations:**
+- `filter`: Filter by condition
+- `map`: Transform each element
+- `reduce`: Aggregate to single value
+- `sort`: Sort by field or value
+- `group_by`: Group by field value
+- `unique`: Extract unique values
+- `reverse`: Reverse order
+
+## DateTime Tools
+
+### DateTime Now Tool
+
+**Tool Name**: `datetime_now`  
+**Version**: `2.0.0`
+
+Get current date and time in any timezone.
+
+**Key Features:**
+- Multiple timezone support
+- Various output formats
+- Unix timestamp
+- ISO 8601 formatting
+- Relative time descriptions
+
+**Parameters:**
+- `timezone` (string): Target timezone
+- `format` (string): Output format
+- `unix` (boolean): Return Unix timestamp
+- `iso` (boolean): Return ISO 8601 format
+
+### DateTime Parse Tool
+
+**Tool Name**: `datetime_parse`  
+**Version**: `2.0.0`
+
+Parse dates from various formats including natural language.
+
+**Key Features:**
+- Auto-format detection
+- Natural language parsing ("next Monday")
+- Multiple format support
+- Timezone handling
+- Relative date parsing
+
+**Parameters:**
+- `date_string` (string, required): Date to parse
+- `format` (string): Expected format
+- `timezone` (string): Source timezone
+- `strict` (boolean): Strict parsing mode
+
+### DateTime Calculate Tool
+
+**Tool Name**: `datetime_calculate`  
+**Version**: `2.0.0`
+
+Perform date arithmetic and calculations.
+
+**Key Features:**
+- Add/subtract time units
+- Business day calculations
+- Duration calculations
+- Date differences
+- Holiday awareness
+
+**Parameters:**
+- `date` (string): Base date (default: now)
+- `operation` (string, required): Calculation type
+- `value` (integer): Amount to add/subtract
+- `unit` (string): Time unit
+- `business_days` (boolean): Use business days only
+
+**Operations:**
+- `add`: Add time to date
+- `subtract`: Subtract time from date
+- `difference`: Calculate time between dates
+- `business_days`: Count business days
+
+### DateTime Format Tool
+
+**Tool Name**: `datetime_format`  
+**Version**: `2.0.0`
+
+Format dates with localization support.
+
+**Key Features:**
+- Standard format patterns
+- Custom formats
+- Localization (50+ locales)
+- Relative formatting
+- Multiple output formats
+
+**Parameters:**
+- `date` (string, required): Date to format
+- `format` (string): Output format
+- `locale` (string): Locale for formatting
+- `timezone` (string): Display timezone
+
+### DateTime Compare Tool
+
+**Tool Name**: `datetime_compare`  
+**Version**: `2.0.0`
+
+Compare dates and check date ranges.
+
+**Key Features:**
+- Date comparisons
+- Range checking
+- Multiple date sorting
+- Relative comparisons
+- Business day aware
+
+**Parameters:**
+- `date1` (string, required): First date
+- `date2` (string, required): Second date
+- `operation` (string): Comparison type
+- `dates` (array): Multiple dates for sorting
+
+**Operations:**
+- `before`: Check if date1 is before date2
+- `after`: Check if date1 is after date2
+- `equal`: Check if dates are equal
+- `between`: Check if date is in range
+- `earliest`: Find earliest date
+- `latest`: Find latest date
+
+### DateTime Info Tool
+
+**Tool Name**: `datetime_info`  
+**Version**: `2.0.0`
+
+Get detailed information about dates.
+
+**Key Features:**
+- Day of week/year
+- Week number
+- Quarter information
+- Leap year detection
+- Days in month
+- Zodiac signs
+
+**Parameters:**
+- `date` (string, required): Date to analyze
+- `timezone` (string): Timezone for calculations
+- `include_all` (boolean): Return all information
+
+### DateTime Convert Tool
+
+**Tool Name**: `datetime_convert`  
+**Version**: `2.0.0`
+
+Convert dates between timezones.
+
+**Key Features:**
+- Timezone conversion
+- DST handling
+- Offset calculations
+- Multiple timezone support
+- UTC conversions
+
+**Parameters:**
+- `date` (string, required): Date to convert
+- `from_timezone` (string): Source timezone
+- `to_timezone` (string, required): Target timezone
+- `format` (string): Output format
 
 ## Feed Tools
 
-[Documentation for feed processing tools]
+### Feed Fetch Tool
+
+**Tool Name**: `feed_fetch`  
+**Version**: `2.0.0`
+
+Fetch and parse RSS, Atom, and JSON feeds.
+
+**Key Features:**
+- Multi-format support (RSS 2.0, Atom, JSON Feed)
+- Conditional fetching with ETags
+- Custom user agents
+- Item limiting
+- Metadata extraction
+
+**Parameters:**
+- `url` (string, required): Feed URL
+- `max_items` (integer): Maximum items to return
+- `timeout` (integer): Timeout in seconds
+- `user_agent` (string): Custom user agent
+- `if_modified_since` (string): Conditional fetch
+- `etag` (string): ETag for caching
+
+### Feed Discover Tool
+
+**Tool Name**: `feed_discover`  
+**Version**: `2.0.0`
+
+Auto-discover feed URLs from websites.
+
+**Key Features:**
+- Auto-discovery from HTML
+- Common feed path checking
+- Link following
+- Multiple format detection
+- Podcast feed discovery
+
+**Parameters:**
+- `url` (string, required): Website URL
+- `follow_links` (boolean): Follow page links
+- `max_depth` (integer): Link following depth
+- `include_podcasts` (boolean): Include podcast feeds
+
+### Feed Filter Tool
+
+**Tool Name**: `feed_filter`  
+**Version**: `2.0.0`
+
+Filter feed items by various criteria.
+
+**Key Features:**
+- Keyword filtering
+- Date range filtering
+- Author filtering
+- Category filtering
+- Custom matching modes
+
+**Parameters:**
+- `feed` (object, required): Feed to filter
+- `keywords` (array): Keywords to match
+- `after` (string): Date after which to include
+- `before` (string): Date before which to include
+- `authors` (array): Authors to include
+- `categories` (array): Categories to match
+- `match_all` (boolean): Require all criteria
+
+### Feed Aggregate Tool
+
+**Tool Name**: `feed_aggregate`  
+**Version**: `2.0.0`
+
+Combine multiple feeds into one.
+
+**Key Features:**
+- Multi-feed merging
+- Duplicate removal
+- Sorting options
+- Item limiting
+- Metadata preservation
+
+**Parameters:**
+- `feeds` (array, required): Feeds to aggregate
+- `title` (string): Aggregated feed title
+- `description` (string): Feed description
+- `deduplicate` (boolean): Remove duplicates
+- `sort_by` (string): Sort field (date/title)
+- `max_items` (integer): Maximum total items
+
+### Feed Convert Tool
+
+**Tool Name**: `feed_convert`  
+**Version**: `2.0.0`
+
+Convert between feed formats.
+
+**Key Features:**
+- Format conversion (RSS ↔ Atom ↔ JSON)
+- Pretty printing
+- Metadata inclusion
+- Validation
+- Custom templates
+
+**Parameters:**
+- `feed` (object, required): Feed to convert
+- `target_type` (string, required): Target format
+- `pretty_print` (boolean): Format output
+- `include_meta` (boolean): Include metadata
+- `validate` (boolean): Validate output
+
+### Feed Extract Tool
+
+**Tool Name**: `feed_extract`  
+**Version**: `2.0.0`
+
+Extract specific data from feed items.
+
+**Key Features:**
+- Field extraction
+- Data flattening
+- Custom field mapping
+- Metadata extraction
+- Export formatting
+
+**Parameters:**
+- `feed` (object, required): Feed to process
+- `fields` (array, required): Fields to extract
+- `max_items` (integer): Maximum items
+- `flatten` (boolean): Flatten nested data
+- `include_meta` (boolean): Include metadata
+
+## Tool Discovery and Usage
+
+All built-in tools are registered in the global tool registry and can be discovered programmatically:
+
+```go
+import "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
+
+// List all tools
+allTools := tools.Tools.List()
+
+// Get tools by category
+webTools := tools.Tools.ListByCategory("web")
+
+// Search for tools
+results := tools.Tools.Search("json")
+
+// Get a specific tool
+tool, err := tools.GetTool("web_search")
+```
+
+## Version History
+
+### v2.0.0 (January 2025)
+- Migrated all 32 tools to ToolBuilder pattern
+- Added comprehensive metadata for LLM guidance
+- Enhanced error messages and examples
+- Added MCP (Model Context Protocol) compatibility
+- Improved authentication support across web tools
+
+### v1.0.0 (December 2024)
+- Initial release with 26 core tools
+- Basic tool functionality
+- Simple parameter validation

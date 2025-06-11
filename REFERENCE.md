@@ -77,8 +77,8 @@ Welcome to the Go-LLMs documentation reference. This document provides links to 
 - [Multi-Provider Example](/cmd/examples/multi/README.md) - Working with multiple providers
 - [Consensus Example](/cmd/examples/consensus/README.md) - Multi-provider consensus strategies
 - [Provider Options Example](/cmd/examples/provider-options/README.md) - Demonstration of provider options system
-- [Schema Example](/cmd/examples/schema/README.md) - Schema generation from Go structs
-- [Coercion Example](/cmd/examples/coercion/README.md) - Type coercion for validation
+- [Schema Example](/cmd/examples/structured-schema/README.md) - Schema generation from Go structs
+- [Coercion Example](/cmd/examples/structured-coercion/README.md) - Type coercion for validation
 - [Convenience Example](/cmd/examples/convenience/README.md) - Utility functions for common tasks
 - [Model Info Example](/cmd/examples/modelinfo/README.md) - Model discovery and capability information
 - [Metrics Example](/cmd/examples/metrics/README.md) - Performance monitoring and metrics

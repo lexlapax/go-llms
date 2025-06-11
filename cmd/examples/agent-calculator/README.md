@@ -66,9 +66,21 @@ The calculator tool now includes comprehensive LLM guidance with the ToolBuilder
 
 ## Running the Example
 
-### 1. Direct Tool Usage (Default)
+### 1. LLM Agent Mode (Default)
 ```bash
 go run main.go
+```
+
+This mode demonstrates using the calculator tool through an LLM agent. The agent:
+- Accepts natural language prompts
+- Automatically uses the calculator tool based on its enhanced metadata
+- Leverages the tool's usage instructions and examples
+- Handles errors using the tool's error guidance
+- Returns results in natural language
+
+### 2. Direct Tool Usage
+```bash
+go run main.go direct
 ```
 
 This mode demonstrates direct usage of the calculator tool without an LLM. It shows:
@@ -79,21 +91,9 @@ This mode demonstrates direct usage of the calculator tool without an LLM. It sh
 - Using constant names as operands (e.g., "pi", "phi")
 - Comprehensive error handling
 
-### 2. LLM Agent Mode
-```bash
-go run main.go llm
-```
-
-This mode demonstrates using the calculator tool through an LLM agent. The agent:
-- Accepts natural language prompts
-- Automatically uses the calculator tool based on its enhanced metadata
-- Leverages the tool's usage instructions and examples
-- Handles errors using the tool's error guidance
-- Returns results in natural language
-
 ### 3. Tool Information Mode
 ```bash
-go run main.go llm info
+go run main.go info
 ```
 
 This mode displays the calculator tool's comprehensive metadata:

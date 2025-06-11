@@ -1,163 +1,154 @@
-# Go-LLMs Project TODOs
+# Go-LLMs Project TODOs - v0.3.x Roadmap
 
-## Features
-- [ ] Add Model Context Protocol Client support for Agents
-- [ ] Add Model Context Protocol Server support for Workflows or Agents
+## v0.3.1 Release (Ready)
+- [ ] 0.3.1.1: Tag release v0.3.1
 
-## Authentication System Improvements
-- [ ] Implement provider registry pattern for auth detection (MEDIUM PRIORITY)
-  - [ ] Create AuthProvider interface with Name(), CanHandle(), Configure() methods
-  - [ ] Implement AuthRegistry for managing multiple providers
-  - [ ] Add configuration file support for custom auth mappings (YAML/JSON)
-  - [ ] Support provider patterns:
-    - [ ] URL pattern matching (regex support)
-    - [ ] Response-based detection (401 + WWW-Authenticate header)
-    - [ ] OpenAPI security scheme integration
-    - [ ] OAuth2 discovery via .well-known endpoints
-  - [ ] Create default providers for common services:
-    - [ ] GitHub (including Enterprise)
-    - [ ] GitLab (including self-hosted)
-    - [ ] Generic Bearer token
-    - [ ] Generic API key
-    - [ ] Basic auth
-  - [ ] Ensure backward compatibility with existing detectURLSpecificAuth
-  - [ ] Add examples and documentation
-  - [ ] Benefits:
-    - [ ] Works with any URL including test servers
-    - [ ] Extensible without code changes
-    - [ ] User-configurable auth providers
-    - [ ] Standards-based approach
+## v0.3.2: Enhanced Tool Capabilities
+### 0.3.2.1: Web API Client Advanced Features 
+- [ ] Auto-Pagination: Automatically follow pagination links
+- [ ] Rate Limiting: Respect rate limit headers with intelligent backoff
+- [ ] Response Caching: Cache responses with configurable TTL
+- [ ] Request Templates: Store and reuse common request patterns
+- [ ] Response Transformation: Extract data using JSONPath or JQ-like queries
+- [ ] Error Recovery: Smart retries with exponential backoff
+- [ ] Mock Mode: Optional mock responses for testing
+- [ ] Streaming Responses: Handle large response streaming
+- [ ] Request/Response Middleware: Plugin system for custom processing
+- [ ] Multi-tenancy: Support multiple API configurations
+- [ ] Request Batching: Batch multiple requests for efficiency
 
-## Testing & Performance
-- [ ] Performance profiling and optimization:
-  - [ ] Phase 1: Baseline Profiling Infrastructure (Prerequisites)
-    - [ ] P1: Create benchmark harness for A/B testing optimizations (REVISIT)
-    - [ ] P2: Implement visualization for memory allocation patterns (REVISIT)
-    - [ ] P2: Create real-world test scenarios for end-to-end performance (REVISIT)
+### 0.3.2.2: Authentication System Improvements 
+- [ ] Create AuthProvider interface with Name(), CanHandle(), Configure() methods
+- [ ] Implement AuthRegistry for managing multiple providers
+- [ ] Add configuration file support for custom auth mappings (YAML/JSON)
+- [ ] Support provider patterns:
+  - [ ] URL pattern matching (regex support)
+  - [ ] Response-based detection (401 + WWW-Authenticate header)
+  - [ ] OpenAPI security scheme integration
+  - [ ] OAuth2 discovery via .well-known endpoints
+- [ ] Create default providers for common services:
+  - [ ] GitHub (including Enterprise)
+  - [ ] GitLab (including self-hosted)
+  - [ ] Generic Bearer token
+  - [ ] Generic API key
+  - [ ] Basic auth
+- [ ] Ensure backward compatibility with existing detectURLSpecificAuth
+- [ ] Add examples and documentation
 
-  - Phase 2: High-Impact Optimizations (Quick Wins)
-    (All P0 and P1 items completed - see TODO-DONE.md)
+## v0.3.3: Built-in Agents Library
+### 0.3.3.1: Text Processing Agents 
+- [ ] TextSummarize - intelligent summarization using LLM
+- [ ] TextExtract - extract structured data from text
+- [ ] TextAnalyze - sentiment, entities, keywords
+- [ ] TextTranslate - language translation using LLM
 
-  - [ ] Phase 3: Advanced Optimizations (After Initial Improvements)
-    - [ ] P1: Implement adaptive channel buffer sizing based on usage patterns (REVISIT)
-    - [ ] P1: Add pool prewarming for high-throughput scenarios (REVISIT)
-    - [ ] P1: Reduce redundant property iterations in schema processing (REVISIT)
-    - [ ] P2: Implement more granular locking in cached objects (REVISIT)
-    - [ ] P2: Optimize zero-initialization patterns for pooled objects (REVISIT)
-    - [ ] P2: Introduce buffer pooling for string builders (REVISIT)
+### 0.3.3.2: Research Agents 
+- [ ] WebResearcher - web research with source tracking
+- [ ] DocumentAnalyzer - analyze documents and PDFs
+- [ ] FactChecker - verify claims against sources
 
-  - [ ] Phase 4: Integration and Validation (Finalization)
-    - [ ] P0: Document performance improvements with metrics (REVISIT)
-    - [ ] P0: Verify optimizations in high-concurrency scenarios (REVISIT)
-    - [ ] P1: Create benchmark comparison charts for before/after (REVISIT)
-    - [ ] P1: Implement regression testing to prevent performance degradation (REVISIT)
-    - [ ] P2: Add performance acceptance criteria to CI pipeline (REVISIT)
+### 0.3.3.3: Coding Agents 
+- [ ] CodeReviewer - review code for issues
+- [ ] TestGenerator - generate tests from code
+- [ ] DocWriter - generate documentation
 
-## Architecture & Built-in Components for next release
+### 0.3.3.4: Data Agents 
+- [ ] DataAnalyst - analyze datasets and generate insights
+- [ ] ReportGenerator - create formatted reports
+- [ ] DataCleaner - clean and validate data
 
-### Agent Architecture Restructuring
-- Agent Architecture Restructuring - All phases completed - see TODO-DONE.md
+### 0.3.3.5: Feed Agents 
+- [ ] NewsMonitor - monitor news feeds for keywords and topics using LLM
+- [ ] FeedAggregator - aggregate and deduplicate content from multiple feeds
+- [ ] FeedSummarizer - summarize feed content using LLM
+- [ ] ContentCurator - curate and categorize feed content using LLM
 
-- [ ] Phase 6: Advanced Features (MOVED TO PHASE 7) (low priority)
-  - [ ] State persistence and serialization, present plan before implementation
-  - [ ] Agent discovery and registry, present plan before implementation
-  - [ ] Advanced merge strategies for parallel agents
-  - [ ] Streaming support for long-running agents
+## v0.3.4: Built-in Workflow Patterns
+### 0.3.4.1: Core Workflow Patterns 
+- [ ] Pipeline - sequential processing workflow
+- [ ] MapReduce - parallel processing with aggregation
+- [ ] Consensus - multi-agent agreement pattern
+- [ ] Retry - with exponential backoff
 
-### Tool System Enhancement with LLM Guidance (HIGHEST PRIORITY - IN PROGRESS)
-- Phase 1: Core Infrastructure (Week 1)
-  - Day 1-4: COMPLETED - see TODO-DONE.md
-  - Day 5: API Client Tool & Integration testing
-    - Phase 1-4: COMPLETED - see TODO-DONE.md
-    - [ ] Phase 5: Advanced Capabilities for web-api-client tool (medium priority)
-      - [ ] Auto-Pagination: Automatically follow pagination links
-      - [ ] Rate Limiting: Respect rate limit headers with intelligent backoff
-      - [ ] Response Caching: Cache responses with configurable TTL
-      - [ ] Request Templates: Store and reuse common request patterns
-      - [ ] Response Transformation: Extract data using JSONPath or JQ-like queries
-      - [ ] Error Recovery: Smart retries with exponential backoff
-      - [ ] Mock Mode: Optional mock responses for testing
-      - [ ] Streaming Responses: Handle large response streaming
-      - [ ] Request/Response Middleware: Plugin system for custom processing
-      - [ ] Multi-tenancy: Support multiple API configurations
-      - [ ] Request Batching: Batch multiple requests for efficiency
-    - Integration Testing - COMPLETED - see TODO-DONE.md
+### 0.3.4.2: Example Workflows 
+- [ ] ResearchWorkflow - research → verify → summarize → report
+- [ ] CodeReviewWorkflow - analyze → review → suggest → document
+- [ ] DataPipeline - ingest → clean → analyze → visualize
 
-- Phase 2: Tool Migration to Enhanced Interface (Week 2) - COMPLETED - see TODO-DONE.md
+## v0.3.5: Advanced Agent Features
+### 0.3.5.1: State Management 
+- [ ] State persistence and serialization design
+- [ ] Implement state storage backends (file, database)
+- [ ] Add state versioning and migration
+- [ ] Create examples with persistent agents
 
-- Phase 3: Tool Migration Part 2 (Week 3) - COMPLETED January 10, 2025 - see TODO-DONE.md
-  - [ ] Update all examples that use migrated tools to follow calculator/web-api pattern (REVISIT)
-  - [ ] Day 4: Update examples (first 15)
-    - [ ] agent-calculator - Remove manual prompt
-    - [ ] agent-simple-llm - Use auto docs
-    - [ ] agent-llm-builtin-tools - Showcase
-    - [ ] agent-tools-conversion - Update
-    - [ ] builtins-* examples (7) - Update all
-    - [ ] Other agent examples (4)
-    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool
-  - [ ] Day 5: Update examples (remaining 16)
-    - [ ] Update all remaining examples
-    - [ ] Verify all examples work
-    - [ ] Update example documentation
+### 0.3.5.2: Agent Discovery
+- [ ] Agent discovery and registry design
+- [ ] Implement agent metadata and search
+- [ ] Add dynamic agent loading
+- [ ] Create agent marketplace example
 
-- [ ] Phase 4: Documentation & Polish (Week 4)
-  - Day 1-2: Technical documentation - COMPLETED January 9, 2025
-    - Technical documentation for tools.md created
-    - [ ] Add architecture diagrams (SVG diagrams still needed)
-  - [ ] Day 3-4: User guide updates
-    - [ ] Create docs/user-guide/tool-development.md
-    - [ ] Update docs/user-guide/builtin-tools.md
-    - [ ] Add migration guide
-    - [ ] Create examples gallery
-  - [ ] Day 5: Final testing & release
-    - [ ] Run full test suite
-    - [ ] Performance validation
-    - [ ] Create release notes
-    - [ ] Tag release
-    - [ ] ensure all the documentation links are updated and correct, root README.md REFERENCE.md , the index READMES in docs/ and examples
+### 0.3.5.3: Advanced Features 
+- [ ] Advanced merge strategies for parallel agents
+- [ ] Streaming support for long-running agents
+- [ ] Agent composition patterns
+- [ ] Agent lifecycle management
 
-### Previous Built-in Components Plan
-- P2: Build useful built-in tools - COMPLETED - see TODO-DONE.md
+## v0.3.6: Model Context Protocol (MCP) Support
+### 0.3.6.1: MCP Client Support 
+- [ ] Research MCP specification and requirements
+- [ ] Design MCP client interface for agents
+- [ ] Implement MCP client in pkg/agent/mcp/client
+- [ ] Add MCP tool discovery and registration
+- [ ] Create examples demonstrating MCP client usage
+- [ ] Write comprehensive tests
+- [ ] Document MCP client usage in user guide
 
-- [ ] P3: Build useful built-in agents (Phase 3 - POSTPONED until after architecture restructuring)
-  - [ ] Text Agents
-    - [ ] TextSummarize - intelligent summarization using LLM
-    - [ ] TextExtract - extract structured data from text
-    - [ ] TextAnalyze - sentiment, entities, keywords
-    - [ ] TextTranslate - language translation using LLM
-  - [ ] Research Agents:
-    - [ ] WebResearcher - web research with source tracking
-    - [ ] DocumentAnalyzer - analyze documents and PDFs
-    - [ ] FactChecker - verify claims against sources
-  - [ ] Coding Agents:
-    - [ ] CodeReviewer - review code for issues
-    - [ ] TestGenerator - generate tests from code
-    - [ ] DocWriter - generate documentation
-  - [ ] Data Agents:
-    - [ ] DataAnalyst - analyze datasets and generate insights
-    - [ ] ReportGenerator - create formatted reports
-    - [ ] DataCleaner - clean and validate data
-  - [ ] Feed Agents:
-    - [ ] NewsMonitor - monitor news feeds for keywords and topics using LLM
-    - [ ] FeedAggregator - aggregate and deduplicate content from multiple feeds
-    - [ ] FeedSummarizer - summarize feed content using LLM
-    - [ ] ContentCurator - curate and categorize feed content using LLM
-  
-- [ ] P4: Build useful multi-agent workflows (Phase 4 - PENDING)
-  - [ ] Core Patterns:
-    - [ ] Pipeline - sequential processing
-    - [ ] MapReduce - parallel processing with aggregation
-    - [ ] Consensus - multi-agent agreement
-    - [ ] Retry - with exponential backoff
-  - [ ] Example Workflows:
-    - [ ] ResearchWorkflow - research → verify → summarize → report
-    - [ ] CodeReviewWorkflow - analyze → review → suggest → document
-    - [ ] DataPipeline - ingest → clean → analyze → visualize
-    
-- [ ] Fix identified cross-link issues (path inconsistencies, broken links) (REVISIT)
-- [ ] Perform final consistency check across all documentation (REVISIT)
+### 0.3.6.2: MCP Server Support 
+- [ ] Design MCP server interface for exposing agents/workflows
+- [ ] Implement MCP server in pkg/agent/mcp/server
+- [ ] Add agent/workflow registration to MCP server
+- [ ] Create example MCP server implementations
+- [ ] Write comprehensive tests
+- [ ] Document MCP server setup and configuration
+
+## v0.3.7: Performance Optimization
+### 0.3.7.1: Profiling Infrastructure (REVISIT)
+- [ ] Create benchmark harness for A/B testing optimizations
+- [ ] Implement visualization for memory allocation patterns
+- [ ] Create real-world test scenarios for end-to-end performance
+
+### 0.3.7.2: Advanced Optimizations (REVISIT)
+- [ ] Implement adaptive channel buffer sizing based on usage patterns
+- [ ] Add pool prewarming for high-throughput scenarios
+- [ ] Reduce redundant property iterations in schema processing
+- [ ] Implement more granular locking in cached objects
+- [ ] Optimize zero-initialization patterns for pooled objects
+- [ ] Introduce buffer pooling for string builders
+
+### 0.3.7.3: Performance Validation (REVISIT)
+- [ ] Document performance improvements with metrics
+- [ ] Verify optimizations in high-concurrency scenarios
+- [ ] Create benchmark comparison charts for before/after
+- [ ] Implement regression testing to prevent performance degradation
+- [ ] Add performance acceptance criteria to CI pipeline
+
+## v0.3.8: Final Polish and Stable Release
+### 0.3.8.1: Documentation Polish
+- [ ] Fix identified cross-link issues (path inconsistencies, broken links)
+- [ ] Perform final consistency check across all documentation
+- [ ] Update all examples to showcase v0.3.x features
+- [ ] Create migration guide from earlier versions
+
+### 0.3.8.2: API Refinement
 - [ ] API refinement based on usage feedback
-- [ ] Final review and preparation for stable release
+- [ ] Deprecate old patterns with migration paths
+- [ ] Ensure backward compatibility where possible
+- [ ] Final review and preparation for v0.4.0 stable release
 
-## Completed Tasks
+## Notes
+- Tool System Enhancement Phases 1-4: COMPLETED (see TODO-DONE.md)
+- Agent Architecture Restructuring Phases 1-7: COMPLETED (see TODO-DONE.md)
+- Performance Phase 2 (Quick Wins): COMPLETED (see TODO-DONE.md)
+
 See TODO-DONE.md for all completed tasks

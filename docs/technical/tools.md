@@ -409,6 +409,122 @@ agentAgain := tools.NewToolAgent(tool)
 
 ## Architecture
 
+### Tool System Overview
+
+![Tool Architecture](../images/tool_architecture.svg)
+
+The tool system in go-llms follows a layered architecture:
+
+1. **Agent Layer**: Various agent types (LLMAgent, BaseAgent, WorkflowAgent) that can use tools
+2. **Tool Interface Layer**: Core interfaces (domain.Tool, domain.ToolContext, domain.ToolMetadata)
+3. **Tool Implementation Layer**: Actual tool implementations using ToolBuilder pattern
+4. **Tool Registry**: Global registry for tool discovery and management
+
+Cross-cutting concerns like state management, event emission, and authentication flow through the ToolContext.
+
+### Tool Lifecycle
+
+![Tool Lifecycle](../images/tool_lifecycle.svg)
+
+The tool lifecycle consists of two main phases:
+
+**Creation and Registration Phase:**
+1. **Tool Creation**: Use ToolBuilder pattern to create tools with metadata
+2. **Registration**: Register tools in the global registry
+3. **Discovery**: Agents discover and add tools via registry or direct assignment
+
+**Execution Phase:**
+1. **Agent Invokes Tool**: Agent decides to use a tool based on context
+2. **Create ToolContext**: Framework creates context with state, events, and metadata
+3. **Validate Parameters**: Tool validates input against parameter schema
+4. **Execute Function**: If valid, execute the tool's core functionality
+   - Emit start event
+   - Access state for configuration
+   - Process data
+   - Emit completion event
+5. **Return Result**: Return structured result or error
+
+### ToolBuilder Pattern Details
+
+![ToolBuilder Pattern](../images/toolbuilder_pattern.svg)
+
+The ToolBuilder pattern provides a fluent interface for creating tools:
+
+**Required Components:**
+- `WithFunction()`: The execution function
+- `WithParameterSchema()`: Input validation schema
+- `WithOutputSchema()`: Output structure schema
+
+**Optional Metadata:**
+- `WithCategory()`: Tool categorization
+- `WithTags()`: Discovery tags
+- `WithVersion()`: Version tracking
+- `WithUsageInstructions()`: LLM guidance
+- `WithConstraints()`: Limitations
+- `WithExamples()`: Usage examples
+- `WithErrorGuidance()`: Error handling guidance
+- `WithDeterministic()`: Behavioral hints
+
+All methods return the builder for chaining, and `Build()` creates the final tool.
+
+## Enhanced Features
+
+### State Integration
+
+Tools can access agent state through the ToolContext:
+
+```go
+func myToolExecute(ctx *domain.ToolContext, params MyParams) (*MyResult, error) {
+    // Read configuration from state
+    if apiKey, ok := ctx.State.Get("api_key"); ok {
+        // Use API key
+    }
+    
+    // Access previous results
+    if lastResult, ok := ctx.State.Get("last_result"); ok {
+        // Reference previous execution
+    }
+    
+    return result, nil
+}
+```
+
+### Event Emission
+
+Tools can emit events for monitoring and debugging:
+
+```go
+// Emit start event
+ctx.EmitEvent(domain.EventTypeToolStart, map[string]interface{}{
+    "tool": "my_tool",
+    "params": params,
+})
+
+// Emit progress
+ctx.EmitProgress(50, 100, "Processing halfway complete")
+
+// Emit completion
+ctx.EmitEvent(domain.EventTypeToolComplete, result)
+```
+
+### Authentication Support
+
+Web tools support multiple authentication methods:
+
+1. **Automatic Detection**: Tools detect credentials from state
+2. **Multiple Methods**: Bearer, API Key, Basic, OAuth2, Custom
+3. **URL Pattern Matching**: Auto-apply credentials based on URLs
+4. **Secure Storage**: Credentials stored in state, not exposed to LLMs
+
+### MCP (Model Context Protocol) Export
+
+All tools can export to MCP format for compatibility:
+
+```go
+mcpDef := tool.ToMCPDefinition()
+// Exports tool with full metadata in MCP-compatible format
+```
+
 ### Tool Registry
 
 All built-in tools are registered in a global registry:
@@ -445,7 +561,211 @@ mcpDef := tool.ToMCPDefinition()
 catalog := tools.Tools.ExportAllToMCP()
 ```
 
-## Examples
+## Complete Example
+
+Here's a comprehensive example showing how to create a custom tool using the ToolBuilder pattern:
+
+```go
+package customtools
+
+import (
+    "fmt"
+    "time"
+    
+    "github.com/lexlapax/go-llms/pkg/agent/domain"
+    "github.com/lexlapax/go-llms/pkg/agent/tools"
+    sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+)
+
+// Define parameter and result structs
+type WeatherParams struct {
+    City        string `json:"city" description:"City name"`
+    Country     string `json:"country,omitempty" description:"Country code (ISO 3166)"`
+    Units       string `json:"units,omitempty" description:"Temperature units (celsius/fahrenheit)"`
+}
+
+type WeatherResult struct {
+    City        string  `json:"city"`
+    Country     string  `json:"country"`
+    Temperature float64 `json:"temperature"`
+    Description string  `json:"description"`
+    Humidity    int     `json:"humidity"`
+    WindSpeed   float64 `json:"wind_speed"`
+    Units       string  `json:"units"`
+    Timestamp   string  `json:"timestamp"`
+}
+
+// Create the execution function
+func weatherExecute(ctx *domain.ToolContext, params WeatherParams) (*WeatherResult, error) {
+    // Emit start event
+    ctx.EmitEvent(domain.EventTypeToolStart, map[string]interface{}{
+        "tool": "weather",
+        "city": params.City,
+    })
+    
+    // Validate parameters
+    if params.City == "" {
+        return nil, fmt.Errorf("city is required")
+    }
+    
+    // Default units to celsius
+    if params.Units == "" {
+        params.Units = "celsius"
+    }
+    
+    // Check for API key in state
+    apiKey, ok := ctx.State.Get("weather_api_key")
+    if !ok {
+        return nil, fmt.Errorf("weather API key not found in state")
+    }
+    
+    // Progress event
+    ctx.EmitProgress(50, 100, "Fetching weather data")
+    
+    // Mock weather data (in real implementation, call weather API)
+    result := &WeatherResult{
+        City:        params.City,
+        Country:     params.Country,
+        Temperature: 22.5,
+        Description: "Partly cloudy",
+        Humidity:    65,
+        WindSpeed:   12.5,
+        Units:       params.Units,
+        Timestamp:   time.Now().Format(time.RFC3339),
+    }
+    
+    // Convert temperature if needed
+    if params.Units == "fahrenheit" {
+        result.Temperature = result.Temperature*9/5 + 32
+    }
+    
+    // Emit completion event
+    ctx.EmitEvent(domain.EventTypeToolComplete, result)
+    
+    return result, nil
+}
+
+// Create the tool using ToolBuilder
+func CreateWeatherTool() domain.Tool {
+    paramSchema := &sdomain.Schema{
+        Type: "object",
+        Properties: map[string]*sdomain.Schema{
+            "city": {
+                Type:        "string",
+                Description: "City name",
+                MinLength:   1,
+                MaxLength:   100,
+            },
+            "country": {
+                Type:        "string",
+                Description: "Country code (ISO 3166)",
+                Pattern:     "^[A-Z]{2}$",
+            },
+            "units": {
+                Type:        "string",
+                Description: "Temperature units",
+                Enum:        []interface{}{"celsius", "fahrenheit"},
+                Default:     "celsius",
+            },
+        },
+        Required: []string{"city"},
+    }
+    
+    outputSchema := &sdomain.Schema{
+        Type: "object",
+        Properties: map[string]*sdomain.Schema{
+            "city":        {Type: "string"},
+            "country":     {Type: "string"},
+            "temperature": {Type: "number"},
+            "description": {Type: "string"},
+            "humidity":    {Type: "integer", Minimum: 0, Maximum: 100},
+            "wind_speed":  {Type: "number", Minimum: 0},
+            "units":       {Type: "string"},
+            "timestamp":   {Type: "string", Format: "date-time"},
+        },
+        Required: []string{"city", "temperature", "description", "units", "timestamp"},
+    }
+    
+    return tools.NewToolBuilder("weather", "Get current weather information for a city").
+        WithCategory("web").
+        WithTags("weather", "api", "temperature", "forecast").
+        WithVersion("1.0.0").
+        WithFunction(weatherExecute).
+        WithParameterSchema(paramSchema).
+        WithOutputSchema(outputSchema).
+        WithUsageInstructions(`Use this tool to get current weather information for any city.
+        
+The tool returns:
+- Current temperature (in specified units)
+- Weather description
+- Humidity percentage
+- Wind speed
+- Timestamp of the observation
+
+Make sure to specify the country code for ambiguous city names.`).
+        WithConstraints(
+            "Requires weather_api_key in agent state",
+            "City names must be in English",
+            "Country codes must be ISO 3166 2-letter codes",
+            "Temperature units limited to celsius or fahrenheit",
+            "Real-time data depends on API availability",
+        ).
+        WithExamples(
+            tools.Example{
+                Name:        "Basic weather query",
+                Description: "Get weather for a major city",
+                Input:       map[string]interface{}{"city": "London"},
+                Output: map[string]interface{}{
+                    "city":        "London",
+                    "temperature": 15.5,
+                    "description": "Cloudy",
+                    "humidity":    78,
+                    "wind_speed":  8.5,
+                    "units":       "celsius",
+                    "timestamp":   "2024-01-10T14:30:00Z",
+                },
+            },
+            tools.Example{
+                Name:        "Weather with country and units",
+                Description: "Specify country for ambiguous cities and use Fahrenheit",
+                Input: map[string]interface{}{
+                    "city":    "Paris",
+                    "country": "FR",
+                    "units":   "fahrenheit",
+                },
+                Output: map[string]interface{}{
+                    "city":        "Paris",
+                    "country":     "FR",
+                    "temperature": 68.0,
+                    "description": "Sunny",
+                    "humidity":    45,
+                    "wind_speed":  5.0,
+                    "units":       "fahrenheit",
+                    "timestamp":   "2024-01-10T14:30:00Z",
+                },
+            },
+        ).
+        WithErrorGuidance(map[string]string{
+            "city is required":      "Provide a city name in the 'city' parameter",
+            "api key not found":     "Set weather_api_key in agent state before using this tool",
+            "invalid country code":  "Use 2-letter ISO country codes (e.g., US, GB, FR)",
+            "unknown city":          "City not found. Check spelling or add country code",
+            "api rate limit":        "Too many requests. Wait before trying again",
+        }).
+        WithDeterministic(false).        // Weather changes
+        WithDestructive(false).          // Read-only operation
+        WithRequiresConfirmation(false). // Safe to call
+        WithEstimatedLatency("medium").  // API call required
+        Build()
+}
+
+// Register the tool
+func init() {
+    tools.RegisterTool(CreateWeatherTool())
+}
+```
+
+## Working Examples
 
 For complete working examples, see:
 - `cmd/examples/agent-calculator/` - Calculator tool with LLM integration

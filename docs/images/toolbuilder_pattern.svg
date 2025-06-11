@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .builder { fill: #e3f2fd; stroke: #1976D2; stroke-width: 2; }
+      .method { fill: #f3e5f5; stroke: #7B1FA2; stroke-width: 2; }
+      .metadata { fill: #e8f5e9; stroke: #388E3C; stroke-width: 2; }
+      .result { fill: #fff9c4; stroke: #F57C00; stroke-width: 2; }
+      .text { font-family: Arial, sans-serif; font-size: 14px; text-anchor: middle; }
+      .title { font-size: 18px; font-weight: bold; }
+      .code { font-family: monospace; font-size: 12px; text-anchor: start; }
+      .arrow { fill: none; stroke: #333; stroke-width: 2; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" class="text title">ToolBuilder Pattern</text>
+
+  <!-- ToolBuilder -->
+  <rect x="250" y="60" width="300" height="60" class="builder" rx="5"/>
+  <text x="400" y="85" class="text" font-weight="bold">ToolBuilder</text>
+  <text x="400" y="105" class="text">NewToolBuilder(name, description)</text>
+
+  <!-- Required Methods -->
+  <text x="150" y="160" class="text" font-weight="bold">Required Methods</text>
+  
+  <rect x="50" y="180" width="300" height="40" class="method" rx="5"/>
+  <text x="200" y="205" class="text code">WithFunction(execute)</text>
+
+  <rect x="50" y="230" width="300" height="40" class="method" rx="5"/>
+  <text x="200" y="255" class="text code">WithParameterSchema(schema)</text>
+
+  <rect x="50" y="280" width="300" height="40" class="method" rx="5"/>
+  <text x="200" y="305" class="text code">WithOutputSchema(schema)</text>
+
+  <!-- Optional Metadata -->
+  <text x="600" y="160" class="text" font-weight="bold">Optional Metadata</text>
+
+  <rect x="450" y="180" width="300" height="30" class="metadata" rx="5"/>
+  <text x="600" y="200" class="text code">WithCategory(category)</text>
+
+  <rect x="450" y="220" width="300" height="30" class="metadata" rx="5"/>
+  <text x="600" y="240" class="text code">WithTags(tags...)</text>
+
+  <rect x="450" y="260" width="300" height="30" class="metadata" rx="5"/>
+  <text x="600" y="280" class="text code">WithVersion(version)</text>
+
+  <rect x="450" y="300" width="300" height="30" class="metadata" rx="5"/>
+  <text x="600" y="320" class="text code">WithUsageInstructions(text)</text>
+
+  <rect x="450" y="340" width="300" height="30" class="metadata" rx="5"/>
+  <text x="600" y="360" class="text code">WithConstraints(constraints...)</text>
+
+  <rect x="450" y="380" width="300" height="30" class="metadata" rx="5"/>
+  <text x="600" y="400" class="text code">WithExamples(examples...)</text>
+
+  <rect x="450" y="420" width="300" height="30" class="metadata" rx="5"/>
+  <text x="600" y="440" class="text code">WithErrorGuidance(map)</text>
+
+  <rect x="450" y="460" width="300" height="30" class="metadata" rx="5"/>
+  <text x="600" y="480" class="text code">WithDeterministic(bool)</text>
+
+  <!-- Arrows from builder -->
+  <path d="M 300 120 L 200 180" class="arrow"/>
+  <path d="M 300 120 L 200 230" class="arrow"/>
+  <path d="M 300 120 L 200 280" class="arrow"/>
+  
+  <path d="M 500 120 L 600 180" class="arrow"/>
+  <path d="M 500 120 L 600 220" class="arrow"/>
+  <path d="M 500 120 L 600 260" class="arrow"/>
+  <path d="M 500 120 L 600 300" class="arrow"/>
+  <path d="M 500 120 L 600 340" class="arrow"/>
+  <path d="M 500 120 L 600 380" class="arrow"/>
+  <path d="M 500 120 L 600 420" class="arrow"/>
+  <path d="M 500 120 L 600 460" class="arrow"/>
+
+  <!-- Build Method -->
+  <rect x="250" y="520" width="300" height="50" class="result" rx="5"/>
+  <text x="400" y="550" class="text" font-weight="bold">Build() domain.Tool</text>
+
+  <!-- Arrows to build -->
+  <path d="M 200 320 L 400 520" class="arrow"/>
+  <path d="M 600 490 L 400 520" class="arrow"/>
+
+  <!-- Example Code -->
+  <rect x="50" y="590" width="700" height="90" fill="#f5f5f5" stroke="#999" stroke-width="1" rx="5"/>
+  <text x="60" y="610" class="code">tool := tools.NewToolBuilder("calculator", "Performs mathematical calculations").</text>
+  <text x="60" y="630" class="code">    WithFunction(calculatorExecute).</text>
+  <text x="60" y="650" class="code">    WithParameterSchema(paramSchema).</text>
+  <text x="60" y="670" class="code">    WithExamples(example1, example2).Build()</text>
+</svg>

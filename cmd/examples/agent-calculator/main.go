@@ -8,16 +8,12 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
-	"math"
 	"os"
-	"strings"
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	toolmath "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/math"
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
-	ldomain "github.com/lexlapax/go-llms/pkg/llm/domain"
-	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	"github.com/lexlapax/go-llms/pkg/util/llmutil"
 )
 
@@ -43,12 +39,61 @@ func createToolContext() *agentDomain.ToolContext {
 }
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "llm" {
-		// Run LLM integration example
-		runLLMExample()
-	} else {
-		// Run direct tool usage example
-		runDirectExample()
+	// Check for command line arguments
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "direct":
+			// Run direct tool usage example
+			runDirectExample()
+			return
+		case "info":
+			// Show tool information
+			showToolInfo()
+			return
+		}
+	}
+
+	// Default: Run LLM integration example
+	runLLMExample()
+}
+
+func showToolInfo() {
+	fmt.Println("=== Calculator Tool Information ===")
+	fmt.Println()
+
+	// Get the calculator tool from registry
+	calculator, ok := tools.GetTool("calculator")
+	if !ok {
+		log.Fatalf("Failed to get calculator tool")
+	}
+
+	fmt.Printf("Tool Name: %s\n", calculator.Name())
+	fmt.Printf("Description: %s\n", calculator.Description())
+	fmt.Printf("Category: %s\n", calculator.Category())
+	fmt.Printf("Version: %s\n", calculator.Version())
+	fmt.Printf("Deterministic: %v\n", calculator.IsDeterministic())
+	fmt.Printf("Destructive: %v\n", calculator.IsDestructive())
+	fmt.Printf("Requires Confirmation: %v\n", calculator.RequiresConfirmation())
+	fmt.Printf("Estimated Latency: %s\n", calculator.EstimatedLatency())
+	fmt.Printf("Tags: %v\n", calculator.Tags())
+
+	fmt.Println("\nUsage Instructions:")
+	fmt.Println(calculator.UsageInstructions())
+
+	fmt.Println("\nConstraints:")
+	for _, constraint := range calculator.Constraints() {
+		fmt.Printf("- %s\n", constraint)
+	}
+
+	fmt.Println("\nExamples:")
+	for i, example := range calculator.Examples() {
+		fmt.Printf("%d. %s - %s\n", i+1, example.Name, example.Description)
+		fmt.Printf("   Input: %v\n", example.Input)
+		fmt.Printf("   Output: %v\n", example.Output)
+		if example.Explanation != "" {
+			fmt.Printf("   Explanation: %s\n", example.Explanation)
+		}
+		fmt.Println()
 	}
 }
 
@@ -107,24 +152,24 @@ func runDirectExample() {
 		printResult("2^8", powerResult)
 	}
 
-	// Example 2: Scientific Functions
-	fmt.Println("\n--- Scientific Functions ---")
+	// Example 2: Square Root and Logarithms
+	fmt.Println("\n--- Square Root and Logarithms ---")
 
 	// Square root
 	sqrtResult, sqrtErr := calculator.Execute(toolCtx, map[string]interface{}{
 		"operation": "sqrt",
-		"operand1":  16.0,
+		"operand1":  144.0,
 	})
 	if sqrtErr != nil {
 		log.Printf("Square root failed: %v", sqrtErr)
 	} else {
-		printResult("√16", sqrtResult)
+		printResult("√144", sqrtResult)
 	}
 
 	// Natural logarithm
 	logResult, logErr := calculator.Execute(toolCtx, map[string]interface{}{
 		"operation": "log",
-		"operand1":  math.E,
+		"operand1":  2.718281828,
 	})
 	if logErr != nil {
 		log.Printf("Natural log failed: %v", logErr)
@@ -132,25 +177,23 @@ func runDirectExample() {
 		printResult("ln(e)", logResult)
 	}
 
-	// Logarithm base 2
-	log2Result, log2Err := calculator.Execute(toolCtx, map[string]interface{}{
-		"operation": "log",
-		"operand1":  8.0,
-		"operand2":  2.0,
-	})
-	if log2Err != nil {
-		log.Printf("Log base 2 failed: %v", log2Err)
-	} else {
-		printResult("log₂(8)", log2Result)
-	}
-
-	// Example 3: Trigonometry
+	// Example 3: Trigonometry (radians)
 	fmt.Println("\n--- Trigonometry ---")
 
-	// Sin(π/2)
+	// Pi constant
+	piResult, piErr := calculator.Execute(toolCtx, map[string]interface{}{
+		"operation": "pi",
+	})
+	if piErr != nil {
+		log.Printf("Pi failed: %v", piErr)
+	} else {
+		printResult("π", piResult)
+	}
+
+	// Sine of pi/2
 	sinResult, sinErr := calculator.Execute(toolCtx, map[string]interface{}{
 		"operation": "sin",
-		"operand1":  math.Pi / 2,
+		"operand1":  1.5707963267948966, // pi/2
 	})
 	if sinErr != nil {
 		log.Printf("Sine failed: %v", sinErr)
@@ -158,40 +201,18 @@ func runDirectExample() {
 		printResult("sin(π/2)", sinResult)
 	}
 
-	// Cos(π)
-	cosResult, cosErr := calculator.Execute(toolCtx, map[string]interface{}{
-		"operation": "cos",
-		"operand1":  math.Pi,
-	})
-	if cosErr != nil {
-		log.Printf("Cosine failed: %v", cosErr)
-	} else {
-		printResult("cos(π)", cosResult)
-	}
-
-	// Arcsin(1)
-	asinResult, asinErr := calculator.Execute(toolCtx, map[string]interface{}{
-		"operation": "asin",
-		"operand1":  1.0,
-	})
-	if asinErr != nil {
-		log.Printf("Arcsin failed: %v", asinErr)
-	} else {
-		printResult("arcsin(1) in radians", asinResult)
-	}
-
 	// Example 4: Advanced Operations
 	fmt.Println("\n--- Advanced Operations ---")
 
 	// Factorial
-	factResult, factErr := calculator.Execute(toolCtx, map[string]interface{}{
+	factorialResult, factErr := calculator.Execute(toolCtx, map[string]interface{}{
 		"operation": "factorial",
 		"operand1":  5.0,
 	})
 	if factErr != nil {
 		log.Printf("Factorial failed: %v", factErr)
 	} else {
-		printResult("5!", factResult)
+		printResult("5!", factorialResult)
 	}
 
 	// GCD
@@ -206,42 +227,7 @@ func runDirectExample() {
 		printResult("GCD(48, 18)", gcdResult)
 	}
 
-	// LCM
-	lcmResult, lcmErr := calculator.Execute(toolCtx, map[string]interface{}{
-		"operation": "lcm",
-		"operand1":  12.0,
-		"operand2":  18.0,
-	})
-	if lcmErr != nil {
-		log.Printf("LCM failed: %v", lcmErr)
-	} else {
-		printResult("LCM(12, 18)", lcmResult)
-	}
-
-	// Example 5: Mathematical Constants
-	fmt.Println("\n--- Mathematical Constants ---")
-
-	// Pi
-	piResult, piErr := calculator.Execute(toolCtx, map[string]interface{}{
-		"operation": "pi",
-	})
-	if piErr != nil {
-		log.Printf("Pi failed: %v", piErr)
-	} else {
-		printResult("π", piResult)
-	}
-
-	// E
-	eResult, eErr := calculator.Execute(toolCtx, map[string]interface{}{
-		"operation": "e",
-	})
-	if eErr != nil {
-		log.Printf("E failed: %v", eErr)
-	} else {
-		printResult("e", eResult)
-	}
-
-	// Example 6: Error Handling
+	// Example 5: Error Handling
 	fmt.Println("\n--- Error Handling ---")
 
 	// Division by zero
@@ -251,67 +237,20 @@ func runDirectExample() {
 		"operand2":  0.0,
 	})
 	if divZeroErr != nil {
-		log.Printf("Expected error for division by zero: %v", divZeroErr)
+		fmt.Printf("Division by zero: %v (expected)\n", divZeroErr)
 	} else {
 		printResult("10 / 0", divZeroResult)
 	}
 
-	// Square root of negative
-	negSqrtResult, negSqrtErr := calculator.Execute(toolCtx, map[string]interface{}{
+	// Square root of negative number
+	sqrtNegResult, sqrtNegErr := calculator.Execute(toolCtx, map[string]interface{}{
 		"operation": "sqrt",
-		"operand1":  -4.0,
+		"operand1":  -16.0,
 	})
-	if negSqrtErr != nil {
-		log.Printf("Expected error for sqrt(-4): %v", negSqrtErr)
+	if sqrtNegErr != nil {
+		fmt.Printf("√(-16): %v (expected)\n", sqrtNegErr)
 	} else {
-		printResult("√(-4)", negSqrtResult)
-	}
-
-	// Invalid operation
-	unkResult, unkErr := calculator.Execute(toolCtx, map[string]interface{}{
-		"operation": "unknown",
-		"operand1":  1.0,
-		"operand2":  2.0,
-	})
-	if unkErr != nil {
-		log.Printf("Expected error for unknown operation: %v", unkErr)
-	} else {
-		printResult("unknown(1, 2)", unkResult)
-	}
-
-	// Example 7: Additional Constants
-	fmt.Println("\n--- Additional Mathematical Constants ---")
-
-	// Golden ratio
-	phiResult, phiErr := calculator.Execute(toolCtx, map[string]interface{}{
-		"operation": "phi",
-	})
-	if phiErr != nil {
-		log.Printf("Phi failed: %v", phiErr)
-	} else {
-		printResult("φ (golden ratio)", phiResult)
-	}
-
-	// Calculate using phi
-	phiCalc, phiCalcErr := calculator.Execute(toolCtx, map[string]interface{}{
-		"operation": "multiply",
-		"operand1":  "phi",
-		"operand2":  "phi",
-	})
-	if phiCalcErr != nil {
-		log.Printf("Phi squared failed: %v", phiCalcErr)
-	} else {
-		printResult("φ² (phi squared)", phiCalc)
-	}
-
-	// Tau
-	tauResult, tauErr := calculator.Execute(toolCtx, map[string]interface{}{
-		"operation": "tau",
-	})
-	if tauErr != nil {
-		log.Printf("Tau failed: %v", tauErr)
-	} else {
-		printResult("τ (tau = 2π)", tauResult)
+		printResult("√(-16)", sqrtNegResult)
 	}
 
 	// Display all available operations
@@ -346,20 +285,15 @@ func runLLMExample() {
 
 	// Create LLM provider using provider/model string
 	providerString := "anthropic/claude-3-7-sonnet-latest" // Default to Claude
-	if os.Getenv("OPENAI_API_KEY") != "" {
+	if os.Getenv("OPENAI_API_KEY") != "" && os.Getenv("ANTHROPIC_API_KEY") == "" {
 		providerString = "openai/gpt-4o"
-	} else if os.Getenv("GEMINI_API_KEY") != "" {
+	} else if os.Getenv("GEMINI_API_KEY") != "" && os.Getenv("ANTHROPIC_API_KEY") == "" {
 		providerString = "gemini/gemini-2.0-flash"
 	}
 
 	provider, err := llmutil.NewProviderFromString(providerString)
 	if err != nil {
-		// Fall back to mock provider for demonstration
-		fmt.Println("Note: No LLM API keys found. Using mock provider for demonstration.")
-		fmt.Println("The mock will simulate calculator tool usage.")
-		fmt.Println("Tip: Set DEBUG=1 to see detailed logging of agent execution.")
-		fmt.Println()
-		provider = createMockProvider()
+		log.Fatalf("Failed to create provider: %v", err)
 	}
 
 	// Parse provider string to get provider and model info
@@ -438,47 +372,9 @@ The tool will guide you on proper usage, including which operations need one or 
 			prompt: "Calculate 15! (factorial)",
 		},
 		{
-			title:  "Advanced Math - GCD",
-			prompt: "What is the GCD of 48 and 18?",
-		},
-		{
-			title:  "Logarithms",
-			prompt: "Calculate log base 2 of 64",
-		},
-		{
-			title:  "Using Constants",
-			prompt: "What is pi times e?",
-		},
-		{
-			title:  "Error Handling",
-			prompt: "What is the square root of -16?",
-		},
-		{
 			title:  "Complex Calculation",
 			prompt: "Calculate (phi squared) minus (sqrt(5))",
 		},
-	}
-
-	// Display tool metadata if requested
-	if len(os.Args) > 2 && os.Args[2] == "info" {
-		fmt.Println("=== Calculator Tool Information ===")
-		fmt.Printf("Name: %s\n", calculator.Name())
-		fmt.Printf("Description: %s\n", calculator.Description())
-		fmt.Printf("Version: %s\n", calculator.Version())
-		fmt.Printf("Category: %s\n", calculator.Category())
-		fmt.Printf("Tags: %v\n", calculator.Tags())
-		fmt.Printf("Deterministic: %v\n", calculator.IsDeterministic())
-		fmt.Printf("Destructive: %v\n", calculator.IsDestructive())
-		fmt.Printf("Requires Confirmation: %v\n", calculator.RequiresConfirmation())
-		fmt.Printf("Estimated Latency: %s\n", calculator.EstimatedLatency())
-		fmt.Println("\nUsage Instructions:")
-		fmt.Println(calculator.UsageInstructions())
-		fmt.Println("\nConstraints:")
-		for _, c := range calculator.Constraints() {
-			fmt.Printf("- %s\n", c)
-		}
-		fmt.Println("\nExamples available:", len(calculator.Examples()))
-		return
 	}
 
 	// Run examples
@@ -502,9 +398,9 @@ The tool will guide you on proper usage, including which operations need one or 
 
 	fmt.Println("\n=== Instructions ===")
 	fmt.Println("To run this example:")
-	fmt.Println("1. For direct tool usage: ./agent-calculator")
-	fmt.Println("2. For LLM integration: ./agent-calculator llm")
-	fmt.Println("3. For tool information: ./agent-calculator llm info")
+	fmt.Println("1. Default (LLM integration): go run main.go")
+	fmt.Println("2. Direct tool usage: go run main.go direct")
+	fmt.Println("3. Tool information: go run main.go info")
 	fmt.Println("\nEnvironment variables:")
 	fmt.Println("- Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY for real LLM")
 	fmt.Println("- Set DEBUG=1 to enable detailed logging")
@@ -530,141 +426,4 @@ func printLastMessage(state *agentDomain.State) {
 
 	// Last resort: print available keys for debugging
 	fmt.Printf("No response found. Available keys: %v\n", state.Keys())
-}
-
-// createMockProvider creates a mock provider for demonstration
-func createMockProvider() ldomain.Provider {
-	mockProvider := provider.NewMockProvider()
-	// Track if we've seen a tool result
-	hasToolResult := false
-	mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.Response, error) {
-		// Extract the last user message
-		var lastUserMsg string
-		for i := len(messages) - 1; i >= 0; i-- {
-			if messages[i].Role == "user" {
-				// Get text content from the message
-				for _, part := range messages[i].Content {
-					if part.Type == ldomain.ContentTypeText {
-						lastUserMsg = part.Text
-						break
-					}
-				}
-				if lastUserMsg != "" {
-					break
-				}
-			}
-		}
-
-		// Check if this is a tool result response
-		if strings.Contains(lastUserMsg, "Tool results:") && strings.Contains(lastUserMsg, "Result:") {
-			hasToolResult = true
-			// Extract the calculation result from the tool result message
-			var resultValue string
-			lines := strings.Split(lastUserMsg, "\n")
-			for _, line := range lines {
-				if strings.Contains(line, "Result:") {
-					parts := strings.Split(line, "Result:")
-					if len(parts) > 1 {
-						resultValue = strings.TrimSpace(parts[1])
-					}
-				}
-			}
-
-			// Generate a natural language response based on the tool result
-			if resultValue != "" {
-				if strings.Contains(messages[len(messages)-3].Content[0].Text, "multiply") ||
-					strings.Contains(messages[len(messages)-3].Content[0].Text, "*") {
-					return ldomain.Response{
-						Content: fmt.Sprintf("The result of multiplying 25 by 17 is %s.", resultValue),
-					}, nil
-				} else if strings.Contains(messages[len(messages)-3].Content[0].Text, "square root") {
-					return ldomain.Response{
-						Content: fmt.Sprintf("The square root of 144 is %s.", resultValue),
-					}, nil
-				} else if strings.Contains(messages[len(messages)-3].Content[0].Text, "power") {
-					return ldomain.Response{
-						Content: fmt.Sprintf("2 raised to the power of 10 is %s.", resultValue),
-					}, nil
-				} else if strings.Contains(messages[len(messages)-3].Content[0].Text, "factorial") {
-					return ldomain.Response{
-						Content: fmt.Sprintf("The factorial of 15 (15!) is %s.", resultValue),
-					}, nil
-				} else if strings.Contains(messages[len(messages)-3].Content[0].Text, "GCD") {
-					return ldomain.Response{
-						Content: fmt.Sprintf("The greatest common divisor (GCD) of 48 and 18 is %s.", resultValue),
-					}, nil
-				} else if strings.Contains(messages[len(messages)-3].Content[0].Text, "log base 2") {
-					return ldomain.Response{
-						Content: fmt.Sprintf("The logarithm base 2 of 64 is %s.", resultValue),
-					}, nil
-				} else if strings.Contains(messages[len(messages)-3].Content[0].Text, "sine") ||
-					strings.Contains(messages[len(messages)-3].Content[0].Text, "sin") {
-					return ldomain.Response{
-						Content: fmt.Sprintf("The sine of π/2 radians is %s.", resultValue),
-					}, nil
-				} else if strings.Contains(messages[len(messages)-3].Content[0].Text, "pi times e") {
-					return ldomain.Response{
-						Content: fmt.Sprintf("The value of π × e is %s.", resultValue),
-					}, nil
-				}
-			}
-
-			return ldomain.Response{
-				Content: fmt.Sprintf("The calculation result is %s.", resultValue),
-			}, nil
-		}
-
-		// Initial tool call based on the prompt
-		if lastUserMsg != "" && !hasToolResult {
-			switch {
-			case contains(lastUserMsg, "*") || contains(lastUserMsg, "multiply"):
-				return ldomain.Response{
-					Content: `{"tool": "calculator", "params": {"operation": "multiply", "operand1": 25, "operand2": 17}}`,
-				}, nil
-			case contains(lastUserMsg, "square root"):
-				return ldomain.Response{
-					Content: `{"tool": "calculator", "params": {"operation": "sqrt", "operand1": 144}}`,
-				}, nil
-			case contains(lastUserMsg, "power"):
-				return ldomain.Response{
-					Content: `{"tool": "calculator", "params": {"operation": "power", "operand1": 2, "operand2": 10}}`,
-				}, nil
-			case contains(lastUserMsg, "factorial"):
-				return ldomain.Response{
-					Content: `{"tool": "calculator", "params": {"operation": "factorial", "operand1": 15}}`,
-				}, nil
-			case contains(lastUserMsg, "GCD"):
-				return ldomain.Response{
-					Content: `{"tool": "calculator", "params": {"operation": "gcd", "operand1": 48, "operand2": 18}}`,
-				}, nil
-			case contains(lastUserMsg, "log base 2"):
-				return ldomain.Response{
-					Content: `{"tool": "calculator", "params": {"operation": "log", "operand1": 64, "operand2": 2}}`,
-				}, nil
-			case contains(lastUserMsg, "sine") || contains(lastUserMsg, "sin"):
-				return ldomain.Response{
-					Content: `{"tool": "calculator", "params": {"operation": "sin", "operand1": 1.5707963267948966}}`,
-				}, nil
-			case contains(lastUserMsg, "pi times e"):
-				return ldomain.Response{
-					Content: `{"tool": "calculator", "params": {"operation": "multiply", "operand1": 3.141592653589793, "operand2": 2.718281828459045}}`,
-				}, nil
-			default:
-				return ldomain.Response{
-					Content: "I'll help you with that calculation. Let me use the calculator tool.",
-				}, nil
-			}
-		}
-
-		return ldomain.Response{
-			Content: "I can help you with mathematical calculations.",
-		}, nil
-	})
-
-	return mockProvider
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > 0 && len(substr) > 0 &&
-		(s[0:len(substr)] == substr || contains(s[1:], substr)))
 }
