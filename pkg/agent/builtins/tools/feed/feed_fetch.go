@@ -16,16 +16,19 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	atools "github.com/lexlapax/go-llms/pkg/agent/tools"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/util/auth"
 )
 
 // FeedFetchParams defines parameters for the FeedFetch tool
 type FeedFetchParams struct {
-	URL        string `json:"url"`
-	Timeout    int    `json:"timeout,omitempty"`     // Timeout in seconds, default 30
-	MaxItems   int    `json:"max_items,omitempty"`   // Maximum items to return, 0 = all
-	UserAgent  string `json:"user_agent,omitempty"`  // Custom user agent
-	IfModified string `json:"if_modified,omitempty"` // If-Modified-Since header value
-	ETag       string `json:"etag,omitempty"`        // ETag for conditional requests
+	URL        string                 `json:"url"`
+	Timeout    int                    `json:"timeout,omitempty"`     // Timeout in seconds, default 30
+	MaxItems   int                    `json:"max_items,omitempty"`   // Maximum items to return, 0 = all
+	UserAgent  string                 `json:"user_agent,omitempty"`  // Custom user agent
+	IfModified string                 `json:"if_modified,omitempty"` // If-Modified-Since header value
+	ETag       string                 `json:"etag,omitempty"`        // ETag for conditional requests
+	Auth       map[string]interface{} `json:"auth,omitempty"`        // Authentication configuration
+	Headers    map[string]string      `json:"headers,omitempty"`     // Additional HTTP headers
 }
 
 // FeedFetchResult defines the result of the FeedFetch tool
@@ -207,207 +210,557 @@ type jsonAttachment struct {
 	Size     int64  `json:"size_in_bytes"`
 }
 
-// feedFetchParamSchema defines parameters for the FeedFetch tool
-var feedFetchParamSchema = &sdomain.Schema{
-	Type: "object",
-	Properties: map[string]sdomain.Property{
-		"url": {
-			Type:        "string",
-			Format:      "uri",
-			Description: "The feed URL to fetch",
-		},
-		"timeout": {
-			Type:        "number",
-			Description: "Request timeout in seconds (default: 30)",
-		},
-		"max_items": {
-			Type:        "number",
-			Description: "Maximum number of items to return (0 = all)",
-		},
-		"user_agent": {
-			Type:        "string",
-			Description: "Custom User-Agent header",
-		},
-		"if_modified": {
-			Type:        "string",
-			Description: "If-Modified-Since header value for conditional requests",
-		},
-		"etag": {
-			Type:        "string",
-			Description: "ETag value for conditional requests",
-		},
-	},
-	Required: []string{"url"},
-}
+// feedFetchExecute is the execution function for feed_fetch
+func feedFetchExecute(ctx *domain.ToolContext, params FeedFetchParams) (*FeedFetchResult, error) {
+	// Emit start event
+	if ctx.Events != nil {
+		ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+			ToolName:   "feed_fetch",
+			Parameters: params,
+			RequestID:  ctx.RunID,
+		})
+	}
 
-// init automatically registers the tool on package import
-func init() {
-	tools.MustRegisterTool("feed_fetch", FeedFetch(), tools.ToolMetadata{
-		Metadata: builtins.Metadata{
-			Name:        "feed_fetch",
-			Category:    "feed",
-			Tags:        []string{"feed", "rss", "atom", "json", "syndication", "news"},
-			Description: "Fetches and parses feeds in RSS, Atom, or JSON Feed format",
-			Version:     "1.0.0",
-			Examples: []builtins.Example{
-				{
-					Name:        "Basic RSS fetch",
-					Description: "Fetch an RSS feed",
-					Code:        `FeedFetch().Execute(ctx, FeedFetchParams{URL: "https://example.com/rss"})`,
-				},
-				{
-					Name:        "Fetch with limit",
-					Description: "Fetch only recent items",
-					Code:        `FeedFetch().Execute(ctx, FeedFetchParams{URL: "https://blog.example.com/feed", MaxItems: 10})`,
-				},
-				{
-					Name:        "Conditional fetch",
-					Description: "Fetch only if modified",
-					Code:        `FeedFetch().Execute(ctx, FeedFetchParams{URL: "https://news.example.com/atom", ETag: "W/\"123456\""})`,
-				},
-			},
-		},
-		RequiredPermissions: []string{"network:access"},
-		ResourceUsage: tools.ResourceInfo{
-			Memory:      "low",
-			Network:     true,
-			FileSystem:  false,
-			Concurrency: true,
-		},
-	})
+	// Check state for default timeout if not provided
+	timeout := 30 * time.Second
+	if params.Timeout > 0 {
+		timeout = time.Duration(params.Timeout) * time.Second
+	} else if ctx.State != nil {
+		if val, ok := ctx.State.Get("feed_fetch_default_timeout"); ok {
+			if t, ok := val.(int); ok && t > 0 {
+				timeout = time.Duration(t) * time.Second
+			}
+		}
+	}
+
+	// Check state for default user agent if not provided
+	userAgent := "go-llms-feed/2.0"
+	if params.UserAgent != "" {
+		userAgent = params.UserAgent
+	} else if ctx.State != nil {
+		if val, ok := ctx.State.Get("feed_fetch_user_agent"); ok {
+			if ua, ok := val.(string); ok && ua != "" {
+				userAgent = ua
+			}
+		}
+	}
+
+	// Auto-detect auth if not provided
+	if params.Auth == nil && ctx.State != nil {
+		if authConfig := auth.DetectAuthFromState(ctx.State, params.URL, nil); authConfig != nil {
+			params.Auth = map[string]interface{}{
+				"type": authConfig.Type,
+			}
+			for k, v := range authConfig.Data {
+				params.Auth[k] = v
+			}
+		}
+	}
+
+	// Create HTTP client with timeout
+	client := &http.Client{
+		Timeout: timeout,
+	}
+
+	// Create request with context
+	req, err := http.NewRequestWithContext(ctx.Context, "GET", params.URL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	// Set user agent header
+	req.Header.Set("User-Agent", userAgent)
+
+	// Apply custom headers
+	for k, v := range params.Headers {
+		req.Header.Set(k, v)
+	}
+
+	// Set conditional headers
+	if params.IfModified != "" {
+		req.Header.Set("If-Modified-Since", params.IfModified)
+	}
+	if params.ETag != "" {
+		req.Header.Set("If-None-Match", params.ETag)
+	}
+
+	// Apply authentication
+	if params.Auth != nil {
+		if err := auth.ApplyAuth(req, params.Auth); err != nil {
+			return nil, fmt.Errorf("auth error: %w", err)
+		}
+	}
+
+	// Execute request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching feed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	// Handle 304 Not Modified
+	if resp.StatusCode == http.StatusNotModified {
+		result := &FeedFetchResult{
+			Status:      resp.StatusCode,
+			NotModified: true,
+			Headers:     extractHeaders(resp.Header),
+		}
+
+		// Emit result event
+		if ctx.Events != nil {
+			ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+				ToolName:  "feed_fetch",
+				Result:    result,
+				RequestID: ctx.RunID,
+			})
+		}
+
+		return result, nil
+	}
+
+	// Check status code
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("HTTP error %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	// Read response body with size limit (10MB)
+	limitReader := io.LimitReader(resp.Body, 10*1024*1024)
+	body, err := io.ReadAll(limitReader)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response: %w", err)
+	}
+
+	// Detect and parse feed format
+	feed, format, err := parseFeed(body)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing feed: %w", err)
+	}
+
+	// Apply max items limit
+	if params.MaxItems > 0 && len(feed.Items) > params.MaxItems {
+		feed.Items = feed.Items[:params.MaxItems]
+	}
+
+	result := &FeedFetchResult{
+		Feed:    *feed,
+		Status:  resp.StatusCode,
+		Headers: extractHeaders(resp.Header),
+		Format:  format,
+	}
+
+	// Emit result event
+	if ctx.Events != nil {
+		ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+			ToolName:  "feed_fetch",
+			Result:    result,
+			RequestID: ctx.RunID,
+		})
+	}
+
+	return result, nil
 }
 
 // FeedFetch creates a tool for fetching and parsing feeds
 func FeedFetch() domain.Tool {
-	return atools.NewTool(
-		"feed_fetch",
-		"Fetches and parses feeds in RSS, Atom, or JSON Feed format",
-		func(ctx *domain.ToolContext, params FeedFetchParams) (*FeedFetchResult, error) {
-			// Emit start event
-			if ctx.Events != nil {
-				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
-					ToolName:   "feed_fetch",
-					Parameters: params,
-					RequestID:  ctx.RunID,
-				})
-			}
-
-			// Check state for default timeout if not provided
-			timeout := 30 * time.Second
-			if params.Timeout > 0 {
-				timeout = time.Duration(params.Timeout) * time.Second
-			} else if ctx.State != nil {
-				if val, ok := ctx.State.Get("feed_fetch_default_timeout"); ok {
-					if t, ok := val.(int); ok && t > 0 {
-						timeout = time.Duration(t) * time.Second
-					}
-				}
-			}
-
-			// Check state for default user agent if not provided
-			userAgent := "go-llms-feed/1.0"
-			if params.UserAgent != "" {
-				userAgent = params.UserAgent
-			} else if ctx.State != nil {
-				if val, ok := ctx.State.Get("feed_fetch_user_agent"); ok {
-					if ua, ok := val.(string); ok && ua != "" {
-						userAgent = ua
-					}
-				}
-			}
-
-			// Create HTTP client with timeout
-			client := &http.Client{
-				Timeout: timeout,
-			}
-
-			// Create request with context
-			req, err := http.NewRequestWithContext(ctx.Context, "GET", params.URL, nil)
-			if err != nil {
-				return nil, fmt.Errorf("error creating request: %w", err)
-			}
-
-			// Set user agent header
-			req.Header.Set("User-Agent", userAgent)
-
-			// Set conditional headers
-			if params.IfModified != "" {
-				req.Header.Set("If-Modified-Since", params.IfModified)
-			}
-			if params.ETag != "" {
-				req.Header.Set("If-None-Match", params.ETag)
-			}
-
-			// Execute request
-			resp, err := client.Do(req)
-			if err != nil {
-				return nil, fmt.Errorf("error fetching feed: %w", err)
-			}
-			defer func() { _ = resp.Body.Close() }()
-
-			// Handle 304 Not Modified
-			if resp.StatusCode == http.StatusNotModified {
-				result := &FeedFetchResult{
-					Status:      resp.StatusCode,
-					NotModified: true,
-					Headers:     extractHeaders(resp.Header),
-				}
-
-				// Emit result event
-				if ctx.Events != nil {
-					ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
-						ToolName:  "feed_fetch",
-						Result:    result,
-						RequestID: ctx.RunID,
-					})
-				}
-
-				return result, nil
-			}
-
-			// Check status code
-			if resp.StatusCode >= 400 {
-				return nil, fmt.Errorf("HTTP error %d: %s", resp.StatusCode, resp.Status)
-			}
-
-			// Read response body with size limit (10MB)
-			limitReader := io.LimitReader(resp.Body, 10*1024*1024)
-			body, err := io.ReadAll(limitReader)
-			if err != nil {
-				return nil, fmt.Errorf("error reading response: %w", err)
-			}
-
-			// Detect and parse feed format
-			feed, format, err := parseFeed(body)
-			if err != nil {
-				return nil, fmt.Errorf("error parsing feed: %w", err)
-			}
-
-			// Apply max items limit
-			if params.MaxItems > 0 && len(feed.Items) > params.MaxItems {
-				feed.Items = feed.Items[:params.MaxItems]
-			}
-
-			result := &FeedFetchResult{
-				Feed:    *feed,
-				Status:  resp.StatusCode,
-				Headers: extractHeaders(resp.Header),
-				Format:  format,
-			}
-
-			// Emit result event
-			if ctx.Events != nil {
-				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
-					ToolName:  "feed_fetch",
-					Result:    result,
-					RequestID: ctx.RunID,
-				})
-			}
-
-			return result, nil
+	// Define parameter schema
+	paramSchema := &sdomain.Schema{
+		Type: "object",
+		Properties: map[string]sdomain.Property{
+			"url": {
+				Type:        "string",
+				Format:      "uri",
+				Description: "The feed URL to fetch",
+			},
+			"timeout": {
+				Type:        "number",
+				Description: "Request timeout in seconds (default: 30)",
+			},
+			"max_items": {
+				Type:        "number",
+				Description: "Maximum number of items to return (0 = all)",
+			},
+			"user_agent": {
+				Type:        "string",
+				Description: "Custom User-Agent header",
+			},
+			"if_modified": {
+				Type:        "string",
+				Description: "If-Modified-Since header value for conditional requests",
+			},
+			"etag": {
+				Type:        "string",
+				Description: "ETag value for conditional requests",
+			},
+			"auth": {
+				Type:        "object",
+				Description: "Authentication configuration",
+				Properties: map[string]sdomain.Property{
+					"type": {
+						Type:        "string",
+						Description: "Authentication type: api_key, bearer, basic, oauth2, custom",
+						Enum:        []string{"api_key", "bearer", "basic", "oauth2", "custom"},
+					},
+				},
+			},
+			"headers": {
+				Type:        "object",
+				Description: "Additional HTTP headers to send with the request",
+			},
 		},
-		feedFetchParamSchema,
-	)
+		Required: []string{"url"},
+	}
+
+	// Define output schema
+	outputSchema := &sdomain.Schema{
+		Type: "object",
+		Properties: map[string]sdomain.Property{
+			"feed": {
+				Type:        "object",
+				Description: "The parsed feed in unified format",
+				Properties: map[string]sdomain.Property{
+					"title": {
+						Type:        "string",
+						Description: "Feed title",
+					},
+					"description": {
+						Type:        "string",
+						Description: "Feed description",
+					},
+					"link": {
+						Type:        "string",
+						Description: "Feed website link",
+					},
+					"updated": {
+						Type:        "string",
+						Format:      "date-time",
+						Description: "Last update time",
+					},
+					"published": {
+						Type:        "string",
+						Format:      "date-time",
+						Description: "Publication time",
+					},
+					"language": {
+						Type:        "string",
+						Description: "Feed language",
+					},
+					"copyright": {
+						Type:        "string",
+						Description: "Copyright information",
+					},
+					"author": {
+						Type:        "object",
+						Description: "Feed author",
+					},
+					"image": {
+						Type:        "object",
+						Description: "Feed image/logo",
+					},
+					"items": {
+						Type:        "array",
+						Description: "Feed items/entries",
+						Items: &sdomain.Property{
+							Type: "object",
+						},
+					},
+				},
+			},
+			"status": {
+				Type:        "integer",
+				Description: "HTTP status code",
+			},
+			"headers": {
+				Type:        "object",
+				Description: "Relevant HTTP response headers",
+			},
+			"format": {
+				Type:        "string",
+				Description: "Detected feed format: RSS2, Atom, JSONFeed",
+			},
+			"not_modified": {
+				Type:        "boolean",
+				Description: "True if feed hasn't changed (304 response)",
+			},
+		},
+		Required: []string{"status"},
+	}
+
+	builder := atools.NewToolBuilder("feed_fetch", "Fetch and parse RSS, Atom, or JSON feeds").
+		WithFunction(feedFetchExecute).
+		WithParameterSchema(paramSchema).
+		WithOutputSchema(outputSchema).
+		WithUsageInstructions(`The feed_fetch tool retrieves and parses web feeds in various formats:
+
+Feed Formats Supported:
+1. RSS 2.0:
+   - Most common feed format
+   - XML-based with channel and item elements
+   - Supports enclosures for podcasts/media
+
+2. Atom:
+   - IETF standard feed format
+   - More structured than RSS
+   - Better date/time handling
+
+3. JSON Feed:
+   - Modern JSON-based format
+   - Easier to parse than XML
+   - Native support for content types
+
+Unified Output Format:
+- All feeds converted to consistent structure
+- Normalized field names across formats
+- Proper date/time parsing
+- Author information extraction
+- Media enclosure support
+
+Authentication Support:
+- Automatic detection from state (api_key, bearer_token, etc.)
+- Manual auth configuration for protected feeds
+- Support for API key, Bearer, Basic, OAuth2, and custom auth
+- Works with subscription-based feeds
+
+Conditional Requests:
+- ETag support for bandwidth efficiency
+- If-Modified-Since header support
+- Returns 304 Not Modified when unchanged
+- Preserves caching headers in response
+
+State Integration:
+- feed_fetch_default_timeout: Default timeout in seconds
+- feed_fetch_user_agent: Default User-Agent string
+- Authentication auto-detected from state keys
+
+Common Use Cases:
+- News aggregation and monitoring
+- Podcast feed parsing
+- Blog post syndication
+- Content change detection
+- Feed validation and testing`).
+		WithExamples([]domain.ToolExample{
+			{
+				Name:        "Basic RSS fetch",
+				Description: "Fetch a public RSS feed",
+				Scenario:    "When you need to read articles from a blog",
+				Input: map[string]interface{}{
+					"url": "https://example.com/rss",
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title":       "Example Blog",
+						"description": "A blog about examples",
+						"link":        "https://example.com",
+						"items": []map[string]interface{}{
+							{
+								"id":          "https://example.com/post1",
+								"title":       "First Post",
+								"description": "This is the first post",
+								"link":        "https://example.com/post1",
+								"published":   "2024-03-15T10:00:00Z",
+							},
+						},
+					},
+					"status": 200,
+					"format": "RSS2",
+				},
+				Explanation: "Successfully fetched and parsed RSS 2.0 feed",
+			},
+			{
+				Name:        "Fetch with authentication",
+				Description: "Fetch a protected feed",
+				Scenario:    "When accessing a subscription-based feed",
+				Input: map[string]interface{}{
+					"url": "https://premium.example.com/feed",
+					"auth": map[string]interface{}{
+						"type":  "bearer",
+						"token": "your-access-token",
+					},
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title": "Premium Content Feed",
+						"items": []map[string]interface{}{
+							{
+								"id":      "premium-1",
+								"title":   "Exclusive Article",
+								"content": "Full premium content here...",
+							},
+						},
+					},
+					"status": 200,
+					"format": "Atom",
+				},
+				Explanation: "Used bearer token to access protected Atom feed",
+			},
+			{
+				Name:        "Conditional fetch with ETag",
+				Description: "Check if feed has changed",
+				Scenario:    "When monitoring feeds for updates efficiently",
+				Input: map[string]interface{}{
+					"url":  "https://news.example.com/feed",
+					"etag": `W/"123456789"`,
+				},
+				Output: map[string]interface{}{
+					"status":       304,
+					"not_modified": true,
+					"headers": map[string]string{
+						"ETag":          `W/"123456789"`,
+						"Cache-Control": "max-age=300",
+					},
+				},
+				Explanation: "Feed hasn't changed since last fetch (304 Not Modified)",
+			},
+			{
+				Name:        "Fetch with item limit",
+				Description: "Get only recent items",
+				Scenario:    "When you only need the latest updates",
+				Input: map[string]interface{}{
+					"url":       "https://blog.example.com/feed",
+					"max_items": 5,
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title": "Tech Blog",
+						"items": []map[string]interface{}{
+							{"id": "1", "title": "Latest Post"},
+							{"id": "2", "title": "Yesterday's Post"},
+							{"id": "3", "title": "Previous Post"},
+							{"id": "4", "title": "Older Post"},
+							{"id": "5", "title": "Fifth Post"},
+						},
+					},
+					"status": 200,
+					"format": "RSS2",
+				},
+				Explanation: "Limited results to 5 most recent items",
+			},
+			{
+				Name:        "JSON Feed fetch",
+				Description: "Fetch a modern JSON feed",
+				Scenario:    "When working with JSON-based feeds",
+				Input: map[string]interface{}{
+					"url": "https://modern.example.com/feed.json",
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title":       "Modern Blog",
+						"description": "A blog using JSON Feed",
+						"link":        "https://modern.example.com",
+						"author": map[string]interface{}{
+							"name": "John Doe",
+							"url":  "https://modern.example.com/about",
+						},
+						"items": []map[string]interface{}{
+							{
+								"id":      "2024-03-15",
+								"title":   "JSON Feeds are Great",
+								"content": "Here's why JSON feeds are awesome...",
+								"tags":    []string{"json", "feeds", "web"},
+							},
+						},
+					},
+					"status": 200,
+					"format": "JSONFeed",
+				},
+				Explanation: "Parsed JSON Feed 1.1 format",
+			},
+			{
+				Name:        "Podcast feed with enclosures",
+				Description: "Fetch podcast RSS with media files",
+				Scenario:    "When parsing podcast feeds",
+				Input: map[string]interface{}{
+					"url": "https://podcast.example.com/rss",
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title": "Tech Podcast",
+						"items": []map[string]interface{}{
+							{
+								"id":          "episode-42",
+								"title":       "Episode 42: Feed Processing",
+								"description": "Discussion about feed formats",
+								"enclosures": []map[string]interface{}{
+									{
+										"url":    "https://podcast.example.com/episodes/42.mp3",
+										"type":   "audio/mpeg",
+										"length": 25000000,
+									},
+								},
+							},
+						},
+					},
+					"status": 200,
+					"format": "RSS2",
+				},
+				Explanation: "Parsed podcast feed with audio enclosures",
+			},
+			{
+				Name:        "Custom headers",
+				Description: "Fetch with custom HTTP headers",
+				Scenario:    "When the feed server requires specific headers",
+				Input: map[string]interface{}{
+					"url": "https://api.example.com/feed",
+					"headers": map[string]string{
+						"X-API-Version": "2.0",
+						"Accept":        "application/rss+xml",
+					},
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title": "API Feed",
+						"items": []map[string]interface{}{},
+					},
+					"status": 200,
+					"format": "RSS2",
+				},
+				Explanation: "Custom headers included in feed request",
+			},
+			{
+				Name:        "Timeout handling",
+				Description: "Set custom timeout for slow feeds",
+				Scenario:    "When fetching from slow servers",
+				Input: map[string]interface{}{
+					"url":     "https://slow.example.com/feed",
+					"timeout": 60,
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title": "Slow Feed",
+						"items": []map[string]interface{}{},
+					},
+					"status": 200,
+					"format": "Atom",
+				},
+				Explanation: "Extended timeout allowed slow feed to complete",
+			},
+		}).
+		WithConstraints([]string{
+			"URL must be a valid HTTP or HTTPS URL",
+			"Timeout must be positive (default: 30 seconds)",
+			"MaxItems of 0 returns all items",
+			"Response body limited to 10MB",
+			"Supports RSS 2.0, Atom 1.0, and JSON Feed 1.x",
+			"Date formats are normalized to RFC3339",
+			"Authentication is applied to feed requests",
+			"Conditional requests save bandwidth",
+		}).
+		WithErrorGuidance(map[string]string{
+			"error creating request": "Check if the URL is properly formatted",
+			"error fetching feed":    "Verify network connectivity and URL accessibility",
+			"HTTP error 401":         "Authentication required - provide auth configuration",
+			"HTTP error 403":         "Access forbidden - check credentials or permissions",
+			"HTTP error 404":         "Feed not found at the specified URL",
+			"error parsing feed":     "The content is not a valid RSS, Atom, or JSON feed",
+			"unknown feed format":    "Unable to detect feed format - check if URL points to a feed",
+			"auth error":             "Authentication configuration is invalid",
+			"timeout":                "Increase timeout parameter for slow servers",
+		}).
+		WithCategory("feed").
+		WithTags([]string{"feed", "rss", "atom", "json", "syndication", "news", "podcast", "authentication"}).
+		WithVersion("2.0.0").
+		WithBehavior(false, false, false, "medium") // Non-deterministic due to network
+
+	return builder.Build()
 }
 
 // parseFeed detects and parses the feed format
@@ -712,4 +1065,73 @@ func extractHeaders(headers http.Header) map[string]string {
 	}
 
 	return result
+}
+
+// init automatically registers the tool on package import
+func init() {
+	tools.MustRegisterTool("feed_fetch", FeedFetch(), tools.ToolMetadata{
+		Metadata: builtins.Metadata{
+			Name:        "feed_fetch",
+			Category:    "feed",
+			Tags:        []string{"feed", "rss", "atom", "json", "syndication", "news", "podcast"},
+			Description: "Fetches and parses feeds in RSS, Atom, or JSON Feed format with authentication support",
+			Version:     "2.0.0",
+			Examples: []builtins.Example{
+				{
+					Name:        "Basic RSS fetch",
+					Description: "Fetch an RSS feed",
+					Code:        `FeedFetch().Execute(ctx, FeedFetchParams{URL: "https://example.com/rss"})`,
+				},
+				{
+					Name:        "Fetch with auth",
+					Description: "Fetch protected feed",
+					Code:        `FeedFetch().Execute(ctx, FeedFetchParams{URL: "https://private.example.com/feed", Auth: map[string]interface{}{"type": "bearer", "token": "xyz"}})`,
+				},
+				{
+					Name:        "Fetch with limit",
+					Description: "Fetch only recent items",
+					Code:        `FeedFetch().Execute(ctx, FeedFetchParams{URL: "https://blog.example.com/feed", MaxItems: 10})`,
+				},
+				{
+					Name:        "Conditional fetch",
+					Description: "Fetch only if modified",
+					Code:        `FeedFetch().Execute(ctx, FeedFetchParams{URL: "https://news.example.com/atom", ETag: "W/\"123456\""})`,
+				},
+			},
+		},
+		RequiredPermissions: []string{"network:access"},
+		ResourceUsage: tools.ResourceInfo{
+			Memory:      "low",
+			Network:     true,
+			FileSystem:  false,
+			Concurrency: true,
+		},
+		UsageInstructions: `The feed_fetch tool retrieves and parses web feeds:
+- Supports RSS 2.0, Atom, and JSON Feed formats
+- Unified output format across all feed types
+- Authentication support for protected feeds
+- Conditional requests with ETag/If-Modified-Since
+- Configurable timeouts and item limits
+- Automatic format detection
+
+Use for news aggregation, podcast feeds, and content monitoring.`,
+		Constraints: []string{
+			"URL must be valid HTTP/HTTPS",
+			"Response body limited to 10MB",
+			"Timeout defaults to 30 seconds",
+			"Dates normalized to RFC3339",
+			"Auth applied to all requests",
+		},
+		ErrorGuidance: map[string]string{
+			"error fetching feed": "Check URL and network",
+			"HTTP error 401":      "Add authentication",
+			"error parsing feed":  "Verify feed format",
+			"unknown feed format": "Not a valid feed",
+			"auth error":          "Check auth config",
+		},
+		IsDeterministic:      false, // Network operation
+		IsDestructive:        false,
+		RequiresConfirmation: false,
+		EstimatedLatency:     "medium",
+	})
 }

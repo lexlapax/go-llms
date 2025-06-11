@@ -711,6 +711,19 @@ The core functionality is fairly complete and working for basic llm wrappers. Ho
     - Automatic detection based on URL patterns and OpenAPI schemes
     - Support for API Key, Bearer Token, Basic Auth, and OAuth2 (placeholder)
     - Used by REST, OpenAPI, and GraphQL modes consistently
+- 🎉 **Tool System Enhancement Phase 2 & 3 - ToolBuilder Migration** (January 10, 2025):
+  - **Phase 2 Completed**: Migrated 15 tools to enhanced ToolBuilder pattern
+    - Calculator (1), System tools (4), File tools (6), Web tools (4)
+    - Each tool now includes 7-9 comprehensive examples
+    - Added usage instructions, constraints, and error guidance
+    - Full MCP compatibility and behavioral hints
+  - **Phase 3 Days 1-3 Completed**: Migrated 17 additional tools
+    - Day 1: Data tools (4) - json_process, csv_process, xml_process, data_transform
+    - Day 2: DateTime tools (7) - all datetime_* tools with timezone/locale support
+    - Day 3: Feed tools (6) - all feed_* tools with authentication support
+    - Total: 32 tools now using enhanced ToolBuilder pattern
+    - All tools feature comprehensive metadata for better LLM guidance
+    - 170+ tests passing across all migrated packages
 
 **v0.3.0** (June 2025)
 - 🎉 **Built-in Tools System** - Complete implementation of comprehensive built-in tools

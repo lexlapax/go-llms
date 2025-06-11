@@ -612,7 +612,7 @@ func TestFeedFetchCustomUserAgent(t *testing.T) {
 		t.Fatalf("Failed to fetch feed: %v", err)
 	}
 
-	if receivedUserAgent != "go-llms-feed/1.0" {
-		t.Errorf("Expected default user agent 'go-llms-feed/1.0', got '%s'", receivedUserAgent)
+	if receivedUserAgent != "go-llms-feed/2.0" {
+		t.Errorf("Expected default user agent 'go-llms-feed/2.0', got '%s'", receivedUserAgent)
 	}
 }

@@ -17,74 +17,6 @@ import (
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// feedAggregateParamSchema defines parameters for the FeedAggregate tool
-var feedAggregateParamSchema = &sdomain.Schema{
-	Type: "object",
-	Properties: map[string]sdomain.Property{
-		"feeds": {
-			Type:        "array",
-			Description: "Array of feeds to aggregate",
-		},
-		"sort_by": {
-			Type:        "string",
-			Description: "Sort field: date, title (default: date)",
-		},
-		"sort_descending": {
-			Type:        "boolean",
-			Description: "Sort in descending order (default: false)",
-		},
-		"remove_dupes": {
-			Type:        "boolean",
-			Description: "Remove duplicate items based on URL or content similarity (default: false)",
-		},
-		"max_items": {
-			Type:        "number",
-			Description: "Maximum number of items in aggregated feed",
-		},
-		"merge_metadata": {
-			Type:        "boolean",
-			Description: "Merge feed metadata (title, description) into aggregated feed (default: false)",
-		},
-	},
-	Required: []string{"feeds"},
-}
-
-func init() {
-	tools.MustRegisterTool("feed_aggregate", FeedAggregate(), tools.ToolMetadata{
-		Metadata: builtins.Metadata{
-			Name:        "feed_aggregate",
-			Category:    "feed",
-			Tags:        []string{"feed", "aggregate", "combine", "merge", "sort"},
-			Description: "Combines multiple feeds into one unified feed",
-			Version:     "1.0.0",
-			Examples: []builtins.Example{
-				{
-					Name:        "Combine news feeds",
-					Description: "Merge multiple news feeds into one",
-					Code:        `FeedAggregate().Execute(ctx, FeedAggregateParams{Feeds: []UnifiedFeed{techFeed, scienceFeed, businessFeed}})`,
-				},
-				{
-					Name:        "Sort by date descending",
-					Description: "Aggregate and sort by most recent first",
-					Code:        `FeedAggregate().Execute(ctx, FeedAggregateParams{Feeds: feeds, SortBy: "date", SortDescending: true, MaxItems: 100})`,
-				},
-				{
-					Name:        "Remove duplicates",
-					Description: "Combine feeds and remove duplicate articles",
-					Code:        `FeedAggregate().Execute(ctx, FeedAggregateParams{Feeds: feeds, RemoveDupes: true, MergeMetadata: true})`,
-				},
-			},
-		},
-		RequiredPermissions: []string{},
-		ResourceUsage: tools.ResourceInfo{
-			Memory:      "medium",
-			Network:     false,
-			FileSystem:  false,
-			Concurrency: false,
-		},
-	})
-}
-
 // FeedAggregateParams contains parameters for the FeedAggregate tool
 type FeedAggregateParams struct {
 	Feeds          []UnifiedFeed `json:"feeds"`
@@ -103,57 +35,486 @@ type FeedAggregateResult struct {
 	DupesRemoved int         `json:"dupes_removed,omitempty"`
 }
 
+// feedAggregateExecute is the execution function for feed_aggregate
+func feedAggregateExecute(ctx *domain.ToolContext, params FeedAggregateParams) (*FeedAggregateResult, error) {
+	// Emit start event
+	if ctx.Events != nil {
+		ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+			ToolName:   "feed_aggregate",
+			Parameters: params,
+			RequestID:  ctx.RunID,
+		})
+	}
+
+	// Check state for default sort options if not provided
+	if params.SortBy == "" && ctx.State != nil {
+		if val, ok := ctx.State.Get("feed_aggregate_default_sort"); ok {
+			if sort, ok := val.(string); ok && sort != "" {
+				params.SortBy = sort
+			}
+		}
+	}
+
+	// Check state for default max items if not provided
+	if params.MaxItems == 0 && ctx.State != nil {
+		if val, ok := ctx.State.Get("feed_aggregate_max_items"); ok {
+			if max, ok := val.(int); ok && max > 0 {
+				params.MaxItems = max
+			}
+		}
+	}
+
+	result, err := aggregateFeeds(params)
+	if err != nil {
+		return nil, err
+	}
+
+	// Emit result event
+	if ctx.Events != nil {
+		ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+			ToolName:  "feed_aggregate",
+			Result:    result,
+			RequestID: ctx.RunID,
+		})
+	}
+
+	return result, nil
+}
+
 // FeedAggregate creates a new FeedAggregate tool
 func FeedAggregate() domain.Tool {
-	return atools.NewTool(
-		"feed_aggregate",
-		"Combines multiple feeds into one unified feed with sorting and deduplication",
-		func(ctx *domain.ToolContext, params FeedAggregateParams) (*FeedAggregateResult, error) {
-			// Emit start event
-			if ctx.Events != nil {
-				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
-					ToolName:   "feed_aggregate",
-					Parameters: params,
-					RequestID:  ctx.RunID,
-				})
-			}
-
-			// Check state for default sort options if not provided
-			if params.SortBy == "" && ctx.State != nil {
-				if val, ok := ctx.State.Get("feed_aggregate_default_sort"); ok {
-					if sort, ok := val.(string); ok && sort != "" {
-						params.SortBy = sort
-					}
-				}
-			}
-
-			// Check state for default max items if not provided
-			if params.MaxItems == 0 && ctx.State != nil {
-				if val, ok := ctx.State.Get("feed_aggregate_max_items"); ok {
-					if max, ok := val.(int); ok && max > 0 {
-						params.MaxItems = max
-					}
-				}
-			}
-
-			result, err := aggregateFeeds(params)
-			if err != nil {
-				return nil, err
-			}
-
-			// Emit result event
-			if ctx.Events != nil {
-				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
-					ToolName:  "feed_aggregate",
-					Result:    result,
-					RequestID: ctx.RunID,
-				})
-			}
-
-			return result, nil
+	// Define parameter schema
+	paramSchema := &sdomain.Schema{
+		Type: "object",
+		Properties: map[string]sdomain.Property{
+			"feeds": {
+				Type:        "array",
+				Description: "Array of UnifiedFeed objects to aggregate",
+				Items: &sdomain.Property{
+					Type:        "object",
+					Description: "Feed to include in aggregation",
+				},
+			},
+			"sort_by": {
+				Type:        "string",
+				Description: "Sort field: 'date' or 'title' (default: date)",
+				Enum:        []string{"date", "title"},
+			},
+			"sort_descending": {
+				Type:        "boolean",
+				Description: "Sort in descending order (default: false - oldest first for date, A-Z for title)",
+			},
+			"remove_dupes": {
+				Type:        "boolean",
+				Description: "Remove duplicate items based on URL or content hash (default: false)",
+			},
+			"max_items": {
+				Type:        "number",
+				Description: "Maximum number of items in aggregated feed (0 = unlimited)",
+			},
+			"merge_metadata": {
+				Type:        "boolean",
+				Description: "Merge feed metadata (title, description) into aggregated feed (default: false)",
+			},
 		},
-		feedAggregateParamSchema,
-	)
+		Required: []string{"feeds"},
+	}
+
+	// Define output schema
+	outputSchema := &sdomain.Schema{
+		Type: "object",
+		Properties: map[string]sdomain.Property{
+			"feed": {
+				Type:        "object",
+				Description: "The aggregated feed combining all input feeds",
+			},
+			"source_count": {
+				Type:        "integer",
+				Description: "Number of source feeds aggregated",
+			},
+			"total_items": {
+				Type:        "integer",
+				Description: "Total number of items before filtering/limiting",
+			},
+			"dupes_removed": {
+				Type:        "integer",
+				Description: "Number of duplicate items removed (if remove_dupes=true)",
+			},
+		},
+		Required: []string{"feed", "source_count", "total_items"},
+	}
+
+	builder := atools.NewToolBuilder("feed_aggregate", "Combine multiple feeds into one unified feed with sorting and deduplication").
+		WithFunction(feedAggregateExecute).
+		WithParameterSchema(paramSchema).
+		WithOutputSchema(outputSchema).
+		WithUsageInstructions(`The feed_aggregate tool combines multiple feeds into a single unified feed:
+
+Aggregation Features:
+1. Feed Combination:
+   - Merges items from all input feeds
+   - Preserves all item metadata
+   - Maintains feed structure consistency
+
+2. Sorting Options:
+   - By date: Published date (falls back to updated date)
+   - By title: Alphabetical sorting
+   - Ascending or descending order
+   - Items without dates sorted to end
+
+3. Duplicate Removal:
+   - Detects duplicates by URL (primary)
+   - Falls back to content hash (MD5 of title+description+content)
+   - Preserves first occurrence
+
+4. Metadata Merging:
+   - Combines feed titles: "Aggregated: Feed1, Feed2, ..."
+   - Joins descriptions with " | " separator
+   - Uses most recent updated timestamp
+   - Preserves first feed's other metadata
+
+5. Result Limiting:
+   - Apply max_items after sorting and deduplication
+   - Useful for creating "top N" feeds
+
+State Integration:
+- feed_aggregate_default_sort: Default sort field (date/title)
+- feed_aggregate_max_items: Default item limit
+
+Common Use Cases:
+- Multi-source news aggregation
+- Creating unified podcast feeds
+- Combining team/department blogs
+- Building curated content feeds
+- Cross-source content monitoring`).
+		WithExamples([]domain.ToolExample{
+			{
+				Name:        "Basic feed aggregation",
+				Description: "Combine multiple news feeds",
+				Scenario:    "When you want to merge different news sources into one feed",
+				Input: map[string]interface{}{
+					"feeds": []map[string]interface{}{
+						{
+							"title": "Tech News",
+							"items": []map[string]interface{}{
+								{
+									"title":     "AI Breakthrough",
+									"link":      "https://tech.example.com/ai",
+									"published": "2024-03-20T10:00:00Z",
+								},
+								{
+									"title":     "New Smartphone",
+									"link":      "https://tech.example.com/phone",
+									"published": "2024-03-19T10:00:00Z",
+								},
+							},
+						},
+						{
+							"title": "Science Daily",
+							"items": []map[string]interface{}{
+								{
+									"title":     "Mars Discovery",
+									"link":      "https://science.example.com/mars",
+									"published": "2024-03-21T10:00:00Z",
+								},
+							},
+						},
+					},
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"items": []map[string]interface{}{
+							{
+								"title":     "New Smartphone",
+								"link":      "https://tech.example.com/phone",
+								"published": "2024-03-19T10:00:00Z",
+							},
+							{
+								"title":     "AI Breakthrough",
+								"link":      "https://tech.example.com/ai",
+								"published": "2024-03-20T10:00:00Z",
+							},
+							{
+								"title":     "Mars Discovery",
+								"link":      "https://science.example.com/mars",
+								"published": "2024-03-21T10:00:00Z",
+							},
+						},
+					},
+					"source_count":  2,
+					"total_items":   3,
+					"dupes_removed": 0,
+				},
+				Explanation: "Combined 2 feeds with 3 total items, sorted by date (oldest first by default)",
+			},
+			{
+				Name:        "Sort by date descending",
+				Description: "Aggregate with most recent items first",
+				Scenario:    "When you want the latest content at the top",
+				Input: map[string]interface{}{
+					"feeds": []map[string]interface{}{
+						{
+							"items": []map[string]interface{}{
+								{"title": "Old Post", "published": "2024-01-01T10:00:00Z"},
+								{"title": "Recent Post", "published": "2024-03-20T10:00:00Z"},
+								{"title": "Yesterday's Post", "published": "2024-03-19T10:00:00Z"},
+							},
+						},
+					},
+					"sort_by":         "date",
+					"sort_descending": true,
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"items": []map[string]interface{}{
+							{"title": "Recent Post", "published": "2024-03-20T10:00:00Z"},
+							{"title": "Yesterday's Post", "published": "2024-03-19T10:00:00Z"},
+							{"title": "Old Post", "published": "2024-01-01T10:00:00Z"},
+						},
+					},
+					"source_count":  1,
+					"total_items":   3,
+					"dupes_removed": 0,
+				},
+				Explanation: "Items sorted by date in descending order (newest first)",
+			},
+			{
+				Name:        "Remove duplicates",
+				Description: "Aggregate and remove duplicate items",
+				Scenario:    "When feeds might contain the same articles",
+				Input: map[string]interface{}{
+					"feeds": []map[string]interface{}{
+						{
+							"title": "Feed A",
+							"items": []map[string]interface{}{
+								{
+									"title": "Shared Article",
+									"link":  "https://example.com/article1",
+								},
+								{
+									"title": "Unique to A",
+									"link":  "https://example.com/article2",
+								},
+							},
+						},
+						{
+							"title": "Feed B",
+							"items": []map[string]interface{}{
+								{
+									"title": "Shared Article",
+									"link":  "https://example.com/article1",
+								},
+								{
+									"title": "Unique to B",
+									"link":  "https://example.com/article3",
+								},
+							},
+						},
+					},
+					"remove_dupes": true,
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"items": []map[string]interface{}{
+							{
+								"title": "Shared Article",
+								"link":  "https://example.com/article1",
+							},
+							{
+								"title": "Unique to A",
+								"link":  "https://example.com/article2",
+							},
+							{
+								"title": "Unique to B",
+								"link":  "https://example.com/article3",
+							},
+						},
+					},
+					"source_count":  2,
+					"total_items":   4,
+					"dupes_removed": 1,
+				},
+				Explanation: "Removed 1 duplicate item based on matching URLs",
+			},
+			{
+				Name:        "Merge metadata",
+				Description: "Aggregate with combined feed metadata",
+				Scenario:    "When you want to preserve source feed information",
+				Input: map[string]interface{}{
+					"feeds": []map[string]interface{}{
+						{
+							"title":       "Tech Blog",
+							"description": "Latest technology news",
+							"items":       []map[string]interface{}{{"title": "Tech Post"}},
+						},
+						{
+							"title":       "Science Blog",
+							"description": "Scientific discoveries",
+							"items":       []map[string]interface{}{{"title": "Science Post"}},
+						},
+					},
+					"merge_metadata": true,
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title":       "Aggregated: Tech Blog, Science Blog",
+						"description": "Latest technology news | Scientific discoveries",
+						"items": []map[string]interface{}{
+							{"title": "Tech Post"},
+							{"title": "Science Post"},
+						},
+					},
+					"source_count": 2,
+					"total_items":  2,
+				},
+				Explanation: "Merged feed metadata with aggregated title and combined descriptions",
+			},
+			{
+				Name:        "Sort by title",
+				Description: "Aggregate and sort alphabetically",
+				Scenario:    "When you want items organized by title",
+				Input: map[string]interface{}{
+					"feeds": []map[string]interface{}{
+						{
+							"items": []map[string]interface{}{
+								{"title": "Zebra Article"},
+								{"title": "Apple News"},
+								{"title": "Microsoft Update"},
+							},
+						},
+					},
+					"sort_by": "title",
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"items": []map[string]interface{}{
+							{"title": "Apple News"},
+							{"title": "Microsoft Update"},
+							{"title": "Zebra Article"},
+						},
+					},
+					"source_count": 1,
+					"total_items":  3,
+				},
+				Explanation: "Items sorted alphabetically by title (A-Z)",
+			},
+			{
+				Name:        "Limit aggregated items",
+				Description: "Create a top-N feed",
+				Scenario:    "When you only want the most recent items from multiple sources",
+				Input: map[string]interface{}{
+					"feeds": []map[string]interface{}{
+						{
+							"items": []map[string]interface{}{
+								{"title": "Post 1", "published": "2024-03-20T10:00:00Z"},
+								{"title": "Post 2", "published": "2024-03-19T10:00:00Z"},
+								{"title": "Post 3", "published": "2024-03-18T10:00:00Z"},
+							},
+						},
+						{
+							"items": []map[string]interface{}{
+								{"title": "Post 4", "published": "2024-03-21T10:00:00Z"},
+								{"title": "Post 5", "published": "2024-03-17T10:00:00Z"},
+							},
+						},
+					},
+					"sort_by":         "date",
+					"sort_descending": true,
+					"max_items":       3,
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"items": []map[string]interface{}{
+							{"title": "Post 4", "published": "2024-03-21T10:00:00Z"},
+							{"title": "Post 1", "published": "2024-03-20T10:00:00Z"},
+							{"title": "Post 2", "published": "2024-03-19T10:00:00Z"},
+						},
+					},
+					"source_count": 2,
+					"total_items":  5,
+				},
+				Explanation: "Limited to 3 most recent items from 5 total items",
+			},
+			{
+				Name:        "Handle items without dates",
+				Description: "Aggregate with mixed date availability",
+				Scenario:    "When some items lack date information",
+				Input: map[string]interface{}{
+					"feeds": []map[string]interface{}{
+						{
+							"items": []map[string]interface{}{
+								{"title": "Dated Item", "published": "2024-03-20T10:00:00Z"},
+								{"title": "No Date Item"},
+								{"title": "Another Dated", "published": "2024-03-19T10:00:00Z"},
+							},
+						},
+					},
+					"sort_by":         "date",
+					"sort_descending": true,
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"items": []map[string]interface{}{
+							{"title": "Dated Item", "published": "2024-03-20T10:00:00Z"},
+							{"title": "Another Dated", "published": "2024-03-19T10:00:00Z"},
+							{"title": "No Date Item"},
+						},
+					},
+					"source_count": 1,
+					"total_items":  3,
+				},
+				Explanation: "Items without dates sorted to the end",
+			},
+			{
+				Name:        "Empty feeds handling",
+				Description: "Aggregate with some empty feeds",
+				Scenario:    "When some feeds have no items",
+				Input: map[string]interface{}{
+					"feeds": []map[string]interface{}{
+						{
+							"title": "Active Feed",
+							"items": []map[string]interface{}{
+								{"title": "Only Item"},
+							},
+						},
+						{
+							"title": "Empty Feed",
+							"items": []map[string]interface{}{},
+						},
+					},
+				},
+				Output: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"items": []map[string]interface{}{
+							{"title": "Only Item"},
+						},
+					},
+					"source_count": 2,
+					"total_items":  1,
+				},
+				Explanation: "Successfully aggregated feeds even with empty sources",
+			},
+		}).
+		WithConstraints([]string{
+			"Feeds must be in UnifiedFeed format",
+			"Sort field must be 'date' or 'title'",
+			"MaxItems of 0 means no limit",
+			"Duplicate detection uses URL first, then content hash",
+			"Items without dates are sorted to the end when sorting by date",
+			"Title sorting is case-insensitive",
+			"Deduplication preserves first occurrence",
+			"Empty feeds are handled gracefully",
+		}).
+		WithErrorGuidance(map[string]string{
+			"invalid sort_by field": "Use 'date' or 'title' for sort_by parameter",
+			"no feeds provided":     "Provide at least one feed in the feeds array",
+		}).
+		WithCategory("feed").
+		WithTags([]string{"feed", "aggregate", "combine", "merge", "sort", "deduplicate"}).
+		WithVersion("2.0.0").
+		WithBehavior(true, false, false, "medium") // Deterministic, local operation, medium memory
+
+	return builder.Build()
 }
 
 func aggregateFeeds(params FeedAggregateParams) (*FeedAggregateResult, error) {
@@ -367,4 +728,70 @@ func getItemDate(item FeedItem) *time.Time {
 		return item.Updated
 	}
 	return nil
+}
+
+// init automatically registers the tool on package import
+func init() {
+	tools.MustRegisterTool("feed_aggregate", FeedAggregate(), tools.ToolMetadata{
+		Metadata: builtins.Metadata{
+			Name:        "feed_aggregate",
+			Category:    "feed",
+			Tags:        []string{"feed", "aggregate", "combine", "merge", "sort", "deduplicate"},
+			Description: "Combine multiple feeds into one unified feed with sorting and deduplication",
+			Version:     "2.0.0",
+			Examples: []builtins.Example{
+				{
+					Name:        "Basic aggregation",
+					Description: "Combine multiple feeds",
+					Code:        `FeedAggregate().Execute(ctx, FeedAggregateParams{Feeds: []UnifiedFeed{feed1, feed2}})`,
+				},
+				{
+					Name:        "Sort and deduplicate",
+					Description: "Aggregate with sorting and duplicate removal",
+					Code:        `FeedAggregate().Execute(ctx, FeedAggregateParams{Feeds: feeds, SortBy: "date", SortDescending: true, RemoveDupes: true})`,
+				},
+				{
+					Name:        "Limited aggregation",
+					Description: "Aggregate with item limit",
+					Code:        `FeedAggregate().Execute(ctx, FeedAggregateParams{Feeds: feeds, MaxItems: 20, MergeMetadata: true})`,
+				},
+				{
+					Name:        "Sort by title",
+					Description: "Aggregate and sort alphabetically",
+					Code:        `FeedAggregate().Execute(ctx, FeedAggregateParams{Feeds: feeds, SortBy: "title"})`,
+				},
+			},
+		},
+		RequiredPermissions: []string{},
+		ResourceUsage: tools.ResourceInfo{
+			Memory:      "medium",
+			Network:     false,
+			FileSystem:  false,
+			Concurrency: true,
+		},
+		UsageInstructions: `The feed_aggregate tool combines multiple feeds:
+- Feed merging with metadata combination
+- Sorting by date or title (ascending/descending)
+- Duplicate removal based on URL or content hash
+- Item limiting for top-N feeds
+- Metadata merging for aggregated feed info
+
+Perfect for multi-source aggregation, content curation, and feed consolidation.`,
+		Constraints: []string{
+			"Feeds must be UnifiedFeed format",
+			"Sort field must be 'date' or 'title'",
+			"MaxItems 0 = no limit",
+			"Duplicate detection uses URL first",
+			"Items without dates sorted to end",
+			"Title sorting is case-insensitive",
+		},
+		ErrorGuidance: map[string]string{
+			"invalid sort_by field": "Use 'date' or 'title'",
+			"no feeds provided":     "Provide at least one feed",
+		},
+		IsDeterministic:      true, // Local operation
+		IsDestructive:        false,
+		RequiresConfirmation: false,
+		EstimatedLatency:     "low",
+	})
 }

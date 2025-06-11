@@ -17,66 +17,6 @@ import (
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// feedConvertParamSchema defines parameters for the FeedConvert tool
-var feedConvertParamSchema = &sdomain.Schema{
-	Type: "object",
-	Properties: map[string]sdomain.Property{
-		"feed": {
-			Type:        "object",
-			Description: "Feed data to convert (from FeedFetch or other tools)",
-		},
-		"target_type": {
-			Type:        "string",
-			Description: "Target format: rss, atom, json",
-		},
-		"pretty": {
-			Type:        "boolean",
-			Description: "Pretty-print the output (default: false)",
-		},
-		"include_content": {
-			Type:        "boolean",
-			Description: "Include full content in output (default: true)",
-		},
-	},
-	Required: []string{"feed", "target_type"},
-}
-
-func init() {
-	tools.MustRegisterTool("feed_convert", FeedConvert(), tools.ToolMetadata{
-		Metadata: builtins.Metadata{
-			Name:        "feed_convert",
-			Category:    "feed",
-			Tags:        []string{"feed", "convert", "transform", "rss", "atom", "json"},
-			Description: "Converts feeds between RSS, Atom, and JSON Feed formats",
-			Version:     "1.0.0",
-			Examples: []builtins.Example{
-				{
-					Name:        "Convert to RSS",
-					Description: "Convert any feed format to RSS 2.0",
-					Code:        `FeedConvert().Execute(ctx, FeedConvertParams{Feed: feed, TargetType: "rss", Pretty: true})`,
-				},
-				{
-					Name:        "Convert to JSON Feed",
-					Description: "Convert RSS/Atom to modern JSON Feed format",
-					Code:        `FeedConvert().Execute(ctx, FeedConvertParams{Feed: feed, TargetType: "json", IncludeContent: true})`,
-				},
-				{
-					Name:        "Minimal Atom conversion",
-					Description: "Convert to Atom without full content",
-					Code:        `FeedConvert().Execute(ctx, FeedConvertParams{Feed: feed, TargetType: "atom", IncludeContent: false})`,
-				},
-			},
-		},
-		RequiredPermissions: []string{},
-		ResourceUsage: tools.ResourceInfo{
-			Memory:      "low",
-			Network:     false,
-			FileSystem:  false,
-			Concurrency: false,
-		},
-	})
-}
-
 // FeedConvertParams contains parameters for the FeedConvert tool
 type FeedConvertParams struct {
 	Feed           UnifiedFeed `json:"feed"`
@@ -92,57 +32,420 @@ type FeedConvertResult struct {
 	Format      string `json:"format"`
 }
 
+// feedConvertExecute is the execution function for feed_convert
+func feedConvertExecute(ctx *domain.ToolContext, params FeedConvertParams) (*FeedConvertResult, error) {
+	// Emit start event
+	if ctx.Events != nil {
+		ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
+			ToolName:   "feed_convert",
+			Parameters: params,
+			RequestID:  ctx.RunID,
+		})
+	}
+
+	// Check state for default format preferences
+	if params.TargetType == "" && ctx.State != nil {
+		if val, ok := ctx.State.Get("feed_convert_default_format"); ok {
+			if format, ok := val.(string); ok && format != "" {
+				params.TargetType = format
+			}
+		}
+	}
+
+	// Check state for default pretty print setting
+	if !params.Pretty && ctx.State != nil {
+		if val, ok := ctx.State.Get("feed_convert_pretty_print"); ok {
+			if pretty, ok := val.(bool); ok {
+				params.Pretty = pretty
+			}
+		}
+	}
+
+	result, err := convertFeed(params)
+	if err != nil {
+		return nil, err
+	}
+
+	// Emit result event
+	if ctx.Events != nil {
+		ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
+			ToolName:  "feed_convert",
+			Result:    result,
+			RequestID: ctx.RunID,
+		})
+	}
+
+	return result, nil
+}
+
 // FeedConvert creates a new FeedConvert tool
 func FeedConvert() domain.Tool {
-	return atools.NewTool(
-		"feed_convert",
-		"Converts feeds between RSS, Atom, and JSON Feed formats",
-		func(ctx *domain.ToolContext, params FeedConvertParams) (*FeedConvertResult, error) {
-			// Emit start event
-			if ctx.Events != nil {
-				ctx.Events.Emit(domain.EventToolCall, domain.ToolCallEventData{
-					ToolName:   "feed_convert",
-					Parameters: params,
-					RequestID:  ctx.RunID,
-				})
-			}
-
-			// Check state for default format preferences
-			if params.TargetType == "" && ctx.State != nil {
-				if val, ok := ctx.State.Get("feed_convert_default_format"); ok {
-					if format, ok := val.(string); ok && format != "" {
-						params.TargetType = format
-					}
-				}
-			}
-
-			// Check state for default pretty print setting
-			if !params.Pretty && ctx.State != nil {
-				if val, ok := ctx.State.Get("feed_convert_pretty_print"); ok {
-					if pretty, ok := val.(bool); ok {
-						params.Pretty = pretty
-					}
-				}
-			}
-
-			result, err := convertFeed(params)
-			if err != nil {
-				return nil, err
-			}
-
-			// Emit result event
-			if ctx.Events != nil {
-				ctx.Events.Emit(domain.EventToolResult, domain.ToolResultEventData{
-					ToolName:  "feed_convert",
-					Result:    result,
-					RequestID: ctx.RunID,
-				})
-			}
-
-			return result, nil
+	// Define parameter schema
+	paramSchema := &sdomain.Schema{
+		Type: "object",
+		Properties: map[string]sdomain.Property{
+			"feed": {
+				Type:        "object",
+				Description: "Feed data to convert (UnifiedFeed format)",
+			},
+			"target_type": {
+				Type:        "string",
+				Description: "Target format: rss, atom, or json",
+				Enum:        []string{"rss", "atom", "json"},
+			},
+			"pretty": {
+				Type:        "boolean",
+				Description: "Pretty-print the output for readability (default: false)",
+			},
+			"include_content": {
+				Type:        "boolean",
+				Description: "Include full content in output, not just summaries (default: true)",
+			},
 		},
-		feedConvertParamSchema,
-	)
+		Required: []string{"feed", "target_type"},
+	}
+
+	// Define output schema
+	outputSchema := &sdomain.Schema{
+		Type: "object",
+		Properties: map[string]sdomain.Property{
+			"content": {
+				Type:        "string",
+				Description: "The converted feed content in the target format",
+			},
+			"content_type": {
+				Type:        "string",
+				Description: "MIME type of the converted content",
+			},
+			"format": {
+				Type:        "string",
+				Description: "The format the feed was converted to (rss, atom, json)",
+			},
+		},
+		Required: []string{"content", "content_type", "format"},
+	}
+
+	builder := atools.NewToolBuilder("feed_convert", "Convert feeds between RSS, Atom, and JSON Feed formats").
+		WithFunction(feedConvertExecute).
+		WithParameterSchema(paramSchema).
+		WithOutputSchema(outputSchema).
+		WithUsageInstructions(`The feed_convert tool transforms feeds between different formats:
+
+Supported Conversions:
+1. RSS 2.0:
+   - Standard RSS format with channel/item structure
+   - Wide compatibility with feed readers
+   - Best for podcasts and traditional blogs
+   - Content included in description field
+
+2. Atom 1.0:
+   - IETF standard with better structure
+   - Separate content and summary fields
+   - Better date/time handling
+   - Required unique IDs for entries
+
+3. JSON Feed 1.1:
+   - Modern JSON-based format
+   - Easy to parse programmatically
+   - Native support for attachments
+   - Clean separation of content types
+
+Conversion Features:
+- Preserves all standard feed elements
+- Maps fields appropriately between formats
+- Handles enclosures/attachments conversion
+- Maintains author information
+- Converts dates to appropriate formats
+- Optional pretty-printing for readability
+
+State Integration:
+- feed_convert_default_format: Default target format
+- feed_convert_pretty_print: Default pretty print setting
+
+Common Use Cases:
+- Feed format migration
+- Cross-platform compatibility
+- API format requirements
+- Feed validation and testing
+- Format modernization`).
+		WithExamples([]domain.ToolExample{
+			{
+				Name:        "RSS to JSON Feed",
+				Description: "Convert traditional RSS to modern JSON format",
+				Scenario:    "When you need JSON format for modern APIs",
+				Input: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title":       "Tech Blog",
+						"description": "Latest tech news",
+						"link":        "https://example.com",
+						"items": []map[string]interface{}{
+							{
+								"id":          "post-1",
+								"title":       "New Technology",
+								"description": "Brief summary",
+								"content":     "<p>Full article content...</p>",
+								"link":        "https://example.com/post-1",
+								"published":   "2024-03-15T10:00:00Z",
+							},
+						},
+					},
+					"target_type": "json",
+					"pretty":      true,
+				},
+				Output: map[string]interface{}{
+					"content": `{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Tech Blog",
+  "home_page_url": "https://example.com",
+  "description": "Latest tech news",
+  "items": [
+    {
+      "id": "post-1",
+      "title": "New Technology",
+      "url": "https://example.com/post-1",
+      "content_html": "<p>Full article content...</p>",
+      "date_published": "2024-03-15T10:00:00Z"
+    }
+  ]
+}`,
+					"content_type": "application/feed+json",
+					"format":       "json",
+				},
+				Explanation: "Converted RSS feed to JSON Feed 1.1 format with pretty printing",
+			},
+			{
+				Name:        "Convert to Atom",
+				Description: "Convert any feed to Atom format",
+				Scenario:    "When you need Atom format for standards compliance",
+				Input: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title": "News Feed",
+						"link":  "https://news.example.com",
+						"author": map[string]interface{}{
+							"name":  "News Team",
+							"email": "news@example.com",
+						},
+						"items": []map[string]interface{}{
+							{
+								"id":          "news-1",
+								"title":       "Breaking News",
+								"description": "Important update",
+								"link":        "https://news.example.com/1",
+								"published":   "2024-03-15T12:00:00Z",
+								"categories":  []string{"urgent", "world"},
+							},
+						},
+					},
+					"target_type":     "atom",
+					"include_content": false,
+				},
+				Output: map[string]interface{}{
+					"content":      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<feed xmlns=\"http://www.w3.org/2005/Atom\">...",
+					"content_type": "application/atom+xml",
+					"format":       "atom",
+				},
+				Explanation: "Converted to Atom format with summary only (no full content)",
+			},
+			{
+				Name:        "Convert to RSS",
+				Description: "Convert modern formats to classic RSS",
+				Scenario:    "When you need RSS for legacy compatibility",
+				Input: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title":     "Podcast Feed",
+						"link":      "https://podcast.example.com",
+						"language":  "en-us",
+						"copyright": "© 2024 Example",
+						"items": []map[string]interface{}{
+							{
+								"id":          "episode-1",
+								"title":       "Episode 1: Introduction",
+								"description": "Our first episode",
+								"link":        "https://podcast.example.com/1",
+								"published":   "2024-03-01T09:00:00Z",
+								"enclosures": []map[string]interface{}{
+									{
+										"url":    "https://podcast.example.com/ep1.mp3",
+										"type":   "audio/mpeg",
+										"length": 15000000,
+									},
+								},
+							},
+						},
+					},
+					"target_type": "rss",
+				},
+				Output: map[string]interface{}{
+					"content":      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\">...",
+					"content_type": "application/rss+xml",
+					"format":       "rss",
+				},
+				Explanation: "Converted to RSS 2.0 with podcast enclosure support",
+			},
+			{
+				Name:        "Pretty print JSON",
+				Description: "Convert with human-readable formatting",
+				Scenario:    "When you need formatted output for debugging or display",
+				Input: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title": "Simple Feed",
+						"items": []map[string]interface{}{
+							{"id": "1", "title": "Item 1"},
+						},
+					},
+					"target_type": "json",
+					"pretty":      true,
+				},
+				Output: map[string]interface{}{
+					"content": `{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Simple Feed",
+  "items": [
+    {
+      "id": "1",
+      "title": "Item 1"
+    }
+  ]
+}`,
+					"content_type": "application/feed+json",
+					"format":       "json",
+				},
+				Explanation: "JSON Feed with indentation for readability",
+			},
+			{
+				Name:        "Convert with full content",
+				Description: "Include complete article content",
+				Scenario:    "When you want full articles in the converted feed",
+				Input: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title": "Blog",
+						"items": []map[string]interface{}{
+							{
+								"id":          "post-1",
+								"title":       "Full Article",
+								"description": "Summary only",
+								"content":     "<article><p>This is the complete article with multiple paragraphs...</p></article>",
+							},
+						},
+					},
+					"target_type":     "atom",
+					"include_content": true,
+				},
+				Output: map[string]interface{}{
+					"content":      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<feed xmlns=\"http://www.w3.org/2005/Atom\">...",
+					"content_type": "application/atom+xml",
+					"format":       "atom",
+				},
+				Explanation: "Atom feed with full HTML content in content element",
+			},
+			{
+				Name:        "Author preservation",
+				Description: "Convert while maintaining author information",
+				Scenario:    "When author attribution is important",
+				Input: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title": "Team Blog",
+						"author": map[string]interface{}{
+							"name": "Editorial Team",
+						},
+						"items": []map[string]interface{}{
+							{
+								"id":    "1",
+								"title": "Post by John",
+								"author": map[string]interface{}{
+									"name":  "John Smith",
+									"email": "john@example.com",
+								},
+							},
+						},
+					},
+					"target_type": "json",
+				},
+				Output: map[string]interface{}{
+					"content":      `{"version":"https://jsonfeed.org/version/1.1",...}`,
+					"content_type": "application/feed+json",
+					"format":       "json",
+				},
+				Explanation: "Author information preserved at both feed and item level",
+			},
+			{
+				Name:        "Attachment conversion",
+				Description: "Convert feeds with media attachments",
+				Scenario:    "When converting podcast or media feeds",
+				Input: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title": "Video Feed",
+						"items": []map[string]interface{}{
+							{
+								"id":    "video-1",
+								"title": "Tutorial Video",
+								"enclosures": []map[string]interface{}{
+									{
+										"url":    "https://example.com/video.mp4",
+										"type":   "video/mp4",
+										"length": 50000000,
+									},
+								},
+							},
+						},
+					},
+					"target_type": "json",
+				},
+				Output: map[string]interface{}{
+					"content":      `{..."attachments":[{"url":"https://example.com/video.mp4","mime_type":"video/mp4","size_in_bytes":50000000}]...}`,
+					"content_type": "application/feed+json",
+					"format":       "json",
+				},
+				Explanation: "Enclosures converted to JSON Feed attachments format",
+			},
+			{
+				Name:        "Date format handling",
+				Description: "Convert with proper date formatting",
+				Scenario:    "When date precision and format matter",
+				Input: map[string]interface{}{
+					"feed": map[string]interface{}{
+						"title":   "Event Feed",
+						"updated": "2024-03-15T14:30:00Z",
+						"items": []map[string]interface{}{
+							{
+								"id":        "event-1",
+								"title":     "Upcoming Event",
+								"published": "2024-03-20T09:00:00Z",
+								"updated":   "2024-03-21T10:00:00Z",
+							},
+						},
+					},
+					"target_type": "rss",
+				},
+				Output: map[string]interface{}{
+					"content":      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\">...<pubDate>Mon, 20 Mar 2024 09:00:00 +0000</pubDate>...",
+					"content_type": "application/rss+xml",
+					"format":       "rss",
+				},
+				Explanation: "RFC3339 dates converted to RFC1123 format for RSS",
+			},
+		}).
+		WithConstraints([]string{
+			"Feed must be in UnifiedFeed format",
+			"Target type must be 'rss', 'atom', or 'json'",
+			"RSS uses RFC1123 date format",
+			"Atom and JSON Feed use RFC3339 dates",
+			"RSS puts content in description field",
+			"Atom has separate content and summary",
+			"JSON Feed supports content_html and content_text",
+			"Author email required for RSS author field",
+		}).
+		WithErrorGuidance(map[string]string{
+			"unsupported target format": "Use 'rss', 'atom', or 'json' as target_type",
+			"conversion error":          "Check if feed data is valid UnifiedFeed format",
+			"marshal error":             "Feed contains invalid characters or structure",
+		}).
+		WithCategory("feed").
+		WithTags([]string{"feed", "convert", "transform", "rss", "atom", "json", "format"}).
+		WithVersion("2.0.0").
+		WithBehavior(true, false, false, "low") // Deterministic, local operation
+
+	return builder.Build()
 }
 
 func convertFeed(params FeedConvertParams) (*FeedConvertResult, error) {
@@ -438,4 +741,72 @@ func convertToJSONFeed(feed UnifiedFeed, includeContent bool, pretty bool) (stri
 	}
 
 	return string(output), nil
+}
+
+// init automatically registers the tool on package import
+func init() {
+	tools.MustRegisterTool("feed_convert", FeedConvert(), tools.ToolMetadata{
+		Metadata: builtins.Metadata{
+			Name:        "feed_convert",
+			Category:    "feed",
+			Tags:        []string{"feed", "convert", "transform", "rss", "atom", "json", "format"},
+			Description: "Convert feeds between RSS, Atom, and JSON Feed formats",
+			Version:     "2.0.0",
+			Examples: []builtins.Example{
+				{
+					Name:        "Convert to RSS",
+					Description: "Convert any feed format to RSS 2.0",
+					Code:        `FeedConvert().Execute(ctx, FeedConvertParams{Feed: feed, TargetType: "rss", Pretty: true})`,
+				},
+				{
+					Name:        "Convert to JSON Feed",
+					Description: "Convert RSS/Atom to modern JSON Feed format",
+					Code:        `FeedConvert().Execute(ctx, FeedConvertParams{Feed: feed, TargetType: "json", IncludeContent: true})`,
+				},
+				{
+					Name:        "Convert to Atom",
+					Description: "Convert to Atom without full content",
+					Code:        `FeedConvert().Execute(ctx, FeedConvertParams{Feed: feed, TargetType: "atom", IncludeContent: false})`,
+				},
+				{
+					Name:        "Pretty print",
+					Description: "Convert with human-readable formatting",
+					Code:        `FeedConvert().Execute(ctx, FeedConvertParams{Feed: feed, TargetType: "json", Pretty: true})`,
+				},
+			},
+		},
+		RequiredPermissions: []string{},
+		ResourceUsage: tools.ResourceInfo{
+			Memory:      "low",
+			Network:     false,
+			FileSystem:  false,
+			Concurrency: true,
+		},
+		UsageInstructions: `The feed_convert tool transforms feeds between formats:
+- RSS 2.0: Classic format with wide compatibility
+- Atom 1.0: IETF standard with better structure
+- JSON Feed 1.1: Modern JSON-based format
+- Pretty printing for human readability
+- Content inclusion options
+- Full metadata preservation
+
+Perfect for format migration, API requirements, and cross-platform compatibility.`,
+		Constraints: []string{
+			"Feed must be UnifiedFeed format",
+			"Target: 'rss', 'atom', or 'json'",
+			"RSS uses RFC1123 dates",
+			"Atom/JSON use RFC3339 dates",
+			"RSS content in description",
+			"Atom has content/summary split",
+		},
+		ErrorGuidance: map[string]string{
+			"unsupported target format": "Use 'rss', 'atom', or 'json'",
+			"conversion error":          "Check feed data format",
+			"marshal error":             "Invalid characters/structure",
+		},
+		IsDeterministic:      true, // Local operation
+		IsDestructive:        false,
+		RequiresConfirmation: false,
+		EstimatedLatency:     "low",
+	})
 }

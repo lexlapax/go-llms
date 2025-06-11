@@ -85,30 +85,8 @@
 
 - Phase 2: Tool Migration to Enhanced Interface (Week 2) - COMPLETED - see TODO-DONE.md
 
-- [ ] Phase 3: Tool Migration Part 2 (Week 3) - Continue migration to ToolBuilder pattern
-  - [x] Day 1: Migrate data tools (4 tools) - COMPLETED January 10, 2025
-    - [x] json_process - Update to ToolBuilder with JSONPath query examples
-    - [x] csv_process - Add transformation examples, delimiter options
-    - [x] xml_process - Add XPath guidance, namespace handling
-    - [x] data_transform - Add operation chains, performance considerations
-    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool
-  - [x] Day 2: Migrate datetime tools (7 tools) - COMPLETED January 10, 2025
-    - [x] datetime_now - Add timezone examples, format options
-    - [x] datetime_info - Add component extraction examples, week calculations
-    - [x] datetime_calculate - Add business days examples, date math
-    - [ ] datetime_parse - Add format pattern examples, auto-detection (IN PROGRESS)
-    - [ ] datetime_format - Add locale examples, custom formats
-    - [ ] datetime_convert - Add timezone conversion examples
-    - [ ] datetime_compare - Add comparison logic, relative time examples
-    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool
-  - [ ] Day 3: Migrate feed tools (6 tools)
-    - [ ] feed_fetch - Add format detection examples, encoding handling
-    - [ ] feed_discover - Add auto-discovery examples, link parsing
-    - [ ] feed_filter - Add complex query examples, date filtering
-    - [ ] feed_aggregate - Add deduplication examples, merge strategies
-    - [ ] feed_convert - Add format conversion examples
-    - [ ] feed_extract - Add content extraction patterns
-    - [ ] update all example that use these tools to a pattern similar  to the calculator tool or the web api tool
+- Phase 3: Tool Migration Part 2 (Week 3) - COMPLETED January 10, 2025 - see TODO-DONE.md
+  - [ ] Update all examples that use migrated tools to follow calculator/web-api pattern (REVISIT)
   - [ ] Day 4: Update examples (first 15)
     - [ ] agent-calculator - Remove manual prompt
     - [ ] agent-simple-llm - Use auto docs
