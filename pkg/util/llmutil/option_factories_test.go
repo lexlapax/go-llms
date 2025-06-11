@@ -184,6 +184,55 @@ func TestWithGeminiDefaultOptions(t *testing.T) {
 	}
 }
 
+func TestWithOllamaDefaultOptions(t *testing.T) {
+	// Save original OLLAMA_HOST
+	origHost := os.Getenv("OLLAMA_HOST")
+	defer func() {
+		_ = os.Setenv("OLLAMA_HOST", origHost)
+	}()
+
+	// Test with OLLAMA_HOST set
+	_ = os.Setenv("OLLAMA_HOST", "http://custom-ollama:11434")
+	options := WithOllamaDefaultOptions()
+
+	// Check that we have the expected types of options
+	hasBaseURL := false
+	hasHeaders := false
+
+	for _, opt := range options {
+		switch opt.(type) {
+		case *domain.BaseURLOption:
+			hasBaseURL = true
+		case *domain.HeadersOption:
+			hasHeaders = true
+		}
+	}
+
+	if !hasBaseURL {
+		t.Errorf("Expected BaseURLOption but not found")
+	}
+	if !hasHeaders {
+		t.Errorf("Expected HeadersOption but not found")
+	}
+
+	// Test without OLLAMA_HOST set
+	_ = os.Unsetenv("OLLAMA_HOST")
+	options = WithOllamaDefaultOptions()
+
+	// Check that we still have base URL option (with default)
+	hasBaseURL = false
+	for _, opt := range options {
+		if _, ok := opt.(*domain.BaseURLOption); ok {
+			hasBaseURL = true
+			break
+		}
+	}
+
+	if !hasBaseURL {
+		t.Errorf("Expected BaseURLOption but not found")
+	}
+}
+
 func TestWithStreamingOptions(t *testing.T) {
 	options := WithStreamingOptions()
 
@@ -343,6 +392,50 @@ func TestWithAnthropicStreamingOptions(t *testing.T) {
 	}
 }
 
+func TestWithOllamaStreamingOptions(t *testing.T) {
+	// Save original OLLAMA_HOST
+	origHost := os.Getenv("OLLAMA_HOST")
+	defer func() {
+		_ = os.Setenv("OLLAMA_HOST", origHost)
+	}()
+
+	// Test with OLLAMA_HOST set
+	_ = os.Setenv("OLLAMA_HOST", "http://custom-ollama:11434")
+	options := WithOllamaStreamingOptions()
+
+	// Check that we have the expected types of options
+	hasBaseURL := false
+	hasHTTPClient := false
+	hasTimeout := false
+	hasHeaders := false
+
+	for _, opt := range options {
+		switch opt.(type) {
+		case *domain.BaseURLOption:
+			hasBaseURL = true
+		case *domain.HTTPClientOption:
+			hasHTTPClient = true
+		case *domain.TimeoutOption:
+			hasTimeout = true
+		case *domain.HeadersOption:
+			hasHeaders = true
+		}
+	}
+
+	if !hasBaseURL {
+		t.Errorf("Expected BaseURLOption but not found")
+	}
+	if !hasHTTPClient {
+		t.Errorf("Expected HTTPClientOption but not found")
+	}
+	if !hasTimeout {
+		t.Errorf("Expected TimeoutOption but not found")
+	}
+	if !hasHeaders {
+		t.Errorf("Expected HeadersOption but not found")
+	}
+}
+
 func TestCreateOptionFactoryFromEnv(t *testing.T) {
 	// Save original environment variables
 	origOpenAIOrg := os.Getenv(EnvOpenAIOrganization)
@@ -351,6 +444,8 @@ func TestCreateOptionFactoryFromEnv(t *testing.T) {
 	origOpenAIUseCase := os.Getenv(EnvOpenAIUseCase)
 	origAnthropicUseCase := os.Getenv(EnvAnthropicUseCase)
 	origGeminiUseCase := os.Getenv(EnvGeminiUseCase)
+	origOllamaHost := os.Getenv("OLLAMA_HOST")
+	origOllamaUseCase := os.Getenv("OLLAMA_USE_CASE")
 
 	// Clean up environment after test
 	defer func() {
@@ -360,6 +455,8 @@ func TestCreateOptionFactoryFromEnv(t *testing.T) {
 		_ = os.Setenv(EnvOpenAIUseCase, origOpenAIUseCase)
 		_ = os.Setenv(EnvAnthropicUseCase, origAnthropicUseCase)
 		_ = os.Setenv(EnvGeminiUseCase, origGeminiUseCase)
+		_ = os.Setenv("OLLAMA_HOST", origOllamaHost)
+		_ = os.Setenv("OLLAMA_USE_CASE", origOllamaUseCase)
 	}()
 
 	tests := []struct {
@@ -421,6 +518,35 @@ func TestCreateOptionFactoryFromEnv(t *testing.T) {
 			minOptions: 5,
 		},
 		{
+			name:     "Ollama Default",
+			provider: "ollama",
+			useCase:  "default",
+			envVars: map[string]string{
+				"OLLAMA_HOST": "http://custom-ollama:11434",
+			},
+			expectedTypes: []string{
+				"*domain.BaseURLOption",
+				"*domain.HeadersOption",
+				"*domain.HTTPClientOption",
+			},
+			minOptions: 3,
+		},
+		{
+			name:     "Ollama Streaming",
+			provider: "ollama",
+			useCase:  "streaming",
+			envVars: map[string]string{
+				"OLLAMA_HOST": "http://custom-ollama:11434",
+			},
+			expectedTypes: []string{
+				"*domain.BaseURLOption",
+				"*domain.HeadersOption",
+				"*domain.HTTPClientOption",
+				"*domain.TimeoutOption",
+			},
+			minOptions: 4,
+		},
+		{
 			name:     "Unknown Provider",
 			provider: "unknown",
 			useCase:  "reliability",
@@ -476,6 +602,8 @@ func TestCreateOptionFactoryFromEnv(t *testing.T) {
 				EnvOpenAIUseCase,
 				EnvAnthropicUseCase,
 				EnvGeminiUseCase,
+				"OLLAMA_HOST",
+				"OLLAMA_USE_CASE",
 			}
 			for _, v := range varsToUnset {
 				_ = os.Unsetenv(v)

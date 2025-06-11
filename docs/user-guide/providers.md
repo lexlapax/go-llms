@@ -23,8 +23,14 @@ Providers are your gateway to Large Language Models. Go-llms supports multiple p
 - **Features**: Multimodal by default, streaming
 - **Best for**: Multimodal tasks, fast inference
 
+### Ollama
+- **Models**: Llama 3.2, Mistral, Phi-3, CodeLlama, and many more
+- **Features**: Local hosting, GPU acceleration, model management, streaming
+- **Best for**: Privacy, offline use, custom models, cost-effective inference
+- **Special**: No API key required, runs locally
+
 ### OpenAI-Compatible
-- **Providers**: Ollama, LM Studio, vLLM, any OpenAI-compatible API
+- **Providers**: LM Studio, vLLM, any OpenAI-compatible API
 - **Features**: Local models, custom endpoints
 - **Best for**: Privacy, custom models, offline use
 
@@ -53,11 +59,20 @@ gemini := provider.NewGeminiProvider(
     "gemini-2.0-flash-lite",
 )
 
-// OpenAI-Compatible (e.g., Ollama)
-ollama := provider.NewOpenAICompatibleProvider(
+// Ollama (convenience wrapper)
+ollama := provider.NewOllamaProvider("llama3.2:3b")
+
+// Or with custom host
+ollama := provider.NewOllamaProvider(
+    "llama3.2:3b",
+    domain.WithBaseURL("http://my-ollama-server:11434"),
+)
+
+// OpenAI-Compatible (for other providers)
+compatible := provider.NewOpenAICompatibleProvider(
     "",  // No API key needed for local
-    "llama2",
-    provider.WithBaseURL("http://localhost:11434/api"),
+    "model-name",
+    provider.WithBaseURL("http://localhost:8080/v1"),
 )
 ```
 
@@ -304,6 +319,13 @@ response, err := openai.Generate(
 - **Fast Inference**: Optimized for speed
 - **Safety Settings**: Built-in content filtering
 
+### Ollama
+- **Local Models**: Run models on your own hardware
+- **Model Management**: Easy download and management via CLI
+- **GPU Acceleration**: Automatic GPU detection and usage
+- **No API Key**: No authentication required for local use
+- **Model Discovery**: List available models programmatically
+
 ## Environment Configuration
 
 ### API Keys
@@ -314,10 +336,19 @@ export OPENAI_API_KEY="sk-..."
 export ANTHROPIC_API_KEY="sk-ant-..."
 export GOOGLE_API_KEY="..."
 
+# Ollama configuration (optional)
+export OLLAMA_HOST="http://localhost:11434"  # Default
+export OLLAMA_MODEL="llama3.2:3b"           # Default model
+
 # Use in code
 provider := provider.NewOpenAIProvider(
     os.Getenv("OPENAI_API_KEY"),
     "gpt-4o",
+)
+
+# Ollama doesn't need an API key
+ollama := provider.NewOllamaProvider(
+    os.Getenv("OLLAMA_MODEL"),  // or "llama3.2:3b"
 )
 ```
 
@@ -457,6 +488,39 @@ func (t *TokenTracker) Track(provider string, tokens int) {
     defer t.mu.Unlock()
     t.usage[provider] += tokens
 }
+```
+
+## Working with Ollama
+
+### Model Discovery
+
+```go
+import "github.com/lexlapax/go-llms/pkg/util/llmutil/modelinfo"
+
+// List available Ollama models
+service := modelinfo.NewService()
+models, err := service.GetOllamaModels()
+if err != nil {
+    log.Fatal(err)
+}
+
+for _, model := range models {
+    fmt.Printf("Model: %s, Context: %d tokens\n", model.Name, model.ContextWindow)
+}
+```
+
+### Running Multiple Models
+
+```go
+// Use different models for different tasks
+codingModel := provider.NewOllamaProvider("codellama:7b")
+chatModel := provider.NewOllamaProvider("llama3.2:3b")
+analysisModel := provider.NewOllamaProvider("mistral:7b")
+
+// Use appropriate model for each task
+code, _ := codingModel.Generate(ctx, "Write a Go function to sort a slice")
+chat, _ := chatModel.Generate(ctx, "Explain the code to a beginner")
+analysis, _ := analysisModel.Generate(ctx, "Review the code for best practices")
 ```
 
 ## Testing with Mock Providers

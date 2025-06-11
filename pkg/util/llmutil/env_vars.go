@@ -143,6 +143,21 @@ func GetGeminiOptionsFromEnv() []domain.ProviderOption {
 	return options
 }
 
+// GetOllamaOptionsFromEnv retrieves Ollama-specific options from environment variables.
+func GetOllamaOptionsFromEnv() []domain.ProviderOption {
+	var options []domain.ProviderOption
+
+	// First, add common options
+	options = append(options, GetCommonOptionsFromEnv()...)
+
+	// Base URL option (Ollama host)
+	if host := os.Getenv("OLLAMA_HOST"); host != "" {
+		options = append(options, domain.NewBaseURLOption(host))
+	}
+
+	return options
+}
+
 // GetProviderOptionsFromEnv retrieves options for a specific provider from environment variables.
 func GetProviderOptionsFromEnv(providerType string) []domain.ProviderOption {
 	providerType = strings.ToLower(providerType)
@@ -154,6 +169,8 @@ func GetProviderOptionsFromEnv(providerType string) []domain.ProviderOption {
 		return GetAnthropicOptionsFromEnv()
 	case "gemini":
 		return GetGeminiOptionsFromEnv()
+	case "ollama":
+		return GetOllamaOptionsFromEnv()
 	default:
 		return GetCommonOptionsFromEnv()
 	}
@@ -170,6 +187,9 @@ func GetAPIKeyFromEnv(providerType string) string {
 		return os.Getenv(EnvAnthropicAPIKey)
 	case "gemini":
 		return os.Getenv(EnvGeminiAPIKey)
+	case "ollama":
+		// Ollama doesn't need an API key
+		return ""
 	default:
 		return ""
 	}
@@ -196,6 +216,12 @@ func GetModelFromEnv(providerType string) string {
 		model := os.Getenv(EnvGeminiModel)
 		if model == "" {
 			return "gemini-2.0-flash-lite"
+		}
+		return model
+	case "ollama":
+		model := os.Getenv("OLLAMA_MODEL")
+		if model == "" {
+			return "llama3.2:3b"
 		}
 		return model
 	default:

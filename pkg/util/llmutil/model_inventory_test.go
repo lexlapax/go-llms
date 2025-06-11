@@ -64,6 +64,7 @@ func TestGetAvailableModels_CacheMiss_ThenHit(t *testing.T) {
 			fetchers.NewOpenAIFetcher(openaiServer.URL, http.DefaultClient),
 			fetchers.NewGoogleFetcher(googleServer.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
+			nil, // OllamaFetcher - optional for tests
 		)
 	}
 	t.Cleanup(func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc })
@@ -214,6 +215,7 @@ func TestGetAvailableModels_CacheDisabled(t *testing.T) {
 			fetchers.NewOpenAIFetcher(openaiServer1.URL, http.DefaultClient),
 			fetchers.NewGoogleFetcher(googleServer1.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
+			nil, // OllamaFetcher - optional for tests
 		)
 	}
 	t.Cleanup(func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc })
@@ -251,6 +253,7 @@ func TestGetAvailableModels_CacheDisabled(t *testing.T) {
 			fetchers.NewOpenAIFetcher(openaiServer2.URL, http.DefaultClient),
 			fetchers.NewGoogleFetcher(googleServer2.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
+			nil, // OllamaFetcher - optional for tests
 		)
 	}
 
@@ -300,6 +303,7 @@ func TestGetAvailableModels_CacheExpired(t *testing.T) {
 			fetchers.NewOpenAIFetcher(openaiServer1.URL, http.DefaultClient),
 			fetchers.NewGoogleFetcher(googleServer1.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
+			nil, // OllamaFetcher - optional for tests
 		)
 	}
 
@@ -326,6 +330,7 @@ func TestGetAvailableModels_CacheExpired(t *testing.T) {
 			fetchers.NewOpenAIFetcher(openaiServer2.URL, http.DefaultClient),
 			fetchers.NewGoogleFetcher(googleServer2.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
+			nil, // OllamaFetcher - optional for tests
 		)
 	}
 
@@ -359,6 +364,7 @@ func TestGetAvailableModels_DefaultCachePath(t *testing.T) {
 			fetchers.NewOpenAIFetcher(openaiServer.URL, http.DefaultClient),
 			fetchers.NewGoogleFetcher(googleServer.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
+			nil, // OllamaFetcher - optional for tests
 		)
 	}
 	t.Cleanup(func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc })
@@ -432,6 +438,7 @@ func TestGetAvailableModels_FetcherError_Propagation(t *testing.T) {
 			fetchers.NewOpenAIFetcher(openaiErrorServer.URL, http.DefaultClient), // Configured to error
 			fetchers.NewGoogleFetcher(googleSuccessServer.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
+			nil, // OllamaFetcher - optional for tests
 		)
 	}
 	t.Cleanup(func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc })

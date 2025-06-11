@@ -122,7 +122,7 @@ func normalizeProvider(provider string) string {
 func isKnownProvider(s string) bool {
 	normalized := normalizeProvider(s)
 	switch normalized {
-	case "openai", "anthropic", "google", "gemini", "mock":
+	case "openai", "anthropic", "google", "gemini", "mock", "ollama":
 		return true
 	default:
 		return false
@@ -159,6 +159,8 @@ func getAPIKeyEnvVar(provider string) string {
 		return "ANTHROPIC_API_KEY"
 	case "google", "gemini":
 		return "GEMINI_API_KEY"
+	case "ollama":
+		return "OLLAMA_API_KEY"
 	default:
 		return strings.ToUpper(provider) + "_API_KEY"
 	}
@@ -173,6 +175,8 @@ func getGoLLMsAPIKeyEnvVar(provider string) string {
 		return "GO_LLMS_ANTHROPIC_API_KEY"
 	case "google", "gemini":
 		return "GO_LLMS_GEMINI_API_KEY"
+	case "ollama":
+		return "GO_LLMS_OLLAMA_API_KEY"
 	default:
 		return "GO_LLMS_" + strings.ToUpper(provider) + "_API_KEY"
 	}
@@ -188,6 +192,12 @@ var modelPrefixToProvider = map[string]string{
 	"claude-":         "anthropic",
 	"gemini-":         "gemini",
 	"embedding-gecko": "gemini",
+	"llama":           "ollama",
+	"mistral":         "ollama",
+	"codellama":       "ollama",
+	"gemma":           "ollama",
+	"qwen":            "ollama",
+	"phi":             "ollama",
 }
 
 var modelKeywordToProvider = map[string]string{
@@ -236,4 +246,15 @@ var modelAliases = map[string]string{
 	"gemini-2.5-pro":   "gemini/gemini-2.5-pro-preview-05-06",
 	"flash":            "gemini/gemini-2.0-flash",
 	"flash-lite":       "gemini/gemini-2.0-flash-lite",
+
+	// Ollama aliases
+	"llama3":        "ollama/llama3.2:3b",
+	"llama3.2":      "ollama/llama3.2:3b",
+	"mistral":       "ollama/mistral:7b",
+	"mistral-7b":    "ollama/mistral:7b",
+	"codellama":     "ollama/codellama:13b",
+	"codellama-13b": "ollama/codellama:13b",
+	"gemma2":        "ollama/gemma2:2b",
+	"qwen2":         "ollama/qwen2.5:7b",
+	"phi3":          "ollama/phi3:mini",
 }

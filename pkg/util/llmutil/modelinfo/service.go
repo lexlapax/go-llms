@@ -17,6 +17,7 @@ type ModelInfoService struct {
 	openAIFetcher    *fetchers.OpenAIFetcher
 	googleFetcher    *fetchers.GoogleFetcher
 	anthropicFetcher *fetchers.AnthropicFetcher
+	ollamaFetcher    *fetchers.OllamaFetcher
 	// Add other fetchers here if more providers are supported
 }
 
@@ -26,11 +27,13 @@ func NewServiceWithCustomFetchers(
 	openAIFetcher *fetchers.OpenAIFetcher,
 	googleFetcher *fetchers.GoogleFetcher,
 	anthropicFetcher *fetchers.AnthropicFetcher,
+	ollamaFetcher *fetchers.OllamaFetcher,
 ) *ModelInfoService {
 	return &ModelInfoService{
 		openAIFetcher:    openAIFetcher,
 		googleFetcher:    googleFetcher,
 		anthropicFetcher: anthropicFetcher,
+		ollamaFetcher:    ollamaFetcher,
 	}
 }
 
@@ -40,6 +43,7 @@ func defaultNewModelInfoService() *ModelInfoService {
 		fetchers.NewOpenAIFetcher("", http.DefaultClient), // Uses default internal URL
 		fetchers.NewGoogleFetcher("", http.DefaultClient), // Uses default internal URL
 		&fetchers.AnthropicFetcher{},                      // Remains as is
+		fetchers.NewOllamaFetcher("", http.DefaultClient), // Uses default internal URL
 	)
 }
 
@@ -80,6 +84,20 @@ func (s *ModelInfoService) AggregateModels() (*domain.ModelInventory, error) {
 		fetcherErrors = append(fetcherErrors, errMsg)
 	} else {
 		allModels = append(allModels, anthropicModels...)
+	}
+
+	// Fetch from Ollama (local models)
+	// Note: This is optional as Ollama may not be running
+	if s.ollamaFetcher != nil {
+		ollamaModels, err := s.ollamaFetcher.FetchModels()
+		if err != nil {
+			// Don't treat Ollama errors as critical since it's a local service
+			// that may not always be running
+			errMsg := fmt.Sprintf("Error fetching Ollama models (local service may not be running): %v", err)
+			fetcherErrors = append(fetcherErrors, errMsg)
+		} else {
+			allModels = append(allModels, ollamaModels...)
+		}
 	}
 
 	// Populate metadata

@@ -40,6 +40,9 @@ func (c *Context) createProvider() (llmDomain.Provider, error) {
 		return provider.NewAnthropicProvider(apiKey, modelName), nil
 	case "gemini":
 		return provider.NewGeminiProvider(apiKey, modelName), nil
+	case "ollama":
+		// Ollama doesn't need an API key
+		return provider.NewOllamaProvider(modelName), nil
 	case "mock":
 		return provider.NewMockProvider(), nil
 	default:

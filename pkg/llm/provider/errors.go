@@ -113,6 +113,49 @@ func mapAnthropicErrorToStandard(statusCode int, errorType, errorMsg string, ope
 	}
 }
 
+// mapOllamaErrorToStandard maps Ollama API error messages to standard error types
+func mapOllamaErrorToStandard(statusCode int, errorMsg string, operation string) error {
+	// Convert error message to lowercase for case-insensitive matching
+	lowerErrorMsg := strings.ToLower(errorMsg)
+
+	// Common error patterns for Ollama
+	switch {
+	case statusCode == http.StatusUnauthorized:
+		// Ollama typically doesn't use API keys, but might have auth in some configurations
+		return domain.NewProviderError("ollama", operation, statusCode, errorMsg, domain.ErrAuthenticationFailed)
+
+	case statusCode == http.StatusTooManyRequests:
+		// Local Ollama might have rate limiting configured
+		return domain.NewProviderError("ollama", operation, statusCode, errorMsg, domain.ErrRateLimitExceeded)
+
+	case strings.Contains(lowerErrorMsg, "context length") || strings.Contains(lowerErrorMsg, "too long"):
+		return domain.NewProviderError("ollama", operation, statusCode, errorMsg, domain.ErrContextTooLong)
+
+	case strings.Contains(lowerErrorMsg, "model not found") || strings.Contains(lowerErrorMsg, "no such model"):
+		return domain.NewProviderError("ollama", operation, statusCode, errorMsg, domain.ErrModelNotFound)
+
+	case strings.Contains(lowerErrorMsg, "out of memory") || strings.Contains(lowerErrorMsg, "oom"):
+		// Ollama specific - running out of GPU/system memory
+		return domain.NewProviderError("ollama", operation, statusCode, errorMsg, domain.ErrProviderUnavailable)
+
+	case strings.Contains(lowerErrorMsg, "invalid parameter") || strings.Contains(lowerErrorMsg, "invalid request"):
+		return domain.NewProviderError("ollama", operation, statusCode, errorMsg, domain.ErrInvalidModelParameters)
+
+	case statusCode == http.StatusServiceUnavailable ||
+		statusCode == http.StatusBadGateway ||
+		statusCode == http.StatusGatewayTimeout ||
+		strings.Contains(lowerErrorMsg, "connection refused") ||
+		strings.Contains(lowerErrorMsg, "no such host"):
+		return domain.NewProviderError("ollama", operation, statusCode, errorMsg, domain.ErrNetworkConnectivity)
+
+	case statusCode >= 500 || strings.Contains(lowerErrorMsg, "server error"):
+		return domain.NewProviderError("ollama", operation, statusCode, errorMsg, domain.ErrProviderUnavailable)
+
+	default:
+		return domain.NewProviderError("ollama", operation, statusCode, errorMsg, domain.ErrRequestFailed)
+	}
+}
+
 // ParseJSONError attempts to extract error information from a JSON error response
 // This is a utility function to abstract error parsing logic for different providers
 func ParseJSONError(body []byte, statusCode int, provider, operation string) error {
@@ -149,6 +192,8 @@ func ParseJSONError(body []byte, statusCode int, provider, operation string) err
 			}
 
 			return mapAnthropicErrorToStandard(statusCode, errorType, errorMsg, operation)
+		case "ollama":
+			return mapOllamaErrorToStandard(statusCode, errorMsg, operation)
 		default:
 			// For other providers, use a generic approach
 			return domain.NewProviderError(provider, operation, statusCode, errorMsg, nil)

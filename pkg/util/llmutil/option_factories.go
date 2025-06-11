@@ -141,6 +141,29 @@ func WithGeminiDefaultOptions() []domain.ProviderOption {
 	return options
 }
 
+// WithOllamaDefaultOptions creates a set of options commonly used with Ollama.
+// This includes a default base URL for the local Ollama service.
+func WithOllamaDefaultOptions() []domain.ProviderOption {
+	// Start with performance options since Ollama is typically local
+	options := WithPerformanceOptions()
+
+	// Check if OLLAMA_HOST is set in environment
+	if host := os.Getenv("OLLAMA_HOST"); host != "" {
+		options = append(options, domain.NewBaseURLOption(host))
+	} else {
+		// Default to localhost if not specified
+		options = append(options, domain.NewBaseURLOption("http://localhost:11434"))
+	}
+
+	// Add common headers
+	headers := map[string]string{
+		"User-Agent": "go-llms/1.0",
+	}
+	options = append(options, domain.NewHeadersOption(headers))
+
+	return options
+}
+
 // Use case specific option factory functions
 
 // WithStreamingOptions creates a set of options optimized for streaming responses.
@@ -213,6 +236,15 @@ func WithAnthropicStreamingOptions(systemPrompt string) []domain.ProviderOption 
 	return append(options, streamingOptions...)
 }
 
+// WithOllamaStreamingOptions combines Ollama default options with streaming options.
+func WithOllamaStreamingOptions() []domain.ProviderOption {
+	options := WithOllamaDefaultOptions()
+	streamingOptions := WithStreamingOptions()
+
+	// Replace HTTP client and timeout with streaming-optimized versions
+	return append(options, streamingOptions...)
+}
+
 // CreateOptionFactoryFromEnv creates provider options combining environment variables and factory functions.
 // This function provides a consolidated approach to creating provider options by:
 // 1. Getting options from environment variables
@@ -220,7 +252,7 @@ func WithAnthropicStreamingOptions(systemPrompt string) []domain.ProviderOption 
 // 3. Merging both sets of options with appropriate priority
 //
 // Parameters:
-//   - providerType: The provider type ("openai", "anthropic", "gemini")
+//   - providerType: The provider type ("openai", "anthropic", "gemini", "ollama")
 //   - useCase: The use case ("default", "performance", "reliability", "streaming")
 //     If empty, the function will look for a use case in the environment variables
 //
@@ -241,6 +273,8 @@ func CreateOptionFactoryFromEnv(providerType, useCase string) []domain.ProviderO
 			useCase = os.Getenv(EnvAnthropicUseCase)
 		case "gemini":
 			useCase = os.Getenv(EnvGeminiUseCase)
+		case "ollama":
+			useCase = os.Getenv("OLLAMA_USE_CASE")
 		}
 
 		// If still empty after checking environment, default to "default"
@@ -293,6 +327,18 @@ func CreateOptionFactoryFromEnv(providerType, useCase string) []domain.ProviderO
 			factoryOptions = append(WithReliabilityOptions(), WithGeminiDefaultOptions()...)
 		default:
 			factoryOptions = WithGeminiDefaultOptions()
+		}
+
+	case "ollama":
+		switch useCase {
+		case "streaming":
+			factoryOptions = WithOllamaStreamingOptions()
+		case "performance":
+			factoryOptions = WithPerformanceOptions()
+		case "reliability":
+			factoryOptions = WithReliabilityOptions()
+		default:
+			factoryOptions = WithOllamaDefaultOptions()
 		}
 
 	default:

@@ -40,6 +40,15 @@ func TestParseProviderModelString(t *testing.T) {
 		{"claude model inference", "claude-3-haiku-20240307", "anthropic", "claude-3-haiku-20240307", false},
 		{"gemini model inference", "gemini-2.0-flash", "gemini", "gemini-2.0-flash", false},
 
+		// Ollama models
+		{"ollama with model", "ollama/llama3.2:3b", "ollama", "llama3.2:3b", false},
+		{"ollama provider only", "ollama", "ollama", "", false},
+		{"llama3 alias", "llama3", "ollama", "llama3.2:3b", false},
+		{"mistral alias", "mistral", "ollama", "mistral:7b", false},
+		{"llama model inference", "llama3.2:3b", "ollama", "llama3.2:3b", false},
+		{"mistral model inference", "mistral:7b-instruct", "ollama", "mistral:7b-instruct", false},
+		{"codellama inference", "codellama:13b", "ollama", "codellama:13b", false},
+
 		// Special cases
 		{"mock provider", "mock", "mock", "", false},
 		{"empty spec", "", "", "", true},
@@ -173,7 +182,7 @@ func TestHelperFunctions(t *testing.T) {
 	})
 
 	t.Run("isKnownProvider", func(t *testing.T) {
-		knownProviders := []string{"openai", "OpenAI", "anthropic", "google", "gemini", "mock"}
+		knownProviders := []string{"openai", "OpenAI", "anthropic", "google", "gemini", "mock", "ollama", "Ollama"}
 		for _, provider := range knownProviders {
 			if !isKnownProvider(provider) {
 				t.Errorf("isKnownProvider(%q) = false, want true", provider)
@@ -197,6 +206,7 @@ func TestHelperFunctions(t *testing.T) {
 			{"anthropic", "ANTHROPIC_API_KEY"},
 			{"google", "GEMINI_API_KEY"},
 			{"gemini", "GEMINI_API_KEY"},
+			{"ollama", "OLLAMA_API_KEY"},
 			{"custom", "CUSTOM_API_KEY"},
 		}
 

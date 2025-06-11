@@ -870,6 +870,129 @@ Update the LLM API documentation in `docs/api/llm.md` to include the new provide
 
 Update the [Architecture](docs/technical/architecture.md) document to mention the new provider in the appropriate sections.
 
+## Special Case: OpenAI-Compatible Providers
+
+Some providers (like Ollama, LM Studio, vLLM) implement the OpenAI API specification. For these providers, you can create a convenience wrapper instead of implementing the full provider interface from scratch.
+
+### Example: Ollama Provider
+
+Here's how Ollama was implemented as a convenience wrapper around the OpenAI provider:
+
+```go
+package provider
+
+import (
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/lexlapax/go-llms/pkg/llm/domain"
+)
+
+const (
+	defaultOllamaHost    = "http://localhost:11434"
+	defaultOllamaTimeout = 300 * time.Second
+)
+
+// ollamaTimeoutOption wraps a time.Duration for WithOllamaTimeout
+type ollamaTimeoutOption struct {
+	timeout time.Duration
+}
+
+// Apply implements the domain.ProviderOption interface
+func (o ollamaTimeoutOption) Apply(interface{}) {}
+
+// GetTimeout returns the timeout value
+func (o ollamaTimeoutOption) GetTimeout() time.Duration {
+	return o.timeout
+}
+
+// WithOllamaTimeout creates a timeout option specifically for Ollama
+func WithOllamaTimeout(timeout time.Duration) domain.ProviderOption {
+	return ollamaTimeoutOption{timeout: timeout}
+}
+
+// NewOllamaProvider creates a new Ollama provider using the OpenAI-compatible API
+func NewOllamaProvider(model string, options ...domain.ProviderOption) *OpenAIProvider {
+	// Set default options for Ollama
+	defaultOptions := []domain.ProviderOption{
+		domain.NewBaseURLOption(defaultOllamaHost),
+		domain.NewHTTPClientOption(&http.Client{Timeout: defaultOllamaTimeout}),
+	}
+
+	// Check for OLLAMA_HOST environment variable
+	if host := os.Getenv("OLLAMA_HOST"); host != "" {
+		defaultOptions[0] = domain.NewBaseURLOption(host)
+	}
+
+	// Apply user-provided options (can override defaults)
+	allOptions := append(defaultOptions, options...)
+
+	// Create OpenAI provider with Ollama configuration
+	// Empty API key since Ollama doesn't require authentication
+	return NewOpenAIProvider("", model, allOptions...)
+}
+```
+
+### Steps for Adding an OpenAI-Compatible Provider
+
+1. **Create a Convenience Wrapper**
+   - Define provider-specific constants (default host, timeout)
+   - Create provider-specific options if needed
+   - Implement a `NewXProvider` function that configures the OpenAI provider
+
+2. **Update Utility Functions**
+   ```go
+   // In pkg/util/llmutil/llmutil.go
+   case "ollama":
+       // Ollama doesn't require an API key
+       llmProvider = provider.NewOllamaProvider(config.Model, options...)
+   ```
+
+3. **Update Environment Variables**
+   ```go
+   // In pkg/util/llmutil/env_vars.go
+   case "ollama":
+       model := os.Getenv("OLLAMA_MODEL")
+       if model == "" {
+           return "llama3.2:3b"  // Default model
+       }
+       return model
+   ```
+
+4. **Add Model Discovery (if supported)**
+   ```go
+   // In pkg/util/llmutil/modelinfo/fetchers/ollama_fetcher.go
+   type OllamaFetcher struct {
+       BaseURL string
+   }
+
+   func (f *OllamaFetcher) FetchModels() ([]domain.Model, error) {
+       // Implement model listing using provider-specific API
+       // For Ollama: GET /api/tags
+   }
+   ```
+
+5. **Update Error Handling**
+   ```go
+   // In pkg/llm/provider/errors.go
+   func mapOllamaErrorToStandard(statusCode int, errorMsg string, operation string) error {
+       // Map provider-specific errors to standard domain errors
+   }
+   ```
+
+6. **Create Examples and Tests**
+   - Create integration tests that verify the provider works correctly
+   - Add examples showing how to use the provider
+   - Include any provider-specific features
+
+### Benefits of This Approach
+
+1. **Reuse Existing Code**: Leverage the battle-tested OpenAI provider implementation
+2. **Minimal Maintenance**: Updates to the OpenAI provider automatically benefit compatible providers
+3. **Consistent Behavior**: All OpenAI-compatible providers behave the same way
+4. **Easy Integration**: Minimal code changes required
+
 ## Common Challenges and Solutions
 
 ### Rate Limiting
@@ -911,6 +1034,54 @@ Adding a new provider to Go-LLMs involves implementing the provider interface, w
 
 Remember to thoroughly test your implementation, both with unit tests and integration tests, to ensure compatibility with the rest of the library.
 
+## Complete Integration Checklist
+
+Here's a comprehensive checklist of all files and locations that need to be updated when adding a new provider (using Ollama as an example):
+
+### Provider Core Files
+- [ ] `pkg/llm/provider/ollama.go` - Provider implementation
+- [ ] `pkg/llm/provider/ollama_test.go` - Unit tests
+- [ ] `pkg/llm/provider/errors.go` - Add error mapping function
+
+### Utility Integration
+- [ ] `pkg/util/llmutil/provider_parser.go` - Add to `isKnownProvider`, model patterns
+- [ ] `pkg/util/llmutil/provider_parser_test.go` - Add test cases
+- [ ] `pkg/util/llmutil/llmutil.go` - Add to `CreateProvider`, `ProviderFromEnv`
+- [ ] `pkg/util/llmutil/llmutil_test.go` - Add test cases
+- [ ] `pkg/util/llmutil/env_vars.go` - Add environment variable handling
+- [ ] `pkg/util/llmutil/env_vars_test.go` - Add test cases
+- [ ] `pkg/util/llmutil/option_factories.go` - Add option factory functions
+- [ ] `pkg/util/llmutil/option_factories_test.go` - Add test cases
+
+### Model Discovery (if applicable)
+- [ ] `pkg/util/llmutil/modelinfo/fetchers/ollama_fetcher.go` - Model discovery
+- [ ] `pkg/util/llmutil/modelinfo/fetchers/ollama_fetcher_test.go` - Tests
+- [ ] `pkg/util/llmutil/modelinfo/service.go` - Add to service
+- [ ] `pkg/util/llmutil/modelinfo/service_test.go` - Add test cases
+
+### CLI Integration
+- [ ] `cmd/cli.go` - Add to `createProvider` function
+- [ ] `cmd/cli_test.go` - Add test case
+- [ ] `cmd/config.go` - Add configuration structure
+
+### Examples and Tests
+- [ ] `cmd/examples/provider-ollama/` - Create example directory
+- [ ] `cmd/examples/provider-ollama/main.go` - Example implementation
+- [ ] `cmd/examples/provider-ollama/main_test.go` - Example tests
+- [ ] `cmd/examples/provider-ollama/README.md` - Example documentation
+- [ ] `tests/integration/ollama_integration_test.go` - Integration tests
+
+### Documentation
+- [ ] `docs/user-guide/providers.md` - Add provider section
+- [ ] `docs/technical/provider-implementation.md` - Update with lessons learned
+- [ ] Main `README.md` - Update provider list
+
+### Environment Variables
+The following environment variables should be supported:
+- `OLLAMA_HOST` or `[PROVIDER]_HOST` - API endpoint
+- `OLLAMA_MODEL` or `[PROVIDER]_MODEL` - Default model
+- `OLLAMA_API_KEY` or `[PROVIDER]_API_KEY` - API key (if required)
+
 ## References
 
 - [Provider Interface Definition](/pkg/llm/domain/interfaces.go)
@@ -918,3 +1089,4 @@ Remember to thoroughly test your implementation, both with unit tests and integr
 - [OpenAI Provider Implementation](/pkg/llm/provider/openai.go) (reference implementation)
 - [Anthropic Provider Implementation](/pkg/llm/provider/anthropic.go) (reference implementation)
 - [Gemini Provider Implementation](/pkg/llm/provider/gemini.go) (reference implementation)
+- [Ollama Provider Implementation](/pkg/llm/provider/ollama.go) (OpenAI-compatible example)

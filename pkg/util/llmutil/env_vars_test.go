@@ -55,6 +55,12 @@ func TestGetAPIKeyFromEnv(t *testing.T) {
 			expectedKey: "",
 		},
 		{
+			name:        "Ollama No Key Needed",
+			provider:    "ollama",
+			envVars:     map[string]string{},
+			expectedKey: "",
+		},
+		{
 			name:        "Unknown Provider",
 			provider:    "unknown",
 			envVars:     map[string]string{},
@@ -91,11 +97,14 @@ func TestGetModelFromEnv(t *testing.T) {
 	origAnthropicModel := os.Getenv(EnvAnthropicModel)
 	origGeminiModel := os.Getenv(EnvGeminiModel)
 
+	originalOllamaModel := os.Getenv("OLLAMA_MODEL")
+
 	// Clean up environment after test
 	defer func() {
 		_ = os.Setenv(EnvOpenAIModel, origOpenAIModel)
 		_ = os.Setenv(EnvAnthropicModel, origAnthropicModel)
 		_ = os.Setenv(EnvGeminiModel, origGeminiModel)
+		_ = os.Setenv("OLLAMA_MODEL", originalOllamaModel)
 	}()
 
 	tests := []struct {
@@ -147,6 +156,20 @@ func TestGetModelFromEnv(t *testing.T) {
 			expectedModel: "gemini-2.0-flash-lite",
 		},
 		{
+			name:     "Ollama Model",
+			provider: "ollama",
+			envVars: map[string]string{
+				"OLLAMA_MODEL": "mistral:7b",
+			},
+			expectedModel: "mistral:7b",
+		},
+		{
+			name:          "Ollama Default Model",
+			provider:      "ollama",
+			envVars:       map[string]string{},
+			expectedModel: "llama3.2:3b",
+		},
+		{
 			name:          "Unknown Provider",
 			provider:      "unknown",
 			envVars:       map[string]string{},
@@ -160,6 +183,7 @@ func TestGetModelFromEnv(t *testing.T) {
 			_ = os.Unsetenv(EnvOpenAIModel)
 			_ = os.Unsetenv(EnvAnthropicModel)
 			_ = os.Unsetenv(EnvGeminiModel)
+			_ = os.Unsetenv("OLLAMA_MODEL")
 
 			// Set environment variables for test
 			for k, v := range tt.envVars {
@@ -271,6 +295,7 @@ func TestGetProviderOptionsFromEnv(t *testing.T) {
 	origOpenAIBaseURL := os.Getenv(EnvOpenAIBaseURL)
 	origAnthropicBaseURL := os.Getenv(EnvAnthropicBaseURL)
 	origGeminiBaseURL := os.Getenv(EnvGeminiBaseURL)
+	origOllamaHost := os.Getenv("OLLAMA_HOST")
 	origHTTPTimeout := os.Getenv(EnvHTTPTimeout)
 	origAnthropicSystemPrompt := os.Getenv(EnvAnthropicSystemPrompt)
 	origOpenAIOrganization := os.Getenv(EnvOpenAIOrganization)
@@ -280,6 +305,7 @@ func TestGetProviderOptionsFromEnv(t *testing.T) {
 		_ = os.Setenv(EnvOpenAIBaseURL, origOpenAIBaseURL)
 		_ = os.Setenv(EnvAnthropicBaseURL, origAnthropicBaseURL)
 		_ = os.Setenv(EnvGeminiBaseURL, origGeminiBaseURL)
+		_ = os.Setenv("OLLAMA_HOST", origOllamaHost)
 		_ = os.Setenv(EnvHTTPTimeout, origHTTPTimeout)
 		_ = os.Setenv(EnvAnthropicSystemPrompt, origAnthropicSystemPrompt)
 		_ = os.Setenv(EnvOpenAIOrganization, origOpenAIOrganization)
@@ -340,6 +366,29 @@ func TestGetProviderOptionsFromEnv(t *testing.T) {
 			expectedCount: 1,
 		},
 		{
+			name:          "Ollama No Options",
+			provider:      "ollama",
+			envVars:       map[string]string{},
+			expectedCount: 0,
+		},
+		{
+			name:     "Ollama Host",
+			provider: "ollama",
+			envVars: map[string]string{
+				"OLLAMA_HOST": "http://localhost:11434",
+			},
+			expectedCount: 1,
+		},
+		{
+			name:     "Ollama with Common Options",
+			provider: "ollama",
+			envVars: map[string]string{
+				"OLLAMA_HOST":  "http://localhost:11434",
+				EnvHTTPTimeout: "10",
+			},
+			expectedCount: 2,
+		},
+		{
 			name:     "Unknown Provider",
 			provider: "unknown",
 			envVars: map[string]string{
@@ -353,7 +402,7 @@ func TestGetProviderOptionsFromEnv(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clear environment variables first
 			clearEnvVars := []string{
-				EnvOpenAIBaseURL, EnvAnthropicBaseURL, EnvGeminiBaseURL,
+				EnvOpenAIBaseURL, EnvAnthropicBaseURL, EnvGeminiBaseURL, "OLLAMA_HOST",
 				EnvHTTPTimeout, EnvAnthropicSystemPrompt, EnvOpenAIOrganization,
 			}
 			for _, v := range clearEnvVars {

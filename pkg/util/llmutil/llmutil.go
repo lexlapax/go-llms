@@ -46,7 +46,7 @@ func WithProviderOptions(config ModelConfig) ([]domain.ProviderOption, error) {
 	// Add base URL option if specified
 	if config.BaseURL != "" {
 		// Only add interface options for valid providers
-		if config.Provider == "openai" || config.Provider == "anthropic" || config.Provider == "gemini" {
+		if config.Provider == "openai" || config.Provider == "anthropic" || config.Provider == "gemini" || config.Provider == "ollama" {
 			baseURLOption := domain.NewBaseURLOption(config.BaseURL)
 			interfaceOptions = append(interfaceOptions, baseURLOption)
 		}
@@ -57,8 +57,8 @@ func WithProviderOptions(config ModelConfig) ([]domain.ProviderOption, error) {
 
 // CreateProvider creates an LLM provider based on configuration
 func CreateProvider(config ModelConfig) (domain.Provider, error) {
-	// Skip API key check for mock provider
-	if config.Provider != "mock" && config.APIKey == "" {
+	// Skip API key check for mock provider and ollama
+	if config.Provider != "mock" && config.Provider != "ollama" && config.APIKey == "" {
 		// Try to get API key from environment if not provided in config
 		apiKey := GetAPIKeyFromEnv(config.Provider)
 		if apiKey == "" {
@@ -94,6 +94,9 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 	case "gemini":
 		llmProvider = provider.NewGeminiProvider(config.APIKey, config.Model, options...)
 
+	case "ollama":
+		llmProvider = provider.NewOllamaProvider(config.Model, options...)
+
 	case "mock":
 		llmProvider = provider.NewMockProvider()
 
@@ -118,6 +121,7 @@ func ProviderFromEnv() (domain.Provider, string, string, error) {
 	openAIModel := GetModelFromEnv("openai")
 	anthropicModel := GetModelFromEnv("anthropic")
 	geminiModel := GetModelFromEnv("gemini")
+	ollamaModel := GetModelFromEnv("ollama")
 
 	// Try to create a provider in order of preference
 	if openAIKey != "" {
@@ -158,6 +162,23 @@ func ProviderFromEnv() (domain.Provider, string, string, error) {
 		// Create provider with options
 		llmProvider := provider.NewGeminiProvider(geminiKey, geminiModel, options...)
 		return llmProvider, "gemini", geminiModel, nil
+	}
+
+	// Check for Ollama (no API key needed)
+	ollamaHost := os.Getenv("OLLAMA_HOST")
+	// Only check raw environment variable, not the default from GetModelFromEnv
+	ollamaModelEnv := os.Getenv("OLLAMA_MODEL")
+	if ollamaHost != "" || ollamaModelEnv != "" {
+		// Use the new option factory approach with environment variables
+		useCase := os.Getenv("OLLAMA_USE_CASE")
+		if useCase == "" {
+			useCase = "default"
+		}
+		options := CreateOptionFactoryFromEnv("ollama", useCase)
+
+		// Create provider with options
+		llmProvider := provider.NewOllamaProvider(ollamaModel, options...)
+		return llmProvider, "ollama", ollamaModel, nil
 	}
 
 	// If no API keys are found, create a mock provider

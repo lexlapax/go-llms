@@ -66,6 +66,23 @@ func TestCreateProvider(t *testing.T) {
 			expectError: false,
 		},
 		{
+			name: "Valid Ollama config",
+			config: ModelConfig{
+				Provider: "ollama",
+				Model:    "llama3.2:3b",
+			},
+			expectError: false,
+		},
+		{
+			name: "Ollama with custom base URL",
+			config: ModelConfig{
+				Provider: "ollama",
+				Model:    "mistral:7b",
+				BaseURL:  "http://custom-ollama:11434",
+			},
+			expectError: false,
+		},
+		{
 			name: "Missing API key but available in env",
 			config: ModelConfig{
 				Provider: "openai",
@@ -551,6 +568,8 @@ func TestProviderFromEnv(t *testing.T) {
 	originalOpenAI := os.Getenv("OPENAI_API_KEY")
 	originalAnthropic := os.Getenv("ANTHROPIC_API_KEY")
 	originalGemini := os.Getenv("GEMINI_API_KEY")
+	originalOllamaHost := os.Getenv("OLLAMA_HOST")
+	originalOllamaModel := os.Getenv("OLLAMA_MODEL")
 	originalOpenAIBaseURL := os.Getenv("OPENAI_BASE_URL")
 	originalAnthropicBaseURL := os.Getenv("ANTHROPIC_BASE_URL")
 	originalGeminiBaseURL := os.Getenv("GEMINI_BASE_URL")
@@ -564,6 +583,8 @@ func TestProviderFromEnv(t *testing.T) {
 		_ = os.Setenv("OPENAI_API_KEY", originalOpenAI)
 		_ = os.Setenv("ANTHROPIC_API_KEY", originalAnthropic)
 		_ = os.Setenv("GEMINI_API_KEY", originalGemini)
+		_ = os.Setenv("OLLAMA_HOST", originalOllamaHost)
+		_ = os.Setenv("OLLAMA_MODEL", originalOllamaModel)
 		_ = os.Setenv("OPENAI_BASE_URL", originalOpenAIBaseURL)
 		_ = os.Setenv("ANTHROPIC_BASE_URL", originalAnthropicBaseURL)
 		_ = os.Setenv("GEMINI_BASE_URL", originalGeminiBaseURL)
@@ -576,6 +597,7 @@ func TestProviderFromEnv(t *testing.T) {
 	// Clear all environment variables for clean testing
 	envVars := []string{
 		"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY",
+		"OLLAMA_HOST", "OLLAMA_MODEL",
 		"OPENAI_BASE_URL", "ANTHROPIC_BASE_URL", "GEMINI_BASE_URL",
 		"OPENAI_ORGANIZATION", "ANTHROPIC_SYSTEM_PROMPT",
 		"LLM_HTTP_TIMEOUT", "LLM_RETRY_ATTEMPTS",
@@ -585,6 +607,9 @@ func TestProviderFromEnv(t *testing.T) {
 	}
 
 	// Test with no API keys (should return mock provider)
+	// Make sure OLLAMA_HOST is also cleared
+	_ = os.Unsetenv("OLLAMA_HOST")
+	_ = os.Unsetenv("OLLAMA_MODEL")
 	_, provName, _, err = ProviderFromEnv()
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
@@ -656,6 +681,30 @@ func TestProviderFromEnv(t *testing.T) {
 	_, ok = prov.(*provider.AnthropicProvider)
 	if !ok {
 		t.Errorf("Expected AnthropicProvider, got: %T", prov)
+	}
+
+	// Clean up environment for next tests
+	for _, v := range envVars {
+		_ = os.Unsetenv(v)
+	}
+
+	// Test Ollama provider
+	_ = os.Setenv("OLLAMA_HOST", "http://localhost:11434")
+	prov, provName, modelName, err = ProviderFromEnv()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if provName != "ollama" {
+		t.Errorf("Expected 'ollama' provider, got: %s", provName)
+	}
+	if modelName != "llama3.2:3b" {
+		t.Errorf("Expected 'llama3.2:3b' model, got: %s", modelName)
+	}
+
+	// Test that the provider has the right type
+	_, ok = prov.(*provider.OpenAIProvider) // Ollama uses OpenAI provider internally
+	if !ok {
+		t.Errorf("Expected OpenAIProvider (for Ollama), got: %T", prov)
 	}
 
 	// Clean up environment for next tests

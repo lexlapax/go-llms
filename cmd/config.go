@@ -34,6 +34,11 @@ type Config struct {
 			APIKey       string `yaml:"api_key"`
 			DefaultModel string `yaml:"default_model"`
 		} `yaml:"gemini"`
+
+		Ollama struct {
+			Host         string `yaml:"host"`
+			DefaultModel string `yaml:"default_model"`
+		} `yaml:"ollama"`
 	} `yaml:"providers"`
 }
 
@@ -50,6 +55,8 @@ func InitOptimizedConfig(configFile string) error {
 	config.Providers.OpenAI.DefaultModel = "gpt-4o"
 	config.Providers.Anthropic.DefaultModel = "claude-3-5-sonnet-latest"
 	config.Providers.Gemini.DefaultModel = "gemini-2.0-flash-lite"
+	config.Providers.Ollama.DefaultModel = "llama3.2:3b"
+	config.Providers.Ollama.Host = "http://localhost:11434"
 
 	// Load from config file
 	if configFile != "" {
@@ -111,6 +118,7 @@ func loadEnvVars() {
 	loadProviderEnvVars("openai", "OPENAI")
 	loadProviderEnvVars("anthropic", "ANTHROPIC")
 	loadProviderEnvVars("gemini", "GEMINI")
+	loadProviderEnvVars("ollama", "OLLAMA")
 
 	// Also check for standard API key environment variables (backward compatibility)
 	if val := os.Getenv("OPENAI_API_KEY"); val != "" && config.Providers.OpenAI.APIKey == "" {
@@ -121,6 +129,13 @@ func loadEnvVars() {
 	}
 	if val := os.Getenv("GEMINI_API_KEY"); val != "" && config.Providers.Gemini.APIKey == "" {
 		config.Providers.Gemini.APIKey = val
+	}
+	// Check for standard Ollama environment variables
+	if val := os.Getenv("OLLAMA_HOST"); val != "" && config.Providers.Ollama.Host == "" {
+		config.Providers.Ollama.Host = val
+	}
+	if val := os.Getenv("OLLAMA_MODEL"); val != "" && config.Providers.Ollama.DefaultModel == "" {
+		config.Providers.Ollama.DefaultModel = val
 	}
 }
 
@@ -149,6 +164,16 @@ func loadProviderEnvVars(provider, envPrefix string) {
 			config.Providers.Anthropic.DefaultModel = val
 		case "gemini":
 			config.Providers.Gemini.DefaultModel = val
+		case "ollama":
+			config.Providers.Ollama.DefaultModel = val
+		}
+	}
+
+	// Ollama Host
+	if provider == "ollama" {
+		envVar = fmt.Sprintf("GO_LLMS_PROVIDERS_%s_HOST", envPrefix)
+		if val := os.Getenv(envVar); val != "" {
+			config.Providers.Ollama.Host = val
 		}
 	}
 }
@@ -164,6 +189,12 @@ func GetOptimizedAPIKey(provider string) (string, error) {
 		key = config.Providers.Anthropic.APIKey
 	case "gemini":
 		key = config.Providers.Gemini.APIKey
+	case "ollama":
+		// Ollama doesn't require an API key
+		return "", nil
+	case "mock":
+		// Mock provider doesn't require an API key
+		return "", nil
 	}
 
 	if key == "" {
@@ -191,6 +222,8 @@ func GetOptimizedProvider() (string, string, error) {
 			model = config.Providers.Anthropic.DefaultModel
 		case "gemini":
 			model = config.Providers.Gemini.DefaultModel
+		case "ollama":
+			model = config.Providers.Ollama.DefaultModel
 		}
 
 		if model == "" {

@@ -131,6 +131,16 @@ func TestCreateProvider(t *testing.T) {
 			wantErr:      false,
 		},
 		{
+			name: "ollama provider success",
+			config: Config{
+				Provider: "ollama",
+			},
+			mockAPIKey:   "",
+			mockProvider: "ollama",
+			mockModel:    "llama3.2:3b",
+			wantErr:      false,
+		},
+		{
 			name: "invalid provider",
 			config: Config{
 				Provider: "invalid",
