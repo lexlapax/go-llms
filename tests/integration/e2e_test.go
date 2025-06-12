@@ -138,9 +138,26 @@ func TestLiveEndToEndAgent(t *testing.T) {
 
 	// Add a system prompt with explicit instructions to use tools
 	agent.SetSystemPrompt(`You are a helpful assistant that can answer questions and use tools.
-When asked about date or time information, ALWAYS use the get_current_date tool.
-When asked to perform calculations, ALWAYS use the multiply tool.
-Do not try to calculate or determine dates yourself - use the provided tools.`)
+
+IMPORTANT RULES:
+1. When asked about date or time information, you MUST use the get_current_date tool.
+2. When asked to perform ANY multiplication, you MUST use the multiply tool.
+3. NEVER calculate or determine dates/times yourself.
+4. NEVER perform multiplication yourself.
+
+When you need to use a tool, format your response EXACTLY like this:
+<tool>tool_name</tool>
+<params>{"param1": "value1", "param2": "value2"}</params>
+
+For multiplication, use:
+<tool>multiply</tool>
+<params>{"a": 8, "b": 9}</params>
+
+For date/time, use:
+<tool>get_current_date</tool>
+<params>{}</params>
+
+Remember: ALWAYS use tools for calculations and dates, no exceptions!`)
 
 	// Add date and calculator tools
 	agent.AddTool(tools.NewTool(

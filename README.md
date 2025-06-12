@@ -4,7 +4,7 @@ A lightweight Go library providing a simplified, unified interface to interact w
 
 ## Features
 
-- **Unified API** across OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, and compatible providers
+- **Unified API** across OpenAI, Anthropic, Google Gemini, Vertex AI, Ollama, OpenRouter, and compatible providers
 - **Structured outputs** with JSON schema validation and type coercion
 - **Agent system** with state management, hooks, and workflow patterns
 - **32 built-in tools** for web, file, system, data, datetime, and feed operations
@@ -120,6 +120,7 @@ result, err := provider.GenerateWithSchema(
 - **OpenAI** - GPT-4o, GPT-4o-mini, GPT-4 Turbo, GPT-3.5 Turbo
 - **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus, Claude 3 Haiku
 - **Google Gemini** - Gemini 2.0 Flash Lite, Gemini Pro, Gemini Pro Vision
+- **Google Vertex AI** - Enterprise Gemini models, Claude (partner models), regional deployment
 - **Ollama** - Llama 3.2, Mistral, Phi-3, CodeLlama, and more (local hosting)
 - **OpenRouter** - Access to 400+ models from various providers (68 free models)
 - **OpenAI-Compatible** - LM Studio, vLLM, and any OpenAI-compatible API

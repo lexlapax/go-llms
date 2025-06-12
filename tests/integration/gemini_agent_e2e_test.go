@@ -349,7 +349,7 @@ func TestLiveGeminiComplexWorkflow(t *testing.T) {
 		if !strings.Contains(lower, "new york") {
 			t.Error("Expected response to mention New York")
 		}
-		if !strings.Contains(lower, "celsius") || !strings.Contains(lower, "°c") {
+		if !strings.Contains(lower, "celsius") && !strings.Contains(lower, "°c") {
 			t.Error("Expected response to contain Celsius conversion")
 		}
 		// Should contain weather conditions

@@ -164,6 +164,21 @@ func WithOllamaDefaultOptions() []domain.ProviderOption {
 	return options
 }
 
+// WithVertexAIDefaultOptions creates a set of options commonly used with Vertex AI.
+// This includes optimized HTTP client settings for Google Cloud.
+func WithVertexAIDefaultOptions() []domain.ProviderOption {
+	// Start with reliability options since Vertex AI is a cloud service
+	options := WithReliabilityOptions()
+
+	// Add common headers for Vertex AI
+	headers := map[string]string{
+		"User-Agent": "go-llms/1.0",
+	}
+	options = append(options, domain.NewHeadersOption(headers))
+
+	return options
+}
+
 // Use case specific option factory functions
 
 // WithStreamingOptions creates a set of options optimized for streaming responses.
@@ -275,6 +290,8 @@ func CreateOptionFactoryFromEnv(providerType, useCase string) []domain.ProviderO
 			useCase = os.Getenv(EnvGeminiUseCase)
 		case "ollama":
 			useCase = os.Getenv("OLLAMA_USE_CASE")
+		case "vertexai":
+			useCase = os.Getenv("VERTEXAI_USE_CASE")
 		}
 
 		// If still empty after checking environment, default to "default"
@@ -353,6 +370,19 @@ func CreateOptionFactoryFromEnv(providerType, useCase string) []domain.ProviderO
 		default:
 			// Default options for OpenRouter
 			factoryOptions = []domain.ProviderOption{}
+		}
+
+	case "vertexai":
+		// Vertex AI options
+		switch useCase {
+		case "streaming":
+			factoryOptions = append(WithStreamingOptions(), WithVertexAIDefaultOptions()...)
+		case "performance":
+			factoryOptions = append(WithPerformanceOptions(), WithVertexAIDefaultOptions()...)
+		case "reliability":
+			factoryOptions = append(WithReliabilityOptions(), WithVertexAIDefaultOptions()...)
+		default:
+			factoryOptions = WithVertexAIDefaultOptions()
 		}
 
 	default:

@@ -22,15 +22,15 @@ func TestNewOpenRouterProvider(t *testing.T) {
 			model:         "openai/gpt-4",
 			envBase:       "",
 			expectedBase:  defaultOpenRouterHost,
-			expectBaseURL: "https://openrouter.ai/api/v1",
+			expectBaseURL: "https://openrouter.ai/api",
 		},
 		{
 			name:          "with custom base URL from env",
 			apiKey:        "test-key",
 			model:         "anthropic/claude-3-opus",
-			envBase:       "https://custom.openrouter.ai/api/v1",
-			expectedBase:  "https://custom.openrouter.ai/api/v1",
-			expectBaseURL: "https://custom.openrouter.ai/api/v1",
+			envBase:       "https://custom.openrouter.ai/api",
+			expectedBase:  "https://custom.openrouter.ai/api",
+			expectBaseURL: "https://custom.openrouter.ai/api",
 		},
 		{
 			name:          "with different model",
@@ -38,7 +38,7 @@ func TestNewOpenRouterProvider(t *testing.T) {
 			model:         "google/gemini-pro",
 			envBase:       "",
 			expectedBase:  defaultOpenRouterHost,
-			expectBaseURL: "https://openrouter.ai/api/v1",
+			expectBaseURL: "https://openrouter.ai/api",
 		},
 	}
 

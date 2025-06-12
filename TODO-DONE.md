@@ -1,5 +1,76 @@
 # Go-LLMs Completed Tasks
 
+## v0.3.3.3: Google Vertex AI provider (Completed - January 11, 2025)
+- [x] Implement REST API-based Vertex AI provider
+  - [x] Create `pkg/llm/provider/vertexai.go` with REST implementation
+  - [x] Implement OAuth2 authentication using `golang.org/x/oauth2`
+    - [x] Support service account JSON authentication
+    - [x] Support Application Default Credentials (ADC)
+    - [x] Integrate with `pkg/util/auth` for token management
+  - [x] Add required configuration options
+    - [x] Project ID (required)
+    - [x] Location/Region (required)
+    - [x] Service account path (optional)
+    - [x] Custom endpoint URL (optional)
+  - [x] Implement message conversion
+    - [x] Convert domain messages to Vertex AI format
+    - [x] Map roles (USER, MODEL, no system role)
+    - [x] Handle multimodal content (images, files)
+  - [x] Implement REST API methods
+    - [x] GenerateContent (non-streaming)
+    - [x] StreamGenerateContent with SSE parsing
+    - [x] Handle Vertex AI specific error responses
+  - [x] Write comprehensive unit tests in `pkg/llm/provider/vertexai_test.go`
+    - [x] Mock OAuth2 token source
+    - [x] Test message conversion
+    - [x] Test error handling
+- [x] Add model discovery/listing support
+  - [x] Implement fetcher in `pkg/util/llmutil/modelinfo/fetchers/vertexai_fetcher.go`
+  - [x] Use REST API to list available models per region
+  - [x] Handle authentication for discovery
+  - [x] Support both Google and partner models (Claude)
+  - [x] Add tests for the fetcher
+- [x] Create dedicated example in `cmd/examples/provider-vertexai/`
+  - [x] Show service account authentication setup
+  - [x] Demonstrate ADC authentication
+  - [x] Include project ID and region configuration
+  - [x] Show usage with different models (Gemini, Claude)
+  - [x] Demonstrate streaming responses
+  - [x] Include error handling examples
+- [x] Update provider integration code
+  - [x] Update `pkg/util/llmutil/provider_parser.go` to recognize "vertexai"
+  - [x] Update `pkg/util/llmutil/llmutil.go` with Vertex AI case
+  - [x] Update `pkg/util/llmutil/env_vars.go` for Vertex AI env vars
+    - [x] VERTEX_AI_PROJECT_ID
+    - [x] VERTEX_AI_LOCATION
+    - [x] GOOGLE_APPLICATION_CREDENTIALS
+  - [x] Update `pkg/llm/provider/errors.go` for Vertex AI errors
+  - [x] Added domain.VertexAIOption interface and implementations
+  - [x] Added TopK field to ProviderOptions struct
+  - [x] Update `pkg/util/llmutil/option_factories.go` for Vertex AI options
+  - [x] Update `cmd/cli.go` and `cmd/config.go`
+- [x] Add integration tests
+  - [x] Create `tests/integration/vertexai_integration_test.go`
+  - [x] Test with service account authentication
+  - [x] Test with ADC authentication
+  - [x] Test region-specific functionality
+  - [x] Test partner models (Claude) if available
+  - [x] Add environment variable checks (skip if not configured)
+- [x] Update documentation
+  - [x] Add Vertex AI section to `docs/user-guide/providers.md`
+  - [x] Document authentication methods (service account, ADC)
+  - [x] Explain differences from consumer Gemini API
+    - [x] IAM-based auth vs API keys
+    - [x] Regional deployment requirements
+    - [x] Enterprise features
+    - [x] Access to partner models
+  - [x] Include setup instructions
+    - [x] Creating service account
+    - [x] Setting up IAM permissions
+    - [x] Configuring project and region
+  - [x] Add Vertex AI to technical provider documentation
+  - [x] Update README.md with Vertex AI support
+
 ## v0.3.3.2: OpenRouter provider (Completed - January 11, 2025)
 - [x] Research OpenRouter API and update this todo.md list
   - **Research Findings**: OpenRouter is FULLY OpenAI-compatible with additional features

@@ -48,6 +48,12 @@ const (
 	EnvOpenRouterBaseURL = "OPENROUTER_BASE_URL" // Base URL for OpenRouter API
 	EnvOpenRouterAPIKey  = "OPENROUTER_API_KEY"  // API key for OpenRouter //nolint:gosec // This is just the env var name, not a credential
 	EnvOpenRouterUseCase = "OPENROUTER_USE_CASE" // Use case for OpenRouter
+
+	// Vertex AI options
+	EnvVertexAIProjectID          = "VERTEX_AI_PROJECT_ID"           // Project ID for Vertex AI
+	EnvVertexAILocation           = "VERTEX_AI_LOCATION"             // Location/Region for Vertex AI
+	EnvVertexAIModel              = "VERTEX_AI_MODEL"                // Model to use for Vertex AI
+	EnvVertexAIServiceAccountPath = "GOOGLE_APPLICATION_CREDENTIALS" // Service account path
 )
 
 // GetCommonOptionsFromEnv retrieves common provider options from environment variables.
@@ -164,6 +170,19 @@ func GetOllamaOptionsFromEnv() []domain.ProviderOption {
 	return options
 }
 
+// GetVertexAIOptionsFromEnv retrieves Vertex AI-specific options from environment variables.
+func GetVertexAIOptionsFromEnv() []domain.ProviderOption {
+	var options []domain.ProviderOption
+
+	// First, add common options
+	options = append(options, GetCommonOptionsFromEnv()...)
+
+	// Vertex AI doesn't use base URL or API key options since it uses OAuth2
+	// The project ID and location are handled by the provider constructor
+	
+	return options
+}
+
 // GetProviderOptionsFromEnv retrieves options for a specific provider from environment variables.
 func GetProviderOptionsFromEnv(providerType string) []domain.ProviderOption {
 	providerType = strings.ToLower(providerType)
@@ -177,6 +196,8 @@ func GetProviderOptionsFromEnv(providerType string) []domain.ProviderOption {
 		return GetGeminiOptionsFromEnv()
 	case "ollama":
 		return GetOllamaOptionsFromEnv()
+	case "vertexai":
+		return GetVertexAIOptionsFromEnv()
 	default:
 		return GetCommonOptionsFromEnv()
 	}
@@ -236,6 +257,12 @@ func GetModelFromEnv(providerType string) string {
 		model := os.Getenv("OLLAMA_MODEL")
 		if model == "" {
 			return "llama3.2:3b"
+		}
+		return model
+	case "vertexai":
+		model := os.Getenv(EnvVertexAIModel)
+		if model == "" {
+			return "gemini-1.5-flash-001"
 		}
 		return model
 	default:

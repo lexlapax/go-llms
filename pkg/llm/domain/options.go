@@ -12,6 +12,7 @@ type ProviderOptions struct {
 	MaxTokens        int
 	StopSequences    []string
 	TopP             float64
+	TopK             int
 	FrequencyPenalty float64
 	PresencePenalty  float64
 	Model            string
@@ -54,6 +55,13 @@ func WithStopSequences(sequences []string) Option {
 func WithTopP(topP float64) Option {
 	return func(o *ProviderOptions) {
 		o.TopP = topP
+	}
+}
+
+// WithTopK sets the top-k value for generation
+func WithTopK(topK int) Option {
+	return func(o *ProviderOptions) {
+		o.TopK = topK
 	}
 }
 

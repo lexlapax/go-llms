@@ -57,8 +57,8 @@ func WithProviderOptions(config ModelConfig) ([]domain.ProviderOption, error) {
 
 // CreateProvider creates an LLM provider based on configuration
 func CreateProvider(config ModelConfig) (domain.Provider, error) {
-	// Skip API key check for mock provider and ollama
-	if config.Provider != "mock" && config.Provider != "ollama" && config.APIKey == "" {
+	// Skip API key check for mock provider, ollama, and vertexai (uses OAuth2)
+	if config.Provider != "mock" && config.Provider != "ollama" && config.Provider != "vertexai" && config.APIKey == "" {
 		// Try to get API key from environment if not provided in config
 		apiKey := GetAPIKeyFromEnv(config.Provider)
 		if apiKey == "" {
@@ -99,6 +99,22 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 
 	case "openrouter":
 		llmProvider = provider.NewOpenRouterProvider(config.APIKey, config.Model, options...)
+
+	case "vertexai":
+		// Vertex AI requires project ID and location
+		projectID := os.Getenv("VERTEX_AI_PROJECT_ID")
+		if projectID == "" {
+			return nil, fmt.Errorf("VERTEX_AI_PROJECT_ID environment variable is required for Vertex AI provider")
+		}
+		location := os.Getenv("VERTEX_AI_LOCATION")
+		if location == "" {
+			location = "us-central1" // Default location
+		}
+		var err error
+		llmProvider, err = provider.NewVertexAIProvider(projectID, location, config.Model, options...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Vertex AI provider: %w", err)
+		}
 
 	case "mock":
 		llmProvider = provider.NewMockProvider()

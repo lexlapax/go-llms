@@ -44,6 +44,12 @@ type Config struct {
 			APIKey       string `yaml:"api_key"`
 			DefaultModel string `yaml:"default_model"`
 		} `yaml:"openrouter"`
+
+		VertexAI struct {
+			ProjectID    string `yaml:"project_id"`
+			Location     string `yaml:"location"`
+			DefaultModel string `yaml:"default_model"`
+		} `yaml:"vertexai"`
 	} `yaml:"providers"`
 }
 
@@ -63,6 +69,8 @@ func InitOptimizedConfig(configFile string) error {
 	config.Providers.Ollama.DefaultModel = "llama3.2:3b"
 	config.Providers.Ollama.Host = "http://localhost:11434"
 	config.Providers.OpenRouter.DefaultModel = "huggingface/zephyr-7b-beta:free"
+	config.Providers.VertexAI.DefaultModel = "gemini-1.5-flash"
+	config.Providers.VertexAI.Location = "us-central1"
 
 	// Load from config file
 	if configFile != "" {
@@ -126,6 +134,7 @@ func loadEnvVars() {
 	loadProviderEnvVars("gemini", "GEMINI")
 	loadProviderEnvVars("ollama", "OLLAMA")
 	loadProviderEnvVars("openrouter", "OPENROUTER")
+	loadProviderEnvVars("vertexai", "VERTEXAI")
 
 	// Also check for standard API key environment variables (backward compatibility)
 	if val := os.Getenv("OPENAI_API_KEY"); val != "" && config.Providers.OpenAI.APIKey == "" {
@@ -150,6 +159,19 @@ func loadEnvVars() {
 	}
 	if val := os.Getenv("OPENROUTER_MODEL"); val != "" && config.Providers.OpenRouter.DefaultModel == "" {
 		config.Providers.OpenRouter.DefaultModel = val
+	}
+	// Check for standard Vertex AI environment variables
+	if val := os.Getenv("VERTEXAI_PROJECT"); val != "" && config.Providers.VertexAI.ProjectID == "" {
+		config.Providers.VertexAI.ProjectID = val
+	}
+	if val := os.Getenv("GOOGLE_CLOUD_PROJECT"); val != "" && config.Providers.VertexAI.ProjectID == "" {
+		config.Providers.VertexAI.ProjectID = val
+	}
+	if val := os.Getenv("VERTEXAI_LOCATION"); val != "" && config.Providers.VertexAI.Location == "" {
+		config.Providers.VertexAI.Location = val
+	}
+	if val := os.Getenv("VERTEXAI_MODEL"); val != "" && config.Providers.VertexAI.DefaultModel == "" {
+		config.Providers.VertexAI.DefaultModel = val
 	}
 }
 
@@ -184,6 +206,8 @@ func loadProviderEnvVars(provider, envPrefix string) {
 			config.Providers.Ollama.DefaultModel = val
 		case "openrouter":
 			config.Providers.OpenRouter.DefaultModel = val
+		case "vertexai":
+			config.Providers.VertexAI.DefaultModel = val
 		}
 	}
 
@@ -192,6 +216,18 @@ func loadProviderEnvVars(provider, envPrefix string) {
 		envVar = fmt.Sprintf("GO_LLMS_PROVIDERS_%s_HOST", envPrefix)
 		if val := os.Getenv(envVar); val != "" {
 			config.Providers.Ollama.Host = val
+		}
+	}
+
+	// Vertex AI Project ID and Location
+	if provider == "vertexai" {
+		envVar = fmt.Sprintf("GO_LLMS_PROVIDERS_%s_PROJECT_ID", envPrefix)
+		if val := os.Getenv(envVar); val != "" {
+			config.Providers.VertexAI.ProjectID = val
+		}
+		envVar = fmt.Sprintf("GO_LLMS_PROVIDERS_%s_LOCATION", envPrefix)
+		if val := os.Getenv(envVar); val != "" {
+			config.Providers.VertexAI.Location = val
 		}
 	}
 }
@@ -211,6 +247,9 @@ func GetOptimizedAPIKey(provider string) (string, error) {
 		key = config.Providers.OpenRouter.APIKey
 	case "ollama":
 		// Ollama doesn't require an API key
+		return "", nil
+	case "vertexai":
+		// Vertex AI uses OAuth2, not API keys
 		return "", nil
 	case "mock":
 		// Mock provider doesn't require an API key
@@ -246,6 +285,8 @@ func GetOptimizedProvider() (string, string, error) {
 			model = config.Providers.Ollama.DefaultModel
 		case "openrouter":
 			model = config.Providers.OpenRouter.DefaultModel
+		case "vertexai":
+			model = config.Providers.VertexAI.DefaultModel
 		}
 
 		if model == "" {
@@ -254,4 +295,17 @@ func GetOptimizedProvider() (string, string, error) {
 	}
 
 	return provider, model, nil
+}
+
+// GetVertexAIConfig returns the configured Vertex AI project ID and location
+func GetVertexAIConfig() (projectID, location string) {
+	projectID = config.Providers.VertexAI.ProjectID
+	location = config.Providers.VertexAI.Location
+	
+	// Default location if not specified
+	if location == "" {
+		location = "us-central1"
+	}
+	
+	return projectID, location
 }

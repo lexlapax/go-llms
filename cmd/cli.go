@@ -43,6 +43,15 @@ func (c *Context) createProvider() (llmDomain.Provider, error) {
 	case "ollama":
 		// Ollama doesn't need an API key
 		return provider.NewOllamaProvider(modelName), nil
+	case "openrouter":
+		return provider.NewOpenRouterProvider(apiKey, modelName), nil
+	case "vertexai":
+		// Vertex AI needs project ID and location from environment
+		projectID, location := GetVertexAIConfig()
+		if projectID == "" {
+			return nil, fmt.Errorf("VERTEXAI_PROJECT or GOOGLE_CLOUD_PROJECT environment variable required for Vertex AI")
+		}
+		return provider.NewVertexAIProvider(projectID, location, modelName)
 	case "mock":
 		return provider.NewMockProvider(), nil
 	default:

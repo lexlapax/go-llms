@@ -35,6 +35,13 @@ Providers are your gateway to Large Language Models. Go-llms supports multiple p
 - **Best for**: Accessing multiple providers through one API, cost-effective model selection
 - **Special**: Pay-as-you-go pricing, 68 free models available
 
+### Google Vertex AI
+- **Models**: Gemini 1.5 Pro, Gemini 1.5 Flash, Claude (partner models), PaLM 2
+- **Features**: Enterprise-grade, regional deployment, IAM integration, streaming
+- **Best for**: Enterprise applications, GCP integration, data residency requirements
+- **Authentication**: Service account or Application Default Credentials (ADC)
+- **Special**: Access to partner models (Claude) in enterprise environment
+
 ### OpenAI-Compatible
 - **Providers**: LM Studio, vLLM, OpenRouter (also has dedicated wrapper), any OpenAI-compatible API
 - **Features**: Local models, custom endpoints
@@ -74,6 +81,16 @@ ollama := provider.NewOllamaProvider(
     "llama3.2:3b",
     domain.WithBaseURL("http://my-ollama-server:11434"),
 )
+
+// Google Vertex AI
+vertexAI, err := provider.NewVertexAIProvider(
+    "my-project-id",
+    "us-central1",
+    "gemini-1.5-flash",
+)
+if err != nil {
+    log.Fatal(err)
+}
 
 // OpenAI-Compatible (for other providers)
 // IMPORTANT: Only provide base URL without /v1 or /v1/chat/completions
@@ -343,6 +360,13 @@ response, err := openai.Generate(
 - **No API Key**: No authentication required for local use
 - **Model Discovery**: List available models programmatically
 
+### Google Vertex AI
+- **Enterprise Authentication**: Service account or Application Default Credentials (ADC)
+- **Regional Deployment**: Deploy models in specific regions for data residency
+- **Partner Models**: Access to Claude models in enterprise environment
+- **IAM Integration**: Fine-grained access control with Google Cloud IAM
+- **Model Versions**: Access to specific model versions for consistency
+
 ## Working with OpenAI-Compatible Providers
 
 ### Base URL Configuration
@@ -434,6 +458,15 @@ export GOOGLE_API_KEY="..."
 # Ollama configuration (optional)
 export OLLAMA_HOST="http://localhost:11434"  # Default
 export OLLAMA_MODEL="llama3.2:3b"           # Default model
+
+# OpenRouter configuration
+export OPENROUTER_API_KEY="sk-or-..."
+
+# Vertex AI configuration
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
+export VERTEX_AI_PROJECT_ID="my-project-id"
+export VERTEX_AI_LOCATION="us-central1"
+export VERTEX_AI_MODEL="gemini-1.5-flash"
 
 # Use in code
 provider := provider.NewOpenAIProvider(
@@ -616,6 +649,142 @@ analysisModel := provider.NewOllamaProvider("mistral:7b")
 code, _ := codingModel.Generate(ctx, "Write a Go function to sort a slice")
 chat, _ := chatModel.Generate(ctx, "Explain the code to a beginner")
 analysis, _ := analysisModel.Generate(ctx, "Review the code for best practices")
+```
+
+## Working with Google Vertex AI
+
+Vertex AI is Google Cloud's enterprise AI platform, offering access to Google's models and partner models like Claude in a secure, enterprise environment.
+
+### Authentication
+
+Vertex AI supports multiple authentication methods:
+
+#### 1. Application Default Credentials (ADC)
+
+```go
+// ADC will be used automatically if configured
+provider, err := provider.NewVertexAIProvider(
+    "my-project-id",
+    "us-central1",
+    "gemini-1.5-flash",
+)
+```
+
+Set up ADC:
+```bash
+# Using gcloud CLI
+gcloud auth application-default login
+
+# Or set project
+gcloud config set project my-project-id
+```
+
+#### 2. Service Account
+
+```go
+// Using service account JSON file
+provider, err := provider.NewVertexAIProvider(
+    "my-project-id",
+    "us-central1", 
+    "gemini-1.5-pro",
+    domain.NewVertexAIServiceAccountOption("/path/to/service-account.json"),
+)
+
+// Or via environment variable
+os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/path/to/service-account.json")
+provider, err := provider.NewVertexAIProvider(
+    "my-project-id",
+    "us-central1",
+    "gemini-1.5-pro",
+)
+```
+
+### Available Models
+
+#### Google Models
+- `gemini-2.0-flash-preview`: Latest Gemini 2.0 Flash
+- `gemini-1.5-pro`: Most capable Gemini model
+- `gemini-1.5-flash`: Fast and cost-effective
+- `gemini-1.0-pro`: Legacy stable version
+
+#### Partner Models (Claude via Vertex)
+- `claude-3-opus@20240229`: Most capable Claude model
+- `claude-3-7-sonnet@20241022`: Balanced performance
+- `claude-3-5-sonnet@20241022`: Latest Sonnet version
+- `claude-3-5-haiku@20241022`: Fast and efficient
+
+### Regional Deployment
+
+```go
+// Deploy in specific regions for data residency
+usProvider, _ := provider.NewVertexAIProvider(
+    "my-project", "us-central1", "gemini-1.5-flash",
+)
+
+euProvider, _ := provider.NewVertexAIProvider(
+    "my-project", "europe-west4", "gemini-1.5-flash",  
+)
+
+asiaProvider, _ := provider.NewVertexAIProvider(
+    "my-project", "asia-northeast1", "gemini-1.5-flash",
+)
+```
+
+### Using Partner Models
+
+```go
+// Access Claude through Vertex AI
+claude, err := provider.NewVertexAIProvider(
+    "my-project-id",
+    "us-central1",
+    "claude-3-5-sonnet@20241022",
+)
+
+response, err := claude.Generate(ctx, "Explain quantum computing")
+```
+
+### Multimodal with Gemini
+
+```go
+// Analyze images with Gemini models
+imageData, _ := os.ReadFile("diagram.png")
+imageMsg := domain.NewImageMessage(domain.RoleUser, "Explain this diagram", imageData)
+
+response, err := provider.Generate(ctx, imageMsg)
+```
+
+### Environment Configuration
+
+```bash
+# Required
+export VERTEX_AI_PROJECT_ID="my-project-id"
+export VERTEX_AI_LOCATION="us-central1"  # Optional, defaults to us-central1
+
+# For service account auth
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
+
+# Model selection
+export VERTEX_AI_MODEL="gemini-1.5-flash"
+```
+
+### Cost Considerations
+
+- Vertex AI pricing varies by region
+- Partner models (Claude) may have different pricing
+- Consider using Gemini Flash for cost-effective inference
+- Monitor usage through Google Cloud Console
+
+### IAM Permissions
+
+Required permissions for service accounts:
+- `aiplatform.endpoints.predict`
+- `aiplatform.models.predict`
+
+Example IAM policy:
+```bash
+gcloud projects add-iam-policy-binding PROJECT_ID \
+    --member="serviceAccount:YOUR_SERVICE_ACCOUNT@PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/aiplatform.user"
 ```
 
 ## Testing with Mock Providers

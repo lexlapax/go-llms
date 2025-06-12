@@ -122,7 +122,7 @@ func normalizeProvider(provider string) string {
 func isKnownProvider(s string) bool {
 	normalized := normalizeProvider(s)
 	switch normalized {
-	case "openai", "anthropic", "google", "gemini", "mock", "ollama", "openrouter":
+	case "openai", "anthropic", "google", "gemini", "mock", "ollama", "openrouter", "vertexai":
 		return true
 	default:
 		return false

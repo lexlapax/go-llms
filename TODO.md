@@ -11,43 +11,7 @@
 
 ### 0.3.3.2: OpenRouter provider (https://openrouter.ai) ✅ COMPLETED (January 11, 2025)
 
-### 0.3.3.3: Google Vertex AI provider (https://cloud.google.com/vertex-ai)
-- [ ] Research Google Vertex AI (which is different from google gemini) and update this todo.md list
-  - [ ] Investigate authentication (service accounts, OAuth, ADC)
-  - [ ] Study Vertex AI model APIs and endpoints
-  - [ ] Document available models (PaLM, Gemini variants)
-  - [ ] Check differences from consumer Gemini API
-  - [ ] Identify region-specific requirements
-  - [ ] Determine if model discovery is supported
-- [ ] Add dedicated provider implementation
-  - [ ] Create `pkg/llm/provider/vertexai.go`
-  - [ ] Handle Google Cloud authentication
-  - [ ] Add region/project configuration options
-  - [ ] Write unit tests in `pkg/llm/provider/vertexai_test.go`
-- [ ] Add model discovery/listing support (if available)
-  - [ ] Implement fetcher in `pkg/util/llmutil/modelinfo/fetchers/vertexai_fetcher.go`
-  - [ ] Handle authentication for discovery
-  - [ ] Add tests for the fetcher
-- [ ] Create dedicated example in `cmd/examples/provider-vertexai/`
-  - [ ] Show authentication setup (ADC, service account)
-  - [ ] Demonstrate basic usage
-  - [ ] Include region/project configuration
-- [ ] Add integration tests
-  - [ ] Create `tests/integration/vertexai_integration_test.go`
-  - [ ] Test with different authentication methods
-  - [ ] Test region-specific functionality
-- [ ] Update provider integration code
-  - [ ] Update `pkg/util/llmutil/provider_parser.go` and tests
-  - [ ] Update `pkg/util/llmutil/llmutil.go` and tests
-  - [ ] Update `pkg/util/llmutil/env_vars.go` and tests
-  - [ ] Update `pkg/util/llmutil/option_factories.go` and tests
-  - [ ] Update `pkg/llm/provider/errors.go` for Vertex AI errors
-  - [ ] Update `cmd/cli.go` and `cmd/config.go`
-- [ ] Update documentation
-  - [ ] Add Vertex AI section to `docs/user-guide/providers.md`
-  - [ ] Document authentication methods
-  - [ ] Explain differences from consumer Gemini API
-  - [ ] Include region/project setup instructions
+### 0.3.3.3: Google Vertex AI provider (https://cloud.google.com/vertex-ai) ✅ COMPLETED (January 11, 2025)
 
 ### 0.3.3.4: Mistral AI provider (https://mistral.ai/)
 - [ ] Research Mistral AI API and update this todo.md list

@@ -46,12 +46,21 @@ type MockOption interface {
 	ApplyToMock(provider interface{})
 }
 
+// VertexAIOption is an interface for options specific to the Vertex AI provider
+type VertexAIOption interface {
+	ProviderOption
+	// ApplyToVertexAI applies the option to a Vertex AI provider
+	// The actual VertexAIProvider type will be defined in the provider package
+	ApplyToVertexAI(provider interface{})
+}
+
 // CommonOption is an interface for options that apply to all providers
 type CommonOption interface {
 	OpenAIOption
 	AnthropicOption
 	GeminiOption
 	MockOption
+	VertexAIOption
 }
 
 // BaseURLOption sets a custom base URL for the provider API
@@ -122,6 +131,12 @@ func (o *HTTPClientOption) ApplyToGemini(provider interface{}) {
 }
 
 func (o *HTTPClientOption) ApplyToMock(provider interface{}) {
+	if p, ok := provider.(interface{ SetHTTPClient(client *http.Client) }); ok {
+		p.SetHTTPClient(o.Client)
+	}
+}
+
+func (o *HTTPClientOption) ApplyToVertexAI(provider interface{}) {
 	if p, ok := provider.(interface{ SetHTTPClient(client *http.Client) }); ok {
 		p.SetHTTPClient(o.Client)
 	}
@@ -444,5 +459,25 @@ func (o *GeminiSafetySettingsOption) ApplyToGemini(provider interface{}) {
 		SetSafetySettings(settings []map[string]interface{})
 	}); ok {
 		p.SetSafetySettings(o.Settings)
+	}
+}
+
+// Vertex AI-specific options
+
+// VertexAIServiceAccountOption sets the service account file path
+type VertexAIServiceAccountOption struct {
+	Path string
+}
+
+// NewVertexAIServiceAccountOption creates a new VertexAIServiceAccountOption
+func NewVertexAIServiceAccountOption(path string) *VertexAIServiceAccountOption {
+	return &VertexAIServiceAccountOption{Path: path}
+}
+
+func (o *VertexAIServiceAccountOption) ProviderType() string { return "vertexai" }
+
+func (o *VertexAIServiceAccountOption) ApplyToVertexAI(provider interface{}) {
+	if p, ok := provider.(interface{ SetServiceAccountFile(path string) }); ok {
+		p.SetServiceAccountFile(o.Path)
 	}
 }

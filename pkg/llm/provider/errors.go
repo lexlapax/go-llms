@@ -202,6 +202,50 @@ func mapOpenRouterErrorToStandard(statusCode int, errorMsg string, operation str
 	}
 }
 
+// mapVertexAIErrorToStandard maps Vertex AI error messages to standard error types
+func mapVertexAIErrorToStandard(statusCode int, errorMsg string, operation string) error {
+	// Convert error message to lowercase for case-insensitive matching
+	lowerErrorMsg := strings.ToLower(errorMsg)
+
+	// Vertex AI error patterns
+	switch {
+	case statusCode == http.StatusUnauthorized || strings.Contains(lowerErrorMsg, "authentication failed"):
+		return domain.NewProviderError("vertexai", operation, statusCode, errorMsg, domain.ErrAuthenticationFailed)
+
+	case statusCode == http.StatusTooManyRequests || strings.Contains(lowerErrorMsg, "rate limit") || strings.Contains(lowerErrorMsg, "quota exceeded"):
+		return domain.NewProviderError("vertexai", operation, statusCode, errorMsg, domain.ErrRateLimitExceeded)
+
+	case strings.Contains(lowerErrorMsg, "context length") || strings.Contains(lowerErrorMsg, "too long") || strings.Contains(lowerErrorMsg, "exceeds maximum"):
+		return domain.NewProviderError("vertexai", operation, statusCode, errorMsg, domain.ErrContextTooLong)
+
+	case strings.Contains(lowerErrorMsg, "content filter") || strings.Contains(lowerErrorMsg, "safety") || strings.Contains(lowerErrorMsg, "harmful"):
+		return domain.NewProviderError("vertexai", operation, statusCode, errorMsg, domain.ErrContentFiltered)
+
+	case strings.Contains(lowerErrorMsg, "model not found") || strings.Contains(lowerErrorMsg, "invalid model"):
+		return domain.NewProviderError("vertexai", operation, statusCode, errorMsg, domain.ErrModelNotFound)
+
+	case strings.Contains(lowerErrorMsg, "quota") || strings.Contains(lowerErrorMsg, "billing") || strings.Contains(lowerErrorMsg, "payment"):
+		return domain.NewProviderError("vertexai", operation, statusCode, errorMsg, domain.ErrTokenQuotaExceeded)
+
+	case strings.Contains(lowerErrorMsg, "invalid parameter") || strings.Contains(lowerErrorMsg, "invalid request") || strings.Contains(lowerErrorMsg, "invalid_argument"):
+		return domain.NewProviderError("vertexai", operation, statusCode, errorMsg, domain.ErrInvalidModelParameters)
+
+	case strings.Contains(lowerErrorMsg, "permission denied") || strings.Contains(lowerErrorMsg, "forbidden"):
+		return domain.NewProviderError("vertexai", operation, statusCode, errorMsg, domain.ErrAuthenticationFailed)
+
+	case statusCode == http.StatusServiceUnavailable ||
+		statusCode == http.StatusBadGateway ||
+		statusCode == http.StatusGatewayTimeout:
+		return domain.NewProviderError("vertexai", operation, statusCode, errorMsg, domain.ErrNetworkConnectivity)
+
+	case statusCode >= 500:
+		return domain.NewProviderError("vertexai", operation, statusCode, errorMsg, domain.ErrProviderUnavailable)
+
+	default:
+		return domain.NewProviderError("vertexai", operation, statusCode, errorMsg, domain.ErrRequestFailed)
+	}
+}
+
 // ParseJSONError attempts to extract error information from a JSON error response
 // This is a utility function to abstract error parsing logic for different providers
 func ParseJSONError(body []byte, statusCode int, provider, operation string) error {
@@ -217,7 +261,7 @@ func ParseJSONError(body []byte, statusCode int, provider, operation string) err
 	}
 
 	// Look for common error patterns in JSON
-	errorRegex := regexp.MustCompile(`"error":\s*\{\s*"message":\s*"([^"]+)"`)
+	errorRegex := regexp.MustCompile(`"error":\s*\{[^}]*"message":\s*"([^"]+)"`)
 	matches := errorRegex.FindSubmatch(body)
 
 	if len(matches) > 1 {
@@ -242,6 +286,8 @@ func ParseJSONError(body []byte, statusCode int, provider, operation string) err
 			return mapOllamaErrorToStandard(statusCode, errorMsg, operation)
 		case "openrouter":
 			return mapOpenRouterErrorToStandard(statusCode, errorMsg, operation)
+		case "vertexai":
+			return mapVertexAIErrorToStandard(statusCode, errorMsg, operation)
 		default:
 			// For other providers, use a generic approach
 			return domain.NewProviderError(provider, operation, statusCode, errorMsg, nil)

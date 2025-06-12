@@ -24,7 +24,7 @@ func TestOpenRouterIntegration_BasicGeneration(t *testing.T) {
 	apiKey := os.Getenv("OPENROUTER_API_KEY")
 
 	// Use a free model for testing
-	llm := provider.NewOpenRouterProvider(apiKey, "huggingface/zephyr-7b-beta:free")
+	llm := provider.NewOpenRouterProvider(apiKey, "meta-llama/llama-3.3-8b-instruct:free")
 
 	messages := []domain.Message{
 		domain.NewTextMessage(domain.RoleUser, "Say 'Hello from OpenRouter' and nothing else."),
@@ -45,7 +45,7 @@ func TestOpenRouterIntegration_Streaming(t *testing.T) {
 	apiKey := os.Getenv("OPENROUTER_API_KEY")
 
 	// Use a free model
-	llm := provider.NewOpenRouterProvider(apiKey, "mistralai/mistral-7b-instruct:free")
+	llm := provider.NewOpenRouterProvider(apiKey, "mistralai/devstral-small:free")
 
 	messages := []domain.Message{
 		domain.NewTextMessage(domain.RoleUser, "Count from 1 to 5"),
@@ -84,8 +84,8 @@ func TestOpenRouterIntegration_DifferentModels(t *testing.T) {
 		canSkip bool // Some models might not be available
 	}{
 		{
-			name:    "Free Hugging Face Model",
-			model:   "huggingface/zephyr-7b-beta:free",
+			name:    "Free Llama Model",
+			model:   "meta-llama/llama-3.3-8b-instruct:free",
 			canSkip: false,
 		},
 		{
@@ -95,7 +95,7 @@ func TestOpenRouterIntegration_DifferentModels(t *testing.T) {
 		},
 		{
 			name:    "Mistral Free Model",
-			model:   "mistralai/mistral-7b-instruct:free",
+			model:   "mistralai/devstral-small:free",
 			canSkip: false,
 		},
 	}
@@ -137,14 +137,14 @@ func TestOpenRouterIntegration_ErrorHandling(t *testing.T) {
 		{
 			name:          "Invalid API Key",
 			apiKey:        "invalid-key",
-			model:         "huggingface/zephyr-7b-beta:free",
+			model:         "meta-llama/llama-3.3-8b-instruct:free",
 			expectedError: "401",
 		},
 		{
 			name:          "Invalid Model",
 			apiKey:        os.Getenv("OPENROUTER_API_KEY"),
 			model:         "nonexistent/model",
-			expectedError: "not found",
+			expectedError: "is not a valid model ID",
 		},
 	}
 
@@ -170,12 +170,12 @@ func TestOpenRouterIntegration_CustomBaseURL(t *testing.T) {
 	skipIfNoOpenRouterKey(t)
 
 	// Test with environment variable override
-	customURL := "https://openrouter.ai/api/v1" // Same as default, but tests the mechanism
+	customURL := "https://openrouter.ai/api" // Same as default, but tests the mechanism
 	_ = os.Setenv("OPENROUTER_API_BASE", customURL)
 	defer func() { _ = os.Unsetenv("OPENROUTER_API_BASE") }()
 
 	apiKey := os.Getenv("OPENROUTER_API_KEY")
-	llm := provider.NewOpenRouterProvider(apiKey, "huggingface/zephyr-7b-beta:free")
+	llm := provider.NewOpenRouterProvider(apiKey, "meta-llama/llama-3.3-8b-instruct:free")
 
 	messages := []domain.Message{
 		domain.NewTextMessage(domain.RoleUser, "Say 'Custom URL works'"),
