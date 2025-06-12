@@ -596,7 +596,7 @@ func TestProviderFromEnv(t *testing.T) {
 
 	// Clear all environment variables for clean testing
 	envVars := []string{
-		"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY",
+		"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY",
 		"OLLAMA_HOST", "OLLAMA_MODEL",
 		"OPENAI_BASE_URL", "ANTHROPIC_BASE_URL", "GEMINI_BASE_URL",
 		"OPENAI_ORGANIZATION", "ANTHROPIC_SYSTEM_PROMPT",

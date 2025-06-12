@@ -4,7 +4,7 @@ A lightweight Go library providing a simplified, unified interface to interact w
 
 ## Features
 
-- **Unified API** across OpenAI, Anthropic, Google Gemini, Ollama, and compatible providers
+- **Unified API** across OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter, and compatible providers
 - **Structured outputs** with JSON schema validation and type coercion
 - **Agent system** with state management, hooks, and workflow patterns
 - **32 built-in tools** for web, file, system, data, datetime, and feed operations
@@ -14,9 +14,16 @@ A lightweight Go library providing a simplified, unified interface to interact w
 - **Type-safe configuration** with interface-based provider options
 - **Minimal dependencies** leveraging Go's standard library
 
-## What's New in v0.3.2
+## What's New in v0.3.3
 
 See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
+
+### v0.3.3 (January 11, 2025) - OpenRouter Provider
+- Added OpenRouter provider with access to 400+ models
+- Supports 68 free models from various providers
+- Automatic model discovery and fetcher integration
+- Full OpenAI-compatible API support
+- Enhanced documentation for base URL configuration
 
 ### v0.3.2 (January 11, 2025) - Documentation Update
 - Complete documentation restructuring for better user experience
@@ -108,11 +115,20 @@ result, err := provider.GenerateWithSchema(
 - [API Reference](docs/api/README.md) - Complete API documentation
 - [Technical Documentation](docs/technical/README.md) - Architecture and implementation details
 
+## Supported Providers
+
+- **OpenAI** - GPT-4o, GPT-4o-mini, GPT-4 Turbo, GPT-3.5 Turbo
+- **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus, Claude 3 Haiku
+- **Google Gemini** - Gemini 2.0 Flash Lite, Gemini Pro, Gemini Pro Vision
+- **Ollama** - Llama 3.2, Mistral, Phi-3, CodeLlama, and more (local hosting)
+- **OpenRouter** - Access to 400+ models from various providers (68 free models)
+- **OpenAI-Compatible** - LM Studio, vLLM, and any OpenAI-compatible API
+
 ## Examples
 
 The `cmd/examples/` directory contains 40+ examples demonstrating various features:
 
-- **Provider examples**: OpenAI, Anthropic, Gemini, multi-provider strategies
+- **Provider examples**: OpenAI, Anthropic, Gemini, OpenRouter, Ollama, multi-provider strategies
 - **Agent examples**: Tool usage, workflows, state management, sub-agents
 - **Built-in tools**: Web search, file operations, API client, data processing
 - **Advanced patterns**: Structured output, multimodal content, custom agents

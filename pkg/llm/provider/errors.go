@@ -156,6 +156,52 @@ func mapOllamaErrorToStandard(statusCode int, errorMsg string, operation string)
 	}
 }
 
+// mapOpenRouterErrorToStandard maps OpenRouter API error messages to standard error types
+func mapOpenRouterErrorToStandard(statusCode int, errorMsg string, operation string) error {
+	// Convert error message to lowercase for case-insensitive matching
+	lowerErrorMsg := strings.ToLower(errorMsg)
+
+	// OpenRouter uses OpenAI-compatible API, so error patterns are similar
+	// but may include provider-specific messages
+	switch {
+	case statusCode == http.StatusUnauthorized || strings.Contains(lowerErrorMsg, "invalid api key"):
+		return domain.NewProviderError("openrouter", operation, statusCode, errorMsg, domain.ErrAuthenticationFailed)
+
+	case statusCode == http.StatusTooManyRequests || strings.Contains(lowerErrorMsg, "rate limit"):
+		return domain.NewProviderError("openrouter", operation, statusCode, errorMsg, domain.ErrRateLimitExceeded)
+
+	case strings.Contains(lowerErrorMsg, "context length") || strings.Contains(lowerErrorMsg, "too long"):
+		return domain.NewProviderError("openrouter", operation, statusCode, errorMsg, domain.ErrContextTooLong)
+
+	case strings.Contains(lowerErrorMsg, "content filter") || strings.Contains(lowerErrorMsg, "moderation"):
+		return domain.NewProviderError("openrouter", operation, statusCode, errorMsg, domain.ErrContentFiltered)
+
+	case strings.Contains(lowerErrorMsg, "model not found") || strings.Contains(lowerErrorMsg, "no such model"):
+		return domain.NewProviderError("openrouter", operation, statusCode, errorMsg, domain.ErrModelNotFound)
+
+	case strings.Contains(lowerErrorMsg, "quota") || strings.Contains(lowerErrorMsg, "credits") || strings.Contains(lowerErrorMsg, "billing"):
+		return domain.NewProviderError("openrouter", operation, statusCode, errorMsg, domain.ErrTokenQuotaExceeded)
+
+	case strings.Contains(lowerErrorMsg, "invalid parameter") || strings.Contains(lowerErrorMsg, "invalid request"):
+		return domain.NewProviderError("openrouter", operation, statusCode, errorMsg, domain.ErrInvalidModelParameters)
+
+	case strings.Contains(lowerErrorMsg, "provider error") || strings.Contains(lowerErrorMsg, "upstream error"):
+		// OpenRouter specific - when the underlying provider has an issue
+		return domain.NewProviderError("openrouter", operation, statusCode, errorMsg, domain.ErrProviderUnavailable)
+
+	case statusCode == http.StatusServiceUnavailable ||
+		statusCode == http.StatusBadGateway ||
+		statusCode == http.StatusGatewayTimeout:
+		return domain.NewProviderError("openrouter", operation, statusCode, errorMsg, domain.ErrNetworkConnectivity)
+
+	case statusCode >= 500:
+		return domain.NewProviderError("openrouter", operation, statusCode, errorMsg, domain.ErrProviderUnavailable)
+
+	default:
+		return domain.NewProviderError("openrouter", operation, statusCode, errorMsg, domain.ErrRequestFailed)
+	}
+}
+
 // ParseJSONError attempts to extract error information from a JSON error response
 // This is a utility function to abstract error parsing logic for different providers
 func ParseJSONError(body []byte, statusCode int, provider, operation string) error {
@@ -194,6 +240,8 @@ func ParseJSONError(body []byte, statusCode int, provider, operation string) err
 			return mapAnthropicErrorToStandard(statusCode, errorType, errorMsg, operation)
 		case "ollama":
 			return mapOllamaErrorToStandard(statusCode, errorMsg, operation)
+		case "openrouter":
+			return mapOpenRouterErrorToStandard(statusCode, errorMsg, operation)
 		default:
 			// For other providers, use a generic approach
 			return domain.NewProviderError(provider, operation, statusCode, errorMsg, nil)

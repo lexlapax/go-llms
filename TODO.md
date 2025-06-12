@@ -9,43 +9,10 @@
 ## v0.3.3 Additional Providers in llm library
 ### 0.3.3.1: Ollama local hosted provider (https://ollama.com/) ✅ COMPLETED (January 11, 2025) 
 
-### 0.3.3.2: OpenRouter provider (https://openrouter.ai)
-- [ ] Research OpenRouter API and update this todo.md list
-  - [ ] Investigate API authentication method (API keys, OAuth, etc.)
-  - [ ] Check if OpenRouter is OpenAI-compatible or has custom API format
-  - [ ] Document available models and their naming conventions
-  - [ ] Identify any special features or limitations
-  - [ ] Determine if model discovery/listing is supported
-- [ ] Add dedicated provider implementation
-  - [ ] Create `pkg/llm/provider/openrouter.go`
-  - [ ] Add OpenRouter-specific options if needed
-  - [ ] Write unit tests in `pkg/llm/provider/openrouter_test.go`
-- [ ] Add model discovery/listing support (if available)
-  - [ ] Implement fetcher in `pkg/util/llmutil/modelinfo/fetchers/openrouter_fetcher.go`
-  - [ ] Add tests for the fetcher
-  - [ ] Integrate with modelinfo service
-- [ ] Create dedicated example in `cmd/examples/provider-openrouter/`
-  - [ ] Show basic usage with the provider
-  - [ ] Demonstrate any OpenRouter-specific features
-  - [ ] Add streaming examples if supported
-- [ ] Add integration tests
-  - [ ] Create `tests/integration/openrouter_integration_test.go`
-  - [ ] Test basic generation, streaming, and error handling
-  - [ ] Add agent integration tests if applicable
-- [ ] Update provider integration code
-  - [ ] Update `pkg/util/llmutil/provider_parser.go` and tests
-  - [ ] Update `pkg/util/llmutil/llmutil.go` and tests
-  - [ ] Update `pkg/util/llmutil/env_vars.go` and tests
-  - [ ] Update `pkg/util/llmutil/option_factories.go` and tests
-  - [ ] Update `pkg/llm/provider/errors.go` for OpenRouter-specific errors
-  - [ ] Update `cmd/cli.go` and `cmd/config.go`
-- [ ] Update documentation
-  - [ ] Add OpenRouter section to `docs/user-guide/providers.md`
-  - [ ] Document authentication, features, and limitations
-  - [ ] Update main README.md to include OpenRouter
+### 0.3.3.2: OpenRouter provider (https://openrouter.ai) ✅ COMPLETED (January 11, 2025)
 
 ### 0.3.3.3: Google Vertex AI provider (https://cloud.google.com/vertex-ai)
-- [ ] Research Google Vertex AI and update this todo.md list
+- [ ] Research Google Vertex AI (which is different from google gemini) and update this todo.md list
   - [ ] Investigate authentication (service accounts, OAuth, ADC)
   - [ ] Study Vertex AI model APIs and endpoints
   - [ ] Document available models (PaLM, Gemini variants)

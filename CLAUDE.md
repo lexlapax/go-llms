@@ -4,11 +4,11 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-Go-LLMs is a Go library providing a unified interface for various LLM providers (OpenAI, Anthropic, Google Gemini, Ollama, etc.) with robust data validation and agent tooling.
+Go-LLMs is a Go library providing a unified interface for various LLM providers (OpenAI, Anthropic, Google Gemini, OpenRouter, Ollama, etc.) with robust data validation and agent tooling.
 
-**Version**: v0.3.2 (Documentation Update - January 2025)
+**Version**: v0.3.3 (OpenRouter Provider - January 2025)
 
-**Status**: Documentation completely restructured following user journey patterns. All 32 tools support ToolBuilder pattern with MCP compatibility. Ollama provider integration completed (v0.3.3.1).
+**Status**: OpenRouter provider integration completed with access to 400+ models. Documentation updated to clarify base URL handling for OpenAI-compatible providers.
 
 ## Key Commands
 
@@ -38,9 +38,9 @@ make fmt                 # Format code
 
 ## Current Status
 
-- **v0.3.3.1**: Ollama provider integration complete (January 11, 2025)
+- **v0.3.3**: OpenRouter provider integration complete (January 11, 2025)
 - **v0.3.2**: Documentation restructuring complete (January 11, 2025)
 - **v0.3.1**: Tool system enhancement complete (January 10, 2025)
-- **Next**: v0.3.3.2+ - Additional providers (OpenRouter, Vertex AI, Mistral, AWS Bedrock, Azure AI)
+- **Next**: v0.3.4 - Built-in Agents Library
 
 See TODO.md for roadmap and TODO-DONE.md for completed items.

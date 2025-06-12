@@ -14,10 +14,11 @@ import (
 
 // ModelInfoService aggregates model information from various providers.
 type ModelInfoService struct {
-	openAIFetcher    *fetchers.OpenAIFetcher
-	googleFetcher    *fetchers.GoogleFetcher
-	anthropicFetcher *fetchers.AnthropicFetcher
-	ollamaFetcher    *fetchers.OllamaFetcher
+	openAIFetcher     *fetchers.OpenAIFetcher
+	googleFetcher     *fetchers.GoogleFetcher
+	anthropicFetcher  *fetchers.AnthropicFetcher
+	ollamaFetcher     *fetchers.OllamaFetcher
+	openRouterFetcher *fetchers.OpenRouterFetcher
 	// Add other fetchers here if more providers are supported
 }
 
@@ -28,12 +29,14 @@ func NewServiceWithCustomFetchers(
 	googleFetcher *fetchers.GoogleFetcher,
 	anthropicFetcher *fetchers.AnthropicFetcher,
 	ollamaFetcher *fetchers.OllamaFetcher,
+	openRouterFetcher *fetchers.OpenRouterFetcher,
 ) *ModelInfoService {
 	return &ModelInfoService{
-		openAIFetcher:    openAIFetcher,
-		googleFetcher:    googleFetcher,
-		anthropicFetcher: anthropicFetcher,
-		ollamaFetcher:    ollamaFetcher,
+		openAIFetcher:     openAIFetcher,
+		googleFetcher:     googleFetcher,
+		anthropicFetcher:  anthropicFetcher,
+		ollamaFetcher:     ollamaFetcher,
+		openRouterFetcher: openRouterFetcher,
 	}
 }
 
@@ -44,6 +47,7 @@ func defaultNewModelInfoService() *ModelInfoService {
 		fetchers.NewGoogleFetcher("", http.DefaultClient), // Uses default internal URL
 		&fetchers.AnthropicFetcher{},                      // Remains as is
 		fetchers.NewOllamaFetcher("", http.DefaultClient), // Uses default internal URL
+		fetchers.NewOpenRouterFetcher(""),                 // Uses no API key by default
 	)
 }
 
@@ -97,6 +101,19 @@ func (s *ModelInfoService) AggregateModels() (*domain.ModelInventory, error) {
 			fetcherErrors = append(fetcherErrors, errMsg)
 		} else {
 			allModels = append(allModels, ollamaModels...)
+		}
+	}
+
+	// Fetch from OpenRouter
+	// Note: This is optional as it requires an API key
+	if s.openRouterFetcher != nil {
+		openRouterModels, err := s.openRouterFetcher.FetchModels()
+		if err != nil {
+			// Don't treat OpenRouter errors as critical since it requires an API key
+			errMsg := fmt.Sprintf("Error fetching OpenRouter models (API key may not be configured): %v", err)
+			fetcherErrors = append(fetcherErrors, errMsg)
+		} else {
+			allModels = append(allModels, openRouterModels...)
 		}
 	}
 

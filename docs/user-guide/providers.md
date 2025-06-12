@@ -29,10 +29,17 @@ Providers are your gateway to Large Language Models. Go-llms supports multiple p
 - **Best for**: Privacy, offline use, custom models, cost-effective inference
 - **Special**: No API key required, runs locally
 
+### OpenRouter
+- **Models**: 400+ models from OpenAI, Anthropic, Google, Meta, and more
+- **Features**: Automatic fallbacks, cost optimization, unified API
+- **Best for**: Accessing multiple providers through one API, cost-effective model selection
+- **Special**: Pay-as-you-go pricing, 68 free models available
+
 ### OpenAI-Compatible
-- **Providers**: LM Studio, vLLM, any OpenAI-compatible API
+- **Providers**: LM Studio, vLLM, OpenRouter (also has dedicated wrapper), any OpenAI-compatible API
 - **Features**: Local models, custom endpoints
 - **Best for**: Privacy, custom models, offline use
+- **Important**: Only provide the base URL without `/v1` or `/v1/chat/completions` - the provider adds these automatically
 
 ## Basic Usage
 
@@ -69,10 +76,20 @@ ollama := provider.NewOllamaProvider(
 )
 
 // OpenAI-Compatible (for other providers)
-compatible := provider.NewOpenAICompatibleProvider(
+// IMPORTANT: Only provide base URL without /v1 or /v1/chat/completions
+// The provider automatically appends /v1/chat/completions
+compatible := provider.NewOpenAIProvider(
     "",  // No API key needed for local
     "model-name",
-    provider.WithBaseURL("http://localhost:8080/v1"),
+    domain.WithBaseURL("http://localhost:8080"),  // NOT http://localhost:8080/v1
+)
+
+// Example with OpenRouter (OpenAI-compatible)
+openrouter := provider.NewOpenRouterProvider(
+    "your-api-key",
+    "openai/gpt-4o",
+    // OpenRouter uses https://openrouter.ai/api as base URL
+    // The provider will automatically append /v1/chat/completions
 )
 ```
 
@@ -325,6 +342,84 @@ response, err := openai.Generate(
 - **GPU Acceleration**: Automatic GPU detection and usage
 - **No API Key**: No authentication required for local use
 - **Model Discovery**: List available models programmatically
+
+## Working with OpenAI-Compatible Providers
+
+### Base URL Configuration
+
+When using OpenAI-compatible providers, it's crucial to understand how base URLs are handled:
+
+1. **The OpenAI provider automatically appends `/v1/chat/completions` to your base URL**
+2. **You should only provide the base URL without any API endpoints**
+
+#### Correct Examples:
+```go
+// LM Studio
+provider := provider.NewOpenAIProvider(
+    "",
+    "local-model",
+    domain.WithBaseURL("http://localhost:1234"),  // ✓ Correct
+)
+
+// vLLM
+provider := provider.NewOpenAIProvider(
+    "",
+    "model-name", 
+    domain.WithBaseURL("http://localhost:8000"),  // ✓ Correct
+)
+
+// OpenRouter (has convenience wrapper)
+provider := provider.NewOpenRouterProvider(
+    "api-key",
+    "openai/gpt-4o",
+    // Automatically uses https://openrouter.ai/api
+)
+
+// Custom OpenAI-compatible API
+provider := provider.NewOpenAIProvider(
+    "api-key",
+    "model-name",
+    domain.WithBaseURL("https://api.example.com"),  // ✓ Correct
+)
+```
+
+#### Incorrect Examples:
+```go
+// DON'T include /v1 or /v1/chat/completions
+provider := provider.NewOpenAIProvider(
+    "",
+    "model", 
+    domain.WithBaseURL("http://localhost:1234/v1"),  // ✗ Wrong
+)
+
+provider := provider.NewOpenAIProvider(
+    "",
+    "model",
+    domain.WithBaseURL("http://localhost:8000/v1/chat/completions"),  // ✗ Wrong  
+)
+```
+
+### Common OpenAI-Compatible Providers
+
+1. **LM Studio**
+   - Default URL: `http://localhost:1234`
+   - No API key required
+   - Supports various open-source models
+
+2. **vLLM**
+   - Default URL: `http://localhost:8000`
+   - High-performance inference server
+   - Supports distributed serving
+
+3. **OpenRouter**
+   - URL: `https://openrouter.ai/api` (handled by wrapper)
+   - Requires API key
+   - Access to 400+ models from various providers
+
+4. **Ollama** (Special Case)
+   - Has its own wrapper: `NewOllamaProvider`
+   - Default URL: `http://localhost:11434`
+   - Different API structure, but wrapper handles it
 
 ## Environment Configuration
 

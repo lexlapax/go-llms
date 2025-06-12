@@ -42,6 +42,12 @@ const (
 	EnvGeminiModel            = "GEMINI_MODEL"             // Model to use for Gemini
 	EnvGeminiBaseURL          = "GEMINI_BASE_URL"          // Base URL for Gemini API
 	EnvGeminiAPIKey           = "GEMINI_API_KEY"           // API key for Gemini //nolint:gosec // This is just the env var name, not a credential
+
+	// OpenRouter options
+	EnvOpenRouterModel   = "OPENROUTER_MODEL"    // Model to use for OpenRouter
+	EnvOpenRouterBaseURL = "OPENROUTER_BASE_URL" // Base URL for OpenRouter API
+	EnvOpenRouterAPIKey  = "OPENROUTER_API_KEY"  // API key for OpenRouter //nolint:gosec // This is just the env var name, not a credential
+	EnvOpenRouterUseCase = "OPENROUTER_USE_CASE" // Use case for OpenRouter
 )
 
 // GetCommonOptionsFromEnv retrieves common provider options from environment variables.
@@ -187,6 +193,8 @@ func GetAPIKeyFromEnv(providerType string) string {
 		return os.Getenv(EnvAnthropicAPIKey)
 	case "gemini":
 		return os.Getenv(EnvGeminiAPIKey)
+	case "openrouter":
+		return os.Getenv(EnvOpenRouterAPIKey)
 	case "ollama":
 		// Ollama doesn't need an API key
 		return ""
@@ -216,6 +224,12 @@ func GetModelFromEnv(providerType string) string {
 		model := os.Getenv(EnvGeminiModel)
 		if model == "" {
 			return "gemini-2.0-flash-lite"
+		}
+		return model
+	case "openrouter":
+		model := os.Getenv(EnvOpenRouterModel)
+		if model == "" {
+			return "huggingface/zephyr-7b-beta:free"
 		}
 		return model
 	case "ollama":

@@ -39,6 +39,11 @@ type Config struct {
 			Host         string `yaml:"host"`
 			DefaultModel string `yaml:"default_model"`
 		} `yaml:"ollama"`
+
+		OpenRouter struct {
+			APIKey       string `yaml:"api_key"`
+			DefaultModel string `yaml:"default_model"`
+		} `yaml:"openrouter"`
 	} `yaml:"providers"`
 }
 
@@ -57,6 +62,7 @@ func InitOptimizedConfig(configFile string) error {
 	config.Providers.Gemini.DefaultModel = "gemini-2.0-flash-lite"
 	config.Providers.Ollama.DefaultModel = "llama3.2:3b"
 	config.Providers.Ollama.Host = "http://localhost:11434"
+	config.Providers.OpenRouter.DefaultModel = "huggingface/zephyr-7b-beta:free"
 
 	// Load from config file
 	if configFile != "" {
@@ -119,6 +125,7 @@ func loadEnvVars() {
 	loadProviderEnvVars("anthropic", "ANTHROPIC")
 	loadProviderEnvVars("gemini", "GEMINI")
 	loadProviderEnvVars("ollama", "OLLAMA")
+	loadProviderEnvVars("openrouter", "OPENROUTER")
 
 	// Also check for standard API key environment variables (backward compatibility)
 	if val := os.Getenv("OPENAI_API_KEY"); val != "" && config.Providers.OpenAI.APIKey == "" {
@@ -137,6 +144,13 @@ func loadEnvVars() {
 	if val := os.Getenv("OLLAMA_MODEL"); val != "" && config.Providers.Ollama.DefaultModel == "" {
 		config.Providers.Ollama.DefaultModel = val
 	}
+	// Check for standard OpenRouter environment variables
+	if val := os.Getenv("OPENROUTER_API_KEY"); val != "" && config.Providers.OpenRouter.APIKey == "" {
+		config.Providers.OpenRouter.APIKey = val
+	}
+	if val := os.Getenv("OPENROUTER_MODEL"); val != "" && config.Providers.OpenRouter.DefaultModel == "" {
+		config.Providers.OpenRouter.DefaultModel = val
+	}
 }
 
 // loadProviderEnvVars loads provider-specific environment variables
@@ -151,6 +165,8 @@ func loadProviderEnvVars(provider, envPrefix string) {
 			config.Providers.Anthropic.APIKey = val
 		case "gemini":
 			config.Providers.Gemini.APIKey = val
+		case "openrouter":
+			config.Providers.OpenRouter.APIKey = val
 		}
 	}
 
@@ -166,6 +182,8 @@ func loadProviderEnvVars(provider, envPrefix string) {
 			config.Providers.Gemini.DefaultModel = val
 		case "ollama":
 			config.Providers.Ollama.DefaultModel = val
+		case "openrouter":
+			config.Providers.OpenRouter.DefaultModel = val
 		}
 	}
 
@@ -189,6 +207,8 @@ func GetOptimizedAPIKey(provider string) (string, error) {
 		key = config.Providers.Anthropic.APIKey
 	case "gemini":
 		key = config.Providers.Gemini.APIKey
+	case "openrouter":
+		key = config.Providers.OpenRouter.APIKey
 	case "ollama":
 		// Ollama doesn't require an API key
 		return "", nil
@@ -224,6 +244,8 @@ func GetOptimizedProvider() (string, string, error) {
 			model = config.Providers.Gemini.DefaultModel
 		case "ollama":
 			model = config.Providers.Ollama.DefaultModel
+		case "openrouter":
+			model = config.Providers.OpenRouter.DefaultModel
 		}
 
 		if model == "" {

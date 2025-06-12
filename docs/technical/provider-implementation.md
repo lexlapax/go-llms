@@ -872,7 +872,24 @@ Update the [Architecture](docs/technical/architecture.md) document to mention th
 
 ## Special Case: OpenAI-Compatible Providers
 
-Some providers (like Ollama, LM Studio, vLLM) implement the OpenAI API specification. For these providers, you can create a convenience wrapper instead of implementing the full provider interface from scratch.
+Some providers (like Ollama, LM Studio, vLLM, OpenRouter) implement the OpenAI API specification. For these providers, you can create a convenience wrapper instead of implementing the full provider interface from scratch.
+
+### Current OpenAI-Compatible Providers
+
+1. **Ollama** - Local model hosting with GPU acceleration
+2. **OpenRouter** - Access to 400+ models from various providers through a unified API
+
+### Important: Base URL Handling
+
+The OpenAI provider implementation automatically appends `/v1/chat/completions` to the base URL. This means:
+
+1. **Providers should only specify the base URL without any API endpoints**
+2. **Users must not include `/v1` or `/v1/chat/completions` in their base URL configuration**
+
+For example:
+- ✓ Correct: `https://api.example.com`
+- ✗ Wrong: `https://api.example.com/v1`
+- ✗ Wrong: `https://api.example.com/v1/chat/completions`
 
 ### Example: Ollama Provider
 
@@ -915,13 +932,16 @@ func WithOllamaTimeout(timeout time.Duration) domain.ProviderOption {
 // NewOllamaProvider creates a new Ollama provider using the OpenAI-compatible API
 func NewOllamaProvider(model string, options ...domain.ProviderOption) *OpenAIProvider {
 	// Set default options for Ollama
+	// IMPORTANT: Base URL should NOT include /v1 or /v1/chat/completions
+	// The OpenAI provider will automatically append /v1/chat/completions
 	defaultOptions := []domain.ProviderOption{
-		domain.NewBaseURLOption(defaultOllamaHost),
+		domain.NewBaseURLOption(defaultOllamaHost),  // Just the base URL
 		domain.NewHTTPClientOption(&http.Client{Timeout: defaultOllamaTimeout}),
 	}
 
 	// Check for OLLAMA_HOST environment variable
 	if host := os.Getenv("OLLAMA_HOST"); host != "" {
+		// Ensure the host doesn't include /v1 suffix
 		defaultOptions[0] = domain.NewBaseURLOption(host)
 	}
 
@@ -931,6 +951,45 @@ func NewOllamaProvider(model string, options ...domain.ProviderOption) *OpenAIPr
 	// Create OpenAI provider with Ollama configuration
 	// Empty API key since Ollama doesn't require authentication
 	return NewOpenAIProvider("", model, allOptions...)
+}
+```
+
+### Example: OpenRouter Provider
+
+Here's how OpenRouter was implemented as a convenience wrapper:
+
+```go
+package provider
+
+import (
+	"os"
+	"github.com/lexlapax/go-llms/pkg/llm/domain"
+)
+
+const (
+	defaultOpenRouterHost = "https://openrouter.ai/api"
+)
+
+// NewOpenRouterProvider creates a new OpenRouter provider using the OpenAI-compatible API
+// OpenRouter provides access to 400+ models from various providers through a single API.
+// It automatically handles fallbacks and selects cost-effective options.
+func NewOpenRouterProvider(apiKey, model string, options ...domain.ProviderOption) *OpenAIProvider {
+	// Set default options for OpenRouter
+	// IMPORTANT: Base URL should NOT include /v1 or /v1/chat/completions
+	defaultOptions := []domain.ProviderOption{
+		domain.NewBaseURLOption(defaultOpenRouterHost),
+	}
+
+	// Check for OPENROUTER_API_BASE environment variable
+	if base := os.Getenv("OPENROUTER_API_BASE"); base != "" {
+		defaultOptions[0] = domain.NewBaseURLOption(base)
+	}
+
+	// Apply user-provided options (can override defaults)
+	allOptions := append(defaultOptions, options...)
+
+	// Create OpenAI provider with OpenRouter configuration
+	return NewOpenAIProvider(apiKey, model, allOptions...)
 }
 ```
 
@@ -947,6 +1006,9 @@ func NewOllamaProvider(model string, options ...domain.ProviderOption) *OpenAIPr
    case "ollama":
        // Ollama doesn't require an API key
        llmProvider = provider.NewOllamaProvider(config.Model, options...)
+   case "openrouter":
+       // OpenRouter requires an API key like OpenAI
+       llmProvider = provider.NewOpenRouterProvider(config.APIKey, config.Model, options...)
    ```
 
 3. **Update Environment Variables**
@@ -955,6 +1017,9 @@ func NewOllamaProvider(model string, options ...domain.ProviderOption) *OpenAIPr
    case "ollama":
        model := os.Getenv("OLLAMA_MODEL")
        if model == "" {
+   case "openrouter":
+       apiKey := os.Getenv("OPENROUTER_API_KEY")
+       if apiKey == "" {
            return "llama3.2:3b"  // Default model
        }
        return model

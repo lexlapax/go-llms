@@ -1,5 +1,48 @@
 # Go-LLMs Completed Tasks
 
+## v0.3.3.2: OpenRouter provider (Completed - January 11, 2025)
+- [x] Research OpenRouter API and update this todo.md list
+  - **Research Findings**: OpenRouter is FULLY OpenAI-compatible with additional features
+  - **Authentication**: Bearer token (API key) - same as OpenAI
+  - **Base URL**: https://openrouter.ai/api/v1
+  - **Model Discovery**: GET /api/v1/models endpoint available
+  - **Special Features**:
+    - Access to 400+ models from multiple providers through single API
+    - Automatic fallbacks and cost optimization
+    - No regional restrictions (proxy routing)
+    - Support for uncensored models
+    - Free tier models available
+    - BYOK (Bring Your Own Key) support with 5% fee
+    - Privacy options (no logging by default)
+  - **Implementation**: Can use OpenAI provider with custom base URL, similar to Ollama
+- [x] Add dedicated provider implementation
+  - [x] Create `pkg/llm/provider/openrouter.go`
+  - [x] Add OpenRouter-specific options if needed
+  - [x] Write unit tests in `pkg/llm/provider/openrouter_test.go`
+- [x] Add model discovery/listing support (if available)
+  - [x] Implement fetcher in `pkg/util/llmutil/modelinfo/fetchers/openrouter_fetcher.go`
+  - [x] Add tests for the fetcher
+  - [x] Integrate with modelinfo service
+- [x] Create dedicated example in `cmd/examples/provider-openrouter/`
+  - [x] Show basic usage with the provider
+  - [x] Demonstrate any OpenRouter-specific features
+  - [x] Add streaming examples if supported
+- [x] Add integration tests
+  - [x] Create `tests/integration/openrouter_integration_test.go`
+  - [x] Test basic generation, streaming, and error handling
+  - [x] Add agent integration tests if applicable
+- [x] Update provider integration code
+  - [x] Update `pkg/util/llmutil/provider_parser.go` and tests
+  - [x] Update `pkg/util/llmutil/llmutil.go` and tests
+  - [x] Update `pkg/util/llmutil/env_vars.go` and tests
+  - [x] Update `pkg/util/llmutil/option_factories.go` and tests
+  - [x] Update `pkg/llm/provider/errors.go` for OpenRouter-specific errors
+  - [x] Update `cmd/cli.go` and `cmd/config.go`
+- [x] Update documentation
+  - [x] Add OpenRouter section to `docs/user-guide/providers.md`
+  - [x] Document authentication, features, and limitations
+  - [x] Update main README.md to include OpenRouter
+
 ## v0.3.3.1: Ollama local hosted provider (Completed - January 11, 2025)
 - [x] Research how to add Ollama provider and update this todo.md list
   - **Research Findings**: Ollama already has FULL support through the OpenAI-compatible provider

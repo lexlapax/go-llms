@@ -122,7 +122,7 @@ func normalizeProvider(provider string) string {
 func isKnownProvider(s string) bool {
 	normalized := normalizeProvider(s)
 	switch normalized {
-	case "openai", "anthropic", "google", "gemini", "mock", "ollama":
+	case "openai", "anthropic", "google", "gemini", "mock", "ollama", "openrouter":
 		return true
 	default:
 		return false
@@ -161,6 +161,8 @@ func getAPIKeyEnvVar(provider string) string {
 		return "GEMINI_API_KEY"
 	case "ollama":
 		return "OLLAMA_API_KEY"
+	case "openrouter":
+		return "OPENROUTER_API_KEY"
 	default:
 		return strings.ToUpper(provider) + "_API_KEY"
 	}
@@ -177,6 +179,8 @@ func getGoLLMsAPIKeyEnvVar(provider string) string {
 		return "GO_LLMS_GEMINI_API_KEY"
 	case "ollama":
 		return "GO_LLMS_OLLAMA_API_KEY"
+	case "openrouter":
+		return "GO_LLMS_OPENROUTER_API_KEY"
 	default:
 		return "GO_LLMS_" + strings.ToUpper(provider) + "_API_KEY"
 	}
@@ -257,4 +261,9 @@ var modelAliases = map[string]string{
 	"gemma2":        "ollama/gemma2:2b",
 	"qwen2":         "ollama/qwen2.5:7b",
 	"phi3":          "ollama/phi3:mini",
+
+	// OpenRouter aliases
+	"deepseek-qwen3":       "deepseek/deepseek-r1-0528-qwen3-8b:free",
+	"deepseek":             "deepseek/deepseek-r1-0528:free",
+	"openrouter/codellama": "openrouter/ollama/codellama:13b",
 }

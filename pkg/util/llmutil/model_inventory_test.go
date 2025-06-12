@@ -65,6 +65,7 @@ func TestGetAvailableModels_CacheMiss_ThenHit(t *testing.T) {
 			fetchers.NewGoogleFetcher(googleServer.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
 			nil, // OllamaFetcher - optional for tests
+			nil, // OpenRouterFetcher - optional for tests
 		)
 	}
 	t.Cleanup(func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc })
@@ -216,6 +217,7 @@ func TestGetAvailableModels_CacheDisabled(t *testing.T) {
 			fetchers.NewGoogleFetcher(googleServer1.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
 			nil, // OllamaFetcher - optional for tests
+			nil, // OpenRouterFetcher - optional for tests
 		)
 	}
 	t.Cleanup(func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc })
@@ -254,6 +256,7 @@ func TestGetAvailableModels_CacheDisabled(t *testing.T) {
 			fetchers.NewGoogleFetcher(googleServer2.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
 			nil, // OllamaFetcher - optional for tests
+			nil, // OpenRouterFetcher - optional for tests
 		)
 	}
 
@@ -304,6 +307,7 @@ func TestGetAvailableModels_CacheExpired(t *testing.T) {
 			fetchers.NewGoogleFetcher(googleServer1.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
 			nil, // OllamaFetcher - optional for tests
+			nil, // OpenRouterFetcher - optional for tests
 		)
 	}
 
@@ -331,6 +335,7 @@ func TestGetAvailableModels_CacheExpired(t *testing.T) {
 			fetchers.NewGoogleFetcher(googleServer2.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
 			nil, // OllamaFetcher - optional for tests
+			nil, // OpenRouterFetcher - optional for tests
 		)
 	}
 
@@ -365,6 +370,7 @@ func TestGetAvailableModels_DefaultCachePath(t *testing.T) {
 			fetchers.NewGoogleFetcher(googleServer.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
 			nil, // OllamaFetcher - optional for tests
+			nil, // OpenRouterFetcher - optional for tests
 		)
 	}
 	t.Cleanup(func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc })
@@ -439,6 +445,7 @@ func TestGetAvailableModels_FetcherError_Propagation(t *testing.T) {
 			fetchers.NewGoogleFetcher(googleSuccessServer.URL, http.DefaultClient),
 			&fetchers.AnthropicFetcher{},
 			nil, // OllamaFetcher - optional for tests
+			nil, // OpenRouterFetcher - optional for tests
 		)
 	}
 	t.Cleanup(func() { modelinfo.NewModelInfoServiceFunc = originalNewSvcFunc })

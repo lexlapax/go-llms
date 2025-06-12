@@ -100,6 +100,7 @@ provider, providerName, modelName, err := llmutil.ProviderFromEnv()
 OpenRouter's API requires specific configuration when used with go-llms:
 
 - **Base URL**: Use `https://openrouter.ai/api` (without `/v1` because the OpenAI provider adds it automatically)
+  - **IMPORTANT**: Never include `/v1` or `/v1/chat/completions` in your base URL - the provider handles this
 - **API Method**: OpenRouter works best with the `GenerateMessage` method (chat completions endpoint)
 - **Required Attribution Headers**:
   - `HTTP-Referer`: Your site URL for attribution (required)
@@ -387,12 +388,19 @@ The approach demonstrated in this example can be extended to many other provider
 
 ### API Path Handling
 
-The go-llms OpenAI provider handles API path construction in a specific way:
+**⚠️ CRITICAL**: The go-llms OpenAI provider handles API path construction automatically!
 
-1. **Base Paths**: The OpenAI provider automatically adds `/v1` to the base URL
-   - For OpenRouter: Use `https://openrouter.ai/api` (provider adds `/v1`)
-   - For Groq: Use `https://api.groq.com` (provider adds `/v1`)
-   - For Ollama: Use `http://localhost:11434` (no `/v1` is needed)
+The OpenAI provider **automatically appends** `/v1/chat/completions` to your base URL. This means:
+
+1. **Base URL Rules**:
+   - ✅ **CORRECT**: Provide only the base URL without any API paths
+   - ❌ **WRONG**: Including `/v1` or `/v1/chat/completions` in your base URL
+   
+   Examples:
+   - For OpenRouter: Use `https://openrouter.ai/api` (NOT `https://openrouter.ai/api/v1`)
+   - For Groq: Use `https://api.groq.com` (NOT `https://api.groq.com/v1`)
+   - For Ollama: Use `http://localhost:11434` (NOT `http://localhost:11434/v1`)
+   - For LM Studio: Use `http://localhost:1234` (NOT `http://localhost:1234/v1`)
 
 2. **Endpoint Selection**: The provider automatically selects the appropriate endpoint
    - `Generate()` → Uses `/v1/completions` endpoint

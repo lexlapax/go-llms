@@ -152,8 +152,10 @@ Configure providers at creation time:
 
 ```go
 // Common options across providers
+// IMPORTANT: For OpenAI-compatible providers, only provide the base URL
+// The provider automatically appends /v1/chat/completions
 provider := provider.NewOpenAIProvider(apiKey, model,
-    domain.NewBaseURLOption("https://custom-endpoint.com"),
+    domain.NewBaseURLOption("https://custom-endpoint.com"), // NOT .../v1
     domain.NewHTTPClientOption(customHTTPClient),
     domain.NewTimeoutOption(30000), // 30 seconds
     domain.NewHeadersOption(map[string]string{
@@ -210,6 +212,39 @@ stream, _ := openai.Stream(ctx, "Tell me a story")
 for chunk := range stream {
     fmt.Print(chunk)
 }
+```
+
+### OpenAI-Compatible Providers
+
+Many providers implement the OpenAI API specification. Use the OpenAI provider with a custom base URL:
+
+```go
+// IMPORTANT: Only provide the base URL without /v1 or /v1/chat/completions
+// The provider automatically appends these paths
+
+// LM Studio (local)
+lmstudio := provider.NewOpenAIProvider("", "local-model",
+    domain.NewBaseURLOption("http://localhost:1234"), // NOT .../v1
+)
+
+// vLLM (self-hosted)
+vllm := provider.NewOpenAIProvider("", "model-name",
+    domain.NewBaseURLOption("http://localhost:8000"), // NOT .../v1
+)
+
+// OpenRouter (requires API key)
+openrouter := provider.NewOpenRouterProvider("api-key", "openai/gpt-4o",
+    // Uses https://openrouter.ai/api automatically
+    domain.NewHeadersOption(map[string]string{
+        "HTTP-Referer": "https://your-app.com",
+        "X-Title": "Your App",
+    }),
+)
+
+// Custom OpenAI-compatible API
+custom := provider.NewOpenAIProvider("api-key", "model",
+    domain.NewBaseURLOption("https://api.example.com"), // NOT .../v1
+)
 ```
 
 ### Anthropic

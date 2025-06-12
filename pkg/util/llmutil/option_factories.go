@@ -341,6 +341,20 @@ func CreateOptionFactoryFromEnv(providerType, useCase string) []domain.ProviderO
 			factoryOptions = WithOllamaDefaultOptions()
 		}
 
+	case "openrouter":
+		// OpenRouter uses OpenAI API compatibility, so we can use similar options
+		switch useCase {
+		case "streaming":
+			factoryOptions = WithStreamingOptions()
+		case "performance":
+			factoryOptions = WithPerformanceOptions()
+		case "reliability":
+			factoryOptions = WithReliabilityOptions()
+		default:
+			// Default options for OpenRouter
+			factoryOptions = []domain.ProviderOption{}
+		}
+
 	default:
 		// For unknown providers, just use common options based on use case
 		switch useCase {

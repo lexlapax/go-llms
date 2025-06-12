@@ -97,6 +97,9 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 	case "ollama":
 		llmProvider = provider.NewOllamaProvider(config.Model, options...)
 
+	case "openrouter":
+		llmProvider = provider.NewOpenRouterProvider(config.APIKey, config.Model, options...)
+
 	case "mock":
 		llmProvider = provider.NewMockProvider()
 
@@ -162,6 +165,22 @@ func ProviderFromEnv() (domain.Provider, string, string, error) {
 		// Create provider with options
 		llmProvider := provider.NewGeminiProvider(geminiKey, geminiModel, options...)
 		return llmProvider, "gemini", geminiModel, nil
+	}
+
+	// Check for OpenRouter
+	openRouterKey := GetAPIKeyFromEnv("openrouter")
+	openRouterModel := GetModelFromEnv("openrouter")
+	if openRouterKey != "" {
+		// Use the new option factory approach with environment variables
+		useCase := os.Getenv("OPENROUTER_USE_CASE")
+		if useCase == "" {
+			useCase = "default"
+		}
+		options := CreateOptionFactoryFromEnv("openrouter", useCase)
+
+		// Create provider with options
+		llmProvider := provider.NewOpenRouterProvider(openRouterKey, openRouterModel, options...)
+		return llmProvider, "openrouter", openRouterModel, nil
 	}
 
 	// Check for Ollama (no API key needed)
