@@ -7,14 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.3] - 2025-01-11
+
+### Overview
+
+Go-LLMs v0.3.3 is a major provider expansion release that adds support for three new LLM providers: Ollama for local model hosting, OpenRouter for unified access to 400+ models, and Google Vertex AI for enterprise deployments. This release significantly expands the library's reach, enabling users to run models locally, access a vast array of models through a single API, and deploy in enterprise Google Cloud environments.
+
 ### Added
-- **Ollama Provider Support** (v0.3.3.1 - January 11, 2025)
-  - New `NewOllamaProvider()` convenience function for easy local LLM integration
-  - Model discovery support via `/api/tags` endpoint
-  - Full integration with utility systems (env vars, option factories, CLI)
-  - Ollama-specific error handling including OOM detection
-  - Example application demonstrating Ollama usage
-  - Documentation in user guide and provider implementation guide
+
+#### Ollama Provider Support (v0.3.3.1)
+- New `NewOllamaProvider()` convenience function for easy local LLM integration
+- Model discovery support via `/api/tags` endpoint
+- Full integration with utility systems (env vars, option factories, CLI)
+- Ollama-specific error handling including OOM detection
+- Example application demonstrating Ollama usage
+- Documentation in user guide and provider implementation guide
+
+#### OpenRouter Provider Support (v0.3.3.2)
+- New `NewOpenRouterProvider()` with access to 400+ models from various providers
+- Automatic model discovery via `/api/v1/models` endpoint
+- Support for 68 free models without API costs
+- Full streaming support with OpenAI-compatible API
+- Cost-optimized model selection and automatic fallbacks
+- Privacy-focused options (no logging by default)
+- Example demonstrating multi-model usage and free tier access
+- Comprehensive integration tests and documentation
+
+#### Google Vertex AI Provider Support (v0.3.3.3)
+- New `NewVertexAIProvider()` for enterprise Google Cloud deployments
+- OAuth2 authentication with service account and ADC support
+- Access to Google's Gemini models and partner models (Claude via Vertex)
+- Regional deployment support for data residency requirements
+- IAM integration for fine-grained access control
+- Full multimodal support with Gemini models
+- Streaming responses with Server-Sent Events
+- Model discovery with hardcoded catalog (no public API available)
+- Comprehensive example showing authentication methods and regional deployment
+- Enterprise-focused documentation with IAM setup instructions
+
+### Changed
+- Enhanced documentation for OpenAI-compatible providers clarifying base URL usage
+- Updated all provider integration points (CLI, config, utilities) to support new providers
+- Expanded environment variable support for provider-specific configurations
+
+### Documentation
+- Added dedicated sections for each new provider in user guide
+- Updated README with expanded provider list
+- Enhanced provider implementation guide with new provider examples
+- Added enterprise deployment guidance for Vertex AI
 
 ## [v0.3.2] - 2025-01-11
 

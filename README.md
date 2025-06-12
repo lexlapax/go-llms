@@ -18,12 +18,12 @@ A lightweight Go library providing a simplified, unified interface to interact w
 
 See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
 
-### v0.3.3 (January 11, 2025) - OpenRouter Provider
-- Added OpenRouter provider with access to 400+ models
-- Supports 68 free models from various providers
-- Automatic model discovery and fetcher integration
-- Full OpenAI-compatible API support
-- Enhanced documentation for base URL configuration
+### v0.3.3 (January 11, 2025) - Major Provider Expansion
+- **Ollama**: Local model hosting with GPU acceleration and model management
+- **OpenRouter**: Access to 400+ models (68 free) from multiple providers via unified API
+- **Vertex AI**: Enterprise Google Cloud deployment with Gemini and partner models (Claude)
+- Full integration with utilities, CLI, and configuration systems
+- Enhanced documentation for all new providers
 
 ### v0.3.2 (January 11, 2025) - Documentation Update
 - Complete documentation restructuring for better user experience
