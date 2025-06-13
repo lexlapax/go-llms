@@ -9,36 +9,34 @@ A lightweight Go library providing a simplified, unified interface to interact w
 - **Agent system** with state management, hooks, and workflow patterns
 - **32 built-in tools** for web, file, system, data, datetime, and feed operations
 - **Tool enhancement** with LLM guidance metadata and MCP (Model Context Protocol) support
-- **Tool discovery** (v0.3.4+) with metadata-first exploration without imports
+- **Tool discovery system** (v0.3.4+) with metadata-first exploration and scripting bridge integration
 - **Multimodal content** support for text, images, files, videos, and audio
 - **Multi-provider strategies** including fastest, primary, and consensus approaches
 - **Type-safe configuration** with interface-based provider options
 - **Minimal dependencies** leveraging Go's standard library
 
-## What's New in v0.3.3
+## What's New in v0.3.4
 
 See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
+
+### v0.3.4 (June 13, 2025) - Tool Discovery System 🔍
+- **Metadata-First Discovery**: Explore 33+ tools without imports - perfect for scripting engines
+- **Lazy Loading**: Factory pattern with on-demand tool instantiation using build tags
+- **Bridge Integration**: Designed for go-llmspell Lua/JavaScript bridges 
+- **Rich Metadata Access**: Get schemas, examples, help text without tool instances
+- **Performance**: Excellent benchmarks with thread-safe concurrent access
+- **Complete Documentation**: Enhanced examples and technical guides
 
 ### v0.3.3 (January 11, 2025) - Major Provider Expansion
 - **Ollama**: Local model hosting with GPU acceleration and model management
 - **OpenRouter**: Access to 400+ models (68 free) from multiple providers via unified API
 - **Vertex AI**: Enterprise Google Cloud deployment with Gemini and partner models (Claude)
 - Full integration with utilities, CLI, and configuration systems
-- Enhanced documentation for all new providers
 
 ### v0.3.2 (January 11, 2025) - Documentation Update
 - Complete documentation restructuring for better user experience
 - Modularized API documentation with dedicated files for each component
-- Improved user guide following natural learning progression
 - Enhanced technical documentation with new guides for providers and tools
-- Consolidated redundant content and improved cross-linking
-
-### v0.3.1 (January 10, 2025) - Tool System Enhancement
-- Enhanced ToolBuilder pattern for all 32 built-in tools
-- Comprehensive LLM guidance metadata (examples, constraints, error handling)
-- MCP (Model Context Protocol) compatibility
-- Advanced authentication support for web tools
-- Performance improvements
 
 ## Installation
 
@@ -87,16 +85,23 @@ result, err := agent.Run(context.Background(), state)
 ### Tool Discovery (v0.3.4+)
 
 ```go
-// Discover tools without imports
+// Discover tools without imports - perfect for scripting engines
 discovery := tools.NewDiscovery()
 
-// List all available tools
+// List all 33+ available tools
 for _, tool := range discovery.ListTools() {
-    fmt.Printf("%s: %s\n", tool.Name, tool.Description)
+    fmt.Printf("%s (%s): %s\n", tool.Name, tool.Category, tool.Description)
 }
 
-// Search and create tools dynamically
+// Search tools by keyword, category, or tags
 jsonTools := discovery.SearchTools("json")
+mathTools := discovery.ListByCategory("math")
+
+// Get rich metadata before creating tools
+schema, _ := discovery.GetToolSchema("calculator")
+examples, _ := discovery.GetToolExamples("calculator")
+
+// Lazy tool instantiation only when needed
 calculator, _ := discovery.CreateTool("calculator")
 ```
 
@@ -128,6 +133,7 @@ result, err := provider.GenerateWithSchema(
 - [Getting Started Guide](docs/user-guide/getting-started.md) - Quick start and basic concepts
 - [User Guide](docs/user-guide/README.md) - Complete user documentation
 - [Tools & Components](docs/user-guide/tools.md) - Built-in tools and components
+- [Tool Discovery API](docs/technical/tool-discovery-api.md) - **NEW**: Metadata-first discovery system
 - [Examples Gallery](docs/user-guide/examples-gallery.md) - Usage examples
 - [API Reference](docs/api/README.md) - Complete API documentation
 - [Technical Documentation](docs/technical/README.md) - Architecture and implementation details

@@ -11,6 +11,7 @@ This directory contains technical documentation for the Go-LLMs library, intende
 - [Architecture Overview](architecture.md) - System design, component structure, and data flow patterns
 - [Agent Architecture](agents.md) - Agent system implementation details and patterns
 - [Tool Development](tool-development.md) - Internal tool architecture and development patterns
+- [Tool Discovery API](tool-discovery-api.md) - Metadata-first tool discovery system for scripting engines
 - [Built-in Components](built-in-components.md) - Registry system and component patterns
 
 ## Implementation Guides
@@ -52,8 +53,9 @@ This directory contains technical documentation for the Go-LLMs library, intende
 
 ### For Tool Developers
 1. Study [Tool Development](tool-development.md)
-2. Review [Built-in Components](built-in-components.md)
-3. Understand [Agent Architecture](agents.md)
+2. Learn [Tool Discovery API](tool-discovery-api.md) for scripting integration
+3. Review [Built-in Components](built-in-components.md)
+4. Understand [Agent Architecture](agents.md)
 
 ### For Performance Optimization
 1. Read [Performance Optimization](performance.md)

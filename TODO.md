@@ -133,51 +133,9 @@
   - [ ] Include endpoint configuration
 
 ## v0.3.4: Enhanced Tool Capabilities
-### 0.3.4.1 Advanced Tool features - Runtime Tool Discovery for Scripting Engines
-- [ ] Design metadata-first tool registry system
-  - [ ] Create `ToolMetadata` struct with Name, Description, Category, Tags, Schemas, Examples
-  - [ ] Design separation between tool metadata and implementation
-  - [ ] Plan schema storage format that's script-friendly (JSON)
+### 0.3.4.1 Advanced Tool features - Runtime Tool Discovery for Scripting Engines ✅ COMPLETED (June 13, 2025)
   
-- [ ] Implement metadata extraction and generation
-  - [ ] Create tool metadata extraction tool in `internal/toolgen/`
-  - [ ] Parse tool files to extract metadata from ToolBuilder calls
-  - [ ] Generate `pkg/agent/tools/registry_metadata.go` with compile-time metadata
-  - [ ] Add `//go:generate` directive to regenerate on changes
-  
-- [ ] Implement tool factory pattern
-  - [ ] Create `ToolFactory` type for on-demand tool instantiation
-  - [ ] Modify existing tools to register both metadata and factory function
-  - [ ] Ensure factories are registered in init() but tools aren't instantiated
-  - [ ] Add factory registration to tool builder pattern
-  
-- [ ] Create script-friendly discovery API
-  - [ ] Implement `ToolDiscovery` interface in `pkg/agent/tools/discovery.go`
-  - [ ] Add `ListTools()` method returning all tool metadata without imports
-  - [ ] Add `SearchTools(query)` for filtering by category, tags, description
-  - [ ] Add `GetToolSchema(name)` for detailed parameter/output schemas
-  - [ ] Add `GetToolExamples(name)` for retrieving usage examples
-  - [ ] Add `CreateTool(name)` for lazy tool instantiation
-  
-- [ ] Enhance registry for scripting use cases
-  - [ ] Add global `GetToolMetadata()` function for bridge access
-  - [ ] Implement tool search/filter capabilities
-  - [ ] Add category-based tool grouping
-  - [ ] Support tag-based tool discovery
-  
-- [ ] Create examples and documentation
-  - [ ] Document the new discovery API usage
-  - [ ] Create example showing tool listing without imports
-  - [ ] Add example of dynamic tool loading in scripts
-  - [ ] Document metadata schema format for bridge developers
-  
-- [ ] Testing and validation
-  - [ ] Unit tests for metadata extraction
-  - [ ] Tests for factory pattern and lazy loading
-  - [ ] Integration tests for discovery API
-  - [ ] Benchmark to ensure no performance regression
-  
-### 0.3.4.2: Web API Client Advanced Features 
+### 0.3.4.5: Web API Client Advanced Features 
 - [ ] Auto-Pagination: Automatically follow pagination links
 - [ ] Rate Limiting: Respect rate limit headers with intelligent backoff
 - [ ] Response Caching: Cache responses with configurable TTL
@@ -190,7 +148,7 @@
 - [ ] Multi-tenancy: Support multiple API configurations
 - [ ] Request Batching: Batch multiple requests for efficiency
 
-### 0.3.4.3: Authentication System Improvements 
+### 0.3.4.6: Authentication System Improvements 
 - [ ] Create AuthProvider interface with Name(), CanHandle(), Configure() methods
 - [ ] Implement AuthRegistry for managing multiple providers
 - [ ] Add configuration file support for custom auth mappings (YAML/JSON)

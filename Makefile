@@ -50,7 +50,7 @@ NC=\033[0m # No Color
 	bench bench-all bench-pkg bench-specific \
 	profile profile-cpu profile-mem \
 	coverage coverage-pkg coverage-view \
-	lint fmt vet quality check \
+	lint fmt vet quality check generate \
 	deps clean clean-all \
 	dev watch
 
@@ -271,6 +271,12 @@ coverage-view: coverage
 quality: fmt vet lint
 	@echo "$(GREEN)✓ Code quality checks passed!$(NC)"
 
+# Generate code (tool metadata)
+generate:
+	@echo "$(GREEN)Generating tool metadata...$(NC)"
+	$(GOCMD) generate ./pkg/agent/tools
+	@echo "$(GREEN)✓ Tool metadata generated successfully!$(NC)"
+
 # Format code
 fmt:
 	@echo "$(GREEN)Formatting code...$(NC)"
@@ -369,6 +375,7 @@ help:
 	@echo ""
 	@echo "$(GREEN)Code Quality:$(NC)"
 	@echo "  $(YELLOW)make quality$(NC)       Run all code quality checks"
+	@echo "  $(YELLOW)make generate$(NC)      Generate tool metadata"
 	@echo "  $(YELLOW)make coverage$(NC)      Generate coverage report"
 	@echo "  $(YELLOW)make coverage-view$(NC) Generate and open coverage report"
 	@echo ""

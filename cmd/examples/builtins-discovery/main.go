@@ -1,10 +1,11 @@
-// ABOUTME: Example demonstrating usage of built-in components including tools, agents, and workflows
-// ABOUTME: Shows how to discover, configure, and use pre-built components from the registry
+// ABOUTME: Example demonstrating both legacy and new discovery APIs for built-in tools
+// ABOUTME: Shows metadata-first discovery for scripting engines and traditional import-based usage
 
 package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -20,6 +21,7 @@ import (
 	_ "github.com/lexlapax/go-llms/pkg/agent/builtins/tools/web"      // Import for side effects (registration)
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	agentDomain "github.com/lexlapax/go-llms/pkg/agent/domain"
+	discoveryTools "github.com/lexlapax/go-llms/pkg/agent/tools"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
 )
 
@@ -101,8 +103,15 @@ func createToolContext(ctx context.Context) *agentDomain.ToolContext {
 }
 
 func main() {
-	// Display registry summary
-	fmt.Println("=== Built-in Components Registry ===")
+	// Demonstrate NEW discovery API (v0.3.4+) - NO IMPORTS NEEDED!
+	fmt.Println("=== NEW Discovery API (v0.3.4+) - Metadata-First Approach ===")
+	fmt.Println("Perfect for scripting engines and dynamic environments!")
+	fmt.Println()
+
+	demonstrateNewDiscoveryAPI()
+
+	// Display legacy registry summary
+	fmt.Println("=== Legacy Registry API (with imports) ===")
 	fmt.Println()
 
 	// List all registered tools
@@ -290,4 +299,163 @@ func main() {
 			}
 		}
 	}
+}
+
+// demonstrateNewDiscoveryAPI shows the new metadata-first discovery system
+func demonstrateNewDiscoveryAPI() {
+	// Get the discovery instance - NO IMPORTS NEEDED!
+	discovery := discoveryTools.NewDiscovery()
+
+	// 1. List all available tools without importing them
+	fmt.Println("1. Listing all available tools (no imports required):")
+	allTools := discovery.ListTools()
+	fmt.Printf("   Found %d tools available\n", len(allTools))
+
+	// Show first few tools as example
+	fmt.Println("   First 5 tools:")
+	for i, tool := range allTools {
+		if i >= 5 {
+			break
+		}
+		fmt.Printf("   - %s (%s): %s\n", tool.Name, tool.Category, tool.Description)
+	}
+	fmt.Println()
+
+	// 2. Search tools by keyword
+	fmt.Println("2. Searching tools by keyword:")
+	jsonTools := discovery.SearchTools("json")
+	fmt.Printf("   Tools related to 'json': %d\n", len(jsonTools))
+	for _, tool := range jsonTools {
+		fmt.Printf("   - %s: %s (tags: %v)\n", tool.Name, tool.Description, tool.Tags)
+	}
+	fmt.Println()
+
+	// 3. Filter by category
+	fmt.Println("3. Filtering tools by category:")
+	mathTools := discovery.ListByCategory("math")
+	fmt.Printf("   Math tools: %d\n", len(mathTools))
+	for _, tool := range mathTools {
+		fmt.Printf("   - %s: %s\n", tool.Name, tool.Description)
+	}
+	fmt.Println()
+
+	// 4. Get detailed tool schema without creating the tool
+	fmt.Println("4. Getting tool schema (no tool creation):")
+	schema, err := discovery.GetToolSchema("calculator")
+	if err != nil {
+		fmt.Printf("   Error: %v\n", err)
+	} else {
+		fmt.Printf("   Tool: %s\n", schema.Name)
+		fmt.Printf("   Description: %s\n", schema.Description)
+		if schema.Parameters != nil {
+			params, _ := json.MarshalIndent(schema.Parameters, "   ", "  ")
+			fmt.Printf("   Parameters:\n%s\n", params)
+		}
+	}
+	fmt.Println()
+
+	// 5. Get tool examples
+	fmt.Println("5. Getting tool examples:")
+	examples, err := discovery.GetToolExamples("calculator")
+	if err != nil {
+		fmt.Printf("   Error: %v\n", err)
+	} else {
+		fmt.Printf("   Calculator examples: %d\n", len(examples))
+		for i, ex := range examples {
+			if i >= 2 { // Show only first 2 examples
+				break
+			}
+			fmt.Printf("   - %s: %s\n", ex.Name, ex.Description)
+			if ex.Input != nil {
+				input, _ := json.Marshal(ex.Input)
+				fmt.Printf("     Input: %s\n", input)
+			}
+			if ex.Output != nil {
+				output, _ := json.Marshal(ex.Output)
+				fmt.Printf("     Output: %s\n", output)
+			}
+		}
+	}
+	fmt.Println()
+
+	// 6. Dynamic tool loading (lazy instantiation)
+	fmt.Println("6. Dynamic tool loading:")
+	tool, err := discovery.CreateTool("calculator")
+	if err != nil {
+		// This is expected without build tags
+		fmt.Printf("   Tool not loaded (expected): %v\n", err)
+		fmt.Println("   To load tools, compile with: go build -tags=tools")
+	} else {
+		fmt.Printf("   Successfully loaded tool: %s\n", tool.Name())
+	}
+	fmt.Println()
+
+	// 7. Get comprehensive tool help
+	fmt.Println("7. Getting tool help text:")
+	help, err := discovery.GetToolHelp("datetime_now")
+	if err != nil {
+		fmt.Printf("   Error: %v\n", err)
+	} else {
+		fmt.Printf("   Help for datetime_now:\n")
+		// Show first few lines of help
+		lines := help
+		if len(lines) > 200 {
+			lines = lines[:200] + "..."
+		}
+		fmt.Printf("%s\n", lines)
+	}
+	fmt.Println()
+
+	// 8. Demonstrate scripting bridge use case
+	fmt.Println("8. Scripting bridge example (how go-llmspell would use this):")
+	metadata := discoveryTools.GetToolMetadata()
+	fmt.Printf("   Total metadata entries: %d\n", len(metadata))
+
+	// Simulate exposing to a scripting engine
+	scriptData := make(map[string]interface{})
+	for name, info := range metadata {
+		toolData := map[string]interface{}{
+			"name":        name,
+			"description": info.Description,
+			"category":    info.Category,
+			"tags":        info.Tags,
+		}
+
+		// Parse schemas for script access
+		if len(info.ParameterSchema) > 0 {
+			var params interface{}
+			if err := json.Unmarshal(info.ParameterSchema, &params); err == nil {
+				toolData["parameters"] = params
+			}
+		}
+
+		scriptData[name] = toolData
+	}
+
+	fmt.Printf("   Exposed %d tools to scripting engine\n", len(scriptData))
+	fmt.Println("   Each tool includes: name, description, category, tags, parameters")
+	fmt.Println()
+
+	// 9. Show category statistics from discovery
+	fmt.Println("9. Category statistics from discovery:")
+	categoryStats := make(map[string]int)
+	for _, tool := range allTools {
+		categoryStats[tool.Category]++
+	}
+
+	for category, count := range categoryStats {
+		fmt.Printf("   %s: %d tools\n", category, count)
+	}
+	fmt.Println()
+
+	fmt.Println("=== Key Benefits of New Discovery API ===")
+	fmt.Println("✓ No imports required - perfect for scripting engines")
+	fmt.Println("✓ Metadata-first - explore tools before loading")
+	fmt.Println("✓ Lazy loading - create tools only when needed")
+	fmt.Println("✓ Search and filter - find tools by keyword, category, tags")
+	fmt.Println("✓ Schema access - get parameter/output schemas without tool instances")
+	fmt.Println("✓ Examples - see usage examples before tool creation")
+	fmt.Println("✓ Help generation - get formatted help text")
+	fmt.Println("✓ Bridge-friendly - designed for go-llmspell integration")
+	fmt.Println()
 }

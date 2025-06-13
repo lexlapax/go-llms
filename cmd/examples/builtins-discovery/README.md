@@ -76,28 +76,54 @@ for _, entry := range tools.Tools.List() {
 }
 ```
 
-### Enhanced Discovery (v0.3.4+)
-The new discovery system allows metadata-first exploration without imports:
+### New Discovery API (v0.3.4+)
+The metadata-first discovery system enables tool exploration without imports:
 ```go
-// Create discovery instance (no imports needed!)
-discovery := tools.NewDiscovery()
+import discoveryTools "github.com/lexlapax/go-llms/pkg/agent/tools"
 
-// List all available tools without loading them
+// Create discovery instance (no tool imports needed!)
+discovery := discoveryTools.NewDiscovery()
+
+// 1. List all available tools without loading them
 availableTools := discovery.ListTools()
 fmt.Printf("Found %d tools available\n", len(availableTools))
 
-// Search tools by keyword
+// 2. Search tools by keyword
 jsonTools := discovery.SearchTools("json")
-fmt.Printf("Tools that work with JSON: %d\n", len(jsonTools))
+for _, tool := range jsonTools {
+    fmt.Printf("- %s: %s (tags: %v)\n", tool.Name, tool.Description, tool.Tags)
+}
 
-// Get tool details without creating it
+// 3. Filter by category
+mathTools := discovery.ListByCategory("math")
+
+// 4. Get tool schema without creating the tool
 schema, _ := discovery.GetToolSchema("calculator")
+fmt.Printf("Parameters: %+v\n", schema.Parameters)
+
+// 5. Get examples before using
 examples, _ := discovery.GetToolExamples("calculator")
+for _, ex := range examples {
+    fmt.Printf("Example: %s\n", ex.Name)
+}
 
-// Create tools only when needed
-calculator, _ := discovery.CreateTool("calculator")
+// 6. Get formatted help text
+help, _ := discovery.GetToolHelp("datetime_now")
+fmt.Println(help)
 
-// Perfect for scripting engines and dynamic environments
+// 7. Create tools only when needed (lazy loading)
+calculator, err := discovery.CreateTool("calculator")
+if err != nil {
+    // Tool not loaded (expected without -tags=tools)
+    fmt.Printf("Tool not available: %v\n", err)
+}
+
+// 8. Perfect for scripting engines
+metadata := discoveryTools.GetToolMetadata()
+for name, info := range metadata {
+    // Expose to Lua/JavaScript bridge
+    exposeToScript(name, info)
+}
 ```
 
 ### Using Tools

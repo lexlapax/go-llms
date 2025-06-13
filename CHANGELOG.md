@@ -7,6 +7,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.4] - 2025-06-13
+
+### Overview
+
+Go-LLMs v0.3.4 introduces the groundbreaking Tool Discovery System, a metadata-first approach that enables dynamic tool exploration without imports. This release is specifically designed for scripting engines like go-llmspell, providing seamless bridge integration for Lua/JavaScript environments while maintaining excellent performance and comprehensive tooling.
+
+### Added
+
+#### Tool Discovery System (v0.3.4.1)
+- **Metadata-First Discovery**: Explore 33+ tools without requiring package imports
+- **Lazy Loading**: Factory pattern with on-demand tool instantiation
+- **Build Tag Isolation**: Avoid import cycles and compilation bloat using conditional builds
+- **Rich Metadata Access**: Get schemas, examples, and help text without tool instances
+- **Bridge Integration**: Perfect for go-llmspell Lua/JavaScript bridges
+
+#### Core Discovery API
+- `ToolDiscovery` interface in `pkg/agent/tools/discovery.go`
+- `ListTools()` - Return all available tools without loading them
+- `SearchTools(query)` - Filter by keyword, category, tags, description
+- `GetToolSchema(name)` - Detailed parameter/output schemas
+- `GetToolExamples(name)` - Usage examples with input/output
+- `CreateTool(name)` - Lazy tool instantiation
+- `GetToolHelp(name)` - Formatted help text generation
+
+#### Enhanced Registry Features
+- Global `GetToolMetadata()` function for bridge access
+- Category-based tool grouping with `ListByCategory()`
+- Tag-based tool discovery and search capabilities
+- Tool factories with actual constructor function names
+- Metadata extraction from ToolBuilder calls via AST parsing
+
+#### Code Generation System
+- AST-based tool metadata extractor in `internal/toolgen/`
+- Generated `pkg/agent/tools/registry_metadata.go` with compile-time metadata
+- Generated `pkg/agent/tools/registry_factories.go` with conditional imports
+- `//go:generate` directive for automatic regeneration
+- `make generate` target for easy metadata updates
+
+### Enhanced
+
+#### Examples and Documentation
+- **Enhanced builtins-discovery example**: Comprehensive demonstrations of both new discovery API and legacy registry
+- **Technical documentation**: Complete API reference at `docs/technical/tool-discovery-api.md`
+- **Integration examples**: Shows metadata-first exploration, lazy loading, and scripting bridge patterns
+- **Migration guidance**: Clear comparison between legacy and new approaches
+
+#### Testing and Quality
+- **Unit tests**: Comprehensive coverage for metadata extraction and factory pattern
+- **Integration tests**: Full discovery API testing (moved to `tests/integration/`)
+- **Benchmark tests**: Performance validation ensuring no regression (moved to `tests/benchmarks/`)
+- **Code quality**: All lint errors fixed, proper file organization
+
+### Performance
+
+#### Benchmark Results
+- **ListTools**: ~5μs per operation with minimal allocations (1 alloc)
+- **SearchTools**: ~14μs per operation for keyword searches (36 allocs)
+- **ListByCategory**: Very fast at ~550ns per operation (1 alloc)
+- **Schema operations**: 35-70μs for complex schema access (241 allocs)
+- **Concurrent access**: Excellent scalability with thread-safe operations
+
+### Key Benefits
+
+#### For Scripting Engines (go-llmspell)
+- **Zero Imports**: Explore tools without package dependencies
+- **Metadata Access**: Get schemas, examples, help without tool instances
+- **Lazy Loading**: Create tools only when actually needed
+- **Build Tag Safe**: Avoid import cycles and compilation issues
+- **Bridge Friendly**: Designed for Lua/JavaScript integration
+
+#### For Developers
+- **Dynamic Discovery**: Find tools at runtime based on needs
+- **Rich Metadata**: Access parameter schemas, examples, constraints
+- **Help Generation**: Get formatted documentation for any tool
+- **Search & Filter**: Find tools by keyword, category, or tags
+- **Performance**: No upfront tool loading costs
+
+### Technical Architecture
+
+#### Metadata-First Design
+- Tool metadata separated from implementation
+- JSON-based schema storage for script accessibility
+- Factory pattern enables lazy instantiation
+- Build tags prevent unwanted imports in scripting environments
+
+#### Bridge Integration Pattern
+```go
+// Perfect for scripting engines
+metadata := tools.GetToolMetadata()
+for name, info := range metadata {
+    // Expose to Lua/JavaScript bridge
+    bridge.ExposeToolMetadata(name, info)
+}
+```
+
+### Documentation
+- Complete API reference with examples and integration patterns
+- Enhanced technical documentation index with proper navigation
+- Migration guide from legacy registry approach
+- Bridge integration examples for go-llmspell
+
+### Changed
+- Updated technical documentation index to include Tool Discovery API
+- Enhanced examples to demonstrate both legacy and new approaches
+- Improved project structure with proper test organization
+
 ## [v0.3.3] - 2025-01-11
 
 ### Overview

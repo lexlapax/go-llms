@@ -1,5 +1,66 @@
 # Go-LLMs Completed Tasks
 
+## v0.3.4.1: Advanced Tool features - Runtime Tool Discovery for Scripting Engines ✅ COMPLETED (June 13, 2025)
+- [x] Design metadata-first tool registry system
+  - [x] Create `ToolMetadata` struct with Name, Description, Category, Tags, Schemas, Examples
+  - [x] Design separation between tool metadata and implementation
+  - [x] Plan schema storage format that's script-friendly (JSON)
+  
+- [x] Implement metadata extraction and generation
+  - [x] Create tool metadata extraction tool in `internal/toolgen/`
+  - [x] Parse tool files to extract metadata from ToolBuilder calls
+  - [x] Generate `pkg/agent/tools/registry_metadata.go` with compile-time metadata
+  - [x] Add `//go:generate` directive to regenerate on changes
+  - [x] Add `make generate` target to Makefile for easy regeneration
+  
+- [x] Implement tool factory pattern
+  - [x] Create `ToolFactory` type for on-demand tool instantiation
+  - [x] Extract actual constructor function names during generation
+  - [x] Generate factories that use the correct function names
+  - [x] Ensure factories are registered in init() but tools aren't instantiated
+  - [x] Add factory registration with build tags to avoid import cycles
+  
+- [x] Create script-friendly discovery API
+  - [x] Implement `ToolDiscovery` interface in `pkg/agent/tools/discovery.go`
+  - [x] Add `ListTools()` method returning all tool metadata without imports
+  - [x] Add `SearchTools(query)` for filtering by category, tags, description
+  - [x] Add `GetToolSchema(name)` for detailed parameter/output schemas
+  - [x] Add `GetToolExamples(name)` for retrieving usage examples
+  - [x] Add `CreateTool(name)` for lazy tool instantiation
+  
+- [x] Enhance registry for scripting use cases
+  - [x] Add global `GetToolMetadata()` function for bridge access
+  - [x] Implement tool search/filter capabilities (SearchTools)
+  - [x] Add category-based tool grouping (ListByCategory)
+  - [x] Support tag-based tool discovery (SearchTools searches tags)
+  
+- [x] Create examples and documentation
+  - [x] Document the new discovery API usage
+  - [x] Create example showing tool listing without imports
+  - [x] Add example of dynamic tool loading in scripts
+  - [x] Document metadata schema format for bridge developers
+  - [x] Enhanced builtins-discovery example with comprehensive demonstrations
+  - [x] Created technical documentation: `docs/technical/tool-discovery-api.md`
+  - [x] Updated technical documentation index with proper navigation
+  
+- [x] Testing and validation
+  - [x] Unit tests for metadata extraction
+  - [x] Tests for factory pattern and lazy loading
+  - [x] Integration tests for discovery API (moved to `tests/integration/`)
+  - [x] Benchmark to ensure no performance regression (moved to `tests/benchmarks/`)
+  - [x] All tests passing with excellent performance metrics
+  - [x] Fixed lint errors and code quality issues
+  - [x] Removed incorrectly placed example files
+
+**Key Achievements:**
+- **Metadata-First Discovery**: Explore 33+ tools without any imports
+- **Lazy Loading**: Create tools only when needed with factory pattern
+- **Bridge Integration**: Perfect for go-llmspell Lua/JavaScript bridges
+- **Build Tag Isolation**: Avoid import cycles and compilation bloat
+- **Rich Metadata Access**: Schemas, examples, help text available without tool instances
+- **Performance Validated**: All operations perform well with reasonable memory usage
+- **Production Ready**: Complete with documentation, examples, and comprehensive test coverage
+
 ## v0.3.3.3: Google Vertex AI provider (Completed - January 11, 2025)
 - [x] Implement REST API-based Vertex AI provider
   - [x] Create `pkg/llm/provider/vertexai.go` with REST implementation
