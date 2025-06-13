@@ -339,6 +339,70 @@ fileReader := tools.NewToolBuilder("read-file", "Reads file content").
     Build()
 ```
 
+## Tool Discovery (v0.3.4+)
+
+The enhanced discovery system enables metadata-first tool exploration without requiring imports:
+
+### Discovery API
+
+```go
+// Create discovery instance
+discovery := tools.NewDiscovery()
+
+// List all available tools without imports
+tools := discovery.ListTools()
+for _, info := range tools {
+    fmt.Printf("%s (%s): %s\n", info.Name, info.Category, info.Description)
+}
+
+// Search tools by keyword
+searchResults := discovery.SearchTools("json")
+
+// Filter by category
+webTools := discovery.ListByCategory("web")
+
+// Get tool schema without loading
+schema, err := discovery.GetToolSchema("calculator")
+if err == nil {
+    fmt.Printf("Parameters: %v\n", schema.Parameters)
+    fmt.Printf("Output: %v\n", schema.Output)
+}
+
+// Get tool examples
+examples, err := discovery.GetToolExamples("web_search")
+
+// Create tool on demand
+calculator, err := discovery.CreateTool("calculator")
+if err == nil {
+    result, _ := calculator.Execute(ctx, params)
+}
+
+// Batch creation
+tools, err := discovery.CreateTools("web_fetch", "json_process")
+```
+
+### ToolMetadata Structure
+
+```go
+type ToolMetadata struct {
+    Name            string
+    Description     string
+    Category        string
+    Tags            []string
+    ParameterSchema json.RawMessage  // JSON schema
+    OutputSchema    json.RawMessage  // JSON schema
+    Examples        []Example
+    UsageHint       string
+}
+```
+
+### Use Cases
+
+- **Scripting Engines**: Dynamic tool discovery for Lua/JavaScript bridges
+- **CLI Applications**: Interactive tool exploration without imports
+- **Documentation**: Auto-generated tool catalogs
+- **Reduced Binary Size**: Only import tools you actually use
+
 ## See Also
 
 - [Agent API Reference](agent.md) - Core agent concepts

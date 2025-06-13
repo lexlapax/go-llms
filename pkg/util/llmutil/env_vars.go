@@ -179,7 +179,7 @@ func GetVertexAIOptionsFromEnv() []domain.ProviderOption {
 
 	// Vertex AI doesn't use base URL or API key options since it uses OAuth2
 	// The project ID and location are handled by the provider constructor
-	
+
 	return options
 }
 

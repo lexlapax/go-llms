@@ -204,6 +204,43 @@ if entry, ok := tools.Tools.Get("web_fetch"); ok {
 }
 ```
 
+### Enhanced Discovery (v0.3.4+)
+
+The new metadata-first discovery system allows tool exploration without imports:
+
+```go
+// Create discovery instance (no imports needed)
+discovery := tools.NewDiscovery()
+
+// List all available tools with metadata
+allTools := discovery.ListTools()
+for _, tool := range allTools {
+    fmt.Printf("%s: %s\n", tool.Name, tool.Description)
+    fmt.Printf("  Category: %s, Tags: %v\n", tool.Category, tool.Tags)
+    fmt.Printf("  Parameters: %v\n", tool.ParameterSchema)
+}
+
+// Search tools without loading them
+searchResults := discovery.SearchTools("json processing")
+
+// Get tool schema for validation/documentation
+schema, _ := discovery.GetToolSchema("calculator")
+examples, _ := discovery.GetToolExamples("calculator")
+
+// Create tools only when needed
+calculator, _ := discovery.CreateTool("calculator")
+result, _ := calculator.Execute(ctx, params)
+
+// Batch creation for performance
+tools, _ := discovery.CreateTools("web_fetch", "json_process", "file_write")
+```
+
+This enhancement is particularly valuable for:
+- **Scripting Engines**: Dynamic tool discovery in Lua/JavaScript
+- **CLI Tools**: Interactive tool exploration
+- **Documentation**: Auto-generated tool catalogs
+- **Reduced Binary Size**: Only import what you use
+
 ### Enhanced Functionality Pattern
 
 During migration to built-ins, tools are enhanced with:

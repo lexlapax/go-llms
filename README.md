@@ -9,6 +9,7 @@ A lightweight Go library providing a simplified, unified interface to interact w
 - **Agent system** with state management, hooks, and workflow patterns
 - **32 built-in tools** for web, file, system, data, datetime, and feed operations
 - **Tool enhancement** with LLM guidance metadata and MCP (Model Context Protocol) support
+- **Tool discovery** (v0.3.4+) with metadata-first exploration without imports
 - **Multimodal content** support for text, images, files, videos, and audio
 - **Multi-provider strategies** including fastest, primary, and consensus approaches
 - **Type-safe configuration** with interface-based provider options
@@ -81,6 +82,22 @@ agent.AddTool(file.FileRead())
 state := domain.NewState()
 state.Set("prompt", "Search for Go programming tutorials and save the results")
 result, err := agent.Run(context.Background(), state)
+```
+
+### Tool Discovery (v0.3.4+)
+
+```go
+// Discover tools without imports
+discovery := tools.NewDiscovery()
+
+// List all available tools
+for _, tool := range discovery.ListTools() {
+    fmt.Printf("%s: %s\n", tool.Name, tool.Description)
+}
+
+// Search and create tools dynamically
+jsonTools := discovery.SearchTools("json")
+calculator, _ := discovery.CreateTool("calculator")
 ```
 
 ### Structured Output

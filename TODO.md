@@ -132,8 +132,52 @@
   - [ ] Explain deployment vs model concepts
   - [ ] Include endpoint configuration
 
-## v0.3.5: Enhanced Tool Capabilities
-### 0.3.5.1: Web API Client Advanced Features 
+## v0.3.4: Enhanced Tool Capabilities
+### 0.3.4.1 Advanced Tool features - Runtime Tool Discovery for Scripting Engines
+- [ ] Design metadata-first tool registry system
+  - [ ] Create `ToolMetadata` struct with Name, Description, Category, Tags, Schemas, Examples
+  - [ ] Design separation between tool metadata and implementation
+  - [ ] Plan schema storage format that's script-friendly (JSON)
+  
+- [ ] Implement metadata extraction and generation
+  - [ ] Create tool metadata extraction tool in `internal/toolgen/`
+  - [ ] Parse tool files to extract metadata from ToolBuilder calls
+  - [ ] Generate `pkg/agent/tools/registry_metadata.go` with compile-time metadata
+  - [ ] Add `//go:generate` directive to regenerate on changes
+  
+- [ ] Implement tool factory pattern
+  - [ ] Create `ToolFactory` type for on-demand tool instantiation
+  - [ ] Modify existing tools to register both metadata and factory function
+  - [ ] Ensure factories are registered in init() but tools aren't instantiated
+  - [ ] Add factory registration to tool builder pattern
+  
+- [ ] Create script-friendly discovery API
+  - [ ] Implement `ToolDiscovery` interface in `pkg/agent/tools/discovery.go`
+  - [ ] Add `ListTools()` method returning all tool metadata without imports
+  - [ ] Add `SearchTools(query)` for filtering by category, tags, description
+  - [ ] Add `GetToolSchema(name)` for detailed parameter/output schemas
+  - [ ] Add `GetToolExamples(name)` for retrieving usage examples
+  - [ ] Add `CreateTool(name)` for lazy tool instantiation
+  
+- [ ] Enhance registry for scripting use cases
+  - [ ] Add global `GetToolMetadata()` function for bridge access
+  - [ ] Implement tool search/filter capabilities
+  - [ ] Add category-based tool grouping
+  - [ ] Support tag-based tool discovery
+  
+- [ ] Create examples and documentation
+  - [ ] Document the new discovery API usage
+  - [ ] Create example showing tool listing without imports
+  - [ ] Add example of dynamic tool loading in scripts
+  - [ ] Document metadata schema format for bridge developers
+  
+- [ ] Testing and validation
+  - [ ] Unit tests for metadata extraction
+  - [ ] Tests for factory pattern and lazy loading
+  - [ ] Integration tests for discovery API
+  - [ ] Benchmark to ensure no performance regression
+  
+### 0.3.4.2: Web API Client Advanced Features 
 - [ ] Auto-Pagination: Automatically follow pagination links
 - [ ] Rate Limiting: Respect rate limit headers with intelligent backoff
 - [ ] Response Caching: Cache responses with configurable TTL
@@ -146,7 +190,7 @@
 - [ ] Multi-tenancy: Support multiple API configurations
 - [ ] Request Batching: Batch multiple requests for efficiency
 
-### 0.3.5.2: Authentication System Improvements 
+### 0.3.4.3: Authentication System Improvements 
 - [ ] Create AuthProvider interface with Name(), CanHandle(), Configure() methods
 - [ ] Implement AuthRegistry for managing multiple providers
 - [ ] Add configuration file support for custom auth mappings (YAML/JSON)
@@ -164,33 +208,27 @@
 - [ ] Ensure backward compatibility with existing detectURLSpecificAuth
 - [ ] Add examples and documentation
 
-## v0.3.6: Advanced Agent Features
-### 0.3.6.1 Advanced Tool features
-- [ ] research and figure out tool listing best method one or more of the below:
-  - [ ] Static tool listing method: A function like tools.GetAvailableToolNames() that returns tool names without requiring imports
-  - [ ] Tool manifest: A generated file or constant that lists all available tools and their metadata
-  - [ ] Lazy registration: A way to discover tools without importing all packages, then load them on demand
-
-### 0.3.6.1: State Management 
+## v0.3.5: Advanced Agent Features
+### 0.3.5.1: State Management 
 - [ ] State persistence and serialization design
 - [ ] Implement state storage backends (file, database)
 - [ ] Add state versioning and migration
 - [ ] Create examples with persistent agents
 
-### 0.3.6.2: Agent Discovery
+### 0.3.5.2: Agent Discovery
 - [ ] Agent discovery and registry design
 - [ ] Implement agent metadata and search
 - [ ] Add dynamic agent loading
 - [ ] Create agent marketplace example
 
-### 0.3.6.3: Advanced Features 
+### 0.3.5.3: Advanced Features 
 - [ ] Advanced merge strategies for parallel agents
 - [ ] Streaming support for long-running agents
 - [ ] Agent composition patterns
 - [ ] Agent lifecycle management
 
-## v0.3.7: Model Context Protocol (MCP) Support
-### 0.3.7.1: MCP Client Support 
+## v0.3.6: Model Context Protocol (MCP) Support
+### 0.3.6.1: MCP Client Support 
 - [ ] Research MCP specification and requirements
 - [ ] Design MCP client interface for agents
 - [ ] Implement MCP client in pkg/agent/mcp/client
@@ -199,7 +237,7 @@
 - [ ] Write comprehensive tests
 - [ ] Document MCP client usage in user guide
 
-### 0.3.7.2: MCP Server Support 
+### 0.3.6.2: MCP Server Support 
 - [ ] Design MCP server interface for exposing agents/workflows
 - [ ] Implement MCP server in pkg/agent/mcp/server
 - [ ] Add agent/workflow registration to MCP server
@@ -207,54 +245,54 @@
 - [ ] Write comprehensive tests
 - [ ] Document MCP server setup and configuration
 
-## v0.3.8: Built-in Agents Library
-### 0.3.8.1: Text Processing Agents 
+## v0.3.7: Built-in Agents Library
+### 0.3.7.1: Text Processing Agents 
 - [ ] TextSummarize - intelligent summarization using LLM
 - [ ] TextExtract - extract structured data from text
 - [ ] TextAnalyze - sentiment, entities, keywords
 - [ ] TextTranslate - language translation using LLM
 
-### 0.3.8.2: Research Agents 
+### 0.3.7.2: Research Agents 
 - [ ] WebResearcher - web research with source tracking
 - [ ] DocumentAnalyzer - analyze documents and PDFs
 - [ ] FactChecker - verify claims against sources
 
-### 0.3.8.3: Coding Agents 
+### 0.3.7.3: Coding Agents 
 - [ ] CodeReviewer - review code for issues
 - [ ] TestGenerator - generate tests from code
 - [ ] DocWriter - generate documentation
 
-### 0.3.8.4: Data Agents 
+### 0.3.7.4: Data Agents 
 - [ ] DataAnalyst - analyze datasets and generate insights
 - [ ] ReportGenerator - create formatted reports
 - [ ] DataCleaner - clean and validate data
 
-### 0.3.8.5: Feed Agents 
+### 0.3.7.5: Feed Agents 
 - [ ] NewsMonitor - monitor news feeds for keywords and topics using LLM
 - [ ] FeedAggregator - aggregate and deduplicate content from multiple feeds
 - [ ] FeedSummarizer - summarize feed content using LLM
 - [ ] ContentCurator - curate and categorize feed content using LLM
 
-## v0.3.9: Built-in Workflow Patterns
-### 0.3.9.1: Core Workflow Patterns 
+## v0.3.8: Built-in Workflow Patterns
+### 0.3.8.1: Core Workflow Patterns 
 - [ ] Pipeline - sequential processing workflow
 - [ ] MapReduce - parallel processing with aggregation
 - [ ] Consensus - multi-agent agreement pattern
 - [ ] Retry - with exponential backoff
 
-### 0.3.9.2: Example Workflows 
+### 0.3.8.2: Example Workflows 
 - [ ] ResearchWorkflow - research → verify → summarize → report
 - [ ] CodeReviewWorkflow - analyze → review → suggest → document
 - [ ] DataPipeline - ingest → clean → analyze → visualize
 
 
-## v0.3.10: Performance Optimization
-### 0.3.10.1: Profiling Infrastructure (REVISIT)
+## v0.3.9: Performance Optimization
+### 0.3.9.1: Profiling Infrastructure (REVISIT)
 - [ ] Create benchmark harness for A/B testing optimizations
 - [ ] Implement visualization for memory allocation patterns
 - [ ] Create real-world test scenarios for end-to-end performance
 
-### 0.3.10.2: Advanced Optimizations (REVISIT)
+### 0.3.9.2: Advanced Optimizations (REVISIT)
 - [ ] Implement adaptive channel buffer sizing based on usage patterns
 - [ ] Add pool prewarming for high-throughput scenarios
 - [ ] Reduce redundant property iterations in schema processing
@@ -262,21 +300,21 @@
 - [ ] Optimize zero-initialization patterns for pooled objects
 - [ ] Introduce buffer pooling for string builders
 
-### 0.3.10.3: Performance Validation (REVISIT)
+### 0.3.9.3: Performance Validation (REVISIT)
 - [ ] Document performance improvements with metrics
 - [ ] Verify optimizations in high-concurrency scenarios
 - [ ] Create benchmark comparison charts for before/after
 - [ ] Implement regression testing to prevent performance degradation
 - [ ] Add performance acceptance criteria to CI pipeline
 
-## v0.3.11: Final Polish and Stable Release
-### 0.3.11.1: Documentation Polish
+## v0.3.10: Final Polish and Stable Release
+### 0.3.10.1: Documentation Polish
 - [ ] Fix identified cross-link issues (path inconsistencies, broken links)
 - [ ] Perform final consistency check across all documentation
 - [ ] Update all examples to showcase v0.3.x features
 - [ ] Create migration guide from earlier versions
 
-### 0.3.11.2: API Refinement
+### 0.3.10.2: API Refinement
 - [ ] API refinement based on usage feedback
 - [ ] Deprecate old patterns with migration paths
 - [ ] Ensure backward compatibility where possible

@@ -279,6 +279,98 @@ if tools.Tools.Has("web_search") {
 }
 ```
 
+## Tool Discovery (v0.3.4+)
+
+The enhanced tool discovery system provides metadata-first access to tools without requiring imports:
+
+### Metadata-First Discovery
+
+Tools expose their metadata separately from implementation, enabling discovery without importing tool packages:
+
+```go
+// Get all available tool metadata without imports
+metadata := tools.GetToolMetadata()
+for name, meta := range metadata {
+    fmt.Printf("%s: %s (category: %s)\n", name, meta.Description, meta.Category)
+}
+
+// Search tools by criteria
+discovery := tools.NewDiscovery()
+webTools := discovery.SearchTools("web") // Search by name, description, or tags
+mathTools := discovery.ListByCategory("math")
+```
+
+### Tool Schema Access
+
+Access detailed tool schemas for validation and documentation:
+
+```go
+// Get parameter schema for a specific tool
+schema, err := discovery.GetToolSchema("calculator")
+if err == nil {
+    // Use schema for validation or documentation
+    fmt.Printf("Parameters: %v\n", schema.Parameters)
+    fmt.Printf("Output: %v\n", schema.Output)
+}
+
+// Get examples for a tool
+examples, err := discovery.GetToolExamples("web_search")
+for _, example := range examples {
+    fmt.Printf("Example: %s\n", example.Description)
+    fmt.Printf("Input: %v\n", example.Input)
+    fmt.Printf("Expected: %v\n", example.Output)
+}
+```
+
+### Lazy Tool Loading
+
+Create tools only when needed:
+
+```go
+// List available tools without loading them
+availableTools := discovery.ListTools()
+
+// Load specific tools on demand
+tool, err := discovery.CreateTool("calculator")
+if err == nil {
+    result, _ := tool.Execute(ctx, params)
+}
+
+// Load multiple tools
+tools, err := discovery.CreateTools("calculator", "web_search", "file_read")
+```
+
+### Scripting Integration
+
+The discovery system is designed for scripting engines and dynamic environments:
+
+```go
+// Example integration for scripting bridges
+type ScriptingBridge struct {
+    discovery *tools.ToolDiscovery
+}
+
+func (b *ScriptingBridge) ListTools() []ToolInfo {
+    return b.discovery.ListTools()
+}
+
+func (b *ScriptingBridge) GetToolHelp(name string) (string, error) {
+    schema, err := b.discovery.GetToolSchema(name)
+    if err != nil {
+        return "", err
+    }
+    return schema.GenerateHelp(), nil
+}
+
+func (b *ScriptingBridge) ExecuteTool(name string, params map[string]interface{}) (interface{}, error) {
+    tool, err := b.discovery.CreateTool(name)
+    if err != nil {
+        return nil, err
+    }
+    return tool.Execute(ctx, params)
+}
+```
+
 ## Error Handling
 
 Tools should return meaningful errors with context:

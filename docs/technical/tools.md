@@ -821,6 +821,57 @@ allMCPDefs := tools.Tools.ExportAllToMCP()
 toolCatalog := tools.Tools.GenerateCatalog()
 ```
 
+### Enhanced Tool Discovery (v0.3.4+)
+
+The enhanced discovery system enables tool exploration without imports:
+
+```go
+// Metadata-first discovery
+discovery := tools.NewDiscovery()
+
+// List all available tools without importing them
+allTools := discovery.ListTools()
+for _, tool := range allTools {
+    fmt.Printf("Tool: %s - %s\n", tool.Name, tool.Description)
+    fmt.Printf("  Category: %s\n", tool.Category)
+    fmt.Printf("  Tags: %v\n", tool.Tags)
+}
+
+// Search tools by query
+searchResults := discovery.SearchTools("json")
+
+// Get detailed schema without loading tool
+schema, _ := discovery.GetToolSchema("calculator")
+examples, _ := discovery.GetToolExamples("calculator")
+
+// Create tools on demand
+tool, _ := discovery.CreateTool("calculator")
+```
+
+#### Scripting Bridge Integration
+
+Perfect for dynamic scripting environments like go-llmspell:
+
+```go
+// Lua bridge example
+function listTools()
+    local tools = bridge.discovery:ListTools()
+    for _, tool in ipairs(tools) do
+        print(tool.name .. ": " .. tool.description)
+    end
+end
+
+function useTool(name, params)
+    local tool = bridge.discovery:CreateTool(name)
+    return tool:Execute(params)
+end
+
+// JavaScript bridge example
+const tools = await bridge.discovery.listTools();
+const calculator = await bridge.discovery.createTool('calculator');
+const result = await calculator.execute({ expression: '2 + 2' });
+```
+
 ### MCP (Model Context Protocol) Compatibility
 
 Full MCP export with rich metadata:

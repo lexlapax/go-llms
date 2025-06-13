@@ -47,6 +47,36 @@ fileTools := tools.Tools.ListByCategory("file")
 results := tools.Tools.Search("json")
 ```
 
+### Enhanced Discovery (v0.3.4+)
+
+The new discovery system allows exploring tools without importing them:
+
+```go
+// Create discovery instance
+discovery := tools.NewDiscovery()
+
+// List all tools without imports
+availableTools := discovery.ListTools()
+for _, info := range availableTools {
+    fmt.Printf("%s (%s): %s\n", info.Name, info.Category, info.Description)
+    fmt.Printf("  Tags: %v\n", info.Tags)
+}
+
+// Search tools by keyword
+jsonTools := discovery.SearchTools("json")
+webTools := discovery.SearchTools("web")
+
+// Get tool help without loading it
+help, _ := discovery.GetToolHelp("calculator")
+fmt.Println(help)
+
+// Load tool only when needed
+calculator, _ := discovery.CreateTool("calculator")
+result, _ := calculator.Execute(ctx, params)
+```
+
+This is especially useful for scripting environments where you want to discover tools dynamically.
+
 ## Built-in Tool Categories
 
 ### Web Tools (5 tools)

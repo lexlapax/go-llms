@@ -223,6 +223,10 @@ Pre-built, production-ready components:
 
 **Registries**:
 - Global tool registry with search and filtering
+- Enhanced tool discovery system (v0.3.4+)
+  - Metadata-first discovery without imports
+  - Dynamic tool loading for scripting engines
+  - Schema and example access without instantiation
 - Agent template registry (planned)
 - Workflow pattern registry (planned)
 

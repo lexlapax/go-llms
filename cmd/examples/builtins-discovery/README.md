@@ -76,6 +76,30 @@ for _, entry := range tools.Tools.List() {
 }
 ```
 
+### Enhanced Discovery (v0.3.4+)
+The new discovery system allows metadata-first exploration without imports:
+```go
+// Create discovery instance (no imports needed!)
+discovery := tools.NewDiscovery()
+
+// List all available tools without loading them
+availableTools := discovery.ListTools()
+fmt.Printf("Found %d tools available\n", len(availableTools))
+
+// Search tools by keyword
+jsonTools := discovery.SearchTools("json")
+fmt.Printf("Tools that work with JSON: %d\n", len(jsonTools))
+
+// Get tool details without creating it
+schema, _ := discovery.GetToolSchema("calculator")
+examples, _ := discovery.GetToolExamples("calculator")
+
+// Create tools only when needed
+calculator, _ := discovery.CreateTool("calculator")
+
+// Perfect for scripting engines and dynamic environments
+```
+
 ### Using Tools
 ```go
 // Get a specific tool

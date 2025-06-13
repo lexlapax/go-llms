@@ -301,11 +301,11 @@ func GetOptimizedProvider() (string, string, error) {
 func GetVertexAIConfig() (projectID, location string) {
 	projectID = config.Providers.VertexAI.ProjectID
 	location = config.Providers.VertexAI.Location
-	
+
 	// Default location if not specified
 	if location == "" {
 		location = "us-central1"
 	}
-	
+
 	return projectID, location
 }
