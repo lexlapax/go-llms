@@ -8,7 +8,8 @@ Unified Go interface for LLM providers with agent tooling.
 
 **Status**: v0.3.4.1 Tool Discovery System COMPLETED (June 13, 2025)
 **Providers**: OpenAI, Anthropic, Google (Gemini, Vertex AI), Ollama, OpenRouter  
-**Next**: v0.3.4.5 - Web API Client Advanced Features
+**Current**: v0.3.5 - Scripting Engine Integration Support (go-llmspell requirements)
+**Next**: v0.3.5.1 - Schema Package Implementations
 
 ## Recent Completion: Tool Discovery System ✅
 - Metadata-first tool exploration (33+ tools) without imports
@@ -16,6 +17,15 @@ Unified Go interface for LLM providers with agent tooling.
 - Lazy loading with factory pattern and build tag isolation
 - Comprehensive documentation and examples
 - All tests passing with excellent performance
+
+## Upcoming: v0.3.5 Scripting Integration
+Major focus on go-llmspell requirements:
+- Schema implementations (repositories, generators)
+- Enhanced tool discovery with runtime registration
+- Bridge-friendly type system
+- Event system improvements
+- Workflow serialization
+- Testing infrastructure
 
 ## Commands
 ```bash
