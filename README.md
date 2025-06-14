@@ -156,6 +156,8 @@ The `cmd/examples/` directory contains 40+ examples demonstrating various featur
 - **Agent examples**: Tool usage, workflows, state management, sub-agents
 - **Built-in tools**: Web search, file operations, API client, data processing
 - **Advanced patterns**: Structured output, multimodal content, custom agents
+- **Schema utilities**: Schema generation, schema repository management
+- **Error handling**: Serializable errors with recovery strategies
 
 ## Architecture
 

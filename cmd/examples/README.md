@@ -721,6 +721,52 @@ Type coercion and data conversion.
 cd structured-coercion && go run main.go
 ```
 
+### Schema Management Examples
+
+#### [**Schema Generator**](schema-generator/README.md)
+Advanced schema generation from Go structs.
+
+**Features:**
+- Reflection-based schema generation
+- Tag-based schema generation
+- Custom type handlers
+- Nested struct support
+- Schema versioning
+
+```bash
+cd schema-generator && go run main.go
+```
+
+#### [**Schema Repository**](schema-repository/README.md)
+Schema storage and versioning.
+
+**Features:**
+- In-memory repository with thread safety
+- File-based persistent storage
+- Schema versioning and migration
+- Import/export functionality
+- Schema discovery and search
+
+```bash
+cd schema-repository && go run main.go
+```
+
+### Error Handling Examples
+
+#### [**Errors Serialization**](errors-serialization/README.md)
+Enhanced error handling with serialization and recovery.
+
+**Features:**
+- JSON serializable errors
+- Rich error context with stack traces
+- Recovery strategies (exponential backoff, circuit breaker)
+- Error aggregation for batch operations
+- Error builder pattern
+
+```bash
+cd errors-serialization && go run main.go
+```
+
 ### Utility Examples
 
 #### [**Utils Model Info**](utils-modelinfo/README.md)

@@ -192,29 +192,85 @@
 - [x] Add comprehensive tests for all implementations
 - [x] Create examples demonstrating schema usage
 
-### 0.3.5.2: Enhanced Error Handling (FOUNDATION)
-- [ ] Serializable Error Implementation
-  - [ ] JSON serialization for all errors
-  - [ ] Rich error context
-  - [ ] Stack trace capture
-  - [ ] Variable state at error time
-- [ ] Error Recovery Strategies
-  - [ ] Built-in recovery strategies
-  - [ ] Custom strategy registration
-  - [ ] Retry mechanisms
-  - [ ] Fallback options
-- [ ] Error Context Enhancement
-  - [ ] Automatic context collection
-  - [ ] Custom context providers
-  - [ ] Context filtering
-  - [ ] Sensitive data masking
-- [ ] Error handling tests
-- [ ] Recovery strategy examples
+**DOWNSTREAM REQUIREMENTS SATISFIED**:
+- ✅ `pkg/schema/repository/memory.go` - InMemoryRepository with thread-safe schema storage
+- ✅ `pkg/schema/repository/file.go` - FileRepository with JSON/YAML format support
+- ✅ `pkg/schema/generator/reflection.go` - ReflectionGenerator with configurable options (tagName, includePrivate, maxDepth)
+- ✅ Bridge-friendly factory methods: `NewInMemoryRepository()`, `NewFileRepository()`, `NewReflectionGenerator()`
+- ✅ All implementations follow the domain interfaces exactly as specified in downstream requirements
 
-### 0.3.5.3: Bridge-Friendly Type System (FOUNDATION)
-- [ ] Implement Type Registry
+### 0.3.5.2: Enhanced Error Handling (FOUNDATION) ✅ PARTIAL - Standalone Package Only (June 13, 2025)
+- [x] Serializable Error Package Implementation (pkg/errors)
+  - [x] JSON serialization for errors (BaseError with ToJSON)
+  - [x] Rich error context (map[string]interface{})
+  - [x] Stack trace capture (captureStackTrace with filtering)
+  - [x] Variable state at error time (Context field)
+- [x] Error Recovery Strategies
+  - [x] Built-in recovery strategies (exponential, linear, circuit breaker, fallback)
+  - [x] Custom strategy registration (RecoveryRegistry)
+  - [x] Retry mechanisms (backoff calculations)
+  - [x] Fallback options (FallbackStrategy)
+- [x] Error Context Enhancement
+  - [x] Automatic context collection (EnrichError functions)
+  - [x] Custom context providers (ErrorBuilder, ContextProvider)
+  - [x] Context filtering (GetAll returns copy)
+  - [x] Sensitive data masking (manual via context control)
+- [x] Error handling tests (comprehensive test coverage)
+- [x] Recovery strategy examples (enhanced_errors example)
+- [ ] Library-Wide Error Serialization (REQUIRED FOR DOWNSTREAM)
+  - [ ] Convert all pkg/llm provider errors to use pkg/errors
+  - [ ] Convert all pkg/agent errors to use pkg/errors
+  - [ ] Convert all pkg/schema errors to use pkg/errors
+  - [ ] Convert all pkg/structured errors to use pkg/errors
+  - [ ] Update error creation patterns throughout codebase
+  - [ ] Ensure all errors are JSON serializable
+  - [ ] Add migration guide for error handling
+
+**DOWNSTREAM REQUIREMENTS**: 
+- ✅ SerializableError interface with Code(), Message(), Context(), ToJSON(), GetRecoveryStrategy()
+- ✅ BaseError implementation with all required fields (code, message, context, cause, recovery)
+- ✅ Domain-specific errors (AgentError, etc.) that embed BaseError
+- ✅ Recovery strategies: RetryOnce, RetryWithBackoff, Failover
+- ✅ WrapError function for API boundary error wrapping
+- ⚠️ **CRITICAL**: All go-llms errors must implement SerializableError for bridge compatibility
+- ⚠️ **CRITICAL**: Error context must be bridge-friendly (map[string]interface{} serializable)
+
+### 0.3.5.3: Enhanced Tool Discovery System
+- [ ] Dynamic Tool Registration (REQUIRED FOR DOWNSTREAM)
+  - [ ] Add RegisterTool method to ToolDiscovery interface
+  - [ ] Add UnregisterTool method for runtime removal
+  - [ ] Add GetRegisteredTools for listing all tools
+  - [ ] Thread-safe registration/unregistration
+  - [ ] Tool versioning support
+- [ ] Tool Metadata Repository
+  - [ ] Persistent storage for custom tool definitions
+  - [ ] Tool definition format (JSON/YAML)
+  - [ ] Tool dependency management
+  - [ ] Tool lifecycle hooks
+- [ ] Script-Based Tool Factory (CRITICAL FOR SCRIPTING ENGINES)
+  - [ ] Factory interface for creating tools from definitions
+  - [ ] Support for multiple scripting languages
+  - [ ] Sandboxed execution environment
+  - [ ] Tool validation before registration
+- [ ] Registry Persistence (DOWNSTREAM REQUIREMENT)
+  - [ ] SaveRegistry(writer io.Writer) method implementation
+  - [ ] LoadRegistry(reader io.Reader) method implementation
+  - [ ] Support for tool definitions from external sources
+  - [ ] Multi-tenant tool isolation support
+- [ ] Integration tests for dynamic tool management
+- [ ] Examples for script-based tool creation
+
+**DOWNSTREAM REQUIREMENTS**:
+- 🔥 **CRITICAL**: ToolDiscovery interface must support RegisterTool(info ToolInfo, factory ToolFactory) 
+- 🔥 **CRITICAL**: Script tools must be registrable at runtime via bridge layer
+- 🔥 **CRITICAL**: defaultDiscovery must handle both built-in and dynamic tools with thread safety
+- ⚠️ Tool registry persistence for plugin architectures and multi-tenant scenarios
+- ⚠️ Runtime tool loading from files, databases, APIs
+
+### 0.3.5.4: Bridge-Friendly Type System (FOUNDATION)
+- [ ] Implement Type Registry (CRITICAL FOR DOWNSTREAM)
   - [ ] Central registry for type conversions
-  - [ ] RegisterType method for custom converters
+  - [ ] RegisterConverter method for custom converters
   - [ ] Built-in converters for common types
   - [ ] Bidirectional conversion support
 - [ ] Generic Type Converter
@@ -227,75 +283,144 @@
   - [ ] YAML serialization support
   - [ ] Custom serialization formats
   - [ ] Schema-aware serialization
+- [ ] Global DefaultRegistry (REQUIRED BY DOWNSTREAM)
+  - [ ] Pre-registered common conversions (Schema ↔ map[string]interface{})
+  - [ ] Support for multi-hop conversion through intermediate types
+  - [ ] Conversion caching for performance
+  - [ ] Reverse conversion support (CanReverse method)
 - [ ] Type conversion benchmarks
 - [ ] Examples for type bridging
 
-### 0.3.5.4: Testing Infrastructure (FOUNDATION SUPPORT)
-- [ ] Mock Implementations
-  - [ ] Mock for every interface
-  - [ ] Configurable mock behaviors
-  - [ ] Mock assertion helpers
-  - [ ] Mock state verification
-- [ ] Test Helpers
-  - [ ] Agent testing utilities
-  - [ ] Tool testing framework
-  - [ ] Workflow test harness
-  - [ ] Event capture for tests
-- [ ] Scenario Builders
-  - [ ] DSL for test scenarios
-  - [ ] Fluent API design
-  - [ ] Assertion library
-  - [ ] Test report generation
-- [ ] Testing framework examples
-- [ ] Best practices documentation
+**DOWNSTREAM REQUIREMENTS**:
+- 🔥 **CRITICAL**: `pkg/util/types/registry.go` with Registry struct and global DefaultRegistry
+- 🔥 **CRITICAL**: Convert(from interface{}, toType reflect.Type) method for bridge layer
+- 🔥 **CRITICAL**: Pre-registered converters for domain.Schema ↔ map[string]interface{}
+- ⚠️ TypeConverter interface with Convert() and CanReverse() methods
+- ⚠️ Multi-hop conversion through common types for complex transformations
+- ⚠️ Conversion caching to improve performance in bridge scenarios
 
-### 0.3.5.5: Enhanced Tool Discovery System
-- [ ] Dynamic Tool Registration
-  - [ ] Add RegisterTool method to ToolDiscovery interface
-  - [ ] Add UnregisterTool method for runtime removal
-  - [ ] Add GetRegisteredTools for listing all tools
-  - [ ] Thread-safe registration/unregistration
-  - [ ] Tool versioning support
-- [ ] Tool Metadata Repository
-  - [ ] Persistent storage for custom tool definitions
-  - [ ] Tool definition format (JSON/YAML)
-  - [ ] Tool dependency management
-  - [ ] Tool lifecycle hooks
-- [ ] Script-Based Tool Factory
-  - [ ] Factory interface for creating tools from definitions
-  - [ ] Support for multiple scripting languages
-  - [ ] Sandboxed execution environment
-  - [ ] Tool validation before registration
-- [ ] Integration tests for dynamic tool management
-- [ ] Examples for script-based tool creation
-
-### 0.3.5.6: Event System Enhancements
-- [ ] Event Serialization
-  - [ ] Implement JSON serialization for all event types
+### 0.3.5.5: Event System Enhancements
+- [ ] Event Serialization (CRITICAL FOR DOWNSTREAM)
+  - [ ] SerializableEvent interface with MarshalJSON() method
+  - [ ] SerializeEvent helper function for any domain.Event
+  - [ ] Automatic event type and timestamp inclusion
   - [ ] Support for custom event data
   - [ ] Event versioning
   - [ ] Compression options
-- [ ] Event Filtering
-  - [ ] EventFilter interface implementation
+- [ ] Event Filtering (REQUIRED FOR BRIDGE LAYER)
+  - [ ] Filter interface with Match(event domain.Event) method
+  - [ ] PatternFilter with regex pattern matching (e.g., "tool.*")
   - [ ] Composite filters (AND/OR/NOT)
   - [ ] Field-based filtering
   - [ ] Event type filtering
 - [ ] Event Replay System
   - [ ] EventRecorder interface implementation
+  - [ ] EventStorage interface for different backends
   - [ ] Time-based replay
   - [ ] Event persistence options
   - [ ] Replay speed control
+- [ ] Bridge Integration (DOWNSTREAM REQUIREMENT)
+  - [ ] Event subscription with pattern-based filtering
+  - [ ] Serialized event delivery to bridge handlers
+  - [ ] Event context extraction for debugging
 - [ ] Event system integration tests
 - [ ] Examples for event filtering and replay
 
-### 0.3.5.7: Structured Output Support
-- [ ] Output Parser Interface
-  - [ ] Implement parsers for JSON, XML, YAML
+**DOWNSTREAM REQUIREMENTS**:
+- 🔥 **CRITICAL**: `pkg/agent/events/serialization.go` with SerializeEvent() function
+- 🔥 **CRITICAL**: All events must be serializable to map[string]interface{} for bridge layer
+- 🔥 **CRITICAL**: PatternFilter for subscribing to event patterns like "tool.*"
+- ⚠️ Event replay capabilities for debugging and testing scenarios
+- ⚠️ EventStorage abstraction for different persistence backends
+
+### 0.3.5.6: Workflow Serialization and Templates
+- [ ] Workflow Serialization (CRITICAL FOR DOWNSTREAM)
+  - [ ] WorkflowSerializer with format selection ("json", "yaml")
+  - [ ] Serialize(def *WorkflowDefinition) method
+  - [ ] DeserializeDefinition for bridge layer workflow creation
+  - [ ] Preserve all workflow metadata
+  - [ ] Version compatibility handling
+- [ ] Workflow Templates
+  - [ ] Pre-built workflow templates
+  - [ ] Template customization API
+  - [ ] Template registry
+  - [ ] Template validation
+- [ ] Script-Based Step Definitions (REQUIRED FOR SCRIPTING ENGINES)
+  - [ ] ScriptStep struct with Script, Language, Handler fields
+  - [ ] ScriptHandler interface with Execute(ctx, state, script) method
+  - [ ] Support for multiple languages: "javascript", "lua", "tengo", "expr"
+  - [ ] RegisterScriptHandler global function for language registration
+  - [ ] Script validation before execution
+  - [ ] Error handling for script execution
+- [ ] Declarative Workflow Support (DOWNSTREAM REQUIREMENT)
+  - [ ] JSON/YAML workflow definition format
+  - [ ] Script-based step integration in workflows
+  - [ ] Dynamic workflow creation from bridge layer
+  - [ ] Workflow versioning and migration support
+- [ ] Workflow serialization tests
+- [ ] Template examples
+
+**DOWNSTREAM REQUIREMENTS**:
+- 🔥 **CRITICAL**: `pkg/agent/workflow/serialization.go` with WorkflowSerializer
+- 🔥 **CRITICAL**: ScriptStep support for embedding scripts in workflows
+- 🔥 **CRITICAL**: DeserializeDefinition for creating workflows from bridge definitions
+- 🔥 **CRITICAL**: RegisterScriptHandler for pluggable script language support
+- ⚠️ Declarative workflows enable visual builders and no-code tools
+- ⚠️ Workflow storage, versioning, and sharing capabilities
+
+### 0.3.5.7: LLM Provider Metadata and Configuration
+- [ ] Provider Metadata API (CRITICAL FOR DOWNSTREAM)
+  - [ ] ProviderMetadata interface with Name(), Description(), GetCapabilities(), GetModels(), GetConstraints(), GetConfigSchema()
+  - [ ] Capability constants: streaming, function_calling, vision, embeddings
+  - [ ] ModelInfo struct for model discovery
+  - [ ] Constraints struct for limits and rate information
+  - [ ] Configuration schema generation for UI
+- [ ] MetadataProvider Interface (REQUIRED FOR BRIDGE LAYER)
+  - [ ] All providers must implement MetadataProvider interface
+  - [ ] GetMetadata() method returning standardized information
+  - [ ] Bridge-friendly provider information format
+- [ ] Dynamic Provider Registration (DOWNSTREAM REQUIREMENT)
+  - [ ] DynamicRegistry extending domain.ModelRegistry
+  - [ ] RegisterProvider method with validation
+  - [ ] Provider factory pattern using templates
+  - [ ] Provider lifecycle management
+  - [ ] Hot-reload support
+- [ ] Provider Configuration Templates
+  - [ ] GetTemplate(type) function for provider templates
+  - [ ] CreateProvider from configuration maps
+  - [ ] JSON/YAML configuration templates
+  - [ ] Template validation against schemas
+  - [ ] Environment variable mapping
+  - [ ] Secure credential handling
+- [ ] Provider metadata tests
+- [ ] Configuration examples
+
+**DOWNSTREAM REQUIREMENTS**:
+- 🔥 **CRITICAL**: `pkg/llm/providers/metadata.go` with ProviderMetadata interface
+- 🔥 **CRITICAL**: MetadataProvider interface for all providers to enable capability discovery
+- 🔥 **CRITICAL**: Dynamic provider registration from script configurations
+- 🔥 **CRITICAL**: Provider templates for easy provider creation from config maps
+- ⚠️ Capability-based provider selection for optimal LLM choice
+- ⚠️ UI generation support via configuration schemas
+
+### 0.3.5.8: Structured Output Support
+- [ ] Output Parser Interface (CRITICAL FOR DOWNSTREAM)
+  - [ ] Parser interface with Parse() and ParseWithRecovery() methods
+  - [ ] Parser registry with JSON, XML, YAML implementations
+  - [ ] GetParser(format) function for bridge layer
   - [ ] Custom parser plugin system
   - [ ] Error recovery in parsing
   - [ ] Partial parsing support
-- [ ] Output Validator
-  - [ ] Schema-based validation
+- [ ] JSON Parser with Recovery (REQUIRED FOR BRIDGE LAYER)
+  - [ ] Standard JSON parsing with schema validation
+  - [ ] Extract JSON from markdown code blocks
+  - [ ] Common issue fixing (trailing commas, quotes, etc.)
+  - [ ] Schema-guided extraction as last resort
+  - [ ] Configurable strict mode
+- [ ] Output Validator (DOWNSTREAM REQUIREMENT)
+  - [ ] Validate() function taking output and schema
+  - [ ] ValidationResult with detailed error information
+  - [ ] Schema-based validation using domain.Schema
   - [ ] Custom validation rules
   - [ ] Validation error details
   - [ ] Fix suggestions
@@ -304,58 +429,86 @@
   - [ ] Preserve type information
   - [ ] Custom format support
   - [ ] Streaming conversion
+- [ ] Bridge Integration Support
+  - [ ] Schema conversion from script format to domain.Schema
+  - [ ] Result validation with detailed error reporting
+  - [ ] Automatic format detection and recovery
 - [ ] Output parsing benchmarks
 - [ ] Validation examples
 
-### 0.3.5.8: LLM Provider Metadata and Configuration
-- [ ] Provider Metadata API
-  - [ ] ProviderMetadata interface implementation
-  - [ ] Capability discovery
-  - [ ] Constraint documentation
-  - [ ] Configuration schema generation
-- [ ] Dynamic Provider Registration
-  - [ ] Runtime provider registration
-  - [ ] Provider factory pattern
-  - [ ] Provider lifecycle management
-  - [ ] Hot-reload support
-- [ ] Provider Configuration Templates
-  - [ ] JSON/YAML configuration templates
-  - [ ] Template validation
-  - [ ] Environment variable mapping
-  - [ ] Secure credential handling
-- [ ] Provider metadata tests
-- [ ] Configuration examples
+**DOWNSTREAM REQUIREMENTS**:
+- 🔥 **CRITICAL**: `pkg/llm/outputs/parser.go` with Parser interface and registry
+- 🔥 **CRITICAL**: ParseWithRecovery for handling malformed LLM outputs
+- 🔥 **CRITICAL**: Validate() function for output verification against schemas
+- 🔥 **CRITICAL**: Schema-guided parsing for maximum reliability
+- ⚠️ Multiple format support (JSON, XML, YAML) for different LLM output styles
+- ⚠️ Markdown code block extraction for common LLM response patterns
 
-### 0.3.5.9: Workflow Serialization and Templates
-- [ ] Workflow Serialization
-  - [ ] WorkflowSerializer interface implementation
-  - [ ] Support JSON/YAML formats
-  - [ ] Preserve all workflow metadata
-  - [ ] Version compatibility handling
-- [ ] Workflow Templates
-  - [ ] Pre-built workflow templates
-  - [ ] Template customization API
-  - [ ] Template registry
-  - [ ] Template validation
-- [ ] Script-Based Step Definitions
-  - [ ] ScriptStep implementation
-  - [ ] Multiple language support
-  - [ ] Script validation
-  - [ ] Error handling for script execution
-- [ ] Workflow serialization tests
-- [ ] Template examples
+### 0.3.5.9: Testing Infrastructure (FOUNDATION SUPPORT)
+- [ ] Mock Implementations (REQUIRED FOR DOWNSTREAM)
+  - [ ] MockProvider with configurable responses
+  - [ ] MockTool for tool testing scenarios
+  - [ ] Mock for every major interface
+  - [ ] Configurable mock behaviors
+  - [ ] Mock assertion helpers
+  - [ ] Mock state verification and call tracking
+- [ ] Scenario Builder System (CRITICAL FOR BRIDGE TESTING)
+  - [ ] NewScenario() function with fluent API
+  - [ ] WithMockProvider() with response mapping
+  - [ ] WithTool() and WithAgent() setup methods
+  - [ ] WithInput() and ExpectOutput() assertion methods
+  - [ ] ExpectToolCall() with argument matching
+  - [ ] ExpectEvent() for event-driven testing
+  - [ ] Run(t) method for test execution
+- [ ] Test Helpers
+  - [ ] Agent testing utilities
+  - [ ] Tool testing framework
+  - [ ] Workflow test harness
+  - [ ] Event capture for tests
+- [ ] MockProvider Pattern Matching (DOWNSTREAM REQUIREMENT)
+  - [ ] Response matching based on input patterns
+  - [ ] Regex support for flexible response mapping
+  - [ ] Call history tracking with timestamps
+  - [ ] Provider behavior simulation
+- [ ] Assertion and Matcher System
+  - [ ] Matcher interface with Match(value) method
+  - [ ] Built-in matchers: Contains, Equals, HasField
+  - [ ] Custom matcher support
+  - [ ] Detailed assertion failure messages
+- [ ] Testing framework examples
+- [ ] Best practices documentation
+
+**DOWNSTREAM REQUIREMENTS**:
+- 🔥 **CRITICAL**: `pkg/testing/scenario.go` with ScenarioBuilder fluent API
+- 🔥 **CRITICAL**: MockProvider with pattern-based response matching
+- 🔥 **CRITICAL**: Tool and agent testing utilities for bridge scenarios
+- 🔥 **CRITICAL**: Event testing support for workflow validation
+- ⚠️ Scenario-based testing reduces boilerplate for complex test setups
+- ⚠️ Consistent testing patterns across bridge implementations
 
 ### 0.3.5.10: Documentation and API Generation
-- [ ] API Documentation Generator
-  - [ ] Generate OpenAPI specs for tools
+- [ ] API Documentation Generator (CRITICAL FOR DOWNSTREAM)
+  - [ ] Generator interface with GenerateOpenAPI(), GenerateMarkdown(), GenerateJSON()
+  - [ ] Documentable interface for auto-documentation support
+  - [ ] GenerateOpenAPIForTool() function for bridge integration
   - [ ] Tool capability documentation
   - [ ] Interactive API explorer
   - [ ] Version management
+- [ ] Auto-Generated Tool Documentation (DOWNSTREAM REQUIREMENT)
+  - [ ] OpenAPI 3.0 spec generation from ToolInfo
+  - [ ] Automatic request/response schema documentation
+  - [ ] Tool discovery documentation for bridge layers
+  - [ ] Markdown documentation generation
 - [ ] Schema Documentation
   - [ ] Generate docs from schemas
   - [ ] Schema visualization
   - [ ] Example generation
   - [ ] Validation rule docs
+- [ ] Documentation Infrastructure (REQUIRED FOR BRIDGE LAYER)
+  - [ ] Documentation struct with Name, Description, Examples, Schema, Metadata
+  - [ ] Bridge-friendly documentation format
+  - [ ] Multi-format documentation support
+  - [ ] Documentation builder pattern
 - [ ] Example Repository Enhancement
   - [ ] Comprehensive examples for all features
   - [ ] Categorized example structure
@@ -363,6 +516,14 @@
   - [ ] CI for example validation
 - [ ] Documentation generation tests
 - [ ] Meta-documentation (docs about docs)
+
+**DOWNSTREAM REQUIREMENTS**:
+- 🔥 **CRITICAL**: `pkg/docs/generator.go` with Generator interface
+- 🔥 **CRITICAL**: Auto-generation of OpenAPI specs for tools via GenerateOpenAPIForTool()
+- 🔥 **CRITICAL**: Documentable interface for auto-documentation of bridge components
+- 🔥 **CRITICAL**: Bridge-friendly documentation format (JSON serializable)
+- ⚠️ Documentation stays in sync with code through auto-generation
+- ⚠️ Multiple documentation formats for different audiences (API, markdown, JSON)
 
 ## v0.3.6: [Reserved for future features]
 
