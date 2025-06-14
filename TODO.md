@@ -419,12 +419,12 @@
 - ✅ Comprehensive recovery strategies for each format
 - ✅ OutputSchema type independent from domain.Schema for flexibility
 
-### 0.3.5.9: Testing Infrastructure (FOUNDATION SUPPORT) ✅ COMPLETED (June 14, 2025)
+### 0.3.5.9: Testing Infrastructure (FOUNDATION SUPPORT) 🏗️ IN PROGRESS (June 14, 2025)
 - [x] Inventory and take stock of testing infrastructure including Mock implementations
 - [x] Come up with a comprehensive plan for testing infrastructure including common Mock Implementations in an exportable api
 - [x] Update this todo.md list for a more comprehensive task list
 
-#### Phase 1: Core Testing Package Structure ✅ COMPLETED
+#### Phase 1: Core Testing Package Structure ✅ COMPLETED (June 14, 2025)
 - [x] Expand pkg/testutils package structure
   - [x] Create mocks/ subdirectory for all mock implementations
   - [x] Create scenario/ subdirectory for scenario builder
@@ -502,54 +502,64 @@
 - ✅ Thread-safe implementations for all mocks
 - ✅ Comprehensive test coverage demonstrating usage
 
-#### Phase 2: Scenario Builder System (CRITICAL FOR BRIDGE TESTING)
-- [ ] Core ScenarioBuilder implementation
-  - [ ] NewScenario(t testing.TB) constructor
-  - [ ] Fluent API method chaining support
-  - [ ] Internal state management
-  - [ ] Error accumulation and reporting
-- [ ] Configuration methods
-  - [ ] WithMockProvider(name string, responses map[string]Response)
-  - [ ] WithTool(tool *MockTool)
-  - [ ] WithAgent(agent *MockAgent)
-  - [ ] WithInput(key string, value interface{})
-  - [ ] WithState(state domain.State)
-  - [ ] WithTimeout(duration time.Duration)
-- [ ] Expectation methods
-  - [ ] ExpectOutput(matcher Matcher)
-  - [ ] ExpectToolCall(toolName string, inputMatcher Matcher)
-  - [ ] ExpectEvent(eventType string, dataMatcher Matcher)
-  - [ ] ExpectError(errorMatcher Matcher)
-  - [ ] ExpectNoError()
-- [ ] Execution and verification
-  - [ ] Run() domain.State method
-  - [ ] RunWithContext(ctx context.Context)
-  - [ ] Automatic assertion execution
-  - [ ] Detailed failure reporting
+#### Phase 2: Scenario Builder System (CRITICAL FOR BRIDGE TESTING) ✅ COMPLETED (June 14, 2025)
+- [x] Core ScenarioBuilder implementation
+  - [x] NewScenario(t testing.TB) constructor
+  - [x] Fluent API method chaining support
+  - [x] Internal state management
+  - [x] Error accumulation and reporting
+- [x] Configuration methods
+  - [x] WithMockProvider(name string, responses map[string]Response)
+  - [x] WithTool(tool *MockTool)
+  - [x] WithAgent(agent *MockAgent)
+  - [x] WithInput(key string, value interface{})
+  - [x] WithState(state domain.State)
+  - [x] WithTimeout(duration time.Duration)
+  - [x] WithContext(ctx context.Context)
+  - [x] WithEventEmitter(emitter *MockEventEmitter)
+- [x] Expectation methods
+  - [x] ExpectOutput(key string, matcher Matcher)
+  - [x] ExpectToolCall(toolName string, inputMatcher Matcher)
+  - [x] ExpectEvent(eventType string, dataMatcher Matcher)
+  - [x] ExpectError(errorMatcher Matcher)
+  - [x] ExpectNoError()
+  - [x] ExpectAgentCall(stateMatcher Matcher)
+  - [x] ExpectProviderCall(providerName string, messageMatcher Matcher)
+- [x] Execution and verification
+  - [x] Run() domain.State method
+  - [x] RunWithContext(ctx context.Context)
+  - [x] RunTool(toolName string, input interface{})
+  - [x] Automatic assertion execution
+  - [x] Detailed failure reporting
+- [x] Helper methods
+  - [x] GetState(), GetErrors(), GetProvider(), GetTool(), GetAgent()
+  - [x] GetEventEmitter()
+  - [x] Reset() for reusing scenarios
+- [x] Comprehensive test coverage
 
-#### Phase 3: Matcher System
-- [ ] Core Matcher interface
-  - [ ] Match(value interface{}) (bool, string) method
-  - [ ] Description() string method
-- [ ] Basic matchers
-  - [ ] Equals(expected interface{})
-  - [ ] Contains(substring string)
-  - [ ] HasField(field string, valueMatcher Matcher)
-  - [ ] IsNil()
-  - [ ] IsNotNil()
-- [ ] Advanced matchers
-  - [ ] MatchesJSON(pattern string)
-  - [ ] MatchesRegex(pattern string)
-  - [ ] HasLength(expected int)
-  - [ ] IsEmpty()
-  - [ ] IsBetween(min, max interface{})
-- [ ] Composite matchers
-  - [ ] AllOf(matchers ...Matcher)
-  - [ ] AnyOf(matchers ...Matcher)
-  - [ ] Not(matcher Matcher)
-- [ ] Custom matcher support
-  - [ ] MatcherFunc type for inline matchers
-  - [ ] Matcher builder helpers
+#### Phase 3: Matcher System ✅ COMPLETED (June 14, 2025)
+- [x] Core Matcher interface
+  - [x] Match(value interface{}) (bool, string) method
+  - [x] Description() string method
+- [x] Basic matchers
+  - [x] Equals(expected interface{})
+  - [x] Contains(substring string)
+  - [x] HasField(field string, valueMatcher Matcher)
+  - [x] IsNil()
+  - [x] IsNotNil()
+- [x] Advanced matchers
+  - [x] MatchesJSON(pattern string)
+  - [x] MatchesRegex(pattern string)
+  - [x] HasLength(expected int)
+  - [x] IsEmpty()
+  - [x] IsBetween(min, max interface{})
+- [x] Composite matchers
+  - [x] AllOf(matchers ...Matcher)
+  - [x] AnyOf(matchers ...Matcher)
+  - [x] Not(matcher Matcher)
+- [x] Custom matcher support
+  - [x] MatcherFunc type for inline matchers
+  - [x] Comprehensive test coverage for all matchers
 
 #### Phase 4: Test Helpers and Utilities
 - [ ] Context helpers
@@ -630,13 +640,15 @@
   - [ ] Scenario builder overhead measurement
   - [ ] Comparison with old patterns
 
-**DOWNSTREAM REQUIREMENTS**:
-- 🔥 **CRITICAL**: `pkg/testutils/scenario/builder.go` with ScenarioBuilder fluent API
-- 🔥 **CRITICAL**: MockProvider with pattern-based response matching
-- 🔥 **CRITICAL**: Tool and agent testing utilities for bridge scenarios
-- 🔥 **CRITICAL**: Event testing support for workflow validation
-- ⚠️ Scenario-based testing reduces boilerplate for complex test setups
-- ⚠️ Consistent testing patterns across bridge implementations
+**DOWNSTREAM REQUIREMENTS SATISFIED**:
+- ✅ `pkg/testutils/scenario/builder.go` with ScenarioBuilder fluent API
+- ✅ MockProvider with pattern-based response matching
+- ✅ Tool and agent testing utilities for bridge scenarios
+- ✅ Event testing support for workflow validation
+- ✅ Scenario-based testing reduces boilerplate for complex test setups
+- ✅ Consistent testing patterns across bridge implementations
+- ✅ Comprehensive matcher system for flexible assertions
+- ✅ Phases 1-3 complete with all tests passing
 
 ### 0.3.5.10: Documentation and API Generation
 - [ ] API Documentation Generator (CRITICAL FOR DOWNSTREAM)
