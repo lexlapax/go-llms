@@ -18,7 +18,7 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	llmdomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
-	"github.com/lexlapax/go-llms/pkg/testutils"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 // TestAgentConcurrentRequests tests agent workflow stability under high concurrency
@@ -33,9 +33,9 @@ func TestAgentConcurrentRequests(t *testing.T) {
 
 	// Define a set of mock tools for the agent to use
 	mockTools := []domain.Tool{
-		testutils.CreateCalculatorTool(),
-		testutils.CreateMockTool("weather", "Gets weather information", nil),
-		testutils.CreateMockTool("search", "Searches for information", nil),
+		mocks.CreateCalculatorTool(),
+		mocks.NewMockTool("weather", "Gets weather information"),
+		mocks.NewMockTool("search", "Searches for information"),
 	}
 
 	// Create a base mock provider for all agents
@@ -197,9 +197,9 @@ func TestAgentMemoryLeaks(t *testing.T) {
 		agent.SetSystemPrompt("You are a helpful assistant for testing memory leaks.")
 
 		// Add some tools
-		agent.AddTool(testutils.CreateCalculatorTool())
-		agent.AddTool(testutils.CreateMockTool("tool1", "Test tool 1", nil))
-		agent.AddTool(testutils.CreateMockTool("tool2", "Test tool 2", nil))
+		agent.AddTool(mocks.CreateCalculatorTool())
+		agent.AddTool(mocks.NewMockTool("tool1", "Test tool 1"))
+		agent.AddTool(mocks.NewMockTool("tool2", "Test tool 2"))
 
 		// Create and run with state
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)

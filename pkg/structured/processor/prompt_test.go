@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
-	"github.com/lexlapax/go-llms/pkg/testutils"
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 )
 
 func TestEnhancePromptWithSchema(t *testing.T) {
@@ -16,7 +16,7 @@ func TestEnhancePromptWithSchema(t *testing.T) {
 			Type: "object",
 			Properties: map[string]schemaDomain.Property{
 				"name": {Type: "string", Description: "Person's name"},
-				"age":  {Type: "integer", Description: "Person's age", Minimum: testutils.Float64Ptr(0)},
+				"age":  {Type: "integer", Description: "Person's age", Minimum: helpers.Float64Ptr(0)},
 			},
 			Required: []string{"name"},
 		}
@@ -106,7 +106,7 @@ func TestEnhancePromptWithSchema(t *testing.T) {
 			Type: "object",
 			Properties: map[string]schemaDomain.Property{
 				"name":    {Type: "string", Description: "Person's name"},
-				"age":     {Type: "integer", Description: "Person's age", Minimum: testutils.Float64Ptr(0)},
+				"age":     {Type: "integer", Description: "Person's age", Minimum: helpers.Float64Ptr(0)},
 				"address": addressProperty,
 				"tags": {
 					Type: "array",
@@ -175,7 +175,7 @@ func TestEnhancePromptWithOptions(t *testing.T) {
 			Type: "object",
 			Properties: map[string]schemaDomain.Property{
 				"name": {Type: "string", Description: "Person's name"},
-				"age":  {Type: "integer", Description: "Person's age", Minimum: testutils.Float64Ptr(0)},
+				"age":  {Type: "integer", Description: "Person's age", Minimum: helpers.Float64Ptr(0)},
 			},
 			Required: []string{"name"},
 		}
@@ -208,7 +208,7 @@ func TestEnhancePromptWithOptions(t *testing.T) {
 			Type: "object",
 			Properties: map[string]schemaDomain.Property{
 				"name": {Type: "string", Description: "Person's name"},
-				"age":  {Type: "integer", Description: "Person's age", Minimum: testutils.Float64Ptr(0)},
+				"age":  {Type: "integer", Description: "Person's age", Minimum: helpers.Float64Ptr(0)},
 			},
 			Required: []string{"name"},
 		}

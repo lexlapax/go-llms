@@ -133,8 +133,13 @@ func (s *SequentialAgent) Run(ctx context.Context, input *domain.State) (*domain
 		}
 
 		// Update step status
+		// Get start time with lock
+		s.mu.RLock()
+		startTime := s.status.Steps[stepName].StartTime
+		s.mu.RUnlock()
+
 		stepStatus := StepStatus{
-			StartTime: s.status.Steps[stepName].StartTime,
+			StartTime: startTime,
 			EndTime:   time.Now(),
 		}
 

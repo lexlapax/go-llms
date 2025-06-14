@@ -12,7 +12,7 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
-	"github.com/lexlapax/go-llms/pkg/testutils"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 // BenchmarkAgentCreation benchmarks different ways of creating agents
@@ -41,8 +41,8 @@ func BenchmarkAgentCreation(b *testing.B) {
 	})
 
 	b.Run("WithTools", func(b *testing.B) {
-		tool1 := testutils.CreateMockTool("tool1", "Test tool 1", nil)
-		tool2 := testutils.CreateMockTool("tool2", "Test tool 2", nil)
+		tool1 := mocks.NewMockTool("tool1", "Test tool 1")
+		tool2 := mocks.NewMockTool("tool2", "Test tool 2")
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -148,8 +148,8 @@ func BenchmarkToolExecution(b *testing.B) {
 	mockProvider := provider.NewMockProvider()
 
 	// Create tools
-	simpleTool := testutils.CreateMockTool("simple", "Simple tool", nil)
-	complexTool := testutils.CreateMockTool("complex", "Complex tool", nil)
+	simpleTool := mocks.NewMockTool("simple", "Simple tool")
+	complexTool := mocks.NewMockTool("complex", "Complex tool")
 
 	b.Run("SingleToolCall", func(b *testing.B) {
 		deps := core.LLMDeps{

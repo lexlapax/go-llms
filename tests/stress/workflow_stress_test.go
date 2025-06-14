@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/rand"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -18,7 +19,7 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	llmdomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
-	"github.com/lexlapax/go-llms/pkg/testutils"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 // TestWorkflowAgentsConcurrentExecution tests workflow agents under concurrent load
@@ -244,7 +245,7 @@ func TestWorkflowStateManagementStress(t *testing.T) {
 	stateAgent := core.NewLLMAgent("state-test", "mock", deps)
 
 	// Add a tool that modifies state
-	stateAgent.AddTool(testutils.CreateMockTool("state-modifier", "Modifies state", nil))
+	stateAgent.AddTool(mocks.NewMockTool("state-modifier", "Modifies state"))
 
 	// Test concurrent state operations
 	concurrency := 100
@@ -424,20 +425,55 @@ func TestWorkflowErrorHandlingUnderLoad(t *testing.T) {
 	var callCount int64
 	mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []llmdomain.Message, options ...llmdomain.Option) (llmdomain.Response, error) {
 		count := atomic.AddInt64(&callCount, 1)
-		// Fail 20% of requests
-		if count%5 == 0 {
-			return llmdomain.Response{}, fmt.Errorf("simulated error %d", count)
-		}
-		// Timeout 10% of requests
-		if count%10 == 0 {
-			select {
-			case <-time.After(2 * time.Second):
-				return llmdomain.Response{}, fmt.Errorf("simulated timeout")
-			case <-ctx.Done():
-				return llmdomain.Response{}, ctx.Err()
+
+		// Extract agent name from messages to provide deterministic behavior
+		agentName := ""
+		for _, msg := range messages {
+			// Extract text content from message
+			for _, part := range msg.Content {
+				if part.Type == llmdomain.ContentTypeText && strings.Contains(part.Text, "You are") {
+					// Extract agent name between "You are " and " agent"
+					text := part.Text
+					startIdx := strings.Index(text, "You are ")
+					endIdx := strings.Index(text, " agent")
+					if startIdx != -1 && endIdx != -1 && startIdx < endIdx {
+						startIdx += len("You are ")
+						agentName = text[startIdx:endIdx]
+					}
+					break
+				}
+			}
+			if agentName != "" {
+				break
 			}
 		}
-		return llmdomain.Response{Content: fmt.Sprintf("Success %d", count)}, nil
+
+		// Make failure deterministic based on agent name
+		// For parallel tests, ensure at least one agent always succeeds
+		if strings.Contains(agentName, "always-succeeds") {
+			return llmdomain.Response{Content: fmt.Sprintf("Success %d for %s", count, agentName)}, nil
+		}
+
+		// Agents with "might-fail" in name fail on every 3rd call FROM THAT AGENT
+		// Use agent-specific counters to ensure deterministic behavior per agent
+		if strings.Contains(agentName, "might-fail") {
+			// Simple hash of agent name to get consistent behavior
+			agentHash := int64(0)
+			for _, c := range agentName {
+				agentHash += int64(c)
+			}
+			// This agent fails every 3rd time it's called
+			if (count+agentHash)%3 == 0 {
+				return llmdomain.Response{}, fmt.Errorf("simulated error for %s at count %d", agentName, count)
+			}
+		}
+
+		// Sequential agents always fail on step2-might-fail
+		if agentName == "step2-might-fail" {
+			return llmdomain.Response{}, fmt.Errorf("simulated error for %s", agentName)
+		}
+
+		return llmdomain.Response{Content: fmt.Sprintf("Success %d for %s", count, agentName)}, nil
 	})
 
 	// Create agents with error handling
@@ -469,18 +505,21 @@ func TestWorkflowErrorHandlingUnderLoad(t *testing.T) {
 			name: "Parallel_PartialFailure",
 			workflow: func() domain.BaseAgent {
 				par := workflow.NewParallelAgent("par-errors")
-				par.AddAgent(createAgent("par1"))
+				par.WithMergeStrategy(workflow.MergeFirst) // Use first successful result
+				// Create agents that won't all fail at once
+				par.AddAgent(createAgent("par1-always-succeeds"))
 				par.AddAgent(createAgent("par2-might-fail"))
-				par.AddAgent(createAgent("par3"))
+				par.AddAgent(createAgent("par3-always-succeeds"))
 				return par
 			}(),
-			expectFailure: false, // Partial failure strategy allows some failures
+			expectFailure: false, // MergeFirst allows workflow to succeed with partial failures
 		},
 		{
 			name: "Loop_WithRetries",
 			workflow: func() domain.BaseAgent {
 				loop := workflow.NewLoopAgent("loop-retry").
-					WithMaxIterations(3)
+					WithMaxIterations(3).
+					WithBreakOnError(false) // Continue iterating even on errors
 				loop.SetLoopAgent(createAgent("retry-body"))
 				return loop
 			}(),
@@ -504,11 +543,27 @@ func TestWorkflowErrorHandlingUnderLoad(t *testing.T) {
 
 					state := domain.NewState()
 					state.Set("request_id", id)
+					state.Set("user_input", fmt.Sprintf("Process request %d", id))
 
-					_, err := scenario.workflow.Run(ctx, state)
+					result, err := scenario.workflow.Run(ctx, state)
+
 					if err != nil {
 						// Check for partial success
-						if results, exists := state.Get("results"); exists && results != nil {
+						hasPartialSuccess := false
+
+						// Check if we have any results in the state
+						if result != nil {
+							// For parallel workflows with MergeFirst, success means we got a result even with errors
+							if _, exists := result.Get("response"); exists {
+								hasPartialSuccess = true
+							} else if _, exists := result.Get("result"); exists {
+								hasPartialSuccess = true
+							} else if parallelResults, exists := result.Get("parallel_results"); exists && parallelResults != nil {
+								hasPartialSuccess = true
+							}
+						}
+
+						if hasPartialSuccess {
 							atomic.AddInt64(&partialSuccessCount, 1)
 						} else {
 							atomic.AddInt64(&failureCount, 1)

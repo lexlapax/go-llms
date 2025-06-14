@@ -188,8 +188,13 @@ func (c *ConditionalAgent) Run(ctx context.Context, input *domain.State) (*domai
 			result, err := branch.Step.Execute(ctx, lastResult)
 
 			// Update step status
+			// Get start time with lock
+			c.mu.RLock()
+			startTime := c.status.Steps[branch.Name].StartTime
+			c.mu.RUnlock()
+
 			stepStatus := StepStatus{
-				StartTime: c.status.Steps[branch.Name].StartTime,
+				StartTime: startTime,
 				EndTime:   time.Now(),
 			}
 
@@ -266,8 +271,13 @@ func (c *ConditionalAgent) Run(ctx context.Context, input *domain.State) (*domai
 		result, err := c.defaultBranch.Execute(ctx, lastResult)
 
 		// Update step status
+		// Get start time with lock
+		c.mu.RLock()
+		startTime := c.status.Steps["default"].StartTime
+		c.mu.RUnlock()
+
 		stepStatus := StepStatus{
-			StartTime: c.status.Steps["default"].StartTime,
+			StartTime: startTime,
 			EndTime:   time.Now(),
 		}
 

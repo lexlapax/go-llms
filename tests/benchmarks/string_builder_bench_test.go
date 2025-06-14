@@ -6,7 +6,7 @@ import (
 
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 	"github.com/lexlapax/go-llms/pkg/structured/processor"
-	"github.com/lexlapax/go-llms/pkg/testutils"
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 )
 
 // BenchmarkStringBuilderCapacity tests different capacity estimation strategies for string builders
@@ -233,8 +233,8 @@ func createComplexSchema() *schemaDomain.Schema {
 			"title": {
 				Type:        "string",
 				Description: "The name of the recipe",
-				MinLength:   testutils.IntPtr(3),
-				MaxLength:   testutils.IntPtr(100),
+				MinLength:   helpers.IntPtr(3),
+				MaxLength:   helpers.IntPtr(100),
 			},
 			"description": {
 				Type:        "string",
@@ -268,7 +268,7 @@ func createComplexSchema() *schemaDomain.Schema {
 					},
 					Required: []string{"name", "amount"},
 				},
-				MinItems: testutils.IntPtr(1),
+				MinItems: helpers.IntPtr(1),
 			},
 			"instructions": {
 				Type:        "array",
@@ -279,7 +279,7 @@ func createComplexSchema() *schemaDomain.Schema {
 						"step": {
 							Type:        "integer",
 							Description: "Step number",
-							Minimum:     testutils.Float64Ptr(1),
+							Minimum:     helpers.Float64Ptr(1),
 						},
 						"description": {
 							Type:        "string",
@@ -288,7 +288,7 @@ func createComplexSchema() *schemaDomain.Schema {
 						"timer": {
 							Type:        "integer",
 							Description: "Optional timer in minutes for this step",
-							Minimum:     testutils.Float64Ptr(0),
+							Minimum:     helpers.Float64Ptr(0),
 						},
 						"note": {
 							Type:        "string",
@@ -297,7 +297,7 @@ func createComplexSchema() *schemaDomain.Schema {
 					},
 					Required: []string{"step", "description"},
 				},
-				MinItems: testutils.IntPtr(1),
+				MinItems: helpers.IntPtr(1),
 			},
 			"nutrition": {
 				Type:        "object",
@@ -306,32 +306,32 @@ func createComplexSchema() *schemaDomain.Schema {
 					"calories": {
 						Type:        "integer",
 						Description: "Calories per serving",
-						Minimum:     testutils.Float64Ptr(0),
+						Minimum:     helpers.Float64Ptr(0),
 					},
 					"protein": {
 						Type:        "integer",
 						Description: "Protein in grams",
-						Minimum:     testutils.Float64Ptr(0),
+						Minimum:     helpers.Float64Ptr(0),
 					},
 					"carbohydrates": {
 						Type:        "integer",
 						Description: "Carbohydrates in grams",
-						Minimum:     testutils.Float64Ptr(0),
+						Minimum:     helpers.Float64Ptr(0),
 					},
 					"fat": {
 						Type:        "integer",
 						Description: "Fat in grams",
-						Minimum:     testutils.Float64Ptr(0),
+						Minimum:     helpers.Float64Ptr(0),
 					},
 					"fiber": {
 						Type:        "integer",
 						Description: "Fiber in grams",
-						Minimum:     testutils.Float64Ptr(0),
+						Minimum:     helpers.Float64Ptr(0),
 					},
 					"sugar": {
 						Type:        "integer",
 						Description: "Sugar in grams",
-						Minimum:     testutils.Float64Ptr(0),
+						Minimum:     helpers.Float64Ptr(0),
 					},
 				},
 				Required: []string{"calories"},
@@ -339,8 +339,8 @@ func createComplexSchema() *schemaDomain.Schema {
 			"servings": {
 				Type:        "integer",
 				Description: "Number of servings this recipe yields",
-				Minimum:     testutils.Float64Ptr(1),
-				Maximum:     testutils.Float64Ptr(50),
+				Minimum:     helpers.Float64Ptr(1),
+				Maximum:     helpers.Float64Ptr(50),
 			},
 			"cookingTime": {
 				Type:        "object",
@@ -349,17 +349,17 @@ func createComplexSchema() *schemaDomain.Schema {
 					"preparation": {
 						Type:        "integer",
 						Description: "Preparation time in minutes",
-						Minimum:     testutils.Float64Ptr(0),
+						Minimum:     helpers.Float64Ptr(0),
 					},
 					"cooking": {
 						Type:        "integer",
 						Description: "Cooking time in minutes",
-						Minimum:     testutils.Float64Ptr(0),
+						Minimum:     helpers.Float64Ptr(0),
 					},
 					"total": {
 						Type:        "integer",
 						Description: "Total time in minutes",
-						Minimum:     testutils.Float64Ptr(0),
+						Minimum:     helpers.Float64Ptr(0),
 					},
 				},
 				Required: []string{"total"},
@@ -379,7 +379,7 @@ func createComplexSchema() *schemaDomain.Schema {
 				Items: &schemaDomain.Property{
 					Type: "string",
 				},
-				UniqueItems: testutils.BoolPtr(true),
+				UniqueItems: helpers.BoolPtr(true),
 			},
 			"notes": {
 				Type:        "array",
@@ -415,7 +415,7 @@ func createComplexSchema() *schemaDomain.Schema {
 				Items: &schemaDomain.Property{
 					Type: "string",
 				},
-				MinItems: testutils.IntPtr(1),
+				MinItems: helpers.IntPtr(1),
 			},
 		},
 		Required: []string{"warnings"},

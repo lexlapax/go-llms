@@ -1,5 +1,37 @@
 # Go-LLMs Completed Tasks
 
+## v0.3.5.9: Testing Infrastructure - Phase 1 ✅ COMPLETED (June 14, 2025)
+- [x] Core Testing Package Structure
+  - [x] Expanded pkg/testutils package structure with mocks/, scenario/, fixtures/, helpers/ subdirectories
+  - [x] Migrated existing testutils files to new structure with backward compatibility
+  - [x] Removed old compatibility files after successful migration
+- [x] Mock Implementations
+  - [x] MockProvider with pattern-based response mapping and call history
+  - [x] MockTool with input pattern mapping and execution tracking
+  - [x] MockAgent with response queue, sub-agent management, and event tracking
+  - [x] MockState with change tracking, snapshots, and access counting
+  - [x] MockEventEmitter with recording, filtering, and assertions
+  - [x] Mock registry for centralized management
+- [x] Bug Fixes and Improvements
+  - [x] Fixed import cycle between mocks/tool.go and pkg/agent/tools
+  - [x] Fixed race conditions in LLMAgent.getSystemContent() with double-checked locking
+  - [x] Fixed race conditions in Sequential, Parallel, Conditional, and Loop workflow agents
+  - [x] Fixed logic issues in TestWorkflowErrorHandlingUnderLoad
+  - [x] All tests passing with race detector enabled
+
+**Key Implementation Details**:
+- **Import Cycle Fix**: Removed dependency on pkg/agent/tools by defining fields directly in MockTool
+- **Race Condition Fixes**: 
+  - LLMAgent: Used double-checked locking pattern for cachedToolsDescription
+  - Sequential: Protected status.Steps access with read locks
+  - Parallel: Fixed concurrent access to status fields
+  - Conditional: Protected branch status updates
+  - Loop: Added thread-safe helper methods for iteration tracking
+- **Test Logic Fix**: 
+  - Added user_input to state for LLMAgent to process correctly
+  - Fixed agent name extraction from system prompts
+  - Implemented deterministic failure behavior based on agent names
+
 ## v0.3.5.7: LLM Provider Metadata and Configuration ✅ COMPLETED (June 14, 2025)
 - [x] Provider Metadata API (CRITICAL FOR DOWNSTREAM)
   - [x] ProviderMetadata interface with Name(), Description(), GetCapabilities(), GetModels(), GetConstraints(), GetConfigSchema()

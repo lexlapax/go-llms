@@ -5,12 +5,12 @@ import (
 
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 	"github.com/lexlapax/go-llms/pkg/schema/validation"
-	"github.com/lexlapax/go-llms/pkg/testutils"
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 )
 
-// Use helper functions from testutils package
-var intPtr = testutils.IntPtr
-var float64Ptr = testutils.Float64Ptr
+// Use helper functions from helpers package
+var intPtr = helpers.IntPtr
+var float64Ptr = helpers.Float64Ptr
 
 // BenchmarkStringValidation benchmarks string validation performance
 func BenchmarkStringValidation(b *testing.B) {

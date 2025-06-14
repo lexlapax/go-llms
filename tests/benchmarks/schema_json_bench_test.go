@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
-	"github.com/lexlapax/go-llms/pkg/testutils"
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 	optimizedJson "github.com/lexlapax/go-llms/pkg/util/json"
 )
 
@@ -22,14 +22,14 @@ func createTestSchema() *schemaDomain.Schema {
 			"name": {
 				Type:        "string",
 				Description: "The name of the user",
-				MinLength:   testutils.IntPtr(2),
-				MaxLength:   testutils.IntPtr(50),
+				MinLength:   helpers.IntPtr(2),
+				MaxLength:   helpers.IntPtr(50),
 			},
 			"age": {
 				Type:        "integer",
 				Description: "The age of the user",
-				Minimum:     testutils.Float64Ptr(0),
-				Maximum:     testutils.Float64Ptr(120),
+				Minimum:     helpers.Float64Ptr(0),
+				Maximum:     helpers.Float64Ptr(120),
 			},
 			"email": {
 				Type:        "string",
@@ -66,9 +66,9 @@ func createTestSchema() *schemaDomain.Schema {
 				Items: &schemaDomain.Property{
 					Type: "string",
 				},
-				MinItems:    testutils.IntPtr(0),
-				MaxItems:    testutils.IntPtr(10),
-				UniqueItems: testutils.BoolPtr(true),
+				MinItems:    helpers.IntPtr(0),
+				MaxItems:    helpers.IntPtr(10),
+				UniqueItems: helpers.BoolPtr(true),
 			},
 		},
 	}
@@ -101,7 +101,7 @@ func createComplexTestSchema() *schemaDomain.Schema {
 					Type: "string",
 					Enum: []string{"read", "write", "delete", "manage"},
 				},
-				MinItems: testutils.IntPtr(1),
+				MinItems: helpers.IntPtr(1),
 			},
 		},
 	}

@@ -38,6 +38,64 @@ type LoopAgent struct {
 	iterationResults []interface{}
 }
 
+// getCurrentIteration safely returns the current iteration count
+func (l *LoopAgent) getCurrentIteration() int {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return l.currentIteration
+}
+
+// setCurrentIteration safely sets the current iteration count
+func (l *LoopAgent) setCurrentIteration(iter int) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.currentIteration = iter
+}
+
+// incrementIteration safely increments the iteration count
+func (l *LoopAgent) incrementIteration() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.currentIteration++
+}
+
+// getStartTime safely returns the start time
+func (l *LoopAgent) getStartTime() time.Time {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return l.startTime
+}
+
+// setStartTime safely sets the start time
+func (l *LoopAgent) setStartTime(t time.Time) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.startTime = t
+}
+
+// appendIterationResult safely appends a result to iteration results
+func (l *LoopAgent) appendIterationResult(result interface{}) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.iterationResults = append(l.iterationResults, result)
+}
+
+// resetIterationResults safely resets the iteration results
+func (l *LoopAgent) resetIterationResults() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.iterationResults = make([]interface{}, 0)
+}
+
+// getIterationResultsCopy safely returns a copy of iteration results
+func (l *LoopAgent) getIterationResultsCopy() []interface{} {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	results := make([]interface{}, len(l.iterationResults))
+	copy(results, l.iterationResults)
+	return results
+}
+
 // LoopType represents different types of loop behavior
 type LoopType string
 
@@ -168,9 +226,9 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 	}
 
 	// Initialize loop state
-	l.startTime = time.Now()
-	l.currentIteration = 0
-	l.iterationResults = make([]interface{}, 0)
+	l.setStartTime(time.Now())
+	l.setCurrentIteration(0)
+	l.resetIterationResults()
 
 	// Update status to running
 	l.updateStatus(WorkflowStateRunning, "", nil)
@@ -201,44 +259,50 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 		}
 
 		// Check maximum iterations
-		if l.maxIterations > 0 && l.currentIteration >= l.maxIterations {
+		currentIter := l.getCurrentIteration()
+
+		if l.maxIterations > 0 && currentIter >= l.maxIterations {
 			l.emitWorkflowEvent(domain.EventProgress, map[string]interface{}{
 				"reason":    "max_iterations_reached",
-				"iteration": l.currentIteration,
+				"iteration": currentIter,
 			})
 			break
 		}
 
 		// Check maximum duration
-		if l.maxDuration > 0 && time.Since(l.startTime) >= l.maxDuration {
+		startTime := l.getStartTime()
+		if l.maxDuration > 0 && time.Since(startTime) >= l.maxDuration {
 			l.emitWorkflowEvent(domain.EventProgress, map[string]interface{}{
 				"reason":    "max_duration_reached",
-				"iteration": l.currentIteration,
-				"duration":  time.Since(l.startTime).String(),
+				"iteration": l.getCurrentIteration(),
+				"duration":  time.Since(startTime).String(),
 			})
 			break
 		}
 
 		// Check continue condition (while loop)
-		if l.continueCondition != nil && !l.continueCondition(currentState.State, l.currentIteration) {
+		currentIter = l.getCurrentIteration()
+		if l.continueCondition != nil && !l.continueCondition(currentState.State, currentIter) {
 			l.emitWorkflowEvent(domain.EventProgress, map[string]interface{}{
 				"reason":    "continue_condition_false",
-				"iteration": l.currentIteration,
+				"iteration": currentIter,
 			})
 			break
 		}
 
 		// Check break condition (until loop)
-		if l.breakCondition != nil && l.breakCondition(currentState.State, l.currentIteration) {
+		currentIter = l.getCurrentIteration()
+		if l.breakCondition != nil && l.breakCondition(currentState.State, currentIter) {
 			l.emitWorkflowEvent(domain.EventProgress, map[string]interface{}{
 				"reason":    "break_condition_true",
-				"iteration": l.currentIteration,
+				"iteration": currentIter,
 			})
 			break
 		}
 
 		// Update iteration status
-		iterationName := fmt.Sprintf("iteration-%d", l.currentIteration)
+		currentIter = l.getCurrentIteration()
+		iterationName := fmt.Sprintf("iteration-%d", currentIter)
 		l.updateStatus(WorkflowStateRunning, iterationName, nil)
 		l.updateStepStatus(iterationName, StepStatus{
 			State:     StepStateRunning,
@@ -247,7 +311,7 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 
 		// Emit iteration start event
 		l.emitWorkflowEvent(domain.EventWorkflowStep, map[string]interface{}{
-			"iteration": l.currentIteration,
+			"iteration": currentIter,
 			"step":      "iteration_start",
 		})
 
@@ -267,8 +331,13 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 		iterationDuration := time.Since(iterationStart)
 
 		// Update step status
+		// Get start time with lock
+		l.mu.RLock()
+		stepStartTime := l.status.Steps[iterationName].StartTime
+		l.mu.RUnlock()
+
 		stepStatus := StepStatus{
-			StartTime: l.status.Steps[iterationName].StartTime,
+			StartTime: stepStartTime,
 			EndTime:   time.Now(),
 		}
 
@@ -279,7 +348,7 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 
 			// Emit error event
 			l.emitWorkflowEvent(domain.EventAgentError, map[string]interface{}{
-				"iteration": l.currentIteration,
+				"iteration": currentIter,
 				"error":     err.Error(),
 				"duration":  iterationDuration.String(),
 			})
@@ -290,7 +359,7 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 					// Log the after-run error but still return the original error
 					_ = err // Explicitly ignore the error for linting
 				}
-				return nil, fmt.Errorf("loop failed at iteration %d: %w", l.currentIteration, err)
+				return nil, fmt.Errorf("loop failed at iteration %d: %w", currentIter, err)
 			}
 
 			// Continue with current state if not breaking on error
@@ -309,24 +378,24 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 		if l.collectResults && iterationState != nil {
 			// Store the iteration result
 			iterationResult := map[string]interface{}{
-				"iteration": l.currentIteration,
+				"iteration": currentIter,
 				"duration":  iterationDuration,
 				"state":     iterationState.State,
 				"error":     err,
 			}
-			l.iterationResults = append(l.iterationResults, iterationResult)
+			l.appendIterationResult(iterationResult)
 		}
 
 		// Emit iteration complete event
 		l.emitWorkflowEvent(domain.EventProgress, map[string]interface{}{
-			"iteration": l.currentIteration,
+			"iteration": currentIter,
 			"step":      "iteration_complete",
 			"duration":  iterationDuration.String(),
 			"success":   err == nil,
 		})
 
 		// Increment iteration counter
-		l.currentIteration++
+		l.incrementIteration()
 
 		// Apply iteration delay
 		if l.iterationDelay > 0 {
@@ -344,12 +413,12 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 
 	// Add loop metadata to final state
 	if currentState != nil && currentState.Metadata != nil {
-		currentState.Metadata["total_iterations"] = l.currentIteration
-		currentState.Metadata["total_duration"] = time.Since(l.startTime)
+		currentState.Metadata["total_iterations"] = l.getCurrentIteration()
+		currentState.Metadata["total_duration"] = time.Since(l.getStartTime())
 		currentState.Metadata["loop_completed"] = true
 
 		if l.collectResults {
-			currentState.Metadata["iteration_results"] = l.iterationResults
+			currentState.Metadata["iteration_results"] = l.getIterationResultsCopy()
 		}
 	}
 
@@ -361,8 +430,8 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 
 	// Emit workflow complete event
 	l.emitWorkflowEvent(domain.EventAgentComplete, map[string]interface{}{
-		"duration":         time.Since(l.startTime),
-		"total_iterations": l.currentIteration,
+		"duration":         time.Since(l.getStartTime()),
+		"total_iterations": l.getCurrentIteration(),
 		"completed":        true,
 	})
 
@@ -371,22 +440,21 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 
 // GetIterationResults returns the results from all iterations
 func (l *LoopAgent) GetIterationResults() []interface{} {
-	results := make([]interface{}, len(l.iterationResults))
-	copy(results, l.iterationResults)
-	return results
+	return l.getIterationResultsCopy()
 }
 
 // GetCurrentIteration returns the current iteration number
 func (l *LoopAgent) GetCurrentIteration() int {
-	return l.currentIteration
+	return l.getCurrentIteration()
 }
 
 // GetTotalDuration returns the total duration of the loop
 func (l *LoopAgent) GetTotalDuration() time.Duration {
-	if l.startTime.IsZero() {
+	startTime := l.getStartTime()
+	if startTime.IsZero() {
 		return 0
 	}
-	return time.Since(l.startTime)
+	return time.Since(startTime)
 }
 
 // Validate validates the loop workflow configuration
@@ -424,9 +492,9 @@ func (l *LoopAgent) Validate() error {
 
 // Reset resets the loop state for reuse
 func (l *LoopAgent) Reset() {
-	l.currentIteration = 0
-	l.startTime = time.Time{}
-	l.iterationResults = make([]interface{}, 0)
+	l.setCurrentIteration(0)
+	l.setStartTime(time.Time{})
+	l.resetIterationResults()
 }
 
 // GetLoopBody returns the loop body step

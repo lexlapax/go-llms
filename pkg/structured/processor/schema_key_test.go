@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
-	"github.com/lexlapax/go-llms/pkg/testutils"
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 )
 
 func TestGenerateSchemaKey(t *testing.T) {
@@ -271,14 +271,14 @@ func createTestSchema() *schemaDomain.Schema {
 			"name": {
 				Type:        "string",
 				Description: "The name",
-				MinLength:   testutils.IntPtr(2),
-				MaxLength:   testutils.IntPtr(50),
+				MinLength:   helpers.IntPtr(2),
+				MaxLength:   helpers.IntPtr(50),
 			},
 			"age": {
 				Type:        "integer",
 				Description: "The age",
-				Minimum:     testutils.Float64Ptr(0),
-				Maximum:     testutils.Float64Ptr(120),
+				Minimum:     helpers.Float64Ptr(0),
+				Maximum:     helpers.Float64Ptr(120),
 			},
 			"email": {
 				Type:        "string",

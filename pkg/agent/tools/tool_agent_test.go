@@ -10,13 +10,13 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
-	"github.com/lexlapax/go-llms/pkg/testutils"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestToolAgent_Basic(t *testing.T) {
-	tool := testutils.MockTool{
+	tool := mocks.MockTool{
 		ToolName:        "test-tool",
 		ToolDescription: "Test tool for testing",
 		Executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
@@ -51,7 +51,7 @@ func TestToolAgent_Basic(t *testing.T) {
 }
 
 func TestToolAgent_MapParameters(t *testing.T) {
-	tool := testutils.MockTool{
+	tool := mocks.MockTool{
 		ToolName: "map-tool",
 		Executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 			if paramsMap, ok := params.(map[string]interface{}); ok {
@@ -80,7 +80,7 @@ func TestToolAgent_MapParameters(t *testing.T) {
 }
 
 func TestToolAgent_CustomMappers(t *testing.T) {
-	tool := testutils.MockTool{
+	tool := mocks.MockTool{
 		ToolName: "custom-tool",
 		Executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 			if paramsMap, ok := params.(map[string]interface{}); ok {
@@ -122,7 +122,7 @@ func TestToolAgent_CustomMappers(t *testing.T) {
 }
 
 func TestToolAgent_ErrorHandling(t *testing.T) {
-	tool := testutils.MockTool{
+	tool := mocks.MockTool{
 		ToolName: "error-tool",
 		Executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 			return nil, fmt.Errorf("tool execution failed")
@@ -140,7 +140,7 @@ func TestToolAgent_ErrorHandling(t *testing.T) {
 }
 
 func TestToolAgent_StateUpdateError(t *testing.T) {
-	tool := testutils.MockTool{
+	tool := mocks.MockTool{
 		ToolName: "success-tool",
 		Executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 			return "success", nil
@@ -161,7 +161,7 @@ func TestToolAgent_StateUpdateError(t *testing.T) {
 }
 
 func TestToolAgent_SingleParamMapper(t *testing.T) {
-	tool := testutils.MockTool{
+	tool := mocks.MockTool{
 		ToolName: "single-param-tool",
 		Executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 			return fmt.Sprintf("Input was: %v", params), nil
@@ -189,7 +189,7 @@ func TestToolAgent_SingleParamMapper(t *testing.T) {
 }
 
 func TestDefaultParamMapper_Priority(t *testing.T) {
-	tool := testutils.MockTool{
+	tool := mocks.MockTool{
 		ToolName: "priority-tool",
 		Executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 			return params, nil
@@ -253,7 +253,7 @@ func TestToolAgent_WithSchema(t *testing.T) {
 		},
 	}
 
-	tool := testutils.MockTool{
+	tool := mocks.MockTool{
 		ToolName: "schema-tool",
 		Schema:   schema,
 	}

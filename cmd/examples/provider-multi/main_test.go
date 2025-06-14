@@ -7,24 +7,22 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
-	"github.com/lexlapax/go-llms/pkg/testutils"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 // TestMultiProviderFastest tests the fastest strategy of MultiProvider
 func TestMultiProviderFastest(t *testing.T) {
 	// Create mock providers with different latencies
-	fastProvider := &testutils.TestMockProvider{
-		GenerateFunc: func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
-			time.Sleep(10 * time.Millisecond)
-			return "Fast provider response", nil
-		},
+	fastProvider := mocks.NewMockProvider("fast")
+	fastProvider.OnGenerate = func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+		time.Sleep(10 * time.Millisecond)
+		return "Fast provider response", nil
 	}
 
-	slowProvider := &testutils.TestMockProvider{
-		GenerateFunc: func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
-			time.Sleep(30 * time.Millisecond)
-			return "Slow provider response", nil
-		},
+	slowProvider := mocks.NewMockProvider("slow")
+	slowProvider.OnGenerate = func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+		time.Sleep(30 * time.Millisecond)
+		return "Slow provider response", nil
 	}
 
 	// Create providers with weights
@@ -55,18 +53,16 @@ func TestMultiProviderPrimary(t *testing.T) {
 	// Create mock providers with tracking variables
 	var primaryCalled, secondaryCalled bool
 
-	primaryProvider := &testutils.TestMockProvider{
-		GenerateFunc: func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
-			primaryCalled = true
-			return "Primary provider response", nil
-		},
+	primaryProvider := mocks.NewMockProvider("primary")
+	primaryProvider.OnGenerate = func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+		primaryCalled = true
+		return "Primary provider response", nil
 	}
 
-	secondaryProvider := &testutils.TestMockProvider{
-		GenerateFunc: func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
-			secondaryCalled = true
-			return "Secondary provider response", nil
-		},
+	secondaryProvider := mocks.NewMockProvider("secondary")
+	secondaryProvider.OnGenerate = func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+		secondaryCalled = true
+		return "Secondary provider response", nil
 	}
 
 	// Create providers with weights
@@ -106,19 +102,18 @@ func TestMultiProviderPrimary(t *testing.T) {
 // TestMultiProviderStreaming tests the streaming functionality of MultiProvider
 func TestMultiProviderStreaming(t *testing.T) {
 	// Create mock provider with streaming
-	mockProvider := &testutils.TestMockProvider{
-		StreamFunc: func(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
-			ch := make(chan domain.Token)
-			go func() {
-				defer close(ch)
-				ch <- domain.Token{Text: "Token 1", Finished: false}
-				time.Sleep(10 * time.Millisecond)
-				ch <- domain.Token{Text: "Token 2", Finished: false}
-				time.Sleep(10 * time.Millisecond)
-				ch <- domain.Token{Text: "Token 3", Finished: true}
-			}()
-			return ch, nil
-		},
+	mockProvider := mocks.NewMockProvider("mock")
+	mockProvider.OnStream = func(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
+		ch := make(chan domain.Token)
+		go func() {
+			defer close(ch)
+			ch <- domain.Token{Text: "Token 1", Finished: false}
+			time.Sleep(10 * time.Millisecond)
+			ch <- domain.Token{Text: "Token 2", Finished: false}
+			time.Sleep(10 * time.Millisecond)
+			ch <- domain.Token{Text: "Token 3", Finished: true}
+		}()
+		return ch, nil
 	}
 
 	// Create providers with weights

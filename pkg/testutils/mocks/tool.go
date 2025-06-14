@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	"github.com/lexlapax/go-llms/pkg/agent/tools"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
@@ -35,16 +34,24 @@ type ExpectedCall struct {
 // MockTool is an enhanced mock implementation of the Tool interface
 type MockTool struct {
 	// Configuration
-	Info          tools.ToolInfo
-	ResponseMap   map[string]interface{} // Input pattern to response mapping
-	DefaultOutput interface{}            // Default output when no pattern matches
-	ErrorRate     float64                // Probability of returning an error (0.0-1.0)
+	ToolName        string
+	ToolDescription string
+	ToolCategory    string
+	ToolTags        []string
+	ToolVersion     string
+	ResponseMap     map[string]interface{} // Input pattern to response mapping
+	DefaultOutput   interface{}            // Default output when no pattern matches
+	ErrorRate       float64                // Probability of returning an error (0.0-1.0)
 
 	// Behavior hooks
 	OnExecute  func(ctx *domain.ToolContext, input map[string]interface{}) (map[string]interface{}, error)
 	OnValidate func(input map[string]interface{}) error
 
+	// Backward compatibility: simple executor that takes interface{} params
+	Executor func(ctx *domain.ToolContext, params interface{}) (interface{}, error)
+
 	// Schema configuration
+	Schema      *sdomain.Schema // Backward compatibility alias for ParamSchema
 	ParamSchema *sdomain.Schema
 	OutSchema   *sdomain.Schema
 
@@ -66,17 +73,15 @@ type MockTool struct {
 // NewMockTool creates a new mock tool with default configuration
 func NewMockTool(name, description string) *MockTool {
 	return &MockTool{
-		Info: tools.ToolInfo{
-			Name:        name,
-			Description: description,
-			Category:    "test",
-			Tags:        []string{"test", "mock"},
-			Version:     "1.0.0",
-		},
-		ResponseMap:   make(map[string]interface{}),
-		DefaultOutput: map[string]interface{}{"result": "mock result"},
-		ErrorGuid:     make(map[string]string),
-		callHistory:   make([]ToolCall, 0),
+		ToolName:        name,
+		ToolDescription: description,
+		ToolCategory:    "test",
+		ToolTags:        []string{"test", "mock"},
+		ToolVersion:     "1.0.0",
+		ResponseMap:     make(map[string]interface{}),
+		DefaultOutput:   map[string]interface{}{"result": "mock result"},
+		ErrorGuid:       make(map[string]string),
+		callHistory:     make([]ToolCall, 0),
 	}
 }
 
@@ -114,17 +119,27 @@ func (t *MockTool) WithOutputSchema(schema *sdomain.Schema) *MockTool {
 
 // Name returns the tool name
 func (t *MockTool) Name() string {
-	return t.Info.Name
+	return t.ToolName
 }
 
 // Description returns the tool description
 func (t *MockTool) Description() string {
-	return t.Info.Description
+	return t.ToolDescription
 }
 
 // Execute runs the tool with the given parameters
 func (t *MockTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 	start := time.Now()
+
+	// Check backward-compatible executor first
+	if t.Executor != nil {
+		result, err := t.Executor(ctx, params)
+		// Record call with params as-is
+		inputMap := map[string]interface{}{"params": params}
+		outputMap := map[string]interface{}{"result": result}
+		t.recordCall(inputMap, outputMap, err, ctx, start)
+		return result, err
+	}
 
 	// Convert params to map for easier handling
 	inputMap, ok := params.(map[string]interface{})
@@ -133,7 +148,7 @@ func (t *MockTool) Execute(ctx *domain.ToolContext, params interface{}) (interfa
 		inputMap = map[string]interface{}{"input": params}
 	}
 
-	// Check behavior hook first
+	// Check behavior hook
 	if t.OnExecute != nil {
 		output, err := t.OnExecute(ctx, inputMap)
 		t.recordCall(inputMap, output, err, ctx, start)
@@ -162,7 +177,11 @@ func (t *MockTool) Execute(ctx *domain.ToolContext, params interface{}) (interfa
 
 // ParameterSchema returns the parameter schema
 func (t *MockTool) ParameterSchema() *sdomain.Schema {
-	return t.ParamSchema
+	if t.ParamSchema != nil {
+		return t.ParamSchema
+	}
+	// Backward compatibility: check Schema field
+	return t.Schema
 }
 
 // OutputSchema returns the output schema
@@ -192,17 +211,17 @@ func (t *MockTool) ErrorGuidance() map[string]string {
 
 // Category returns the tool category
 func (t *MockTool) Category() string {
-	return t.Info.Category
+	return t.ToolCategory
 }
 
 // Tags returns the tool tags
 func (t *MockTool) Tags() []string {
-	return t.Info.Tags
+	return t.ToolTags
 }
 
 // Version returns the tool version
 func (t *MockTool) Version() string {
-	return t.Info.Version
+	return t.ToolVersion
 }
 
 // IsDeterministic returns whether the tool is deterministic
@@ -228,8 +247,8 @@ func (t *MockTool) EstimatedLatency() string {
 // ToMCPDefinition converts to MCP tool definition
 func (t *MockTool) ToMCPDefinition() domain.MCPToolDefinition {
 	return domain.MCPToolDefinition{
-		Name:        t.Info.Name,
-		Description: t.Info.Description,
+		Name:        t.ToolName,
+		Description: t.ToolDescription,
 		InputSchema: t.ParamSchema,
 	}
 }

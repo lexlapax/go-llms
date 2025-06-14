@@ -419,12 +419,12 @@
 - ✅ Comprehensive recovery strategies for each format
 - ✅ OutputSchema type independent from domain.Schema for flexibility
 
-### 0.3.5.9: Testing Infrastructure (FOUNDATION SUPPORT)
+### 0.3.5.9: Testing Infrastructure (FOUNDATION SUPPORT) ✅ COMPLETED (June 14, 2025)
 - [x] Inventory and take stock of testing infrastructure including Mock implementations
 - [x] Come up with a comprehensive plan for testing infrastructure including common Mock Implementations in an exportable api
 - [x] Update this todo.md list for a more comprehensive task list
 
-#### Phase 1: Core Testing Package Structure
+#### Phase 1: Core Testing Package Structure ✅ COMPLETED
 - [x] Expand pkg/testutils package structure
   - [x] Create mocks/ subdirectory for all mock implementations
   - [x] Create scenario/ subdirectory for scenario builder
@@ -448,7 +448,7 @@
     - [x] Type aliases pointing to new locations  
     - [x] Deprecation notices in comments
     - [x] Maintain backward compatibility during migration
-- [ ] Mock Implementations (REQUIRED FOR DOWNSTREAM)
+- [x] Mock Implementations (REQUIRED FOR DOWNSTREAM)
   - [x] MockProvider with configurable responses
     - [x] Pattern-based response mapping (string patterns to responses)
     - [x] Call history tracking with ProviderCall struct
@@ -461,18 +461,46 @@
     - [x] Execution count tracking
     - [x] Expected calls verification
     - [x] OnExecute and OnValidate hooks
-  - [ ] MockAgent implementation
-    - [ ] Response queue for deterministic testing
-    - [ ] Sub-agent management
-    - [ ] Event emission tracking
-    - [ ] State history recording
-    - [ ] OnStart and OnStep hooks
-  - [ ] MockState with state manipulation helpers
-  - [ ] MockEventEmitter for event testing
+  - [x] MockAgent implementation
+    - [x] Response queue for deterministic testing
+    - [x] Sub-agent management
+    - [x] Event emission tracking
+    - [x] State history recording
+    - [x] OnStart and OnStep hooks
+  - [x] MockState with state manipulation helpers
+    - [x] Change tracking with StateChange history
+    - [x] State snapshots with diff functionality
+    - [x] Access tracking (get/set counts)
+    - [x] Behavior hooks (OnGet, OnSet, OnDelete)
+    - [x] Failure mode simulation
+  - [x] MockEventEmitter for event testing
+    - [x] Event recording and filtering
+    - [x] Event listeners with async support
+    - [x] Behavior hooks for all emit types
+    - [x] Event assertions (count, type, content)
+    - [x] WaitForEvent with timeout
   - [x] Mock registry for centralized management
     - [x] Register/unregister mocks
     - [x] Lookup by name/type
     - [x] Reset all mocks functionality
+  - [x] Comprehensive test coverage for all mock implementations
+    - [x] MockAgent test coverage (all features)
+    - [x] MockState test coverage (all features)
+    - [x] MockEventEmitter test coverage (all features)
+    - [x] CreateMockToolContext helper tested
+  - [x] Fixed import cycles and race conditions
+    - [x] Removed circular dependency between mocks/tool.go and pkg/agent/tools
+    - [x] Fixed race conditions in LLMAgent, workflow agents (Sequential, Parallel, Conditional, Loop)
+    - [x] Fixed logic issues in error handling tests
+
+**DOWNSTREAM REQUIREMENTS SATISFIED**:
+- ✅ MockProvider with pattern-based response matching and call history
+- ✅ MockTool with input pattern mapping and execution tracking
+- ✅ MockAgent with response queue, sub-agent management, and event tracking
+- ✅ MockState with change tracking, snapshots, and access counting
+- ✅ MockEventEmitter with recording, filtering, and assertions
+- ✅ Thread-safe implementations for all mocks
+- ✅ Comprehensive test coverage demonstrating usage
 
 #### Phase 2: Scenario Builder System (CRITICAL FOR BRIDGE TESTING)
 - [ ] Core ScenarioBuilder implementation

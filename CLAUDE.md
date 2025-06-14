@@ -6,9 +6,9 @@ Project guidance for Claude Code when working with go-llms.
 
 Unified Go interface for LLM providers with agent tooling.
 
-**Status**: v0.3.5.9 Testing Infrastructure (In Progress - June 14, 2025)
+**Status**: v0.3.5.9 Testing Infrastructure (Phase 1 Complete - June 14, 2025)
 **Providers**: OpenAI, Anthropic, Google (Gemini, Vertex AI), Ollama, OpenRouter  
-**Current Issue**: XML parser test failing for multiple root elements case
+**Current**: Phase 2 - Scenario Builder System
 **Next**: Complete v0.3.5.9 Testing Infrastructure
 
 ## Recent Progress:
@@ -19,21 +19,25 @@ Unified Go interface for LLM providers with agent tooling.
 - Format conversion between JSON/XML/YAML
 - Bridge adapter for go-llmspell compatibility
 
-### v0.3.5.9 Testing Infrastructure (In Progress)
-- Enhanced mock implementations with pattern-based responses
-- Centralized mock registry
-- Call history tracking
-- Currently fixing: XML parser test case for multiple root elements
+### v0.3.5.9 Testing Infrastructure (Phase 1 Complete)
+- Enhanced mock implementations with pattern-based responses ✅
+- Centralized mock registry ✅
+- Call history tracking ✅
+- Phase 1 completed:
+  - MockAgent with response queues, sub-agent management, event tracking ✅
+  - MockState with change tracking, snapshots, behavior hooks ✅
+  - MockEventEmitter with recording, filtering, assertions ✅
+  - Comprehensive test coverage for all mocks ✅
+  - Fixed import cycles by removing circular dependencies ✅
+- Next: Phase 2 Scenario Builder System
 
 ## Current Test Status:
-- YAML parser: All tests passing ✅
-- JSON parser: All tests passing ✅
-- Converter: All tests passing ✅
-- Validator: All tests passing ✅
-- Bridge adapter: All tests passing ✅
-- XML parser: 1 test failing (Multiple root elements wrapped) ❌
-  - Issue: Parser only returns first element when multiple root elements exist
-  - The `hasMultipleRootElements` detection is working, but wrapping strategy not applied correctly
+- All structured output parsers: Tests passing ✅
+- Mock implementations: All tests passing ✅
+  - MockAgent: Complete with all features tested
+  - MockState: Complete with change tracking, snapshots
+  - MockEventEmitter: Complete with event assertions
+- Unit tests: Passing (except integration/stress tests which require API keys)
 
 ## Upcoming: v0.3.5 Scripting Integration
 Major focus on go-llmspell requirements:

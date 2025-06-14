@@ -595,10 +595,20 @@ func (a *LLMAgent) createMessagesFromState(state *domain.State, prompt string) [
 
 // Get system content including prompt and tool descriptions
 func (a *LLMAgent) getSystemContent() string {
+	// First check with read lock
 	a.mu.RLock()
-	defer a.mu.RUnlock()
+	if a.cachedToolsDescription != "" {
+		cached := a.cachedToolsDescription
+		a.mu.RUnlock()
+		return cached
+	}
+	a.mu.RUnlock()
 
-	// Return cached version if available
+	// Need to generate content - acquire write lock
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	// Double-check after acquiring write lock
 	if a.cachedToolsDescription != "" {
 		return a.cachedToolsDescription
 	}

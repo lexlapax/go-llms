@@ -14,7 +14,7 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
-	"github.com/lexlapax/go-llms/pkg/testutils"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -84,8 +84,8 @@ func TestConvertToolCategoryToAgents(t *testing.T) {
 	// Create registry and add some tools
 	registry := builtins.NewRegistry[domain.Tool]()
 
-	tool1 := testutils.MockTool{ToolName: "tool1", ToolDescription: "Tool 1"}
-	tool2 := testutils.MockTool{ToolName: "tool2", ToolDescription: "Tool 2"}
+	tool1 := mocks.MockTool{ToolName: "tool1", ToolDescription: "Tool 1"}
+	tool2 := mocks.MockTool{ToolName: "tool2", ToolDescription: "Tool 2"}
 
 	err := registry.Register("tool1", &tool1, builtins.Metadata{
 		Name:     "tool1",
@@ -114,7 +114,7 @@ func TestConvertToolCategoryToAgents(t *testing.T) {
 }
 
 func TestNewToolAgentWithEvents(t *testing.T) {
-	tool := testutils.MockTool{
+	tool := mocks.MockTool{
 		ToolName:        "event-tool",
 		ToolDescription: "Tool with events",
 		Executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
