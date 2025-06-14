@@ -480,7 +480,7 @@ func (b *LLMBridge) registerProvider(config map[string]interface{}) error {
 
 **Implementation Expectations**:
 ```go
-// pkg/llm/providers/metadata.go
+// pkg/llm/provider/metadata.go
 package providers
 
 type ProviderMetadata interface {
@@ -507,7 +507,7 @@ type MetadataProvider interface {
     GetMetadata() ProviderMetadata
 }
 
-// pkg/llm/providers/registry.go
+// pkg/llm/provider/registry.go
 type DynamicRegistry struct {
     *domain.ModelRegistry
     providers map[string]MetadataProvider

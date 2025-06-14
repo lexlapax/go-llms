@@ -867,6 +867,20 @@ cd tools-script-dynamic && go run main.go
 
 ### Error Handling Examples
 
+#### [**Provider Metadata**](provider-metadata/README.md)
+Provider metadata and dynamic registry system.
+
+**Features:**
+- Provider capability discovery
+- Model information with pricing
+- Dynamic provider registration
+- Configuration export/import
+- Best model selection by requirements
+
+```bash
+cd provider-metadata && go run main.go
+```
+
 #### [**Errors Serialization**](errors-serialization/README.md)
 Enhanced error handling with serialization and recovery.
 

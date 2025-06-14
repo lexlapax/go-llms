@@ -1,5 +1,56 @@
 # Go-LLMs Completed Tasks
 
+## v0.3.5.7: LLM Provider Metadata and Configuration ✅ COMPLETED (June 14, 2025)
+- [x] Provider Metadata API (CRITICAL FOR DOWNSTREAM)
+  - [x] ProviderMetadata interface with Name(), Description(), GetCapabilities(), GetModels(), GetConstraints(), GetConfigSchema()
+  - [x] Capability constants: streaming, function_calling, vision, embeddings
+  - [x] ModelInfo struct for model discovery
+  - [x] Constraints struct for limits and rate information
+  - [x] Configuration schema generation for UI
+- [x] MetadataProvider Interface (REQUIRED FOR BRIDGE LAYER)
+  - [x] All providers must implement MetadataProvider interface
+  - [x] GetMetadata() method returning standardized information
+  - [x] Bridge-friendly provider information format
+- [x] Dynamic Provider Registration (DOWNSTREAM REQUIREMENT)
+  - [x] DynamicRegistry extending domain.ModelRegistry
+  - [x] RegisterProvider method with validation
+  - [x] Provider factory pattern using templates
+  - [x] Provider lifecycle management
+  - [x] Hot-reload support
+- [x] Provider Configuration Templates
+  - [x] GetTemplate(type) function for provider templates
+  - [x] CreateProvider from configuration maps
+  - [x] JSON/YAML configuration templates
+  - [x] Template validation against schemas
+  - [x] Environment variable mapping
+  - [x] Secure credential handling
+- [x] Provider metadata tests
+- [x] Configuration examples
+
+**DOWNSTREAM REQUIREMENTS SATISFIED**:
+- ✅ `pkg/llm/providers/metadata.go` with ProviderMetadata interface and all required methods
+- ✅ MetadataProvider interface for capability discovery (providers can implement optionally)
+- ✅ DynamicRegistry with full ModelRegistry compatibility, listeners, and factory support
+- ✅ Provider factories for OpenAI, Anthropic, and Mock with template-based creation
+- ✅ Configuration schema with field validation, secrets, and environment variable support
+- ✅ Integration helpers for capability-based provider selection
+- ✅ Comprehensive example demonstrating all features
+
+**Key Implementation Details**:
+- **Initial Implementation**: Started with static model lists in provider metadata implementations
+- **Major Refactoring**: Based on user feedback, refactored to use dynamic model loading:
+  - Changed GetModels() from synchronous to asynchronous with context parameter
+  - Integrated with existing modelinfo service for real-time model data
+  - Added caching layer with 5-minute TTL to reduce API calls
+  - Updated all integration functions to handle async model loading
+  - Removed static model lists from provider metadata implementations
+  - Fixed all tests and examples to work with the new async interface
+- **Benefits of Dynamic Loading**:
+  - Always up-to-date model information from provider APIs
+  - No need to manually update model lists as providers add new models
+  - Reduced maintenance burden on the library
+  - Better alignment with dynamic nature of LLM provider ecosystems
+
 ## v0.3.4.1: Advanced Tool features - Runtime Tool Discovery for Scripting Engines ✅ COMPLETED (June 13, 2025)
 - [x] Design metadata-first tool registry system
   - [x] Create `ToolMetadata` struct with Name, Description, Category, Tags, Schemas, Examples
