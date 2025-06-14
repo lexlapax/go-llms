@@ -1,24 +1,30 @@
 package testutils
 
-// ABOUTME: Helper functions for creating pointers to primitive types
-// ABOUTME: Simplifies test data setup by avoiding inline pointer creation
+// ABOUTME: Compatibility layer for pointer helper functions
+// ABOUTME: These are re-exported from the helpers package for backward compatibility
+
+import "github.com/lexlapax/go-llms/pkg/testutils/helpers"
 
 // IntPtr returns a pointer to an int value
+// Deprecated: Use helpers.IntPtr instead
 func IntPtr(i int) *int {
-	return &i
+	return helpers.IntPtr(i)
 }
 
 // Float64Ptr returns a pointer to a float64 value
+// Deprecated: Use helpers.Float64Ptr instead
 func Float64Ptr(f float64) *float64 {
-	return &f
+	return helpers.Float64Ptr(f)
 }
 
 // BoolPtr returns a pointer to a bool value
+// Deprecated: Use helpers.BoolPtr instead
 func BoolPtr(b bool) *bool {
-	return &b
+	return helpers.BoolPtr(b)
 }
 
 // StringPtr returns a pointer to a string value
+// Deprecated: Use helpers.StringPtr instead
 func StringPtr(s string) *string {
-	return &s
+	return helpers.StringPtr(s)
 }

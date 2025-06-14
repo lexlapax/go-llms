@@ -420,41 +420,190 @@
 - ✅ OutputSchema type independent from domain.Schema for flexibility
 
 ### 0.3.5.9: Testing Infrastructure (FOUNDATION SUPPORT)
+- [x] Inventory and take stock of testing infrastructure including Mock implementations
+- [x] Come up with a comprehensive plan for testing infrastructure including common Mock Implementations in an exportable api
+- [x] Update this todo.md list for a more comprehensive task list
+
+#### Phase 1: Core Testing Package Structure
+- [x] Expand pkg/testutils package structure
+  - [x] Create mocks/ subdirectory for all mock implementations
+  - [x] Create scenario/ subdirectory for scenario builder
+  - [x] Create fixtures/ subdirectory for pre-configured mocks
+  - [x] Create helpers/ subdirectory for test utilities
+- [x] Migrate existing testutils files to new structure
+  - [x] Move mock_providers.go content to mocks/provider.go
+    - [x] Extract TestMockProvider to mocks/provider.go
+    - [x] Extract CustomMockProvider to mocks/provider.go
+    - [x] Extract MockStructuredProvider to mocks/provider.go
+    - [x] Enhance with pattern-based responses and call tracking
+  - [x] Move mock_tools.go content to mocks/tool.go
+    - [x] Move MockTool struct to mocks/tool.go
+    - [x] Enhance with call history tracking
+    - [x] Add response mapping functionality
+  - [x] Move pointer_helpers.go to helpers/pointers.go
+    - [x] Keep as-is (already well-designed helper functions)
+  - [x] Keep fixed_test.go in testutils root
+    - [x] This is a test file demonstrating correct usage
+  - [x] Create compatibility aliases in original files
+    - [x] Type aliases pointing to new locations  
+    - [x] Deprecation notices in comments
+    - [x] Maintain backward compatibility during migration
 - [ ] Mock Implementations (REQUIRED FOR DOWNSTREAM)
-  - [ ] MockProvider with configurable responses
-  - [ ] MockTool for tool testing scenarios
-  - [ ] Mock for every major interface
-  - [ ] Configurable mock behaviors
-  - [ ] Mock assertion helpers
-  - [ ] Mock state verification and call tracking
-- [ ] Scenario Builder System (CRITICAL FOR BRIDGE TESTING)
-  - [ ] NewScenario() function with fluent API
-  - [ ] WithMockProvider() with response mapping
-  - [ ] WithTool() and WithAgent() setup methods
-  - [ ] WithInput() and ExpectOutput() assertion methods
-  - [ ] ExpectToolCall() with argument matching
-  - [ ] ExpectEvent() for event-driven testing
-  - [ ] Run(t) method for test execution
-- [ ] Test Helpers
-  - [ ] Agent testing utilities
-  - [ ] Tool testing framework
-  - [ ] Workflow test harness
-  - [ ] Event capture for tests
-- [ ] MockProvider Pattern Matching (DOWNSTREAM REQUIREMENT)
-  - [ ] Response matching based on input patterns
-  - [ ] Regex support for flexible response mapping
-  - [ ] Call history tracking with timestamps
-  - [ ] Provider behavior simulation
-- [ ] Assertion and Matcher System
-  - [ ] Matcher interface with Match(value) method
-  - [ ] Built-in matchers: Contains, Equals, HasField
-  - [ ] Custom matcher support
-  - [ ] Detailed assertion failure messages
-- [ ] Testing framework examples
-- [ ] Best practices documentation
+  - [x] MockProvider with configurable responses
+    - [x] Pattern-based response mapping (string patterns to responses)
+    - [x] Call history tracking with ProviderCall struct
+    - [x] Thread-safe implementation with sync.RWMutex
+    - [x] Behavior hooks (OnGenerate, OnStream, OnGenerateSchema)
+    - [x] Response delay simulation
+  - [x] MockTool for tool testing scenarios
+    - [x] Input pattern to response mapping
+    - [x] Call history with ToolCall struct
+    - [x] Execution count tracking
+    - [x] Expected calls verification
+    - [x] OnExecute and OnValidate hooks
+  - [ ] MockAgent implementation
+    - [ ] Response queue for deterministic testing
+    - [ ] Sub-agent management
+    - [ ] Event emission tracking
+    - [ ] State history recording
+    - [ ] OnStart and OnStep hooks
+  - [ ] MockState with state manipulation helpers
+  - [ ] MockEventEmitter for event testing
+  - [x] Mock registry for centralized management
+    - [x] Register/unregister mocks
+    - [x] Lookup by name/type
+    - [x] Reset all mocks functionality
+
+#### Phase 2: Scenario Builder System (CRITICAL FOR BRIDGE TESTING)
+- [ ] Core ScenarioBuilder implementation
+  - [ ] NewScenario(t testing.TB) constructor
+  - [ ] Fluent API method chaining support
+  - [ ] Internal state management
+  - [ ] Error accumulation and reporting
+- [ ] Configuration methods
+  - [ ] WithMockProvider(name string, responses map[string]Response)
+  - [ ] WithTool(tool *MockTool)
+  - [ ] WithAgent(agent *MockAgent)
+  - [ ] WithInput(key string, value interface{})
+  - [ ] WithState(state domain.State)
+  - [ ] WithTimeout(duration time.Duration)
+- [ ] Expectation methods
+  - [ ] ExpectOutput(matcher Matcher)
+  - [ ] ExpectToolCall(toolName string, inputMatcher Matcher)
+  - [ ] ExpectEvent(eventType string, dataMatcher Matcher)
+  - [ ] ExpectError(errorMatcher Matcher)
+  - [ ] ExpectNoError()
+- [ ] Execution and verification
+  - [ ] Run() domain.State method
+  - [ ] RunWithContext(ctx context.Context)
+  - [ ] Automatic assertion execution
+  - [ ] Detailed failure reporting
+
+#### Phase 3: Matcher System
+- [ ] Core Matcher interface
+  - [ ] Match(value interface{}) (bool, string) method
+  - [ ] Description() string method
+- [ ] Basic matchers
+  - [ ] Equals(expected interface{})
+  - [ ] Contains(substring string)
+  - [ ] HasField(field string, valueMatcher Matcher)
+  - [ ] IsNil()
+  - [ ] IsNotNil()
+- [ ] Advanced matchers
+  - [ ] MatchesJSON(pattern string)
+  - [ ] MatchesRegex(pattern string)
+  - [ ] HasLength(expected int)
+  - [ ] IsEmpty()
+  - [ ] IsBetween(min, max interface{})
+- [ ] Composite matchers
+  - [ ] AllOf(matchers ...Matcher)
+  - [ ] AnyOf(matchers ...Matcher)
+  - [ ] Not(matcher Matcher)
+- [ ] Custom matcher support
+  - [ ] MatcherFunc type for inline matchers
+  - [ ] Matcher builder helpers
+
+#### Phase 4: Test Helpers and Utilities
+- [ ] Context helpers
+  - [ ] CreateTestToolContext(options ...ContextOption)
+  - [ ] CreateTestAgentContext(options ...ContextOption)
+  - [ ] WithTestState(state domain.State)
+  - [ ] WithTestLogger(logger Logger)
+- [ ] Event testing support
+  - [ ] EventCapture implementation
+  - [ ] Event filtering by type/data
+  - [ ] Event assertion helpers
+  - [ ] Event timeline visualization
+- [ ] State testing utilities
+  - [ ] State diff functionality
+  - [ ] State snapshot comparison
+  - [ ] State mutation helpers
+- [ ] Provider testing utilities
+  - [ ] Response generation from schemas
+  - [ ] Error injection helpers
+  - [ ] Streaming simulation
+
+#### Phase 5: Test Fixtures
+- [ ] Provider fixtures
+  - [ ] ChatGPTMockProvider() with typical responses
+  - [ ] ClaudeMockProvider() with typical responses
+  - [ ] ErrorMockProvider(errorType string)
+  - [ ] SlowMockProvider(delay time.Duration)
+  - [ ] StreamingMockProvider()
+- [ ] Tool fixtures
+  - [ ] CalculatorMockTool() with arithmetic operations
+  - [ ] WebSearchMockTool() with sample results
+  - [ ] FileMockTool() with virtual filesystem
+  - [ ] ErrorMockTool(errorRate float64)
+- [ ] Agent fixtures
+  - [ ] SimpleMockAgent() for basic testing
+  - [ ] ResearchMockAgent() with sub-agents
+  - [ ] WorkflowMockAgent() with steps
+  - [ ] StatefulMockAgent() with complex state
+- [ ] State fixtures
+  - [ ] EmptyTestState()
+  - [ ] PopulatedTestState(data map[string]interface{})
+  - [ ] WithTestData(key string, value interface{})
+
+#### Phase 6: Migration and Integration
+- [ ] Migrate existing mocks
+  - [ ] Update pkg/llm/provider/mock.go to use new structure
+  - [ ] Update pkg/testutils mocks to use new structure
+  - [ ] Update scattered test mocks to use fixtures
+  - [ ] Deprecation notices for old patterns
+- [ ] Update existing tests
+  - [ ] Identify tests using old mock patterns
+  - [ ] Convert to scenario-based testing where appropriate
+  - [ ] Update assertions to use matcher system
+  - [ ] Verify no test regressions
+- [ ] Integration with existing test commands
+  - [ ] Update Makefile test targets
+  - [ ] Add testutils enhancements to test coverage
+  - [ ] Ensure build tags work correctly
+
+#### Phase 7: Documentation and Examples
+- [ ] API documentation
+  - [ ] Package-level documentation for pkg/testutils
+  - [ ] Godoc for all exported types and functions
+  - [ ] Usage examples in documentation
+- [ ] Testing guide
+  - [ ] Migration guide from old patterns
+  - [ ] Best practices for mock usage
+  - [ ] Scenario building patterns
+  - [ ] Common testing recipes
+- [ ] Example test files
+  - [ ] Provider testing examples
+  - [ ] Tool testing examples
+  - [ ] Agent testing examples
+  - [ ] Workflow testing examples
+  - [ ] Integration testing examples
+- [ ] Performance benchmarks
+  - [ ] Mock performance benchmarks
+  - [ ] Scenario builder overhead measurement
+  - [ ] Comparison with old patterns
 
 **DOWNSTREAM REQUIREMENTS**:
-- 🔥 **CRITICAL**: `pkg/testing/scenario.go` with ScenarioBuilder fluent API
+- 🔥 **CRITICAL**: `pkg/testutils/scenario/builder.go` with ScenarioBuilder fluent API
 - 🔥 **CRITICAL**: MockProvider with pattern-based response matching
 - 🔥 **CRITICAL**: Tool and agent testing utilities for bridge scenarios
 - 🔥 **CRITICAL**: Event testing support for workflow validation

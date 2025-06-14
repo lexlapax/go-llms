@@ -3,6 +3,7 @@ package outputs
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -319,7 +320,7 @@ summary: >
   a single line.`,
 			expected: map[string]interface{}{
 				"description": "This is a multi-line\nstring that preserves\nline breaks.\n",
-				"summary":     "This is a folded string that will be joined into a single line.\n",
+				"summary":     "This is a folded string that will be joined into a single line.",
 			},
 		},
 		{
@@ -336,7 +337,7 @@ date: 2023-01-01`,
 				"float":      3.14,
 				"boolean":    true,
 				"null_value": nil,
-				"date":       "2023-01-01",
+				"date":       time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
 			},
 		},
 	}

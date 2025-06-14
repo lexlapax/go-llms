@@ -3,6 +3,7 @@ package outputs
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -101,8 +102,11 @@ active: true`,
 				err := json.Unmarshal([]byte(jsonStr), &parsed)
 				require.NoError(t, err)
 
+				// Debug output
+				t.Logf("Parsed JSON: %+v", parsed)
+
 				root, ok := parsed["root"].(map[string]interface{})
-				require.True(t, ok)
+				require.True(t, ok, "Expected 'root' key in parsed JSON")
 				assert.Equal(t, "test", root["name"])
 			},
 		},
@@ -276,7 +280,8 @@ func TestConverter_EdgeCases(t *testing.T) {
 
 		yamlStr, ok := result.(string)
 		require.True(t, ok)
-		assert.Contains(t, yamlStr, "🚀")
+		// YAML may encode emoji as Unicode escape sequence
+		assert.True(t, strings.Contains(yamlStr, "🚀") || strings.Contains(yamlStr, "\\U0001F680"))
 		assert.Contains(t, yamlStr, "你好")
 	})
 }

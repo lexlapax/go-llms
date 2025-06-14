@@ -410,15 +410,28 @@ func (v *Validator) validateObject(path string, value interface{}, schema *Outpu
 			if propValue, exists := obj[propName]; exists {
 				v.validateValue(propPath, propValue, propSchema, result)
 			} else if propSchema.Required != nil && *propSchema.Required {
-				result.Valid = false
-				result.Errors = append(result.Errors, ValidationError{
-					Path:     propPath,
-					Field:    propName,
-					Message:  "required property missing",
-					Code:     "required_property",
-					Expected: "property to exist",
-					Actual:   "missing",
-				})
+				// Only add error if not already in RequiredProperties
+				// to avoid duplicate errors
+				alreadyRequired := false
+				if schema.RequiredProperties != nil {
+					for _, req := range schema.RequiredProperties {
+						if req == propName {
+							alreadyRequired = true
+							break
+						}
+					}
+				}
+				if !alreadyRequired {
+					result.Valid = false
+					result.Errors = append(result.Errors, ValidationError{
+						Path:     propPath,
+						Field:    propName,
+						Message:  "required property missing",
+						Code:     "required_property",
+						Expected: "property to exist",
+						Actual:   "missing",
+					})
+				}
 			}
 		}
 	}

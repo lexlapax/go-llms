@@ -38,6 +38,20 @@ func (p *XMLParser) Name() string {
 
 // Parse attempts to parse XML output
 func (p *XMLParser) Parse(ctx context.Context, output string) (interface{}, error) {
+	// Check for multiple root elements first
+	if p.hasMultipleRootElements(output) {
+		wrapped := p.wrapInRoot(output)
+		result, err := p.parseXMLToInterface(wrapped)
+		if err != nil {
+			if p.strictMode {
+				return nil, fmt.Errorf("failed to parse XML with multiple roots: %w", err)
+			}
+			// Continue with normal error handling
+		} else {
+			return result, nil
+		}
+	}
+
 	// For XML, we'll parse into a generic structure
 	result, err := p.parseXMLToInterface(output)
 	if err != nil {
@@ -66,8 +80,20 @@ func (p *XMLParser) ParseWithRecovery(ctx context.Context, output string, opts *
 		return p.Parse(ctx, output)
 	}
 
+	// Check for multiple root elements first
+	if p.hasMultipleRootElements(output) {
+		wrapped := p.wrapInRoot(output)
+		result, err := p.parseXMLToInterface(wrapped)
+		if err == nil {
+			return result, nil
+		}
+		// If wrapping didn't help, continue with recovery strategies
+	}
+
 	attempts := 0
 	var lastErr error
+
+	// Don't pre-wrap, let the strategies handle it
 
 	// Try different recovery strategies
 	strategies := []func(string) string{
@@ -76,7 +102,7 @@ func (p *XMLParser) ParseWithRecovery(ctx context.Context, output string, opts *
 		p.cleanXML,
 		p.fixUnclosedTags,
 		p.extractXMLBlock,
-		p.wrapInRoot,
+		p.wrapInRootIfNeeded,
 	}
 
 	for _, strategy := range strategies {
@@ -163,15 +189,33 @@ func (p *XMLParser) xmlNodeToMap(node *xmlNode) map[string]interface{} {
 
 	// Add attributes with @ prefix
 	for _, attr := range node.Attributes {
-		result["@"+attr.Name.Local] = attr.Value
+		attrName := attr.Name.Local
+		if attr.Name.Space != "" {
+			attrName = attr.Name.Space + ":" + attr.Name.Local
+		}
+		result["@"+attrName] = attr.Value
 	}
 
 	// Handle content and child nodes
 	if len(node.Nodes) == 0 {
 		// Leaf node with just content
 		if node.Content != "" && strings.TrimSpace(node.Content) != "" {
+			// If we have attributes, add content as a special key
+			if len(result) > 0 {
+				result[node.XMLName.Local] = strings.TrimSpace(node.Content)
+				return map[string]interface{}{
+					node.XMLName.Local: result,
+				}
+			}
+			// No attributes, just return content
 			return map[string]interface{}{
 				node.XMLName.Local: strings.TrimSpace(node.Content),
+			}
+		}
+		// Empty element with possible attributes
+		if len(result) > 0 {
+			return map[string]interface{}{
+				node.XMLName.Local: result,
 			}
 		}
 		return map[string]interface{}{
@@ -249,48 +293,120 @@ func (p *XMLParser) cleanXML(output string) string {
 
 // fixUnclosedTags attempts to fix unclosed tags
 func (p *XMLParser) fixUnclosedTags(output string) string {
-	// This is a simple implementation that handles basic cases
-	// A production implementation would need a proper XML parser
+	// More sophisticated approach to handle unclosed tags
+	type tagInfo struct {
+		name string
+		line int
+		pos  int
+	}
 
-	// Track open tags
-	openTags := []string{}
+	var openTags []tagInfo
 	lines := strings.Split(output, "\n")
+	fixed := make([]string, len(lines))
 
 	for i, line := range lines {
-		// Find opening tags (but not self-closing)
-		openRe := regexp.MustCompile(`<([a-zA-Z][a-zA-Z0-9]*)\b[^>]*[^/]>`)
-		openMatches := openRe.FindAllStringSubmatch(line, -1)
-		for _, match := range openMatches {
-			openTags = append(openTags, match[1])
+		fixed[i] = line
+		pos := 0
+
+		for pos < len(line) {
+			// Find next tag
+			tagStart := strings.Index(line[pos:], "<")
+			if tagStart == -1 {
+				break
+			}
+			tagStart += pos
+
+			tagEnd := strings.Index(line[tagStart:], ">")
+			if tagEnd == -1 {
+				// Unclosed tag at end of line - close it
+				fixed[i] = line + ">"
+				break
+			}
+			tagEnd += tagStart
+
+			tag := line[tagStart : tagEnd+1]
+
+			// Check if it's a closing tag
+			if strings.HasPrefix(tag, "</") {
+				// Extract tag name
+				tagName := strings.TrimSpace(tag[2 : len(tag)-1])
+				// Find matching open tag
+				found := false
+				for j := len(openTags) - 1; j >= 0; j-- {
+					if openTags[j].name == tagName {
+						openTags = append(openTags[:j], openTags[j+1:]...)
+						found = true
+						break
+					}
+				}
+				if !found && len(openTags) > 0 {
+					// This closing tag doesn't match any open tag
+					// Close the most recent open tag first
+					lastOpen := openTags[len(openTags)-1]
+					if lastOpen.line == i {
+						// Insert closing tag before this one
+						beforeTag := line[:tagStart]
+						afterTag := line[tagStart:]
+						fixed[i] = beforeTag + fmt.Sprintf("</%s>", lastOpen.name) + afterTag
+						openTags = openTags[:len(openTags)-1]
+					}
+				}
+			} else if !strings.HasSuffix(tag[:len(tag)-1], "/") && !strings.HasPrefix(tag, "<?") {
+				// Opening tag (not self-closing)
+				// Extract tag name
+				tagContent := tag[1 : len(tag)-1]
+				tagNameEnd := strings.IndexAny(tagContent, " \t\n")
+				tagName := tagContent
+				if tagNameEnd > 0 {
+					tagName = tagContent[:tagNameEnd]
+				}
+				if tagName != "" && tagName != "?xml" {
+					openTags = append(openTags, tagInfo{name: tagName, line: i, pos: tagEnd})
+				}
+			}
+
+			pos = tagEnd + 1
 		}
 
-		// Find closing tags
-		closeRe := regexp.MustCompile(`</([a-zA-Z][a-zA-Z0-9]*)>`)
-		closeMatches := closeRe.FindAllStringSubmatch(line, -1)
-		for _, match := range closeMatches {
-			// Remove from open tags
-			for j := len(openTags) - 1; j >= 0; j-- {
-				if openTags[j] == match[1] {
-					openTags = append(openTags[:j], openTags[j+1:]...)
-					break
+		// Check if we need to close tags at end of line
+		if i < len(lines)-1 {
+			// Check if next line starts with a closing tag for a different element
+			nextLine := strings.TrimSpace(lines[i+1])
+			if strings.HasPrefix(nextLine, "</") {
+				// Extract the closing tag name
+				closeTagEnd := strings.Index(nextLine, ">")
+				if closeTagEnd > 2 {
+					closeTagName := strings.TrimSpace(nextLine[2:closeTagEnd])
+					// Close any open tags that don't match
+					for j := len(openTags) - 1; j >= 0; j-- {
+						if openTags[j].line == i && openTags[j].name != closeTagName {
+							// Insert closing tag
+							fixed[i] += fmt.Sprintf("</%s>", openTags[j].name)
+							openTags = append(openTags[:j], openTags[j+1:]...)
+						}
+					}
 				}
 			}
 		}
-
-		// Find self-closing tags
-		selfCloseRe := regexp.MustCompile(`<[a-zA-Z][a-zA-Z0-9]*\b[^>]*/>`)
-		selfCloseMatches := selfCloseRe.FindAllString(line, -1)
-		_ = selfCloseMatches // These don't need closing
-
-		lines[i] = line
 	}
 
-	// Add closing tags for unclosed tags
+	// Close any remaining open tags
+	closingTags := []string{}
 	for i := len(openTags) - 1; i >= 0; i-- {
-		lines = append(lines, fmt.Sprintf("</%s>", openTags[i]))
+		closingTags = append(closingTags, fmt.Sprintf("</%s>", openTags[i].name))
 	}
 
-	return strings.Join(lines, "\n")
+	if len(closingTags) > 0 {
+		// Add to the last non-empty line
+		for i := len(fixed) - 1; i >= 0; i-- {
+			if strings.TrimSpace(fixed[i]) != "" {
+				fixed[i] += strings.Join(closingTags, "")
+				break
+			}
+		}
+	}
+
+	return strings.Join(fixed, "\n")
 }
 
 // extractXMLBlock attempts to extract an XML block from text
@@ -357,6 +473,57 @@ func (p *XMLParser) fixAttributeQuotes(xmlStr string) string {
 func (p *XMLParser) looksLikeXML(content string) bool {
 	trimmed := strings.TrimSpace(content)
 	return strings.HasPrefix(trimmed, "<") && strings.Contains(trimmed, ">")
+}
+
+// hasMultipleRootElements checks if the XML has multiple root elements
+func (p *XMLParser) hasMultipleRootElements(xmlStr string) bool {
+	trimmed := strings.TrimSpace(xmlStr)
+
+	// Skip XML declaration if present
+	if strings.HasPrefix(trimmed, "<?xml") {
+		idx := strings.Index(trimmed, "?>")
+		if idx != -1 {
+			trimmed = strings.TrimSpace(trimmed[idx+2:])
+		}
+	}
+
+	// Simple check: try to parse, if it fails with specific error, return true
+	decoder := xml.NewDecoder(strings.NewReader(trimmed))
+	var tokens []xml.Token
+
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			break
+		}
+		tokens = append(tokens, xml.CopyToken(token))
+	}
+
+	// Count root start elements
+	rootCount := 0
+	depth := 0
+
+	for _, token := range tokens {
+		switch token.(type) {
+		case xml.StartElement:
+			if depth == 0 {
+				rootCount++
+			}
+			depth++
+		case xml.EndElement:
+			depth--
+		}
+	}
+
+	return rootCount > 1
+}
+
+// wrapInRootIfNeeded wraps XML in root element only if it has multiple root elements
+func (p *XMLParser) wrapInRootIfNeeded(xmlStr string) string {
+	if p.hasMultipleRootElements(xmlStr) {
+		return p.wrapInRoot(xmlStr)
+	}
+	return xmlStr
 }
 
 // init registers the XML parser

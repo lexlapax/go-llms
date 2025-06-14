@@ -160,6 +160,15 @@ func (p *JSONParser) CanParse(output string) bool {
 		return true
 	}
 
+	// Check for JSON object or array anywhere in the text
+	if strings.Contains(output, "{") && strings.Contains(output, "}") {
+		// Extract potential JSON and check if it looks valid
+		jsonObj := p.extractJSONObject(output)
+		if jsonObj != "" && p.looksLikeJSON(jsonObj) {
+			return true
+		}
+	}
+
 	// Check for common JSON patterns
 	jsonPatterns := []string{
 		`"[^"]+"\s*:\s*`,  // Key-value pairs
@@ -215,6 +224,16 @@ func (p *JSONParser) cleanJSON(output string) string {
 func (p *JSONParser) fixCommonIssues(output string) string {
 	fixed := p.cleanJSON(output)
 
+	// First extract JSON object/array if embedded in text
+	if !p.looksLikeJSON(fixed) {
+		// Try to extract JSON object
+		if jsonObj := p.extractJSONObject(fixed); jsonObj != "" {
+			fixed = jsonObj
+		} else if jsonArr := p.extractJSONArray(fixed); jsonArr != "" {
+			fixed = jsonArr
+		}
+	}
+
 	// Fix trailing commas in objects
 	fixed = regexp.MustCompile(`,(\s*})`).ReplaceAllString(fixed, "$1")
 
@@ -225,8 +244,9 @@ func (p *JSONParser) fixCommonIssues(output string) string {
 	// This is a simple approach and might need refinement for edge cases
 	fixed = p.fixQuotes(fixed)
 
-	// Fix missing quotes around keys
-	fixed = regexp.MustCompile(`(\{|,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:`).ReplaceAllString(fixed, `$1"$2":`)
+	// Fix missing quotes around keys - improved regex to handle unquoted keys
+	// Match word boundaries to avoid matching inside strings
+	fixed = regexp.MustCompile(`([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)(\s*:)`).ReplaceAllString(fixed, `$1"$2"$3`)
 
 	// Fix decimal numbers that might be invalid
 	fixed = regexp.MustCompile(`:\s*\.(\d+)`).ReplaceAllString(fixed, `:0.$1`)

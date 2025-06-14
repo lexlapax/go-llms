@@ -60,13 +60,15 @@ func (p *YAMLParser) ParseWithRecovery(ctx context.Context, output string, opts 
 	attempts := 0
 	var lastErr error
 
+	// Always clean the YAML first (handles tabs, BOM, etc.)
+	output = p.cleanYAML(output)
+
 	// Try different recovery strategies
 	strategies := []func(string) string{
-		func(s string) string { return s }, // Original
+		func(s string) string { return s }, // Original (now cleaned)
 		p.extractFromMarkdown,
-		p.cleanYAML,
-		p.fixIndentation,
 		p.extractYAMLBlock,
+		p.fixIndentation,
 	}
 
 	for _, strategy := range strategies {
@@ -118,7 +120,7 @@ func (p *YAMLParser) CanParse(output string) bool {
 
 	// Check for YAML indicators
 	yamlPatterns := []string{
-		`^---\s*$`,          // Document separator
+		`^---`,              // Document separator
 		`^\w+:\s*`,          // Key-value pair at start
 		`^\s*-\s+`,          // List item at start
 		`^\w+:\s*\n\s+-`,    // Map with list
@@ -171,10 +173,13 @@ func (p *YAMLParser) cleanYAML(output string) string {
 	// Fix Windows line endings
 	cleaned = strings.ReplaceAll(cleaned, "\r\n", "\n")
 
-	// Remove trailing spaces
+	// Replace tabs with spaces (YAML doesn't allow tabs for indentation)
 	lines := strings.Split(cleaned, "\n")
 	for i, line := range lines {
-		lines[i] = strings.TrimRight(line, " \t")
+		// Replace all tabs with spaces (2 spaces per tab)
+		lines[i] = strings.ReplaceAll(line, "\t", "  ")
+		// Remove trailing spaces
+		lines[i] = strings.TrimRight(lines[i], " \t")
 	}
 	cleaned = strings.Join(lines, "\n")
 
@@ -183,33 +188,60 @@ func (p *YAMLParser) cleanYAML(output string) string {
 
 // fixIndentation attempts to fix YAML indentation issues
 func (p *YAMLParser) fixIndentation(output string) string {
-	lines := strings.Split(p.cleanYAML(output), "\n")
+	// First clean the YAML to convert tabs to spaces
+	cleaned := p.cleanYAML(output)
+
+	// Try to parse the cleaned YAML first
+	var test interface{}
+	if err := yaml.Unmarshal([]byte(cleaned), &test); err == nil {
+		// If it parses successfully after cleaning, return it
+		return cleaned
+	}
+
+	// If it still doesn't parse, try to fix indentation
+	lines := strings.Split(cleaned, "\n")
 	if len(lines) == 0 {
 		return output
 	}
 
-	// Find the base indentation
-	minIndent := -1
-	for _, line := range lines {
-		if strings.TrimSpace(line) == "" {
+	// Build a new YAML with proper indentation
+	fixed := make([]string, 0, len(lines))
+	indentStack := []int{0}
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			fixed = append(fixed, "")
 			continue
 		}
-		indent := len(line) - len(strings.TrimLeft(line, " \t"))
-		if minIndent == -1 || indent < minIndent {
-			minIndent = indent
-		}
-	}
 
-	// Remove base indentation
-	if minIndent > 0 {
-		for i, line := range lines {
-			if len(line) >= minIndent {
-				lines[i] = line[minIndent:]
+		// Calculate current indent
+		currentIndent := len(line) - len(strings.TrimLeft(line, " "))
+
+		// Adjust indent stack based on current indentation
+		for len(indentStack) > 1 && currentIndent <= indentStack[len(indentStack)-1] {
+			indentStack = indentStack[:len(indentStack)-1]
+		}
+
+		// Determine the proper indentation level
+		properIndent := indentStack[len(indentStack)-1]
+
+		// If previous line ended with ':', increase indent for this line
+		if i > 0 {
+			prevTrimmed := strings.TrimSpace(lines[i-1])
+			if strings.HasSuffix(prevTrimmed, ":") && !strings.HasPrefix(trimmed, "-") {
+				properIndent = indentStack[len(indentStack)-1] + 2
+				if currentIndent > indentStack[len(indentStack)-1] {
+					indentStack = append(indentStack, properIndent)
+				}
 			}
 		}
+
+		// Apply the proper indentation
+		fixed = append(fixed, strings.Repeat(" ", properIndent)+trimmed)
 	}
 
-	return strings.Join(lines, "\n")
+	return strings.Join(fixed, "\n")
 }
 
 // extractYAMLBlock attempts to extract a YAML block from text
@@ -219,12 +251,56 @@ func (p *YAMLParser) extractYAMLBlock(output string) string {
 	if start == -1 {
 		// Try to find the first line that looks like YAML
 		lines := strings.Split(output, "\n")
+		yamlStart := -1
+		yamlEnd := len(lines)
+
+		// Find start of YAML
 		for i, line := range lines {
 			if p.looksLikeYAMLLine(line) {
-				return strings.Join(lines[i:], "\n")
+				yamlStart = i
+				break
 			}
 		}
-		return ""
+
+		if yamlStart == -1 {
+			return ""
+		}
+
+		// Find end of YAML (when we hit non-YAML content)
+		indentLevel := 0
+		for i := yamlStart + 1; i < len(lines); i++ {
+			line := lines[i]
+			trimmed := strings.TrimSpace(line)
+
+			if trimmed == "" {
+				continue
+			}
+
+			// Calculate indentation
+			currentIndent := len(line) - len(strings.TrimLeft(line, " "))
+
+			// Check if this line looks like YAML continuation
+			if strings.HasPrefix(trimmed, "-") || (currentIndent > 0 && currentIndent >= indentLevel) {
+				// This is a list item or indented content
+				if currentIndent > indentLevel {
+					indentLevel = currentIndent
+				}
+				continue
+			}
+
+			// Check if this line looks like YAML
+			if !p.looksLikeYAMLLine(trimmed) {
+				yamlEnd = i
+				break
+			}
+
+			// Update indent level for key-value pairs
+			if strings.Contains(trimmed, ":") {
+				indentLevel = currentIndent
+			}
+		}
+
+		return strings.Join(lines[yamlStart:yamlEnd], "\n")
 	}
 
 	// Extract from --- to ... or end
