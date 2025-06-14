@@ -241,6 +241,34 @@ export OPENAI_API_KEY="your-key"
 cd agent-multi-coordination && go run main.go
 ```
 
+#### [**Agent Events**](agent-events/README.md)
+Enhanced event system for agent monitoring and bridge integration.
+
+**Features:**
+- EventBus with pattern-based subscriptions
+- Advanced filtering (composite filters)
+- Event serialization for bridge layer
+- Event storage and replay
+- Bridge-specific event types
+
+```bash
+cd agent-events && go run main.go
+```
+
+#### [**Agent Sub-Agents**](agent-sub-agents/README.md)
+Orchestrating multiple sub-agents for complex tasks.
+
+**Features:**
+- Sub-agent management
+- Task delegation
+- Result aggregation
+- Hierarchical agent structures
+
+```bash
+export OPENAI_API_KEY="your-key"
+cd agent-sub-agents && go run main.go
+```
+
 ### Workflow Examples
 
 #### [**Workflow Sequential**](workflow-sequential/README.md)
@@ -434,6 +462,48 @@ export OPENAI_API_KEY="your-key"
 export ANTHROPIC_API_KEY="your-key"
 export GEMINI_API_KEY="your-key"
 cd provider-consensus && go run main.go
+```
+
+#### [**Provider Ollama**](provider-ollama/README.md)
+Local model integration with Ollama.
+
+**Features:**
+- Local LLM hosting
+- Model management
+- Streaming support
+- No API keys required
+
+```bash
+# Make sure Ollama is running locally
+cd provider-ollama && go run main.go
+```
+
+#### [**Provider OpenRouter**](provider-openrouter/README.md)
+Multi-model routing through OpenRouter.
+
+**Features:**
+- Access to 100+ models
+- Single API for multiple providers
+- Cost optimization
+- Model comparison
+
+```bash
+export OPENROUTER_API_KEY="your-key"
+cd provider-openrouter && go run main.go
+```
+
+#### [**Provider Vertex AI**](provider-vertexai/README.md)
+Google Cloud Vertex AI integration.
+
+**Features:**
+- Enterprise-grade deployment
+- Regional endpoints
+- Service account authentication
+- Model versioning
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS="path/to/service-account.json"
+cd provider-vertexai && go run main.go
 ```
 
 #### [**Provider Options**](provider-options/README.md)
@@ -749,6 +819,36 @@ Schema storage and versioning.
 
 ```bash
 cd schema-repository && go run main.go
+```
+
+### Bridge Integration Examples
+
+#### [**Types Bridge**](types-bridge/README.md)
+Type conversion and bridging for scripting engines.
+
+**Features:**
+- Type registry with bidirectional conversions
+- Schema to map[string]interface{} conversion
+- Custom type converters
+- Multi-hop conversion support
+- Conversion caching
+
+```bash
+cd types-bridge && go run main.go
+```
+
+#### [**Tools Script Dynamic**](tools-script-dynamic/README.md)
+Dynamic tool registration for scripting engines.
+
+**Features:**
+- Runtime tool registration
+- Script-based tool factories
+- Tool persistence and loading
+- Multi-tenant tool isolation
+- Tool versioning
+
+```bash
+cd tools-script-dynamic && go run main.go
 ```
 
 ### Error Handling Examples
