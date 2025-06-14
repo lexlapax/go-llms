@@ -6,24 +6,15 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 )
 
 // Helper to create test ToolContext
 func createTestContext() *domain.ToolContext {
-	// Create a mock agent for testing
-	mockAgent := &MockAgent{
-		BaseAgentImpl: core.NewBaseAgent("test-agent", "Test agent for tool tests", domain.AgentTypeCustom),
-	}
-
-	return domain.NewToolContext(
-		context.Background(),
-		domain.NewStateReader(domain.NewState()),
-		mockAgent,
-		"test-run",
-	)
+	// Use new testing infrastructure
+	return helpers.CreateTestToolContext()
 }
 
 // TestNewTool tests the NewTool function

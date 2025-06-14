@@ -2,6 +2,16 @@ package provider
 
 // ABOUTME: Mock provider implementation for testing without API calls
 // ABOUTME: Provides configurable responses and simulated behaviors
+//
+// DEPRECATED: This mock provider is being migrated to the new testing infrastructure.
+// For new code, use:
+//   - fixtures.ChatGPTMockProvider() for ChatGPT-like responses
+//   - fixtures.ClaudeMockProvider() for Claude-like responses
+//   - fixtures.SlowMockProvider() for slow response simulation
+//   - fixtures.ErrorMockProvider() for error testing
+//   - fixtures.StreamingMockProvider() for streaming responses
+//
+// See pkg/testutils/fixtures/ for modern mock implementations.
 
 import (
 	"context"
@@ -16,6 +26,7 @@ import (
 )
 
 // MockProvider implements the Provider interface for testing
+// Deprecated: Use fixtures.ChatGPTMockProvider() or other fixture providers for new code.
 type MockProvider struct {
 	generateFunc           func(ctx context.Context, prompt string, options ...domain.Option) (string, error)
 	generateMessageFunc    func(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error)
@@ -33,6 +44,7 @@ type MockProvider struct {
 }
 
 // NewMockProvider creates a new mock provider with default implementations and options
+// Deprecated: Use fixtures.ChatGPTMockProvider() or other fixture providers for new code.
 func NewMockProvider(options ...domain.ProviderOption) *MockProvider {
 	provider := &MockProvider{
 		generateFunc: func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
