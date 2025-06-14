@@ -561,25 +561,39 @@
   - [x] MatcherFunc type for inline matchers
   - [x] Comprehensive test coverage for all matchers
 
-#### Phase 4: Test Helpers and Utilities
-- [ ] Context helpers
-  - [ ] CreateTestToolContext(options ...ContextOption)
-  - [ ] CreateTestAgentContext(options ...ContextOption)
-  - [ ] WithTestState(state domain.State)
-  - [ ] WithTestLogger(logger Logger)
-- [ ] Event testing support
-  - [ ] EventCapture implementation
-  - [ ] Event filtering by type/data
-  - [ ] Event assertion helpers
-  - [ ] Event timeline visualization
-- [ ] State testing utilities
-  - [ ] State diff functionality
-  - [ ] State snapshot comparison
-  - [ ] State mutation helpers
-- [ ] Provider testing utilities
-  - [ ] Response generation from schemas
-  - [ ] Error injection helpers
-  - [ ] Streaming simulation
+#### Phase 4: Test Helpers and Utilities ✅ COMPLETED (June 14, 2025)
+- [x] Context helpers
+  - [x] CreateTestToolContext(options ...ContextOption)
+  - [x] CreateTestAgentContext(options ...ContextOption)
+  - [x] WithTestState(state domain.State)
+  - [x] WithTestContext(ctx context.Context)
+  - [x] WithTestEventEmitter(emitter domain.EventEmitter)
+  - [x] WithTestRunID(runID string)
+  - [x] WithTestRetry(retry int)
+  - [x] WithTestAgentInfo(info domain.AgentInfo)
+  - [x] Pre-configured contexts (WithError, WithState, WithTimeout)
+- [x] Event testing support
+  - [x] EventCapture implementation
+  - [x] Event filtering by type/data/time range
+  - [x] Event assertion helpers (AssertEvents fluent API)
+  - [x] Event timeline visualization
+  - [x] Common event creation helpers
+- [x] State testing utilities
+  - [x] State diff functionality (DiffStates)
+  - [x] State snapshot comparison (CaptureSnapshot, CompareSnapshots)
+  - [x] State mutation helpers (MutateState fluent API)
+  - [x] State validation (ValidateState with HasKey, HasValue, HasType)
+  - [x] Common state creation helpers
+- [x] Provider testing utilities
+  - [x] Response generation from schemas (ResponseGenerator)
+  - [x] Error injection helpers (ErrorInjector with rate/type/timing control)
+  - [x] Streaming simulation (StreamSimulator with delay/error support)
+  - [x] Provider behavior configuration (ProviderBehavior)
+  - [x] Common behaviors (Slow, Unreliable, RateLimited, Metadata)
+- [x] Pointer helpers
+  - [x] Generic Ptr[T] function
+  - [x] Type-specific pointer functions
+  - [x] Safe dereferencing functions (Deref, DerefOr)
 
 #### Phase 5: Test Fixtures
 - [ ] Provider fixtures
