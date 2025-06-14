@@ -499,12 +499,7 @@ func TestHelperFunctions(t *testing.T) {
 	// Test AddErrorAttributes
 	span.errors = nil
 	span.attributes = nil
-	agentErr := &domain.AgentError{
-		AgentID:   "test-agent",
-		AgentName: "TestAgent",
-		Phase:     "execution",
-		Err:       errors.New("test error"),
-	}
+	agentErr := domain.NewAgentError("test-agent", "TestAgent", "execution", errors.New("test error"))
 
 	AddErrorAttributes(span, agentErr)
 

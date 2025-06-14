@@ -324,7 +324,7 @@ func (ceh *CompositeEventHandler) HandleEvent(event domain.Event) error {
 	ceh.mu.RLock()
 	defer ceh.mu.RUnlock()
 
-	var multiErr domain.MultiError
+	multiErr := domain.NewMultiError()
 	for _, handler := range ceh.handlers {
 		if handler != nil {
 			if err := handler.HandleEvent(event); err != nil {
@@ -334,7 +334,7 @@ func (ceh *CompositeEventHandler) HandleEvent(event domain.Event) error {
 	}
 
 	if multiErr.HasErrors() {
-		return &multiErr
+		return multiErr
 	}
 	return nil
 }

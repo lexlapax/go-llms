@@ -199,7 +199,7 @@
 - ✅ Bridge-friendly factory methods: `NewInMemoryRepository()`, `NewFileRepository()`, `NewReflectionGenerator()`
 - ✅ All implementations follow the domain interfaces exactly as specified in downstream requirements
 
-### 0.3.5.2: Enhanced Error Handling (FOUNDATION) ✅ PARTIAL - Standalone Package Only (June 13, 2025)
+### 0.3.5.2: Enhanced Error Handling (FOUNDATION) ✅ COMPLETED (June 14, 2025)
 - [x] Serializable Error Package Implementation (pkg/errors)
   - [x] JSON serialization for errors (BaseError with ToJSON)
   - [x] Rich error context (map[string]interface{})
@@ -217,14 +217,14 @@
   - [x] Sensitive data masking (manual via context control)
 - [x] Error handling tests (comprehensive test coverage)
 - [x] Recovery strategy examples (enhanced_errors example)
-- [ ] Library-Wide Error Serialization (REQUIRED FOR DOWNSTREAM)
-  - [ ] Convert all pkg/llm provider errors to use pkg/errors
-  - [ ] Convert all pkg/agent errors to use pkg/errors
-  - [ ] Convert all pkg/schema errors to use pkg/errors
-  - [ ] Convert all pkg/structured errors to use pkg/errors
-  - [ ] Update error creation patterns throughout codebase
-  - [ ] Ensure all errors are JSON serializable
-  - [ ] Add migration guide for error handling
+- [x] Library-Wide Error Serialization (REQUIRED FOR DOWNSTREAM)
+  - [x] Convert all pkg/llm provider errors to use pkg/errors
+  - [x] Convert all pkg/agent errors to use pkg/errors
+  - [x] Convert all pkg/schema errors to use pkg/errors (N/A - no errors in schema pkg)
+  - [x] Convert all pkg/structured errors to use pkg/errors (N/A - no errors in structured pkg)
+  - [x] Update error creation patterns throughout codebase
+  - [x] Ensure all errors are JSON serializable
+  - [x] Add migration guide for error handling (docs/technical/error-handling-migration.md)
 
 **DOWNSTREAM REQUIREMENTS**: 
 - ✅ SerializableError interface with Code(), Message(), Context(), ToJSON(), GetRecoveryStrategy()

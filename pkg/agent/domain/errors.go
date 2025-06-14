@@ -4,110 +4,111 @@
 package domain
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/lexlapax/go-llms/pkg/errors"
 )
 
 // Common errors
 var (
 	// ErrAgentNotFound is returned when an agent cannot be found
-	ErrAgentNotFound = errors.New("agent not found")
+	ErrAgentNotFound = errors.NewErrorWithCode("agent_not_found", "agent not found").SetFatal(true)
 
 	// ErrCircularDependency is returned when adding an agent would create a circular dependency
-	ErrCircularDependency = errors.New("circular dependency detected")
+	ErrCircularDependency = errors.NewErrorWithCode("agent_circular_dependency", "circular dependency detected").SetFatal(true)
 
 	// ErrInvalidState is returned when state is invalid or corrupted
-	ErrInvalidState = errors.New("invalid state")
+	ErrInvalidState = errors.NewErrorWithCode("agent_invalid_state", "invalid state").SetFatal(true)
 
 	// ErrInvalidConfiguration is returned when agent configuration is invalid
-	ErrInvalidConfiguration = errors.New("invalid configuration")
+	ErrInvalidConfiguration = errors.NewErrorWithCode("agent_invalid_config", "invalid configuration").SetFatal(true)
 
 	// ErrExecutionTimeout is returned when agent execution times out
-	ErrExecutionTimeout = errors.New("execution timeout")
+	ErrExecutionTimeout = errors.NewErrorWithCode("agent_timeout", "execution timeout").SetRetryable(true)
 
 	// ErrMaxRetriesExceeded is returned when maximum retries are exceeded
-	ErrMaxRetriesExceeded = errors.New("maximum retries exceeded")
+	ErrMaxRetriesExceeded = errors.NewErrorWithCode("agent_max_retries", "maximum retries exceeded").SetFatal(true)
 
 	// ErrAgentInitialization is returned when agent initialization fails
-	ErrAgentInitialization = errors.New("agent initialization failed")
+	ErrAgentInitialization = errors.NewErrorWithCode("agent_init_failed", "agent initialization failed").SetFatal(true)
 
 	// ErrToolNotFound is returned when a tool cannot be found
-	ErrToolNotFound = errors.New("tool not found")
+	ErrToolNotFound = errors.NewErrorWithCode("tool_not_found", "tool not found").SetFatal(true)
 
 	// ErrToolExecution is returned when tool execution fails
-	ErrToolExecution = errors.New("tool execution failed")
+	ErrToolExecution = errors.NewErrorWithCode("tool_execution_failed", "tool execution failed").SetRetryable(true)
 
 	// ErrSchemaValidation is returned when schema validation fails
-	ErrSchemaValidation = errors.New("schema validation failed")
+	ErrSchemaValidation = errors.NewErrorWithCode("schema_validation_failed", "schema validation failed").SetFatal(true)
 
 	// ErrEventDispatch is returned when event dispatch fails
-	ErrEventDispatch = errors.New("event dispatch failed")
+	ErrEventDispatch = errors.NewErrorWithCode("event_dispatch_failed", "event dispatch failed").SetRetryable(true)
 
 	// ErrStateAccess is returned when state access fails
-	ErrStateAccess = errors.New("state access failed")
+	ErrStateAccess = errors.NewErrorWithCode("state_access_failed", "state access failed").SetRetryable(true)
 
 	// ErrArtifactAccess is returned when artifact access fails
-	ErrArtifactAccess = errors.New("artifact access failed")
+	ErrArtifactAccess = errors.NewErrorWithCode("artifact_access_failed", "artifact access failed").SetRetryable(true)
 
 	// ErrWorkflowExecution is returned when workflow execution fails
-	ErrWorkflowExecution = errors.New("workflow execution failed")
+	ErrWorkflowExecution = errors.NewErrorWithCode("workflow_execution_failed", "workflow execution failed").SetRetryable(true)
 
 	// ErrAgentCancelled is returned when agent execution is canceled
-	ErrAgentCancelled = errors.New("agent execution canceled")
+	ErrAgentCancelled = errors.NewErrorWithCode("agent_cancelled", "agent execution canceled")
 
 	// ErrStateReadOnly is returned when trying to modify a read-only state
-	ErrStateReadOnly = errors.New("state is read-only")
+	ErrStateReadOnly = errors.NewErrorWithCode("state_readonly", "state is read-only").SetFatal(true)
 )
 
 // AgentError represents an error that occurred during agent execution
 type AgentError struct {
-	AgentID   string
-	AgentName string
-	Phase     string // "initialize", "before_run", "run", "after_run", "cleanup"
-	Err       error
-	Context   map[string]interface{}
+	*errors.BaseError
+
+	AgentID   string `json:"agent_id"`
+	AgentName string `json:"agent_name"`
+	Phase     string `json:"phase"` // "initialize", "before_run", "run", "after_run", "cleanup"
 }
 
 // Error implements the error interface
 func (e *AgentError) Error() string {
-	return fmt.Sprintf("agent error [%s/%s] in %s: %v", e.AgentID, e.AgentName, e.Phase, e.Err)
-}
-
-// Unwrap returns the underlying error
-func (e *AgentError) Unwrap() error {
-	return e.Err
-}
-
-// Is checks if the error matches target
-func (e *AgentError) Is(target error) bool {
-	return errors.Is(e.Err, target)
+	return fmt.Sprintf("agent error [%s/%s] in %s: %v", e.AgentID, e.AgentName, e.Phase, e.Message)
 }
 
 // NewAgentError creates a new agent error
 func NewAgentError(agentID, agentName, phase string, err error) *AgentError {
+	baseErr := errors.Wrap(err, fmt.Sprintf("agent error in %s phase", phase))
+	_ = baseErr.WithContext("agent_id", agentID).
+		WithContext("agent_name", agentName).
+		WithContext("phase", phase).
+		WithType("AgentError")
+
+	// Set retryability based on phase
+	if phase == "initialize" || phase == "cleanup" {
+		_ = baseErr.SetFatal(true)
+	} else {
+		_ = baseErr.SetRetryable(true)
+	}
+
 	return &AgentError{
+		BaseError: baseErr,
 		AgentID:   agentID,
 		AgentName: agentName,
 		Phase:     phase,
-		Err:       err,
-		Context:   make(map[string]interface{}),
 	}
 }
 
 // WithContext adds context to the error
 func (e *AgentError) WithContext(key string, value interface{}) *AgentError {
-	if e.Context == nil {
-		e.Context = make(map[string]interface{})
-	}
-	e.Context[key] = value
+	_ = e.BaseError.WithContext(key, value)
 	return e
 }
 
 // ValidationError represents a validation error
 type ValidationError struct {
-	Field   string
-	Value   interface{}
-	Message string
+	*errors.BaseError
+
+	Field string      `json:"field"`
+	Value interface{} `json:"value,omitempty"`
 }
 
 // Error implements the error interface
@@ -120,16 +121,23 @@ func (e *ValidationError) Error() string {
 
 // NewValidationError creates a new validation error
 func NewValidationError(field string, value interface{}, message string) *ValidationError {
+	baseErr := errors.Wrap(ErrSchemaValidation, message)
+	_ = baseErr.WithContext("field", field).
+		WithContext("value", value).
+		WithType("ValidationError").
+		SetFatal(true)
+
 	return &ValidationError{
-		Field:   field,
-		Value:   value,
-		Message: message,
+		BaseError: baseErr,
+		Field:     field,
+		Value:     value,
 	}
 }
 
-// MultiError represents multiple errors
+// MultiError represents multiple errors - use ErrorAggregator for new code
 type MultiError struct {
-	Errors []error
+	*errors.BaseError
+	Errors []error `json:"errors"`
 }
 
 // Error implements the error interface
@@ -147,6 +155,10 @@ func (e *MultiError) Error() string {
 func (e *MultiError) Add(err error) {
 	if err != nil {
 		e.Errors = append(e.Errors, err)
+		// Update context with error count
+		if e.BaseError != nil {
+			_ = e.WithContext("error_count", len(e.Errors))
+		}
 	}
 }
 
@@ -160,31 +172,50 @@ func (e *MultiError) Unwrap() []error {
 	return e.Errors
 }
 
+// NewMultiError creates a new MultiError
+func NewMultiError() *MultiError {
+	baseErr := errors.NewErrorWithCode("multi_error", "multiple errors occurred")
+	_ = baseErr.WithType("MultiError")
+
+	return &MultiError{
+		BaseError: baseErr,
+		Errors:    make([]error, 0),
+	}
+}
+
 // ToolError represents an error that occurred during tool execution
 type ToolError struct {
-	ToolName string
-	Phase    string // "validation", "execution", "result_processing"
-	Err      error
-	Input    interface{}
-	Output   interface{}
+	*errors.BaseError
+
+	ToolName string      `json:"tool_name"`
+	Phase    string      `json:"phase"` // "validation", "execution", "result_processing"
+	Input    interface{} `json:"input,omitempty"`
+	Output   interface{} `json:"output,omitempty"`
 }
 
 // Error implements the error interface
 func (e *ToolError) Error() string {
-	return fmt.Sprintf("tool error [%s] in %s: %v", e.ToolName, e.Phase, e.Err)
-}
-
-// Unwrap returns the underlying error
-func (e *ToolError) Unwrap() error {
-	return e.Err
+	return fmt.Sprintf("tool error [%s] in %s: %v", e.ToolName, e.Phase, e.Message)
 }
 
 // NewToolError creates a new tool error
 func NewToolError(toolName, phase string, err error) *ToolError {
+	baseErr := errors.Wrap(err, fmt.Sprintf("tool error in %s phase", phase))
+	_ = baseErr.WithContext("tool_name", toolName).
+		WithContext("phase", phase).
+		WithType("ToolError")
+
+	// Set retryability based on phase
+	if phase == "execution" {
+		_ = baseErr.SetRetryable(true)
+	} else {
+		_ = baseErr.SetFatal(true)
+	}
+
 	return &ToolError{
-		ToolName: toolName,
-		Phase:    phase,
-		Err:      err,
+		BaseError: baseErr,
+		ToolName:  toolName,
+		Phase:     phase,
 	}
 }
 
@@ -195,47 +226,52 @@ func NewToolErrorWithGuidance(toolName, errorType, message, guidance string) err
 	if guidance != "" {
 		errMsg = fmt.Sprintf("%s (Guidance: %s)", message, guidance)
 	}
+
+	baseErr := errors.Wrap(ErrToolExecution, errMsg)
+	_ = baseErr.WithContext("tool_name", toolName).
+		WithContext("error_type", errorType).
+		WithContext("guidance", guidance).
+		WithType("ToolError").
+		SetRetryable(true)
+
 	return &ToolError{
-		ToolName: toolName,
-		Phase:    errorType, // Using Phase field to store error type
-		Err:      fmt.Errorf("%s", errMsg),
+		BaseError: baseErr,
+		ToolName:  toolName,
+		Phase:     errorType, // Using Phase field to store error type
 	}
 }
 
 // WithInput adds input context to the error
 func (e *ToolError) WithInput(input interface{}) *ToolError {
 	e.Input = input
+	_ = e.WithContext("input", input)
 	return e
 }
 
 // WithOutput adds output context to the error
 func (e *ToolError) WithOutput(output interface{}) *ToolError {
 	e.Output = output
+	_ = e.WithContext("output", output)
 	return e
 }
 
 // IsRetryable checks if an error is retryable
 func IsRetryable(err error) bool {
-	// Check for specific retryable errors
-	if errors.Is(err, ErrExecutionTimeout) {
+	// Use the enhanced errors package's retryable check
+	if errors.IsRetryableError(err) {
 		return true
 	}
 
 	// Check for agent errors in specific phases
 	var agentErr *AgentError
 	if errors.As(err, &agentErr) {
-		// Initialization errors are generally not retryable
-		if agentErr.Phase == "initialize" {
-			return false
-		}
-		// Most other phases can be retried
-		return true
+		return agentErr.Retryable
 	}
 
-	// Tool errors are generally retryable
+	// Check for tool errors
 	var toolErr *ToolError
 	if errors.As(err, &toolErr) {
-		return toolErr.Phase == "execution"
+		return toolErr.Retryable
 	}
 
 	// Default to not retryable
@@ -244,15 +280,28 @@ func IsRetryable(err error) bool {
 
 // IsFatal checks if an error is fatal and should stop execution
 func IsFatal(err error) bool {
-	// Check for specific fatal errors
-	if errors.Is(err, ErrCircularDependency) ||
-		errors.Is(err, ErrInvalidConfiguration) ||
-		errors.Is(err, ErrAgentInitialization) ||
-		errors.Is(err, ErrSchemaValidation) {
+	// Use the enhanced errors package's fatal check
+	if errors.IsFatalError(err) {
 		return true
 	}
 
-	// Validation errors are fatal
+	// Check for agent errors
+	var agentErr *AgentError
+	if errors.As(err, &agentErr) {
+		return agentErr.Fatal
+	}
+
+	// Check for tool errors
+	var toolErr *ToolError
+	if errors.As(err, &toolErr) {
+		return toolErr.Fatal
+	}
+
+	// Check for validation errors
 	var validationErr *ValidationError
-	return errors.As(err, &validationErr)
+	if errors.As(err, &validationErr) {
+		return validationErr.Fatal
+	}
+
+	return false
 }
