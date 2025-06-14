@@ -235,30 +235,31 @@
 - ⚠️ **CRITICAL**: All go-llms errors must implement SerializableError for bridge compatibility
 - ⚠️ **CRITICAL**: Error context must be bridge-friendly (map[string]interface{} serializable)
 
-### 0.3.5.3: Enhanced Tool Discovery System
-- [ ] Dynamic Tool Registration (REQUIRED FOR DOWNSTREAM)
-  - [ ] Add RegisterTool method to ToolDiscovery interface
-  - [ ] Add UnregisterTool method for runtime removal
-  - [ ] Add GetRegisteredTools for listing all tools
-  - [ ] Thread-safe registration/unregistration
-  - [ ] Tool versioning support
-- [ ] Tool Metadata Repository
-  - [ ] Persistent storage for custom tool definitions
-  - [ ] Tool definition format (JSON/YAML)
-  - [ ] Tool dependency management
-  - [ ] Tool lifecycle hooks
-- [ ] Script-Based Tool Factory (CRITICAL FOR SCRIPTING ENGINES)
-  - [ ] Factory interface for creating tools from definitions
-  - [ ] Support for multiple scripting languages
-  - [ ] Sandboxed execution environment
-  - [ ] Tool validation before registration
-- [ ] Registry Persistence (DOWNSTREAM REQUIREMENT)
-  - [ ] SaveRegistry(writer io.Writer) method implementation
-  - [ ] LoadRegistry(reader io.Reader) method implementation
-  - [ ] Support for tool definitions from external sources
-  - [ ] Multi-tenant tool isolation support
-- [ ] Integration tests for dynamic tool management
-- [ ] Examples for script-based tool creation
+### 0.3.5.3: Enhanced Tool Discovery System ✅ COMPLETED (June 14, 2025)
+- [x] Dynamic Tool Registration (REQUIRED FOR DOWNSTREAM)
+  - [x] Add RegisterTool method to ToolDiscovery interface
+  - [x] Add UnregisterTool method for runtime removal
+  - [x] Add GetRegisteredTools for listing all tools
+  - [x] Thread-safe registration/unregistration
+  - [x] Tool versioning support
+- [x] Tool Metadata Repository
+  - [x] Persistent storage for custom tool definitions
+  - [x] Tool definition format (JSON/YAML)
+  - [x] Tool dependency management
+  - [x] Tool lifecycle hooks
+- [x] Script-Based Tool Factory (CRITICAL FOR SCRIPTING ENGINES)
+  - [x] Factory interface for creating tools from definitions
+  - [x] Support for multiple scripting languages
+  - [x] Sandboxed execution environment
+  - [x] Tool validation before registration
+- [x] Registry Persistence (DOWNSTREAM REQUIREMENT)
+  - [x] SaveRegistry(writer io.Writer) method implementation
+  - [x] LoadRegistry(reader io.Reader) method implementation
+  - [x] Support for tool definitions from external sources
+  - [x] Multi-tenant tool isolation support
+- [x] update toolgen (internal/toolgen) with new metadata, fields and apis
+- [x] Integration tests for dynamic tool management
+- [x] Examples for script-based tool creation
 
 **DOWNSTREAM REQUIREMENTS**:
 - 🔥 **CRITICAL**: ToolDiscovery interface must support RegisterTool(info ToolInfo, factory ToolFactory) 

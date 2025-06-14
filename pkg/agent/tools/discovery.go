@@ -6,6 +6,7 @@ package tools
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 
@@ -38,31 +39,37 @@ type Example struct {
 // ToolFactory is a function that creates a tool on demand
 type ToolFactory func() (domain.Tool, error)
 
-// ToolDiscovery provides metadata-first tool discovery
+// ToolDiscovery provides metadata-first tool discovery with dynamic registration
 type ToolDiscovery interface {
-	// ListTools returns all available tools without loading them
+	// Static discovery methods
 	ListTools() []ToolInfo
-
-	// SearchTools searches tools by keyword in name, description, or tags
 	SearchTools(query string) []ToolInfo
-
-	// ListByCategory returns tools in a specific category
 	ListByCategory(category string) []ToolInfo
-
-	// GetToolSchema returns detailed schema for a specific tool
 	GetToolSchema(name string) (*ToolSchema, error)
-
-	// GetToolExamples returns examples for a specific tool
 	GetToolExamples(name string) ([]domain.ToolExample, error)
-
-	// CreateTool instantiates a tool by name
 	CreateTool(name string) (domain.Tool, error)
-
-	// CreateTools instantiates multiple tools
 	CreateTools(names ...string) (map[string]domain.Tool, error)
-
-	// GetToolHelp generates help text for a tool
 	GetToolHelp(name string) (string, error)
+
+	// Dynamic registration methods (REQUIRED FOR DOWNSTREAM)
+	RegisterTool(info ToolInfo, factory ToolFactory) error
+	UnregisterTool(name string) error
+	GetRegisteredTools() []ToolInfo
+
+	// Registry persistence (DOWNSTREAM REQUIREMENT)
+	SaveRegistry(writer interface{}) error // io.Writer for serialization
+	LoadRegistry(reader interface{}) error // io.Reader for deserialization
+
+	// Tool versioning support
+	RegisterToolVersion(info ToolInfo, factory ToolFactory, version string) error
+	GetToolVersions(name string) []string
+	CreateToolVersion(name, version string) (domain.Tool, error)
+
+	// Multi-tenant support (for downstream isolation)
+	CreateNamespace(namespace string) error
+	ListNamespaces() []string
+	SwitchNamespace(namespace string) error
+	GetCurrentNamespace() string
 }
 
 // ToolSchema contains detailed schema information
@@ -76,11 +83,27 @@ type ToolSchema struct {
 	ErrorGuidance map[string]string    `json:"error_guidance,omitempty"`
 }
 
-// toolDiscovery implements ToolDiscovery
+// ToolVersionInfo holds versioned tool information
+type ToolVersionInfo struct {
+	ToolInfo
+	Versions map[string]ToolFactory `json:"-"` // version -> factory mapping
+}
+
+// NamespaceRegistry holds tools for a specific namespace
+type NamespaceRegistry struct {
+	Name      string                     `json:"name"`
+	Metadata  map[string]ToolVersionInfo `json:"metadata"`
+	Factories map[string]ToolFactory     `json:"-"` // Current version factories
+}
+
+// toolDiscovery implements ToolDiscovery with enhanced features
 type toolDiscovery struct {
-	metadata  map[string]ToolInfo
-	factories map[string]ToolFactory
-	mu        sync.RWMutex
+	// Multi-namespace support
+	namespaces       map[string]*NamespaceRegistry
+	currentNamespace string
+
+	// Thread safety
+	mu sync.RWMutex
 }
 
 // globalDiscovery is the singleton discovery instance
@@ -93,9 +116,11 @@ var (
 func NewDiscovery() ToolDiscovery {
 	discoveryOnce.Do(func() {
 		globalDiscovery = &toolDiscovery{
-			metadata:  make(map[string]ToolInfo),
-			factories: make(map[string]ToolFactory),
+			namespaces:       make(map[string]*NamespaceRegistry),
+			currentNamespace: "default",
 		}
+		// Create default namespace
+		_ = globalDiscovery.CreateNamespace("default")
 		// Initialize with metadata from registry
 		globalDiscovery.initializeFromRegistry()
 	})
@@ -112,17 +137,18 @@ func (d *toolDiscovery) initializeFromRegistry() {
 // RegisterToolMetadata registers tool metadata without the tool instance
 func RegisterToolMetadata(info ToolInfo, factory ToolFactory) error {
 	discovery := NewDiscovery().(*toolDiscovery)
+	return discovery.RegisterTool(info, factory)
+}
 
-	discovery.mu.Lock()
-	defer discovery.mu.Unlock()
-
-	if _, exists := discovery.metadata[info.Name]; exists {
-		return fmt.Errorf("tool %s already registered", info.Name)
+// getCurrentRegistry returns the current namespace registry, creating it if needed
+func (d *toolDiscovery) getCurrentRegistry() *NamespaceRegistry {
+	registry, exists := d.namespaces[d.currentNamespace]
+	if !exists {
+		// This should not happen as we create default namespace in NewDiscovery
+		_ = d.CreateNamespace(d.currentNamespace)
+		registry = d.namespaces[d.currentNamespace]
 	}
-
-	discovery.metadata[info.Name] = info
-	discovery.factories[info.Name] = factory
-	return nil
+	return registry
 }
 
 // ListTools returns all available tools without loading them
@@ -130,9 +156,10 @@ func (d *toolDiscovery) ListTools() []ToolInfo {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	result := make([]ToolInfo, 0, len(d.metadata))
-	for _, info := range d.metadata {
-		result = append(result, info)
+	registry := d.getCurrentRegistry()
+	result := make([]ToolInfo, 0, len(registry.Metadata))
+	for _, versionInfo := range registry.Metadata {
+		result = append(result, versionInfo.ToolInfo)
 	}
 	return result
 }
@@ -142,10 +169,12 @@ func (d *toolDiscovery) SearchTools(query string) []ToolInfo {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
+	registry := d.getCurrentRegistry()
 	query = strings.ToLower(query)
 	var results []ToolInfo
 
-	for _, info := range d.metadata {
+	for _, versionInfo := range registry.Metadata {
+		info := versionInfo.ToolInfo
 		// Search in name
 		if strings.Contains(strings.ToLower(info.Name), query) {
 			results = append(results, info)
@@ -175,10 +204,11 @@ func (d *toolDiscovery) ListByCategory(category string) []ToolInfo {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
+	registry := d.getCurrentRegistry()
 	var results []ToolInfo
-	for _, info := range d.metadata {
-		if info.Category == category {
-			results = append(results, info)
+	for _, versionInfo := range registry.Metadata {
+		if versionInfo.Category == category {
+			results = append(results, versionInfo.ToolInfo)
 		}
 	}
 	return results
@@ -187,12 +217,15 @@ func (d *toolDiscovery) ListByCategory(category string) []ToolInfo {
 // GetToolSchema returns detailed schema for a specific tool
 func (d *toolDiscovery) GetToolSchema(name string) (*ToolSchema, error) {
 	d.mu.RLock()
-	info, exists := d.metadata[name]
+	registry := d.getCurrentRegistry()
+	versionInfo, exists := registry.Metadata[name]
 	d.mu.RUnlock()
 
 	if !exists {
 		return nil, fmt.Errorf("tool %s not found", name)
 	}
+
+	info := versionInfo.ToolInfo
 
 	schema := &ToolSchema{
 		Name:        info.Name,
@@ -250,7 +283,8 @@ func (d *toolDiscovery) GetToolExamples(name string) ([]domain.ToolExample, erro
 // CreateTool instantiates a tool by name
 func (d *toolDiscovery) CreateTool(name string) (domain.Tool, error) {
 	d.mu.RLock()
-	factory, exists := d.factories[name]
+	registry := d.getCurrentRegistry()
+	factory, exists := registry.Factories[name]
 	d.mu.RUnlock()
 
 	if !exists {
@@ -331,4 +365,241 @@ func GetToolMetadata() map[string]ToolInfo {
 		result[tool.Name] = tool
 	}
 	return result
+}
+
+// ========== DYNAMIC REGISTRATION METHODS (REQUIRED FOR DOWNSTREAM) ==========
+
+// RegisterTool registers a new tool at runtime (CRITICAL FOR SCRIPTING ENGINES)
+func (d *toolDiscovery) RegisterTool(info ToolInfo, factory ToolFactory) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	registry := d.getCurrentRegistry()
+
+	if _, exists := registry.Metadata[info.Name]; exists {
+		return fmt.Errorf("tool %s already registered in namespace %s", info.Name, d.currentNamespace)
+	}
+
+	// Set version if not provided
+	if info.Version == "" {
+		info.Version = "1.0.0"
+	}
+
+	// Create version info
+	versionInfo := ToolVersionInfo{
+		ToolInfo: info,
+		Versions: make(map[string]ToolFactory),
+	}
+	versionInfo.Versions[info.Version] = factory
+
+	registry.Metadata[info.Name] = versionInfo
+	registry.Factories[info.Name] = factory
+	return nil
+}
+
+// UnregisterTool removes a tool from the registry
+func (d *toolDiscovery) UnregisterTool(name string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	registry := d.getCurrentRegistry()
+
+	if _, exists := registry.Metadata[name]; !exists {
+		return fmt.Errorf("tool %s not found in namespace %s", name, d.currentNamespace)
+	}
+
+	delete(registry.Metadata, name)
+	delete(registry.Factories, name)
+	return nil
+}
+
+// GetRegisteredTools returns all registered tools in current namespace
+func (d *toolDiscovery) GetRegisteredTools() []ToolInfo {
+	return d.ListTools() // ListTools already works with current namespace
+}
+
+// ========== REGISTRY PERSISTENCE (DOWNSTREAM REQUIREMENT) ==========
+
+// RegistrySnapshot represents a serializable snapshot of the registry
+type RegistrySnapshot struct {
+	Namespaces map[string]*NamespaceRegistry `json:"namespaces"`
+	Current    string                        `json:"current_namespace"`
+}
+
+// SaveRegistry serializes the registry to a writer
+func (d *toolDiscovery) SaveRegistry(writer interface{}) error {
+	w, ok := writer.(io.Writer)
+	if !ok {
+		return fmt.Errorf("writer must implement io.Writer")
+	}
+
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	snapshot := RegistrySnapshot{
+		Namespaces: d.namespaces,
+		Current:    d.currentNamespace,
+	}
+
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(snapshot)
+}
+
+// LoadRegistry deserializes the registry from a reader
+func (d *toolDiscovery) LoadRegistry(reader interface{}) error {
+	r, ok := reader.(io.Reader)
+	if !ok {
+		return fmt.Errorf("reader must implement io.Reader")
+	}
+
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	var snapshot RegistrySnapshot
+	decoder := json.NewDecoder(r)
+	if err := decoder.Decode(&snapshot); err != nil {
+		return fmt.Errorf("failed to decode registry: %w", err)
+	}
+
+	// Restore namespaces (factories will be nil, need to be re-registered)
+	d.namespaces = snapshot.Namespaces
+	d.currentNamespace = snapshot.Current
+
+	// Initialize factory maps for each namespace
+	for _, ns := range d.namespaces {
+		if ns.Factories == nil {
+			ns.Factories = make(map[string]ToolFactory)
+		}
+	}
+
+	return nil
+}
+
+// ========== TOOL VERSIONING SUPPORT ==========
+
+// RegisterToolVersion registers a specific version of a tool
+func (d *toolDiscovery) RegisterToolVersion(info ToolInfo, factory ToolFactory, version string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	registry := d.getCurrentRegistry()
+
+	versionInfo, exists := registry.Metadata[info.Name]
+	if !exists {
+		// Create new tool with this version
+		versionInfo = ToolVersionInfo{
+			ToolInfo: info,
+			Versions: make(map[string]ToolFactory),
+		}
+	}
+
+	// Set the version
+	info.Version = version
+	versionInfo.Versions[version] = factory
+
+	// If this is the latest version, update the main metadata and factory
+	if !exists || isNewerVersion(version, versionInfo.Version) {
+		versionInfo.ToolInfo = info
+		registry.Factories[info.Name] = factory
+	}
+
+	registry.Metadata[info.Name] = versionInfo
+	return nil
+}
+
+// GetToolVersions returns all available versions of a tool
+func (d *toolDiscovery) GetToolVersions(name string) []string {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	registry := d.getCurrentRegistry()
+	versionInfo, exists := registry.Metadata[name]
+	if !exists {
+		return []string{}
+	}
+
+	versions := make([]string, 0, len(versionInfo.Versions))
+	for version := range versionInfo.Versions {
+		versions = append(versions, version)
+	}
+	return versions
+}
+
+// CreateToolVersion creates a tool instance of a specific version
+func (d *toolDiscovery) CreateToolVersion(name, version string) (domain.Tool, error) {
+	d.mu.RLock()
+	registry := d.getCurrentRegistry()
+	versionInfo, exists := registry.Metadata[name]
+	d.mu.RUnlock()
+
+	if !exists {
+		return nil, fmt.Errorf("tool %s not found", name)
+	}
+
+	factory, versionExists := versionInfo.Versions[version]
+	if !versionExists {
+		return nil, fmt.Errorf("tool %s version %s not found", name, version)
+	}
+
+	return factory()
+}
+
+// ========== MULTI-TENANT SUPPORT (FOR DOWNSTREAM ISOLATION) ==========
+
+// CreateNamespace creates a new tool namespace
+func (d *toolDiscovery) CreateNamespace(namespace string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if _, exists := d.namespaces[namespace]; exists {
+		return fmt.Errorf("namespace %s already exists", namespace)
+	}
+
+	d.namespaces[namespace] = &NamespaceRegistry{
+		Name:      namespace,
+		Metadata:  make(map[string]ToolVersionInfo),
+		Factories: make(map[string]ToolFactory),
+	}
+	return nil
+}
+
+// ListNamespaces returns all available namespaces
+func (d *toolDiscovery) ListNamespaces() []string {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	namespaces := make([]string, 0, len(d.namespaces))
+	for name := range d.namespaces {
+		namespaces = append(namespaces, name)
+	}
+	return namespaces
+}
+
+// SwitchNamespace changes the current namespace
+func (d *toolDiscovery) SwitchNamespace(namespace string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if _, exists := d.namespaces[namespace]; !exists {
+		return fmt.Errorf("namespace %s does not exist", namespace)
+	}
+
+	d.currentNamespace = namespace
+	return nil
+}
+
+// GetCurrentNamespace returns the currently active namespace
+func (d *toolDiscovery) GetCurrentNamespace() string {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	return d.currentNamespace
+}
+
+// ========== HELPER FUNCTIONS ==========
+
+// isNewerVersion compares two semantic version strings (simple implementation)
+func isNewerVersion(v1, v2 string) bool {
+	// Simple string comparison for now - in production would use proper semver
+	return v1 > v2
 }
