@@ -120,7 +120,7 @@ Add structured logging support to agent workflows
 
 ### New Provider Implementation
 
-See [docs/technical/new-provider.md](docs/technical/new-provider.md) for detailed instructions on adding a new LLM provider.
+See [docs/technical/provider-implementation.md](docs/technical/provider-implementation.md) for detailed instructions on adding a new LLM provider.
 
 ### New Tools or Agents
 
