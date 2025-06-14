@@ -168,31 +168,88 @@
 
 ## v0.3.5: Scripting Engine Integration Support (go-llmspell requirements)
 
-### 0.3.5.1: Schema Package Implementations
-- [ ] Implement InMemorySchemaRepository
-  - [ ] Thread-safe in-memory storage for schemas
-  - [ ] CRUD operations for schema management
-  - [ ] Schema versioning support
-  - [ ] Export/import functionality
-- [ ] Implement FileSchemaRepository
-  - [ ] File-based persistent schema storage
-  - [ ] Directory structure for schema organization
-  - [ ] Schema file format (JSON/YAML)
-  - [ ] Migration support between versions
-- [ ] Implement ReflectionSchemaGenerator
-  - [ ] Generate schemas from Go structs using reflection
-  - [ ] Handle nested structs and slices
-  - [ ] Support for custom types
-  - [ ] Preserve Go type information in schema
-- [ ] Implement TagSchemaGenerator
-  - [ ] Generate schemas from struct tags (json, validate, etc.)
-  - [ ] Support multiple tag formats
-  - [ ] Custom tag handlers
-  - [ ] Validation rule extraction
-- [ ] Add comprehensive tests for all implementations
-- [ ] Create examples demonstrating schema usage
+### 0.3.5.1: Schema Package Implementations (FOUNDATION) ✅ COMPLETED (June 13, 2025)
+- [x] Implement InMemorySchemaRepository
+  - [x] Thread-safe in-memory storage for schemas
+  - [x] CRUD operations for schema management
+  - [x] Schema versioning support
+  - [x] Export/import functionality
+- [x] Implement FileSchemaRepository
+  - [x] File-based persistent schema storage
+  - [x] Directory structure for schema organization
+  - [x] Schema file format (JSON/YAML)
+  - [x] Migration support between versions
+- [x] Implement ReflectionSchemaGenerator
+  - [x] Generate schemas from Go structs using reflection
+  - [x] Handle nested structs and slices
+  - [x] Support for custom types
+  - [x] Preserve Go type information in schema
+- [x] Implement TagSchemaGenerator
+  - [x] Generate schemas from struct tags (json, validate, etc.)
+  - [x] Support multiple tag formats
+  - [x] Custom tag handlers
+  - [x] Validation rule extraction
+- [x] Add comprehensive tests for all implementations
+- [x] Create examples demonstrating schema usage
 
-### 0.3.5.2: Enhanced Tool Discovery System
+### 0.3.5.2: Enhanced Error Handling (FOUNDATION)
+- [ ] Serializable Error Implementation
+  - [ ] JSON serialization for all errors
+  - [ ] Rich error context
+  - [ ] Stack trace capture
+  - [ ] Variable state at error time
+- [ ] Error Recovery Strategies
+  - [ ] Built-in recovery strategies
+  - [ ] Custom strategy registration
+  - [ ] Retry mechanisms
+  - [ ] Fallback options
+- [ ] Error Context Enhancement
+  - [ ] Automatic context collection
+  - [ ] Custom context providers
+  - [ ] Context filtering
+  - [ ] Sensitive data masking
+- [ ] Error handling tests
+- [ ] Recovery strategy examples
+
+### 0.3.5.3: Bridge-Friendly Type System (FOUNDATION)
+- [ ] Implement Type Registry
+  - [ ] Central registry for type conversions
+  - [ ] RegisterType method for custom converters
+  - [ ] Built-in converters for common types
+  - [ ] Bidirectional conversion support
+- [ ] Generic Type Converter
+  - [ ] Configurable converter with plugin system
+  - [ ] Handle primitive types automatically
+  - [ ] Support for complex type mappings
+  - [ ] Error handling and validation
+- [ ] Serialization Helpers
+  - [ ] JSON serialization for all domain types
+  - [ ] YAML serialization support
+  - [ ] Custom serialization formats
+  - [ ] Schema-aware serialization
+- [ ] Type conversion benchmarks
+- [ ] Examples for type bridging
+
+### 0.3.5.4: Testing Infrastructure (FOUNDATION SUPPORT)
+- [ ] Mock Implementations
+  - [ ] Mock for every interface
+  - [ ] Configurable mock behaviors
+  - [ ] Mock assertion helpers
+  - [ ] Mock state verification
+- [ ] Test Helpers
+  - [ ] Agent testing utilities
+  - [ ] Tool testing framework
+  - [ ] Workflow test harness
+  - [ ] Event capture for tests
+- [ ] Scenario Builders
+  - [ ] DSL for test scenarios
+  - [ ] Fluent API design
+  - [ ] Assertion library
+  - [ ] Test report generation
+- [ ] Testing framework examples
+- [ ] Best practices documentation
+
+### 0.3.5.5: Enhanced Tool Discovery System
 - [ ] Dynamic Tool Registration
   - [ ] Add RegisterTool method to ToolDiscovery interface
   - [ ] Add UnregisterTool method for runtime removal
@@ -212,26 +269,7 @@
 - [ ] Integration tests for dynamic tool management
 - [ ] Examples for script-based tool creation
 
-### 0.3.5.3: Bridge-Friendly Type System
-- [ ] Implement Type Registry
-  - [ ] Central registry for type conversions
-  - [ ] RegisterType method for custom converters
-  - [ ] Built-in converters for common types
-  - [ ] Bidirectional conversion support
-- [ ] Generic Type Converter
-  - [ ] Configurable converter with plugin system
-  - [ ] Handle primitive types automatically
-  - [ ] Support for complex type mappings
-  - [ ] Error handling and validation
-- [ ] Serialization Helpers
-  - [ ] JSON serialization for all domain types
-  - [ ] YAML serialization support
-  - [ ] Custom serialization formats
-  - [ ] Schema-aware serialization
-- [ ] Type conversion benchmarks
-- [ ] Examples for type bridging
-
-### 0.3.5.4: Event System Enhancements
+### 0.3.5.6: Event System Enhancements
 - [ ] Event Serialization
   - [ ] Implement JSON serialization for all event types
   - [ ] Support for custom event data
@@ -249,44 +287,6 @@
   - [ ] Replay speed control
 - [ ] Event system integration tests
 - [ ] Examples for event filtering and replay
-
-### 0.3.5.5: Workflow Serialization and Templates
-- [ ] Workflow Serialization
-  - [ ] WorkflowSerializer interface implementation
-  - [ ] Support JSON/YAML formats
-  - [ ] Preserve all workflow metadata
-  - [ ] Version compatibility handling
-- [ ] Workflow Templates
-  - [ ] Pre-built workflow templates
-  - [ ] Template customization API
-  - [ ] Template registry
-  - [ ] Template validation
-- [ ] Script-Based Step Definitions
-  - [ ] ScriptStep implementation
-  - [ ] Multiple language support
-  - [ ] Script validation
-  - [ ] Error handling for script execution
-- [ ] Workflow serialization tests
-- [ ] Template examples
-
-### 0.3.5.6: LLM Provider Metadata and Configuration
-- [ ] Provider Metadata API
-  - [ ] ProviderMetadata interface implementation
-  - [ ] Capability discovery
-  - [ ] Constraint documentation
-  - [ ] Configuration schema generation
-- [ ] Dynamic Provider Registration
-  - [ ] Runtime provider registration
-  - [ ] Provider factory pattern
-  - [ ] Provider lifecycle management
-  - [ ] Hot-reload support
-- [ ] Provider Configuration Templates
-  - [ ] JSON/YAML configuration templates
-  - [ ] Template validation
-  - [ ] Environment variable mapping
-  - [ ] Secure credential handling
-- [ ] Provider metadata tests
-- [ ] Configuration examples
 
 ### 0.3.5.7: Structured Output Support
 - [ ] Output Parser Interface
@@ -307,43 +307,43 @@
 - [ ] Output parsing benchmarks
 - [ ] Validation examples
 
-### 0.3.5.8: Enhanced Error Handling
-- [ ] Serializable Error Implementation
-  - [ ] JSON serialization for all errors
-  - [ ] Rich error context
-  - [ ] Stack trace capture
-  - [ ] Variable state at error time
-- [ ] Error Recovery Strategies
-  - [ ] Built-in recovery strategies
-  - [ ] Custom strategy registration
-  - [ ] Retry mechanisms
-  - [ ] Fallback options
-- [ ] Error Context Enhancement
-  - [ ] Automatic context collection
-  - [ ] Custom context providers
-  - [ ] Context filtering
-  - [ ] Sensitive data masking
-- [ ] Error handling tests
-- [ ] Recovery strategy examples
+### 0.3.5.8: LLM Provider Metadata and Configuration
+- [ ] Provider Metadata API
+  - [ ] ProviderMetadata interface implementation
+  - [ ] Capability discovery
+  - [ ] Constraint documentation
+  - [ ] Configuration schema generation
+- [ ] Dynamic Provider Registration
+  - [ ] Runtime provider registration
+  - [ ] Provider factory pattern
+  - [ ] Provider lifecycle management
+  - [ ] Hot-reload support
+- [ ] Provider Configuration Templates
+  - [ ] JSON/YAML configuration templates
+  - [ ] Template validation
+  - [ ] Environment variable mapping
+  - [ ] Secure credential handling
+- [ ] Provider metadata tests
+- [ ] Configuration examples
 
-### 0.3.5.9: Testing Infrastructure
-- [ ] Mock Implementations
-  - [ ] Mock for every interface
-  - [ ] Configurable mock behaviors
-  - [ ] Mock assertion helpers
-  - [ ] Mock state verification
-- [ ] Test Helpers
-  - [ ] Agent testing utilities
-  - [ ] Tool testing framework
-  - [ ] Workflow test harness
-  - [ ] Event capture for tests
-- [ ] Scenario Builders
-  - [ ] DSL for test scenarios
-  - [ ] Fluent API design
-  - [ ] Assertion library
-  - [ ] Test report generation
-- [ ] Testing framework examples
-- [ ] Best practices documentation
+### 0.3.5.9: Workflow Serialization and Templates
+- [ ] Workflow Serialization
+  - [ ] WorkflowSerializer interface implementation
+  - [ ] Support JSON/YAML formats
+  - [ ] Preserve all workflow metadata
+  - [ ] Version compatibility handling
+- [ ] Workflow Templates
+  - [ ] Pre-built workflow templates
+  - [ ] Template customization API
+  - [ ] Template registry
+  - [ ] Template validation
+- [ ] Script-Based Step Definitions
+  - [ ] ScriptStep implementation
+  - [ ] Multiple language support
+  - [ ] Script validation
+  - [ ] Error handling for script execution
+- [ ] Workflow serialization tests
+- [ ] Template examples
 
 ### 0.3.5.10: Documentation and API Generation
 - [ ] API Documentation Generator
