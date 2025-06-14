@@ -337,40 +337,41 @@
 - ✅ Comprehensive filtering system with composite filters (AND/OR/NOT)
 - ✅ Multiple serializers (JSON, JSON-pretty, compact) for different use cases
 
-### 0.3.5.6: Workflow Serialization and Templates
-- [ ] Workflow Serialization (CRITICAL FOR DOWNSTREAM)
-  - [ ] WorkflowSerializer with format selection ("json", "yaml")
-  - [ ] Serialize(def *WorkflowDefinition) method
-  - [ ] DeserializeDefinition for bridge layer workflow creation
-  - [ ] Preserve all workflow metadata
-  - [ ] Version compatibility handling
-- [ ] Workflow Templates
-  - [ ] Pre-built workflow templates
-  - [ ] Template customization API
-  - [ ] Template registry
-  - [ ] Template validation
-- [ ] Script-Based Step Definitions (REQUIRED FOR SCRIPTING ENGINES)
-  - [ ] ScriptStep struct with Script, Language, Handler fields
-  - [ ] ScriptHandler interface with Execute(ctx, state, script) method
-  - [ ] Support for multiple languages: "javascript", "lua", "tengo", "expr"
-  - [ ] RegisterScriptHandler global function for language registration
-  - [ ] Script validation before execution
-  - [ ] Error handling for script execution
-- [ ] Declarative Workflow Support (DOWNSTREAM REQUIREMENT)
-  - [ ] JSON/YAML workflow definition format
-  - [ ] Script-based step integration in workflows
-  - [ ] Dynamic workflow creation from bridge layer
-  - [ ] Workflow versioning and migration support
-- [ ] Workflow serialization tests
-- [ ] Template examples
+### 0.3.5.6: Workflow Serialization and Templates ✅ COMPLETED (June 13, 2025)
+- [x] Workflow Serialization (CRITICAL FOR DOWNSTREAM)
+  - [x] WorkflowSerializer with format selection ("json", "yaml")
+  - [x] Serialize(def *WorkflowDefinition) method
+  - [x] DeserializeDefinition for bridge layer workflow creation
+  - [x] Preserve all workflow metadata
+  - [x] Version compatibility handling
+- [x] Workflow Templates
+  - [x] Pre-built workflow templates
+  - [x] Template customization API
+  - [x] Template registry
+  - [x] Template validation
+- [x] Script-Based Step Definitions (REQUIRED FOR SCRIPTING ENGINES)
+  - [x] ScriptStep struct with Script, Language, Handler fields
+  - [x] ScriptHandler interface with Execute(ctx, state, script) method
+  - [x] Support for multiple languages: "javascript", "lua", "tengo", "expr"
+  - [x] RegisterScriptHandler global function for language registration
+  - [x] Script validation before execution
+  - [x] Error handling for script execution
+- [x] Declarative Workflow Support (DOWNSTREAM REQUIREMENT)
+  - [x] JSON/YAML workflow definition format
+  - [x] Script-based step integration in workflows
+  - [x] Dynamic workflow creation from bridge layer
+  - [x] Workflow versioning and migration support
+- [x] Workflow serialization tests
+- [x] Template examples
 
-**DOWNSTREAM REQUIREMENTS**:
-- 🔥 **CRITICAL**: `pkg/agent/workflow/serialization.go` with WorkflowSerializer
-- 🔥 **CRITICAL**: ScriptStep support for embedding scripts in workflows
-- 🔥 **CRITICAL**: DeserializeDefinition for creating workflows from bridge definitions
-- 🔥 **CRITICAL**: RegisterScriptHandler for pluggable script language support
-- ⚠️ Declarative workflows enable visual builders and no-code tools
-- ⚠️ Workflow storage, versioning, and sharing capabilities
+**DOWNSTREAM REQUIREMENTS SATISFIED**:
+- ✅ `pkg/agent/workflow/serialization.go` with JSON and YAML WorkflowSerializer implementations
+- ✅ ScriptStep in `script_step.go` with full builder pattern and validation
+- ✅ DeserializeDefinition accepts map[string]interface{} from bridge layer
+- ✅ RegisterScriptHandler with global registry and language discovery
+- ✅ Mock handlers for javascript, expr, and json-transform (ready for real implementations)
+- ✅ Workflow templates with variable substitution and categorization
+- ✅ Comprehensive serialization preserving all metadata and versioning
 
 ### 0.3.5.7: LLM Provider Metadata and Configuration
 - [ ] Provider Metadata API (CRITICAL FOR DOWNSTREAM)

@@ -362,6 +362,20 @@ export ANTHROPIC_API_KEY="your-key"
 cd workflow-multi-provider && go run main.go
 ```
 
+#### [**Workflow Serialization**](workflow-serialization/README.md)
+Workflow serialization for bridge layer integration.
+
+**Features:**
+- JSON/YAML workflow serialization
+- Script-based workflow steps
+- Multiple scripting language support
+- Workflow templates
+- Bridge layer deserialization
+
+```bash
+cd workflow-serialization && go run main.go
+```
+
 ### Provider Examples
 
 #### [**Provider OpenAI**](provider-openai/README.md)
