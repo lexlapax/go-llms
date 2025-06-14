@@ -37,6 +37,7 @@ This directory contains technical documentation for the Go-LLMs library, intende
 - [Logging](logging.md) - Logging patterns and best practices
 - [Dependency Reduction](dependency_reduction.md) - Journey from heavy dependencies to stdlib
 - [Tools](tools.md) - Tool system architecture and patterns
+- [Structured Output Support](structured-output-support.md) - LLM output parsing and validation
 
 ## Navigation
 

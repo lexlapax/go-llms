@@ -805,6 +805,19 @@ Type coercion and data conversion.
 cd structured-coercion && go run main.go
 ```
 
+#### [**Structured Output**](structured-output/README.md)
+LLM output parsing with recovery and validation.
+
+**Features:**
+- JSON parsing with recovery from markdown
+- Schema validation with detailed errors
+- Format conversion (JSON/YAML/XML)
+- Bridge integration for go-llmspell
+
+```bash
+cd structured-output && go run main.go
+```
+
 ### Schema Management Examples
 
 #### [**Schema Generator**](schema-generator/README.md)

@@ -57,6 +57,7 @@ Welcome to the comprehensive Go-LLMs documentation reference. This directory con
 - [Logging](technical/logging.md) - Logging patterns and best practices
 - [Dependency Reduction](technical/dependency_reduction.md) - Journey from heavy dependencies to stdlib
 - [Tools](technical/tools.md) - Tool system architecture and patterns
+- [Structured Output Support](technical/structured-output-support.md) - LLM output parsing and validation
 
 ### [Archives](archives/) 📦
 **Historical documentation**

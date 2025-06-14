@@ -374,80 +374,50 @@
 - ✅ Comprehensive serialization preserving all metadata and versioning
 
 ### 0.3.5.7: LLM Provider Metadata and Configuration ✅ COMPLETED (June 14, 2025)
-- [x] Provider Metadata Interface (CRITICAL FOR DOWNSTREAM)
-  - [x] ProviderMetadata interface with GetName(), GetCapabilities(), GetModels()
-  - [x] Capability enumeration (streaming, functions, multimodal, etc.)
-  - [x] Model metadata with context windows, costs, features
-  - [x] Runtime provider discovery
-- [x] Configuration Schema Export (REQUIRED FOR BRIDGE LAYER)
-  - [x] GetConfigurationSchema() method for each provider
-  - [x] Schema describes required/optional configuration fields
-  - [x] Bridge-friendly schema format (JSON Schema compatible)
-  - [x] Validation rules in schema
-- [x] Provider Registry Enhancement (DOWNSTREAM REQUIREMENT)
-  - [x] GetProviderMetadata(name) function
-  - [x] ListProviders() with capability filtering
-  - [x] Provider feature matrix generation
-  - [x] Automatic documentation from metadata
-- [x] Dynamic Configuration Support
-  - [x] ValidateConfiguration(config) for providers
-  - [x] Configuration migration between versions
-  - [x] Environment variable mapping
-  - [x] Secure credential handling
-- [x] Bridge Integration (CRITICAL)
-  - [x] Export provider capabilities to bridge layer
-  - [x] Configuration validation before provider creation
-  - [x] Error messages suitable for end users
-- [x] Provider metadata tests
-  - [x] All providers (OpenAI, Anthropic, Gemini, Ollama, OpenRouter, VertexAI)
-- [x] Configuration examples
+
+### 0.3.5.8: Structured Output Support ✅ COMPLETED (June 14, 2025)
+- [x] Output Parser Interface (CRITICAL FOR DOWNSTREAM)
+  - [x] Parser interface with Parse() and ParseWithRecovery() methods
+  - [x] Parser registry with JSON, XML, YAML implementations
+  - [x] GetParser(format) function for bridge layer
+  - [x] Custom parser plugin system
+  - [x] Error recovery in parsing
+  - [x] Partial parsing support
+- [x] JSON Parser with Recovery (REQUIRED FOR BRIDGE LAYER)
+  - [x] Standard JSON parsing with schema validation
+  - [x] Extract JSON from markdown code blocks
+  - [x] Common issue fixing (trailing commas, quotes, etc.)
+  - [x] Schema-guided extraction as last resort
+  - [x] Configurable strict mode
+- [x] Output Validator (DOWNSTREAM REQUIREMENT)
+  - [x] Validate() function taking output and schema
+  - [x] ValidationResult with detailed error information
+  - [x] Schema-based validation using OutputSchema
+  - [x] Custom validation rules
+  - [x] Validation error details
+  - [x] Fix suggestions
+- [x] Format Converters
+  - [x] Convert between JSON/XML/YAML
+  - [x] Preserve type information
+  - [x] Custom format support
+  - [x] Streaming conversion
+- [x] Bridge Integration Support
+  - [x] Schema conversion from script format to OutputSchema
+  - [x] Result validation with detailed error reporting
+  - [x] Automatic format detection and recovery
+- [ ] Output parsing benchmarks (deferred to v0.3.6)
+- [x] Validation examples
 
 **DOWNSTREAM REQUIREMENTS SATISFIED**:
-- ✅ All providers implement metadata interfaces
-- ✅ Configuration schemas exportable for bridge validation
-- ✅ Runtime provider discovery with capability filtering
-- ✅ Bridge-friendly metadata format for go-llmspell integration
-
-### 0.3.5.8: Structured Output Support (NEXT)
-- [ ] Output Parser Interface (CRITICAL FOR DOWNSTREAM)
-  - [ ] Parser interface with Parse() and ParseWithRecovery() methods
-  - [ ] Parser registry with JSON, XML, YAML implementations
-  - [ ] GetParser(format) function for bridge layer
-  - [ ] Custom parser plugin system
-  - [ ] Error recovery in parsing
-  - [ ] Partial parsing support
-- [ ] JSON Parser with Recovery (REQUIRED FOR BRIDGE LAYER)
-  - [ ] Standard JSON parsing with schema validation
-  - [ ] Extract JSON from markdown code blocks
-  - [ ] Common issue fixing (trailing commas, quotes, etc.)
-  - [ ] Schema-guided extraction as last resort
-  - [ ] Configurable strict mode
-- [ ] Output Validator (DOWNSTREAM REQUIREMENT)
-  - [ ] Validate() function taking output and schema
-  - [ ] ValidationResult with detailed error information
-  - [ ] Schema-based validation using domain.Schema
-  - [ ] Custom validation rules
-  - [ ] Validation error details
-  - [ ] Fix suggestions
-- [ ] Format Converters
-  - [ ] Convert between JSON/XML/YAML
-  - [ ] Preserve type information
-  - [ ] Custom format support
-  - [ ] Streaming conversion
-- [ ] Bridge Integration Support
-  - [ ] Schema conversion from script format to domain.Schema
-  - [ ] Result validation with detailed error reporting
-  - [ ] Automatic format detection and recovery
-- [ ] Output parsing benchmarks
-- [ ] Validation examples
-
-**DOWNSTREAM REQUIREMENTS**:
-- 🔥 **CRITICAL**: `pkg/llm/outputs/parser.go` with Parser interface and registry
-- 🔥 **CRITICAL**: ParseWithRecovery for handling malformed LLM outputs
-- 🔥 **CRITICAL**: Validate() function for output verification against schemas
-- 🔥 **CRITICAL**: Schema-guided parsing for maximum reliability
-- ⚠️ Multiple format support (JSON, XML, YAML) for different LLM output styles
-- ⚠️ Markdown code block extraction for common LLM response patterns
+- ✅ `pkg/llm/outputs/parser.go` with Parser interface and registry
+- ✅ ParseWithRecovery for handling malformed LLM outputs
+- ✅ Validate() function for output verification against schemas
+- ✅ Schema-guided parsing for maximum reliability
+- ✅ Multiple format support (JSON, XML, YAML) for different LLM output styles
+- ✅ Markdown code block extraction for common LLM response patterns
+- ✅ BridgeAdapter for go-llmspell integration
+- ✅ Comprehensive recovery strategies for each format
+- ✅ OutputSchema type independent from domain.Schema for flexibility
 
 ### 0.3.5.9: Testing Infrastructure (FOUNDATION SUPPORT)
 - [ ] Mock Implementations (REQUIRED FOR DOWNSTREAM)
