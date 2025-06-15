@@ -65,6 +65,23 @@ Go-LLMs v0.3.5 is the Scripting Integration release, providing comprehensive sup
 - **Migration**: 47 files migrated to centralized infrastructure
 - **Documentation**: Comprehensive testing guide at `docs/technical/testing.md`
 
+#### Documentation and API Generation (v0.3.5.10)
+- **Documentation Generation System**: Complete `pkg/docs/` package with auto-generation
+  - Generator interface with OpenAPI, Markdown, and JSON output formats
+  - Documentable interface for auto-documentation support
+  - GenerateOpenAPIForTool() function for individual tool documentation
+- **Tool Discovery Integration**: Seamless integration with existing tool discovery
+  - Automatic documentation generation for all 33 discovered tools
+  - Category-based, tag-based, and search-based filtering
+  - Enhanced tool help with rich formatting
+- **Bridge-Friendly Design**: All types JSON serializable for go-llmspell
+  - Complete OpenAPI 3.0 specification generation (142KB for all tools)
+  - Human-readable Markdown documentation (207KB comprehensive docs)
+  - Structured JSON output for programmatic access
+- **Comprehensive Example**: Working example demonstrating all features
+  - Real-world generation from actual tool discovery system
+  - Multiple output formats and filtering options
+
 ### Enhanced
 
 #### Bridge-Friendly Type System
