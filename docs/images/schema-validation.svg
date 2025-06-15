@@ -1,0 +1,114 @@
+<svg width="800" height="550" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .input-box { fill: #ffe0e0; stroke: #333; stroke-width: 2; }
+      .schema-box { fill: #e0f0ff; stroke: #333; stroke-width: 2; }
+      .validation-box { fill: #fff0e0; stroke: #333; stroke-width: 2; }
+      .output-box { fill: #e6f3e6; stroke: #333; stroke-width: 2; }
+      .error-box { fill: #f8d7da; stroke: #721c24; stroke-width: 2; }
+      .text { font: 14px Arial, sans-serif; fill: #333; }
+      .title { font: bold 18px Arial, sans-serif; fill: #333; }
+      .section-title { font: bold 16px Arial, sans-serif; fill: #333; }
+      .small-text { font: 12px Arial, sans-serif; fill: #666; }
+      .code-text { font: 11px Monaco, monospace; fill: #333; }
+      .error-text { font: 12px Arial, sans-serif; fill: #721c24; }
+    </style>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+            refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+    <marker id="error-arrow" markerWidth="10" markerHeight="7" 
+            refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#721c24" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Schema Validation Process</text>
+  
+  <!-- Problem: Without Schema -->
+  <text x="400" y="70" text-anchor="middle" class="section-title">❌ Without Schema - Unpredictable</text>
+  
+  <rect x="50" y="90" width="300" height="60" rx="5" class="input-box" filter="url(#shadow)"/>
+  <text x="200" y="115" text-anchor="middle" class="text">AI Raw Response</text>
+  <text x="200" y="135" text-anchor="middle" class="code-text">"The weather is sunny, 72°F, light winds"</text>
+  
+  <rect x="450" y="90" width="300" height="60" rx="5" class="error-box" filter="url(#shadow)"/>
+  <text x="600" y="115" text-anchor="middle" class="text">Parsing Problems</text>
+  <text x="600" y="135" text-anchor="middle" class="error-text">• Hard to extract data • Inconsistent format</text>
+  
+  <path d="M 350 120 L 440 120" stroke="#721c24" stroke-width="2" marker-end="url(#error-arrow)"/>
+  
+  <!-- Solution: With Schema -->
+  <text x="400" y="200" text-anchor="middle" class="section-title">✅ With Schema - Reliable Structure</text>
+  
+  <!-- Step 1: Define Schema -->
+  <rect x="50" y="230" width="150" height="100" rx="5" class="schema-box" filter="url(#shadow)"/>
+  <text x="125" y="255" text-anchor="middle" class="text">1. Define Schema</text>
+  <text x="70" y="275" class="code-text">{</text>
+  <text x="80" y="290" class="code-text">"condition": "string"</text>
+  <text x="80" y="305" class="code-text">"temp": "number"</text>
+  <text x="80" y="320" class="code-text">"wind": "number"</text>
+  <text x="70" y="325" class="code-text">}</text>
+  
+  <!-- Step 2: AI Generation -->
+  <rect x="230" y="230" width="150" height="100" rx="5" class="input-box" filter="url(#shadow)"/>
+  <text x="305" y="255" text-anchor="middle" class="text">2. AI Generates</text>
+  <text x="250" y="275" class="code-text">{</text>
+  <text x="260" y="290" class="code-text">"condition": "sunny"</text>
+  <text x="260" y="305" class="code-text">"temp": 72</text>
+  <text x="260" y="320" class="code-text">"wind": 5</text>
+  <text x="250" y="325" class="code-text">}</text>
+  
+  <!-- Step 3: Validation -->
+  <rect x="410" y="230" width="150" height="100" rx="5" class="validation-box" filter="url(#shadow)"/>
+  <text x="485" y="255" text-anchor="middle" class="text">3. Validation</text>
+  <text x="430" y="275" class="small-text">✓ Structure matches</text>
+  <text x="430" y="290" class="small-text">✓ Types correct</text>
+  <text x="430" y="305" class="small-text">✓ Required fields</text>
+  <text x="430" y="320" class="small-text">✓ Ready to use</text>
+  
+  <!-- Step 4: Structured Output -->
+  <rect x="590" y="230" width="150" height="100" rx="5" class="output-box" filter="url(#shadow)"/>
+  <text x="665" y="255" text-anchor="middle" class="text">4. Reliable Data</text>
+  <text x="610" y="275" class="code-text">weather.Condition</text>
+  <text x="610" y="290" class="code-text">// "sunny"</text>
+  <text x="610" y="305" class="code-text">weather.Temp</text>
+  <text x="610" y="320" class="code-text">// 72</text>
+  
+  <!-- Process arrows -->
+  <path d="M 200 280 L 220 280" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 380 280 L 400 280" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 560 280 L 580 280" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Error Handling Path -->
+  <text x="400" y="380" text-anchor="middle" class="section-title">Error Handling & Retry</text>
+  
+  <rect x="150" y="400" width="120" height="50" rx="5" class="error-box" filter="url(#shadow)"/>
+  <text x="210" y="425" text-anchor="middle" class="text">Validation Fails</text>
+  <text x="210" y="440" text-anchor="middle" class="error-text">Invalid format</text>
+  
+  <rect x="300" y="400" width="120" height="50" rx="5" class="validation-box" filter="url(#shadow)"/>
+  <text x="360" y="425" text-anchor="middle" class="text">Auto Retry</text>
+  <text x="360" y="440" text-anchor="middle" class="small-text">With correction</text>
+  
+  <rect x="450" y="400" width="120" height="50" rx="5" class="output-box" filter="url(#shadow)"/>
+  <text x="510" y="425" text-anchor="middle" class="text">Success</text>
+  <text x="510" y="440" text-anchor="middle" class="small-text">Valid data</text>
+  
+  <!-- Error flow arrows -->
+  <path d="M 270 425 L 290 425" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 420 425 L 440 425" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Retry arrow -->
+  <path d="M 360 400 Q 360 380 300 380 Q 240 380 240 400" stroke="#666" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrowhead)"/>
+  <text x="300" y="375" text-anchor="middle" class="small-text">Retry with guidance</text>
+  
+  <!-- Benefits -->
+  <rect x="100" y="480" width="600" height="50" rx="5" fill="#f8f9fa" stroke="#ccc" stroke-width="1"/>
+  <text x="400" y="500" text-anchor="middle" class="text">Benefits of Schema Validation</text>
+  <text x="400" y="520" text-anchor="middle" class="small-text">Type Safety • Predictable Structure • Error Recovery • Automatic Retries • Production Ready</text>
+</svg>

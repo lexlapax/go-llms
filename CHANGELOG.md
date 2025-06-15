@@ -104,11 +104,52 @@ Go-LLMs v0.3.5 is the Scripting Integration release, providing comprehensive sup
 
 ### Documentation
 
+#### Comprehensive Documentation Overhaul (June 2025)
+- **Complete User Guide Restructure**: Task-oriented documentation with visual learning paths
+  - New structure: `docs/user-guide/` with getting-started, guides, examples, reference, advanced sections
+  - 5 distinct learning paths: Beginner, Developer, Architect, Production, Contributors
+  - Task-oriented guides (building chat apps, data extractors, research agents, automation)
+  - Practical examples organized by use case, complexity, and domain
+  - Quick reference materials and advanced topics for production deployment
+
+- **Visual Documentation Enhancement**: 15 SVG diagrams for better understanding
+  - `learning-paths.svg` - Interactive decision tree for choosing learning paths
+  - `quickstart-steps.svg` - Visual guide to 5-minute setup process
+  - `chat-architecture.svg` - Production chat application architecture
+  - `provider-comparison.svg` - Visual comparison matrix of AI providers
+  - `schema-validation.svg` - How schemas ensure reliable data structure
+  - Updated existing diagrams: architecture-layers, workflow-patterns, state-management
+  - All diagrams embedded in relevant documentation with proper captions
+
+- **Technical Documentation Reorganization**: Contributor-focused architecture documentation
+  - Restructured `docs/technical/` with Foundation, Core Components, Development, Advanced Topics
+  - Provider, Agent, and Tool documentation in dedicated sections
+  - Enhanced testing strategies guide with comprehensive examples
+  - Complete API reference and type definitions
+
+- **Archive Organization**: Clean separation of current vs historical documentation
+  - Moved old documentation to `docs/archives/` (technical-old, user-guide-old, images-old)
+  - Preserved all historical content while cleaning main documentation structure
+  - Clear version progression tracking
+
+#### Schema System Documentation
 - Created `docs/technical/schema-system.md` - Overview of schema architecture
 - Created `docs/technical/schema-package.md` - Schema implementation details
 - Updated `docs/technical/testing.md` - Complete testing infrastructure guide
 - Enhanced `docs/technical/structured-output-support.md` - Output parsing guide
 - Comprehensive examples for all new features
+
+#### Integration Testing Examples
+- Moved testing examples from `docs/examples/testing_examples.md` to user guide
+- Complete testing strategies in `docs/user-guide/advanced/testing-strategies.md`
+- Real-world testing patterns with mocks, fixtures, scenarios, and performance testing
+
+#### Main Documentation Hub Updates
+- Updated `docs/README.md` with complete navigation for new structure
+- Version information corrected to v0.3.5 (June 2025)
+- Enhanced quick start paths with role-based guidance
+- Added visual resources section highlighting SVG diagrams
+- Updated example count to 80+ working examples
 
 ### Fixed
 

@@ -1,43 +1,26 @@
 # Go-LLMs: Unified Go Library for LLM Integration
 
-A lightweight Go library providing a simplified, unified interface to interact with various LLM providers while offering robust data validation and agent tooling and multi-agent orchestration via workflows and state management.
+Build powerful AI applications with a clean, unified interface to multiple LLM providers. Go-LLMs provides everything you need: from simple text generation to complex multi-agent workflows with built-in tools and structured outputs.
+
+## Why Go-LLMs?
+
+- **One Library, All Providers** - Switch between OpenAI, Anthropic, Google, Ollama, and more with the same code
+- **Production Ready** - Built-in error handling, rate limiting, retries, and monitoring
+- **Rich Tooling** - 33+ built-in tools for web, files, calculations, and data processing
+- **Smart Agents** - Create conversational AI that can use tools and coordinate with other agents
+- **Structured Data** - Get reliable, validated JSON/XML output instead of unpredictable text
+- **Go Native** - Designed for Go developers with clean APIs and minimal dependencies
 
 ## Features
 
-- **Unified API** across OpenAI, Anthropic, Google Gemini, Vertex AI, Ollama, OpenRouter, and compatible providers
-- **Structured outputs** with JSON schema validation and type coercion
-- **Agent system** with state management, hooks, and workflow patterns
-- **32 built-in tools** for web, file, system, data, datetime, and feed operations
-- **Tool enhancement** with LLM guidance metadata and MCP (Model Context Protocol) support
-- **Tool discovery system** (v0.3.4+) with metadata-first exploration and scripting bridge integration
-- **Multimodal content** support for text, images, files, videos, and audio
-- **Multi-provider strategies** including fastest, primary, and consensus approaches
-- **Type-safe configuration** with interface-based provider options
-- **Minimal dependencies** leveraging Go's standard library
-
-## What's New in v0.3.5
-
-See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
-
-### v0.3.5 (June 15, 2025) - Scripting Engine Integration 🚀
-Complete support for go-llmspell scripting engine integration:
-- **Schema System**: Repositories and generators for schema management
-- **Structured Outputs**: JSON/XML/YAML parsers with recovery mechanisms
-- **Event System**: Serialization, filtering, replay with bridge support
-- **Workflow Serialization**: Templates and script-based steps
-- **Testing Infrastructure**: Comprehensive mocks, fixtures, and scenarios
-- **Documentation Generation**: Auto-generate OpenAPI, Markdown, and JSON docs
-
-### v0.3.4 (June 13, 2025) - Tool Discovery System 🔍
-- **Metadata-First Discovery**: Explore 33+ tools without imports - perfect for scripting engines
-- **Lazy Loading**: Factory pattern with on-demand tool instantiation using build tags
-- **Bridge Integration**: Designed for go-llmspell Lua/JavaScript bridges 
-- **Rich Metadata Access**: Get schemas, examples, help text without tool instances
-
-### v0.3.3 (January 11, 2025) - Major Provider Expansion
-- **Ollama**: Local model hosting with GPU acceleration
-- **OpenRouter**: Access to 400+ models (68 free) via unified API
-- **Vertex AI**: Enterprise Google Cloud deployment with Gemini models
+✨ **Unified Provider API** - OpenAI, Anthropic, Google Gemini, Vertex AI, Ollama, OpenRouter  
+🛠️ **Built-in Tool System** - Web search, file operations, calculations, APIs, and more  
+🤖 **Intelligent Agents** - Conversational AI with memory, tools, and workflow orchestration  
+📊 **Structured Outputs** - JSON schema validation with automatic error recovery  
+🔍 **Tool Discovery** - Dynamic tool exploration perfect for scripting engines  
+🌐 **Multimodal Content** - Text, images, audio, video, and file support  
+⚡ **Performance Optimized** - Concurrent execution, streaming, caching  
+🏗️ **Enterprise Ready** - Error handling, monitoring, testing infrastructure
 
 ## Installation
 
@@ -47,139 +30,199 @@ go get github.com/lexlapax/go-llms
 
 ## Quick Start
 
-### Basic Usage
+Get started in 5 minutes with our [interactive quickstart guide](docs/user-guide/getting-started/quickstart.md).
+
+### 1. Simple AI Conversation
 
 ```go
-// Create a provider
-provider := provider.NewOpenAIProvider(
-    os.Getenv("OPENAI_API_KEY"),
-    "gpt-4o",
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    
+    "github.com/lexlapax/go-llms/pkg/llm/provider"
+    "github.com/lexlapax/go-llms/pkg/agent/core"
+    "github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
-// Generate text
-response, err := provider.Generate(context.Background(), "Explain quantum computing")
-if err != nil {
-    log.Fatal(err)
+func main() {
+    // Create provider
+    p := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"), "gpt-4")
+    
+    // Create agent
+    agent := core.NewLLMAgent("assistant", "gpt-4", core.LLMDeps{Provider: p})
+    agent.SetSystemPrompt("You are a helpful assistant.")
+    
+    // Chat
+    state := domain.NewState()
+    state.Set("user_input", "Explain quantum computing in simple terms")
+    result, _ := agent.Run(context.Background(), state)
+    
+    fmt.Println(result.Get("response"))
 }
-fmt.Println(response)
 ```
 
-### Using Agents with Tools
+### 2. Agent with Tools
 
 ```go
-// Create an agent with built-in tools
-agent, err := core.NewAgentFromString("assistant", "openai/gpt-4o")
-if err != nil {
-    log.Fatal(err)
-}
+// Create smart agent with built-in tools
+agent := core.NewLLMAgent("smart-assistant", "gpt-4", core.LLMDeps{Provider: p})
 
-// Add built-in tools
-agent.AddTool(web.WebSearch())
-agent.AddTool(file.FileRead())
+// Add powerful tools
+agent.AddTool(web.NewWebSearchTool(webAPIKey))
+agent.AddTool(file.NewFileReadTool())
+agent.AddTool(calculator.NewCalculatorTool())
 
-// Execute with state
+// Agent can now search web, read files, and calculate
 state := domain.NewState()
-state.Set("prompt", "Search for Go programming tutorials and save the results")
-result, err := agent.Run(context.Background(), state)
+state.Set("user_input", "Search for recent Go releases and calculate days since Go 1.21")
+result, _ := agent.Run(context.Background(), state)
 ```
 
-### Tool Discovery (v0.3.4+)
+### 3. Structured Data Extraction
 
 ```go
-// Discover tools without imports - perfect for scripting engines
-discovery := tools.NewDiscovery()
-
-// List all 33+ available tools
-for _, tool := range discovery.ListTools() {
-    fmt.Printf("%s (%s): %s\n", tool.Name, tool.Category, tool.Description)
-}
-
-// Search tools by keyword, category, or tags
-jsonTools := discovery.SearchTools("json")
-mathTools := discovery.ListByCategory("math")
-
-// Get rich metadata before creating tools
-schema, _ := discovery.GetToolSchema("calculator")
-examples, _ := discovery.GetToolExamples("calculator")
-
-// Lazy tool instantiation only when needed
-calculator, _ := discovery.CreateTool("calculator")
-```
-
-### Structured Output
-
-```go
-// Define a schema
-schema := &domain.Schema{
+// Define what you want
+schema := &schema.Schema{
     Type: "object",
-    Properties: map[string]domain.Property{
-        "name":  {Type: "string"},
-        "age":   {Type: "integer"},
-        "email": {Type: "string", Format: "email"},
+    Properties: map[string]*schema.Schema{
+        "name":     {Type: "string"},
+        "sentiment": {Type: "string", Enum: []interface{}{"positive", "negative", "neutral"}},
+        "confidence": {Type: "number"},
     },
-    Required: []string{"name", "email"},
+    Required: []string{"name", "sentiment"},
 }
 
-// Generate structured data
-result, err := provider.GenerateWithSchema(
-    context.Background(),
-    "Generate a person's information",
-    schema,
-)
+// Get reliable structured output
+agent.SetSchema(schema)
+state.Set("user_input", "Analyze this review: 'Amazing product, works perfectly!'")
+result, _ := agent.Run(context.Background(), state)
+
+// Guaranteed to match your schema
+data := result.Get("structured_output")
 ```
 
-## Documentation
+### 4. Multi-Agent Workflows
 
-- **[Complete Documentation](/docs/README.md)** - Full documentation index
-- [Getting Started Guide](docs/user-guide/getting-started.md) - Quick start and basic concepts
-- [User Guide](docs/user-guide/README.md) - Complete user documentation
-- [Tools & Components](docs/user-guide/tools.md) - Built-in tools and components
-- [Tool Discovery API](docs/technical/tool-discovery-api.md) - **NEW**: Metadata-first discovery system
-- [Examples Gallery](docs/user-guide/examples-gallery.md) - Usage examples
-- [API Reference](docs/api/README.md) - Complete API documentation
-- [Technical Documentation](docs/technical/README.md) - Architecture and implementation details
+```go
+// Create specialized agents
+extractor := core.NewLLMAgent("extractor", "gpt-4", core.LLMDeps{Provider: p})
+analyzer := core.NewLLMAgent("analyzer", "claude-3-sonnet-20240229", core.LLMDeps{Provider: claude})
+
+// Orchestrate with workflows
+workflow := workflow.NewSequentialAgent("data-pipeline", []domain.BaseAgent{
+    extractor,  // First: extract data from text
+    analyzer,   // Second: analyze extracted data
+})
+
+// Process data through the pipeline
+state.Set("document", "Large document content...")
+result, _ := workflow.Run(context.Background(), state)
+```
+
+## Learning Resources
+
+### 📖 Documentation
+- **[Complete Documentation Hub](docs/README.md)** - Start here for everything
+- **[5-Minute Quickstart](docs/user-guide/getting-started/quickstart.md)** - Get running immediately
+- **[User Guide](docs/user-guide/README.md)** - Task-oriented guides with 5 learning paths
+- **[Technical Documentation](docs/technical/README.md)** - Architecture and implementation details
+
+### 🚀 Learning Paths
+- **[Beginner Path](docs/user-guide/examples/beginner-projects.md)** - 5 simple projects to get started
+- **[Developer Path](docs/user-guide/guides/building-chat-apps.md)** - Build production applications
+- **[Architect Path](docs/user-guide/guides/multi-provider-strategies.md)** - Design robust systems
+- **[Production Path](docs/user-guide/advanced/production-deployment.md)** - Deploy and scale
+
+### 💡 Examples & Tutorials
+- **[80+ Working Examples](cmd/examples/README.md)** - Provider, agent, tool, and workflow examples
+- **[Chat Applications Guide](docs/user-guide/guides/building-chat-apps.md)** - Build conversational AI
+- **[Data Extraction Guide](docs/user-guide/guides/building-data-extractors.md)** - Reliable data processing
+- **[Agent Communication](docs/user-guide/guides/agent-communication.md)** - Multi-agent coordination
 
 ## Supported Providers
 
-- **OpenAI** - GPT-4o, GPT-4o-mini, GPT-4 Turbo, GPT-3.5 Turbo
-- **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus, Claude 3 Haiku
-- **Google Gemini** - Gemini 2.0 Flash Lite, Gemini Pro, Gemini Pro Vision
-- **Google Vertex AI** - Enterprise Gemini models, Claude (partner models), regional deployment
-- **Ollama** - Llama 3.2, Mistral, Phi-3, CodeLlama, and more (local hosting)
-- **OpenRouter** - Access to 400+ models from various providers (68 free models)
-- **OpenAI-Compatible** - LM Studio, vLLM, and any OpenAI-compatible API
+**OpenAI** • **Anthropic** • **Google Gemini** • **Google Vertex AI** • **Ollama** • **OpenRouter**
 
-## Examples
+| Provider | Best For | Models | Setup |
+|----------|----------|---------|-------|
+| **OpenAI** | General use, reliability | GPT-4o, GPT-4 Turbo, GPT-4o-mini | [Guide](docs/user-guide/guides/provider-setup.md#openai) |
+| **Anthropic** | Analysis, reasoning | Claude 3.5 Sonnet, Claude 3 Opus | [Guide](docs/user-guide/guides/provider-setup.md#anthropic) |
+| **Google Gemini** | Multimodal, speed | Gemini 2.0 Flash Lite, Gemini Pro | [Guide](docs/user-guide/guides/provider-setup.md#google) |
+| **Vertex AI** | Enterprise, compliance | Gemini + partner models | [Guide](docs/user-guide/guides/provider-setup.md#vertex-ai) |
+| **Ollama** | Local hosting, privacy | Llama, Mistral, CodeLlama | [Guide](docs/user-guide/guides/local-providers.md) |
+| **OpenRouter** | Model variety, cost | 400+ models (68 free) | [Guide](docs/user-guide/guides/provider-setup.md#openrouter) |
 
-The `cmd/examples/` directory contains 40+ examples demonstrating various features:
+See our [provider comparison guide](docs/user-guide/reference/provider-comparison.md) for detailed feature matrices.
 
-- **Provider examples**: OpenAI, Anthropic, Gemini, OpenRouter, Ollama, multi-provider strategies
-- **Agent examples**: Tool usage, workflows, state management, sub-agents
-- **Built-in tools**: Web search, file operations, API client, data processing
-- **Advanced patterns**: Structured output, multimodal content, custom agents
-- **Schema utilities**: Schema generation, schema repository management
-- **Error handling**: Serializable errors with recovery strategies
+## What's New
+
+### v0.3.5 (Latest) - Complete Scripting Engine Support 🚀
+Comprehensive bridge integration for go-llmspell and other scripting engines:
+- **Schema Repositories** with versioning and persistence  
+- **Enhanced Error Handling** with serializable errors and recovery strategies
+- **Event System** with serialization, filtering, and replay capabilities
+- **Tool Discovery** with metadata-first exploration (33+ built-in tools)
+- **Workflow Serialization** with templates and script-based execution
+- **Testing Infrastructure** with mocks, fixtures, and comprehensive scenarios
+
+Full release history in [CHANGELOG.md](CHANGELOG.md).
 
 ## Architecture
 
-Go-LLMs follows a clean architecture with vertical feature slicing:
+Go-LLMs uses a clean, modular architecture designed for reliability and extensibility:
+
+![Architecture Overview](docs/images/architecture-layers.svg)
 
 ```
 pkg/
-├── schema/      # JSON schema validation
-├── llm/         # Provider implementations
-├── structured/  # Output processing
-└── agent/       # Agent system with tools and workflows
+├── llm/         # Provider implementations and domain types
+├── agent/       # Intelligent agents, tools, workflows, events
+├── schema/      # JSON Schema validation and type conversion  
+├── structured/  # Output parsing with error recovery
+├── errors/      # Serializable error system with recovery
+└── testutils/   # Comprehensive testing infrastructure
 ```
 
-## Contributing
+**Design Principles:**
+- **Unified Interfaces** - Same API across all providers and components
+- **Fail-Safe Defaults** - Graceful degradation and automatic error recovery  
+- **Type Safety** - Strong typing with schema validation throughout
+- **Performance First** - Concurrent execution, streaming, and efficient state management
+- **Bridge Friendly** - JSON-serializable types for scripting engine integration
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
+## Get Started
 
-## License
+```bash
+# Install
+go get github.com/lexlapax/go-llms
 
-MIT License - see [LICENSE](LICENSE) file for details.
+# Try the quickstart
+export OPENAI_API_KEY="your-key-here"
+go run docs/user-guide/getting-started/quickstart.go
+```
 
-## Acknowledgments
+**Choose your path:**
+- **New to AI?** → [5-Minute Quickstart](docs/user-guide/getting-started/quickstart.md)
+- **Build apps?** → [Chat Application Guide](docs/user-guide/guides/building-chat-apps.md)  
+- **Production use?** → [Enterprise Deployment](docs/user-guide/advanced/production-deployment.md)
+- **Contributing?** → [Technical Documentation](docs/technical/README.md)
 
-Special thanks to the LLM-based coding tools that helped with documentation and testing: Aider, Claude Code, ChatGPT, Claude Desktop, and Gemini Code.
+## Community & Support
+
+- **[GitHub Issues](https://github.com/lexlapax/go-llms/issues)** - Bug reports and feature requests
+- **[Discussions](https://github.com/lexlapax/go-llms/discussions)** - Questions and community
+- **[Contributing Guide](CONTRIBUTING.md)** - Development and contribution guidelines
+- **[Changelog](CHANGELOG.md)** - Complete version history
+
+## Status
+
+✅ **Production Ready** - Used in production applications  
+✅ **Actively Maintained** - Regular updates and improvements  
+✅ **Comprehensive Testing** - 280+ tests with >85% coverage  
+✅ **Complete Documentation** - User guides, API docs, examples  
+✅ **Bridge Compatible** - Ready for scripting engine integration  
+
+**License:** MIT - see [LICENSE](LICENSE) for details

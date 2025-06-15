@@ -1,0 +1,141 @@
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .openai-box { fill: #e6f3e6; stroke: #333; stroke-width: 2; }
+      .anthropic-box { fill: #e0f0ff; stroke: #333; stroke-width: 2; }
+      .google-box { fill: #ffe0e0; stroke: #333; stroke-width: 2; }
+      .ollama-box { fill: #f0e0ff; stroke: #333; stroke-width: 2; }
+      .feature-good { fill: #2ecc71; }
+      .feature-ok { fill: #f39c12; }
+      .feature-poor { fill: #e74c3c; }
+      .text { font: 14px Arial, sans-serif; fill: #333; }
+      .title { font: bold 18px Arial, sans-serif; fill: #333; }
+      .provider-title { font: bold 16px Arial, sans-serif; fill: #333; }
+      .small-text { font: 12px Arial, sans-serif; fill: #666; }
+      .feature-text { font: 11px Arial, sans-serif; fill: #333; }
+    </style>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Provider Comparison Matrix</text>
+  
+  <!-- Headers -->
+  <text x="100" y="70" text-anchor="middle" class="text">Feature</text>
+  <text x="250" y="70" text-anchor="middle" class="provider-title">OpenAI</text>
+  <text x="400" y="70" text-anchor="middle" class="provider-title">Anthropic</text>
+  <text x="550" y="70" text-anchor="middle" class="provider-title">Google</text>
+  <text x="700" y="70" text-anchor="middle" class="provider-title">Ollama</text>
+  
+  <!-- Provider Info -->
+  <rect x="200" y="80" width="100" height="50" rx="5" class="openai-box" filter="url(#shadow)"/>
+  <text x="250" y="100" text-anchor="middle" class="small-text">GPT-4, GPT-3.5</text>
+  <text x="250" y="115" text-anchor="middle" class="small-text">Industry leader</text>
+  
+  <rect x="350" y="80" width="100" height="50" rx="5" class="anthropic-box" filter="url(#shadow)"/>
+  <text x="400" y="100" text-anchor="middle" class="small-text">Claude 3</text>
+  <text x="400" y="115" text-anchor="middle" class="small-text">Constitutional AI</text>
+  
+  <rect x="500" y="80" width="100" height="50" rx="5" class="google-box" filter="url(#shadow)"/>
+  <text x="550" y="100" text-anchor="middle" class="small-text">Gemini Pro</text>
+  <text x="550" y="115" text-anchor="middle" class="small-text">Free tier</text>
+  
+  <rect x="650" y="80" width="100" height="50" rx="5" class="ollama-box" filter="url(#shadow)"/>
+  <text x="700" y="100" text-anchor="middle" class="small-text">Local models</text>
+  <text x="700" y="115" text-anchor="middle" class="small-text">Privacy focused</text>
+  
+  <!-- Feature Rows -->
+  
+  <!-- Performance -->
+  <text x="100" y="170" text-anchor="middle" class="feature-text">Performance</text>
+  <circle cx="250" cy="165" r="12" class="feature-good"/>
+  <text x="250" y="170" text-anchor="middle" class="feature-text">⭐⭐⭐</text>
+  <circle cx="400" cy="165" r="12" class="feature-good"/>
+  <text x="400" y="170" text-anchor="middle" class="feature-text">⭐⭐⭐</text>
+  <circle cx="550" cy="165" r="12" class="feature-ok"/>
+  <text x="550" y="170" text-anchor="middle" class="feature-text">⭐⭐</text>
+  <circle cx="700" cy="165" r="12" class="feature-poor"/>
+  <text x="700" y="170" text-anchor="middle" class="feature-text">⭐</text>
+  
+  <!-- Cost -->
+  <text x="100" y="210" text-anchor="middle" class="feature-text">Cost</text>
+  <circle cx="250" cy="205" r="12" class="feature-ok"/>
+  <text x="250" y="210" text-anchor="middle" class="feature-text">$$</text>
+  <circle cx="400" cy="205" r="12" class="feature-ok"/>
+  <text x="400" y="210" text-anchor="middle" class="feature-text">$$</text>
+  <circle cx="550" cy="205" r="12" class="feature-good"/>
+  <text x="550" y="210" text-anchor="middle" class="feature-text">Free</text>
+  <circle cx="700" cy="205" r="12" class="feature-good"/>
+  <text x="700" y="210" text-anchor="middle" class="feature-text">Free</text>
+  
+  <!-- Privacy -->
+  <text x="100" y="250" text-anchor="middle" class="feature-text">Privacy</text>
+  <circle cx="250" cy="245" r="12" class="feature-poor"/>
+  <text x="250" y="250" text-anchor="middle" class="feature-text">Cloud</text>
+  <circle cx="400" cy="245" r="12" class="feature-ok"/>
+  <text x="400" y="250" text-anchor="middle" class="feature-text">Better</text>
+  <circle cx="550" cy="245" r="12" class="feature-poor"/>
+  <text x="550" y="250" text-anchor="middle" class="feature-text">Cloud</text>
+  <circle cx="700" cy="245" r="12" class="feature-good"/>
+  <text x="700" y="250" text-anchor="middle" class="feature-text">Local</text>
+  
+  <!-- Multimodal -->
+  <text x="100" y="290" text-anchor="middle" class="feature-text">Images/Vision</text>
+  <circle cx="250" cy="285" r="12" class="feature-good"/>
+  <text x="250" y="290" text-anchor="middle" class="feature-text">✓</text>
+  <circle cx="400" cy="285" r="12" class="feature-good"/>
+  <text x="400" y="290" text-anchor="middle" class="feature-text">✓</text>
+  <circle cx="550" cy="285" r="12" class="feature-good"/>
+  <text x="550" y="290" text-anchor="middle" class="feature-text">✓</text>
+  <circle cx="700" cy="285" r="12" class="feature-ok"/>
+  <text x="700" y="290" text-anchor="middle" class="feature-text">Some</text>
+  
+  <!-- Setup Ease -->
+  <text x="100" y="330" text-anchor="middle" class="feature-text">Setup</text>
+  <circle cx="250" cy="325" r="12" class="feature-good"/>
+  <text x="250" y="330" text-anchor="middle" class="feature-text">Easy</text>
+  <circle cx="400" cy="325" r="12" class="feature-good"/>
+  <text x="400" y="330" text-anchor="middle" class="feature-text">Easy</text>
+  <circle cx="550" cy="325" r="12" class="feature-good"/>
+  <text x="550" y="330" text-anchor="middle" class="feature-text">Easy</text>
+  <circle cx="700" cy="325" r="12" class="feature-poor"/>
+  <text x="700" y="330" text-anchor="middle" class="feature-text">Complex</text>
+  
+  <!-- Best For -->
+  <text x="400" y="380" text-anchor="middle" class="provider-title">Best Use Cases</text>
+  
+  <rect x="50" y="390" width="150" height="60" rx="5" class="openai-box" filter="url(#shadow)"/>
+  <text x="125" y="410" text-anchor="middle" class="small-text">• General AI tasks</text>
+  <text x="125" y="425" text-anchor="middle" class="small-text">• Complex reasoning</text>
+  <text x="125" y="440" text-anchor="middle" class="small-text">• Production apps</text>
+  
+  <rect x="225" y="390" width="150" height="60" rx="5" class="anthropic-box" filter="url(#shadow)"/>
+  <text x="300" y="410" text-anchor="middle" class="small-text">• Safe AI applications</text>
+  <text x="300" y="425" text-anchor="middle" class="small-text">• Content analysis</text>
+  <text x="300" y="440" text-anchor="middle" class="small-text">• Research tasks</text>
+  
+  <rect x="400" y="390" width="150" height="60" rx="5" class="google-box" filter="url(#shadow)"/>
+  <text x="475" y="410" text-anchor="middle" class="small-text">• Prototyping</text>
+  <text x="475" y="425" text-anchor="middle" class="small-text">• Multimodal content</text>
+  <text x="475" y="440" text-anchor="middle" class="small-text">• Free tier projects</text>
+  
+  <rect x="575" y="390" width="150" height="60" rx="5" class="ollama-box" filter="url(#shadow)"/>
+  <text x="650" y="410" text-anchor="middle" class="small-text">• Private data</text>
+  <text x="650" y="425" text-anchor="middle" class="small-text">• Offline usage</text>
+  <text x="650" y="440" text-anchor="middle" class="small-text">• Cost optimization</text>
+  
+  <!-- Legend -->
+  <rect x="600" y="140" width="150" height="80" rx="5" fill="#f8f9fa" stroke="#ccc" stroke-width="1"/>
+  <text x="675" y="160" text-anchor="middle" class="text">Rating</text>
+  
+  <circle cx="620" cy="175" r="8" class="feature-good"/>
+  <text x="645" y="180" class="small-text">Excellent</text>
+  
+  <circle cx="620" cy="195" r="8" class="feature-ok"/>
+  <text x="645" y="200" class="small-text">Good</text>
+  
+  <circle cx="620" cy="215" r="8" class="feature-poor"/>
+  <text x="645" y="220" class="small-text">Limited</text>
+</svg>

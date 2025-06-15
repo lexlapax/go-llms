@@ -1,0 +1,114 @@
+<svg width="800" height="650" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .config-box { fill: #f0e0ff; stroke: #333; stroke-width: 2; }
+      .session-box { fill: #e6f3e6; stroke: #333; stroke-width: 2; }
+      .app-box { fill: #e0f0ff; stroke: #333; stroke-width: 2; }
+      .agent-box { fill: #ffe0e0; stroke: #333; stroke-width: 2; }
+      .provider-box { fill: #fff0e0; stroke: #333; stroke-width: 2; }
+      .error-box { fill: #ffeaa7; stroke: #333; stroke-width: 2; }
+      .text { font: 14px Arial, sans-serif; fill: #333; }
+      .title { font: bold 18px Arial, sans-serif; fill: #333; }
+      .component-title { font: bold 16px Arial, sans-serif; fill: #333; }
+      .small-text { font: 12px Arial, sans-serif; fill: #666; }
+      .method-text { font: 11px Monaco, monospace; fill: #333; }
+    </style>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+            refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Production Chat Application Architecture</text>
+  
+  <!-- Configuration Layer -->
+  <rect x="50" y="60" width="200" height="100" rx="5" class="config-box" filter="url(#shadow)"/>
+  <text x="150" y="85" text-anchor="middle" class="component-title">ChatConfig</text>
+  <text x="70" y="105" class="small-text">• Provider selection</text>
+  <text x="70" y="120" class="small-text">• Model configuration</text>
+  <text x="70" y="135" class="small-text">• System prompts</text>
+  <text x="70" y="150" class="small-text">• Timeouts & limits</text>
+  
+  <!-- Session Management -->
+  <rect x="300" y="60" width="200" height="100" rx="5" class="session-box" filter="url(#shadow)"/>
+  <text x="400" y="85" text-anchor="middle" class="component-title">ChatSession</text>
+  <text x="320" y="105" class="small-text">• Conversation history</text>
+  <text x="320" y="120" class="small-text">• Message persistence</text>
+  <text x="320" y="135" class="small-text">• Session metadata</text>
+  <text x="320" y="150" class="small-text">• History trimming</text>
+  
+  <!-- Error Handling -->
+  <rect x="550" y="60" width="200" height="100" rx="5" class="error-box" filter="url(#shadow)"/>
+  <text x="650" y="85" text-anchor="middle" class="component-title">Error Handling</text>
+  <text x="570" y="105" class="small-text">• Rate limit recovery</text>
+  <text x="570" y="120" class="small-text">• Auth error handling</text>
+  <text x="570" y="135" class="small-text">• Timeout management</text>
+  <text x="570" y="150" class="small-text">• Graceful degradation</text>
+  
+  <!-- Main Application -->
+  <rect x="200" y="200" width="400" height="120" rx="5" class="app-box" filter="url(#shadow)"/>
+  <text x="400" y="225" text-anchor="middle" class="component-title">ChatApp</text>
+  <text x="220" y="250" class="method-text">+ NewChatApp(configPath)</text>
+  <text x="220" y="265" class="method-text">+ Chat(userInput) → (response, error)</text>
+  <text x="220" y="280" class="method-text">+ handleError(err) → userFriendlyError</text>
+  <text x="220" y="295" class="method-text">- trimHistory() // keeps recent messages</text>
+  <text x="220" y="310" class="method-text">- updateSession() // saves state</text>
+  
+  <!-- Agent Layer -->
+  <rect x="100" y="360" width="250" height="100" rx="5" class="agent-box" filter="url(#shadow)"/>
+  <text x="225" y="385" text-anchor="middle" class="component-title">LLM Agent</text>
+  <text x="120" y="405" class="small-text">• System prompt management</text>
+  <text x="120" y="420" class="small-text">• Tool integration</text>
+  <text x="120" y="435" class="small-text">• Context management</text>
+  <text x="120" y="450" class="small-text">• Response generation</text>
+  
+  <!-- Provider Layer -->
+  <rect x="400" y="360" width="250" height="100" rx="5" class="provider-box" filter="url(#shadow)"/>
+  <text x="525" y="385" text-anchor="middle" class="component-title">Provider</text>
+  <text x="420" y="405" class="small-text">• OpenAI / Anthropic / Google</text>
+  <text x="420" y="420" class="small-text">• API key management</text>
+  <text x="420" y="435" class="small-text">• Request/response handling</text>
+  <text x="420" y="450" class="small-text">• Rate limiting</text>
+  
+  <!-- Data Flow -->
+  <text x="400" y="500" text-anchor="middle" class="component-title">Message Flow</text>
+  
+  <!-- Flow Steps -->
+  <rect x="50" y="520" width="120" height="40" rx="5" fill="#e8f4f8" stroke="#333" stroke-width="1"/>
+  <text x="110" y="545" text-anchor="middle" class="small-text">User Input</text>
+  
+  <rect x="200" y="520" width="120" height="40" rx="5" fill="#e8f4f8" stroke="#333" stroke-width="1"/>
+  <text x="260" y="545" text-anchor="middle" class="small-text">Add to History</text>
+  
+  <rect x="350" y="520" width="120" height="40" rx="5" fill="#e8f4f8" stroke="#333" stroke-width="1"/>
+  <text x="410" y="545" text-anchor="middle" class="small-text">Agent Process</text>
+  
+  <rect x="500" y="520" width="120" height="40" rx="5" fill="#e8f4f8" stroke="#333" stroke-width="1"/>
+  <text x="560" y="545" text-anchor="middle" class="small-text">Provider Call</text>
+  
+  <rect x="650" y="520" width="120" height="40" rx="5" fill="#e8f4f8" stroke="#333" stroke-width="1"/>
+  <text x="710" y="545" text-anchor="middle" class="small-text">Update History</text>
+  
+  <!-- Flow arrows -->
+  <path d="M 170 540 L 190 540" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 320 540 L 340 540" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 470 540 L 490 540" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 620 540 L 640 540" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Component relationships -->
+  <path d="M 150 160 L 350 200" stroke="#666" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+  <path d="M 400 160 L 400 200" stroke="#666" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+  <path d="M 650 160 L 450 200" stroke="#666" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+  
+  <path d="M 350 320 L 225 360" stroke="#666" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+  <path d="M 450 320 L 525 360" stroke="#666" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+  
+  <!-- Key Features -->
+  <rect x="50" y="580" width="700" height="50" rx="5" fill="#f8f9fa" stroke="#ccc" stroke-width="1"/>
+  <text x="400" y="600" text-anchor="middle" class="text">Production Features</text>
+  <text x="400" y="615" text-anchor="middle" class="small-text">Configuration Management • Session Persistence • Error Recovery • Thread Safety • Performance Monitoring</text>
+</svg>
