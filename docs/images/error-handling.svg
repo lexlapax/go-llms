@@ -1,0 +1,144 @@
+<svg width="800" height="700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .base-error { fill: #e0f0ff; stroke: #333; stroke-width: 2; }
+      .provider-error { fill: #ffe0e0; stroke: #333; stroke-width: 2; }
+      .agent-error { fill: #e6f3e6; stroke: #333; stroke-width: 2; }
+      .tool-error { fill: #f0e0ff; stroke: #333; stroke-width: 2; }
+      .bridge-error { fill: #fff0e0; stroke: #333; stroke-width: 2; }
+      .text { font: 14px Arial, sans-serif; fill: #333; }
+      .title { font: bold 18px Arial, sans-serif; fill: #333; }
+      .section-title { font: bold 16px Arial, sans-serif; fill: #333; }
+      .small-text { font: 12px Arial, sans-serif; fill: #666; }
+      .error-type { font: bold 12px Arial, sans-serif; fill: #333; }
+    </style>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+            refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Error Handling Hierarchy</text>
+  
+  <!-- Base Error -->
+  <rect x="300" y="60" width="200" height="60" rx="5" class="base-error" filter="url(#shadow)"/>
+  <text x="400" y="85" text-anchor="middle" class="text">Base Error</text>
+  <text x="400" y="105" text-anchor="middle" class="small-text">Common interface</text>
+  
+  <!-- Error Types -->
+  <text x="400" y="160" text-anchor="middle" class="section-title">Error Categories</text>
+  
+  <!-- Provider Errors -->
+  <rect x="50" y="180" width="160" height="120" rx="5" class="provider-error" filter="url(#shadow)"/>
+  <text x="130" y="200" text-anchor="middle" class="text">Provider Errors</text>
+  <text x="130" y="220" text-anchor="middle" class="error-type">• Authentication</text>
+  <text x="130" y="235" text-anchor="middle" class="error-type">• Rate Limit</text>
+  <text x="130" y="250" text-anchor="middle" class="error-type">• Context Length</text>
+  <text x="130" y="265" text-anchor="middle" class="error-type">• Network</text>
+  <text x="130" y="280" text-anchor="middle" class="error-type">• Server Error</text>
+  
+  <!-- Agent Errors -->
+  <rect x="230" y="180" width="160" height="120" rx="5" class="agent-error" filter="url(#shadow)"/>
+  <text x="310" y="200" text-anchor="middle" class="text">Agent Errors</text>
+  <text x="310" y="220" text-anchor="middle" class="error-type">• Invalid State</text>
+  <text x="310" y="235" text-anchor="middle" class="error-type">• Tool Not Found</text>
+  <text x="310" y="250" text-anchor="middle" class="error-type">• Max Iterations</text>
+  <text x="310" y="265" text-anchor="middle" class="error-type">• Validation</text>
+  <text x="310" y="280" text-anchor="middle" class="error-type">• Configuration</text>
+  
+  <!-- Tool Errors -->
+  <rect x="410" y="180" width="160" height="120" rx="5" class="tool-error" filter="url(#shadow)"/>
+  <text x="490" y="200" text-anchor="middle" class="text">Tool Errors</text>
+  <text x="490" y="220" text-anchor="middle" class="error-type">• Execution Failure</text>
+  <text x="490" y="235" text-anchor="middle" class="error-type">• Invalid Input</text>
+  <text x="490" y="250" text-anchor="middle" class="error-type">• Timeout</text>
+  <text x="490" y="265" text-anchor="middle" class="error-type">• Dependencies</text>
+  <text x="490" y="280" text-anchor="middle" class="error-type">• Permissions</text>
+  
+  <!-- Bridge Errors -->
+  <rect x="590" y="180" width="160" height="120" rx="5" class="bridge-error" filter="url(#shadow)"/>
+  <text x="670" y="200" text-anchor="middle" class="text">Bridge Errors</text>
+  <text x="670" y="220" text-anchor="middle" class="error-type">• Serialization</text>
+  <text x="670" y="235" text-anchor="middle" class="error-type">• Type Conversion</text>
+  <text x="670" y="250" text-anchor="middle" class="error-type">• Bridge Protocol</text>
+  <text x="670" y="265" text-anchor="middle" class="error-type">• Version Mismatch</text>
+  <text x="670" y="280" text-anchor="middle" class="error-type">• Transport</text>
+  
+  <!-- Inheritance arrows -->
+  <path d="M 400 120 L 400 140 L 130 140 L 130 180" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 400 140 L 310 140 L 310 180" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 400 140 L 490 140 L 490 180" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 400 140 L 670 140 L 670 180" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Error Handling Flow -->
+  <text x="400" y="350" text-anchor="middle" class="section-title">Error Handling Flow</text>
+  
+  <!-- Error Occurrence -->
+  <rect x="50" y="370" width="120" height="50" rx="5" class="provider-error" filter="url(#shadow)"/>
+  <text x="110" y="400" text-anchor="middle" class="text">Error Occurs</text>
+  
+  <!-- Error Wrapping -->
+  <rect x="200" y="370" width="120" height="50" rx="5" class="base-error" filter="url(#shadow)"/>
+  <text x="260" y="395" text-anchor="middle" class="text">Wrap Error</text>
+  <text x="260" y="410" text-anchor="middle" class="small-text">Add Context</text>
+  
+  <!-- Error Categorization -->
+  <rect x="350" y="370" width="120" height="50" rx="5" class="base-error" filter="url(#shadow)"/>
+  <text x="410" y="395" text-anchor="middle" class="text">Categorize</text>
+  <text x="410" y="410" text-anchor="middle" class="small-text">Error Type</text>
+  
+  <!-- Recovery Strategy -->
+  <rect x="500" y="370" width="120" height="50" rx="5" class="agent-error" filter="url(#shadow)"/>
+  <text x="560" y="395" text-anchor="middle" class="text">Recovery</text>
+  <text x="560" y="410" text-anchor="middle" class="small-text">Strategy</text>
+  
+  <!-- Final Handling -->
+  <rect x="650" y="370" width="120" height="50" rx="5" class="tool-error" filter="url(#shadow)"/>
+  <text x="710" y="395" text-anchor="middle" class="text">Handle or</text>
+  <text x="710" y="410" text-anchor="middle" class="text">Propagate</text>
+  
+  <!-- Flow arrows -->
+  <path d="M 170 395 L 190 395" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 320 395 L 340 395" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 470 395 L 490 395" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 620 395 L 640 395" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Recovery Strategies -->
+  <text x="400" y="470" text-anchor="middle" class="section-title">Recovery Strategies</text>
+  
+  <!-- Retry -->
+  <rect x="80" y="490" width="130" height="60" rx="5" class="base-error" filter="url(#shadow)"/>
+  <text x="145" y="515" text-anchor="middle" class="text">Retry</text>
+  <text x="145" y="530" text-anchor="middle" class="small-text">Exponential Backoff</text>
+  <text x="145" y="545" text-anchor="middle" class="small-text">Max Attempts</text>
+  
+  <!-- Fallback -->
+  <rect x="230" y="490" width="130" height="60" rx="5" class="base-error" filter="url(#shadow)"/>
+  <text x="295" y="515" text-anchor="middle" class="text">Fallback</text>
+  <text x="295" y="530" text-anchor="middle" class="small-text">Alternative Provider</text>
+  <text x="295" y="545" text-anchor="middle" class="small-text">Default Response</text>
+  
+  <!-- Circuit Breaker -->
+  <rect x="380" y="490" width="130" height="60" rx="5" class="base-error" filter="url(#shadow)"/>
+  <text x="445" y="515" text-anchor="middle" class="text">Circuit Breaker</text>
+  <text x="445" y="530" text-anchor="middle" class="small-text">Fail Fast</text>
+  <text x="445" y="545" text-anchor="middle" class="small-text">Auto Recovery</text>
+  
+  <!-- Graceful Degradation -->
+  <rect x="530" y="490" width="130" height="60" rx="5" class="base-error" filter="url(#shadow)"/>
+  <text x="595" y="515" text-anchor="middle" class="text">Graceful</text>
+  <text x="595" y="530" text-anchor="middle" class="text">Degradation</text>
+  <text x="595" y="545" text-anchor="middle" class="small-text">Partial Success</text>
+  
+  <!-- Error Context -->
+  <text x="400" y="600" text-anchor="middle" class="section-title">Error Context</text>
+  
+  <rect x="200" y="620" width="400" height="60" rx="5" fill="#f8f9fa" stroke="#ccc" stroke-width="1"/>
+  <text x="400" y="640" text-anchor="middle" class="text">Structured Error Information</text>
+  <text x="400" y="655" text-anchor="middle" class="small-text">Provider • Error Type • Message • Stack Trace • Metadata • Retry Info</text>
+  <text x="400" y="670" text-anchor="middle" class="small-text">Bridge-Compatible Serialization for External Systems</text>
+</svg>

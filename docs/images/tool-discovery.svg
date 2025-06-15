@@ -1,0 +1,126 @@
+<svg width="800" height="650" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .discovery-box { fill: #e0f0ff; stroke: #333; stroke-width: 2; }
+      .tool-box { fill: #e6f3e6; stroke: #333; stroke-width: 2; }
+      .metadata-box { fill: #ffe0e0; stroke: #333; stroke-width: 2; }
+      .search-box { fill: #f0e0ff; stroke: #333; stroke-width: 2; }
+      .text { font: 14px Arial, sans-serif; fill: #333; }
+      .title { font: bold 18px Arial, sans-serif; fill: #333; }
+      .section-title { font: bold 16px Arial, sans-serif; fill: #333; }
+      .small-text { font: 12px Arial, sans-serif; fill: #666; }
+    </style>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+            refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Tool Discovery System</text>
+  
+  <!-- Discovery Service -->
+  <rect x="300" y="60" width="200" height="80" rx="5" class="discovery-box" filter="url(#shadow)"/>
+  <text x="400" y="90" text-anchor="middle" class="text">Tool Discovery</text>
+  <text x="400" y="110" text-anchor="middle" class="small-text">Registry</text>
+  <text x="400" y="125" text-anchor="middle" class="small-text">Metadata Index</text>
+  
+  <!-- Tool Registration -->
+  <text x="400" y="180" text-anchor="middle" class="section-title">Tool Registration</text>
+  
+  <!-- Tools -->
+  <rect x="50" y="200" width="130" height="60" rx="5" class="tool-box" filter="url(#shadow)"/>
+  <text x="115" y="225" text-anchor="middle" class="text">Calculator</text>
+  <text x="115" y="240" text-anchor="middle" class="small-text">tag: math</text>
+  <text x="115" y="255" text-anchor="middle" class="small-text">v1.0</text>
+  
+  <rect x="200" y="200" width="130" height="60" rx="5" class="tool-box" filter="url(#shadow)"/>
+  <text x="265" y="225" text-anchor="middle" class="text">Weather API</text>
+  <text x="265" y="240" text-anchor="middle" class="small-text">tag: api</text>
+  <text x="265" y="255" text-anchor="middle" class="small-text">v2.1</text>
+  
+  <rect x="350" y="200" width="130" height="60" rx="5" class="tool-box" filter="url(#shadow)"/>
+  <text x="415" y="225" text-anchor="middle" class="text">Database</text>
+  <text x="415" y="240" text-anchor="middle" class="small-text">tag: data</text>
+  <text x="415" y="255" text-anchor="middle" class="small-text">v1.5</text>
+  
+  <rect x="500" y="200" width="130" height="60" rx="5" class="tool-box" filter="url(#shadow)"/>
+  <text x="565" y="225" text-anchor="middle" class="text">Web Scraper</text>
+  <text x="565" y="240" text-anchor="middle" class="small-text">tag: web</text>
+  <text x="565" y="255" text-anchor="middle" class="small-text">v3.0</text>
+  
+  <rect x="650" y="200" width="130" height="60" rx="5" class="tool-box" filter="url(#shadow)"/>
+  <text x="715" y="225" text-anchor="middle" class="text">Custom Tool</text>
+  <text x="715" y="240" text-anchor="middle" class="small-text">tag: custom</text>
+  <text x="715" y="255" text-anchor="middle" class="small-text">v1.0</text>
+  
+  <!-- Registration arrows -->
+  <path d="M 115 140 L 115 200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 265 140 L 265 200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 415 140 L 415 200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 565 140 L 565 200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 715 140 L 715 200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Tool Metadata Storage -->
+  <text x="400" y="310" text-anchor="middle" class="section-title">Metadata Storage</text>
+  
+  <!-- Metadata Index -->
+  <rect x="200" y="330" width="400" height="80" rx="5" class="metadata-box" filter="url(#shadow)"/>
+  <text x="400" y="355" text-anchor="middle" class="text">Tool Metadata Index</text>
+  <text x="400" y="375" text-anchor="middle" class="small-text">Name → Metadata | Tags → Tools | Version → Info</text>
+  <text x="400" y="390" text-anchor="middle" class="small-text">Schema → Validation | Examples → Usage</text>
+  
+  <!-- Discovery Queries -->
+  <text x="400" y="450" text-anchor="middle" class="section-title">Discovery Queries</text>
+  
+  <!-- Query Types -->
+  <rect x="50" y="470" width="140" height="50" rx="5" class="search-box" filter="url(#shadow)"/>
+  <text x="120" y="500" text-anchor="middle" class="text">By Tag: "math"</text>
+  
+  <rect x="210" y="470" width="140" height="50" rx="5" class="search-box" filter="url(#shadow)"/>
+  <text x="280" y="500" text-anchor="middle" class="text">By Name: "calc*"</text>
+  
+  <rect x="370" y="470" width="140" height="50" rx="5" class="search-box" filter="url(#shadow)"/>
+  <text x="440" y="500" text-anchor="middle" class="text">By Version: ">=2.0"</text>
+  
+  <rect x="530" y="470" width="140" height="50" rx="5" class="search-box" filter="url(#shadow)"/>
+  <text x="600" y="500" text-anchor="middle" class="text">By Capability</text>
+  
+  <!-- Query arrows -->
+  <path d="M 120 470 L 120 450 L 400 450 L 400 410" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 280 470 L 280 450" stroke="#333" stroke-width="2"/>
+  <path d="M 440 470 L 440 450" stroke="#333" stroke-width="2"/>
+  <path d="M 600 470 L 600 450" stroke="#333" stroke-width="2"/>
+  
+  <!-- Results -->
+  <text x="400" y="570" text-anchor="middle" class="section-title">Discovery Results</text>
+  
+  <rect x="200" y="590" width="400" height="50" rx="5" class="tool-box" filter="url(#shadow)"/>
+  <text x="400" y="615" text-anchor="middle" class="text">Filtered Tool List + Metadata + Usage Examples</text>
+  
+  <!-- Result arrow -->
+  <path d="M 400 520 L 400 580" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Features Box -->
+  <rect x="50" y="280" width="130" height="80" rx="5" fill="#f8f9fa" stroke="#ccc" stroke-width="1"/>
+  <text x="115" y="300" text-anchor="middle" class="text">Features</text>
+  <text x="115" y="315" text-anchor="middle" class="small-text">• Runtime Registration</text>
+  <text x="115" y="330" text-anchor="middle" class="small-text">• Tag-based Search</text>
+  <text x="115" y="345" text-anchor="middle" class="small-text">• Version Management</text>
+  
+  <!-- Legend -->
+  <rect x="650" y="330" width="130" height="100" rx="5" fill="#f8f9fa" stroke="#ccc" stroke-width="1"/>
+  <text x="715" y="350" text-anchor="middle" class="text">Legend</text>
+  
+  <rect x="660" y="360" width="15" height="10" rx="2" class="discovery-box"/>
+  <text x="685" y="370" class="small-text">Discovery</text>
+  
+  <rect x="660" y="380" width="15" height="10" rx="2" class="tool-box"/>
+  <text x="685" y="390" class="small-text">Tools</text>
+  
+  <rect x="660" y="400" width="15" height="10" rx="2" class="search-box"/>
+  <text x="685" y="410" class="small-text">Queries</text>
+</svg>

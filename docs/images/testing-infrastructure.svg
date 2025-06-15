@@ -1,0 +1,132 @@
+<svg width="800" height="700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .test-box { fill: #e0f0ff; stroke: #333; stroke-width: 2; }
+      .mock-box { fill: #ffe0e0; stroke: #333; stroke-width: 2; }
+      .fixture-box { fill: #e6f3e6; stroke: #333; stroke-width: 2; }
+      .scenario-box { fill: #f0e0ff; stroke: #333; stroke-width: 2; }
+      .helper-box { fill: #fff0e0; stroke: #333; stroke-width: 2; }
+      .text { font: 14px Arial, sans-serif; fill: #333; }
+      .title { font: bold 18px Arial, sans-serif; fill: #333; }
+      .section-title { font: bold 16px Arial, sans-serif; fill: #333; }
+      .small-text { font: 12px Arial, sans-serif; fill: #666; }
+    </style>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+            refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Testing Infrastructure</text>
+  
+  <!-- Test Types -->
+  <text x="400" y="70" text-anchor="middle" class="section-title">Test Pyramid</text>
+  
+  <!-- Unit Tests -->
+  <rect x="250" y="90" width="300" height="40" rx="5" class="test-box" filter="url(#shadow)"/>
+  <text x="400" y="115" text-anchor="middle" class="text">Unit Tests (Fast, Isolated, Mocked)</text>
+  
+  <!-- Integration Tests -->
+  <rect x="300" y="140" width="200" height="40" rx="5" class="test-box" filter="url(#shadow)"/>
+  <text x="400" y="165" text-anchor="middle" class="text">Integration Tests</text>
+  
+  <!-- E2E Tests -->
+  <rect x="350" y="190" width="100" height="40" rx="5" class="test-box" filter="url(#shadow)"/>
+  <text x="400" y="215" text-anchor="middle" class="text">E2E Tests</text>
+  
+  <!-- Test Utilities Structure -->
+  <text x="400" y="270" text-anchor="middle" class="section-title">pkg/testutils/ Structure</text>
+  
+  <!-- Mocks -->
+  <rect x="50" y="300" width="150" height="100" rx="5" class="mock-box" filter="url(#shadow)"/>
+  <text x="125" y="325" text-anchor="middle" class="text">mocks/</text>
+  <text x="125" y="345" text-anchor="middle" class="small-text">• MockProvider</text>
+  <text x="125" y="360" text-anchor="middle" class="small-text">• MockAgent</text>
+  <text x="125" y="375" text-anchor="middle" class="small-text">• MockTool</text>
+  <text x="125" y="390" text-anchor="middle" class="small-text">• MockState</text>
+  
+  <!-- Fixtures -->
+  <rect x="220" y="300" width="150" height="100" rx="5" class="fixture-box" filter="url(#shadow)"/>
+  <text x="295" y="325" text-anchor="middle" class="text">fixtures/</text>
+  <text x="295" y="345" text-anchor="middle" class="small-text">• Pre-configured</text>
+  <text x="295" y="360" text-anchor="middle" class="small-text">• Common setups</text>
+  <text x="295" y="375" text-anchor="middle" class="small-text">• Test data</text>
+  <text x="295" y="390" text-anchor="middle" class="small-text">• Ready-to-use</text>
+  
+  <!-- Scenarios -->
+  <rect x="390" y="300" width="150" height="100" rx="5" class="scenario-box" filter="url(#shadow)"/>
+  <text x="465" y="325" text-anchor="middle" class="text">scenarios/</text>
+  <text x="465" y="345" text-anchor="middle" class="small-text">• Complex workflows</text>
+  <text x="465" y="360" text-anchor="middle" class="small-text">• Multi-component</text>
+  <text x="465" y="375" text-anchor="middle" class="small-text">• End-to-end flows</text>
+  <text x="465" y="390" text-anchor="middle" class="small-text">• Integration tests</text>
+  
+  <!-- Helpers -->
+  <rect x="560" y="300" width="150" height="100" rx="5" class="helper-box" filter="url(#shadow)"/>
+  <text x="635" y="325" text-anchor="middle" class="text">helpers/</text>
+  <text x="635" y="345" text-anchor="middle" class="small-text">• Assertions</text>
+  <text x="635" y="360" text-anchor="middle" class="small-text">• Test utilities</text>
+  <text x="635" y="375" text-anchor="middle" class="small-text">• Common patterns</text>
+  <text x="635" y="390" text-anchor="middle" class="small-text">• Setup/teardown</text>
+  
+  <!-- Mock Details -->
+  <text x="400" y="450" text-anchor="middle" class="section-title">Mock Architecture</text>
+  
+  <!-- Mock Provider Detail -->
+  <rect x="50" y="470" width="200" height="80" rx="5" class="mock-box" filter="url(#shadow)"/>
+  <text x="150" y="490" text-anchor="middle" class="text">MockProvider</text>
+  <text x="150" y="510" text-anchor="middle" class="small-text">• Response patterns</text>
+  <text x="150" y="525" text-anchor="middle" class="small-text">• Call history</text>
+  <text x="150" y="540" text-anchor="middle" class="small-text">• Error simulation</text>
+  
+  <!-- Mock Agent Detail -->
+  <rect x="270" y="470" width="200" height="80" rx="5" class="mock-box" filter="url(#shadow)"/>
+  <text x="370" y="490" text-anchor="middle" class="text">MockAgent</text>
+  <text x="370" y="510" text-anchor="middle" class="small-text">• Response queue</text>
+  <text x="370" y="525" text-anchor="middle" class="small-text">• Event tracking</text>
+  <text x="370" y="540" text-anchor="middle" class="small-text">• Sub-agent mgmt</text>
+  
+  <!-- Mock Tool Detail -->
+  <rect x="490" y="470" width="200" height="80" rx="5" class="mock-box" filter="url(#shadow)"/>
+  <text x="590" y="490" text-anchor="middle" class="text">MockTool</text>
+  <text x="590" y="510" text-anchor="middle" class="small-text">• Input patterns</text>
+  <text x="590" y="525" text-anchor="middle" class="small-text">• Execution tracking</text>
+  <text x="590" y="540" text-anchor="middle" class="small-text">• Controlled results</text>
+  
+  <!-- Test Flow -->
+  <text x="400" y="590" text-anchor="middle" class="section-title">Test Execution Flow</text>
+  
+  <!-- Setup -->
+  <rect x="50" y="610" width="120" height="40" rx="5" class="helper-box" filter="url(#shadow)"/>
+  <text x="110" y="635" text-anchor="middle" class="text">Setup</text>
+  
+  <!-- Mock Creation -->
+  <rect x="200" y="610" width="120" height="40" rx="5" class="mock-box" filter="url(#shadow)"/>
+  <text x="260" y="635" text-anchor="middle" class="text">Create Mocks</text>
+  
+  <!-- Test Execution -->
+  <rect x="350" y="610" width="120" height="40" rx="5" class="test-box" filter="url(#shadow)"/>
+  <text x="410" y="635" text-anchor="middle" class="text">Execute Test</text>
+  
+  <!-- Verification -->
+  <rect x="500" y="610" width="120" height="40" rx="5" class="helper-box" filter="url(#shadow)"/>
+  <text x="560" y="635" text-anchor="middle" class="text">Verify</text>
+  
+  <!-- Cleanup -->
+  <rect x="650" y="610" width="120" height="40" rx="5" class="helper-box" filter="url(#shadow)"/>
+  <text x="710" y="635" text-anchor="middle" class="text">Cleanup</text>
+  
+  <!-- Flow arrows -->
+  <path d="M 170 630 L 190 630" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 320 630 L 340 630" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 470 630 L 490 630" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 620 630 L 640 630" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Benefits -->
+  <rect x="50" y="670" width="700" height="25" rx="5" fill="#f8f9fa" stroke="#ccc" stroke-width="1"/>
+  <text x="400" y="687" text-anchor="middle" class="text">Benefits: Predictable Testing • Fast Execution • Isolation • Easy Debugging • Comprehensive Coverage</text>
+</svg>

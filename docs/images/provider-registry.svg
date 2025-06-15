@@ -1,0 +1,105 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .registry-box { fill: #e0f0ff; stroke: #333; stroke-width: 2; }
+      .provider-box { fill: #e6f3e6; stroke: #333; stroke-width: 2; }
+      .factory-box { fill: #ffe0e0; stroke: #333; stroke-width: 2; }
+      .config-box { fill: #f0e0ff; stroke: #333; stroke-width: 2; }
+      .text { font: 14px Arial, sans-serif; fill: #333; }
+      .title { font: bold 18px Arial, sans-serif; fill: #333; }
+      .section-title { font: bold 16px Arial, sans-serif; fill: #333; }
+      .small-text { font: 12px Arial, sans-serif; fill: #666; }
+    </style>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+            refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Provider Registry Architecture</text>
+  
+  <!-- Provider Registry -->
+  <rect x="300" y="60" width="200" height="80" rx="5" class="registry-box" filter="url(#shadow)"/>
+  <text x="400" y="90" text-anchor="middle" class="text">Provider Registry</text>
+  <text x="400" y="110" text-anchor="middle" class="small-text">Map[string]Factory</text>
+  <text x="400" y="125" text-anchor="middle" class="small-text">Metadata Cache</text>
+  
+  <!-- Provider Factories -->
+  <text x="400" y="180" text-anchor="middle" class="section-title">Registered Factories</text>
+  
+  <rect x="50" y="200" width="150" height="50" rx="5" class="factory-box" filter="url(#shadow)"/>
+  <text x="125" y="225" text-anchor="middle" class="text">OpenAI Factory</text>
+  
+  <rect x="220" y="200" width="150" height="50" rx="5" class="factory-box" filter="url(#shadow)"/>
+  <text x="295" y="225" text-anchor="middle" class="text">Anthropic Factory</text>
+  
+  <rect x="390" y="200" width="150" height="50" rx="5" class="factory-box" filter="url(#shadow)"/>
+  <text x="465" y="225" text-anchor="middle" class="text">Gemini Factory</text>
+  
+  <rect x="560" y="200" width="150" height="50" rx="5" class="factory-box" filter="url(#shadow)"/>
+  <text x="635" y="225" text-anchor="middle" class="text">Custom Factory</text>
+  
+  <!-- Factory registration arrows -->
+  <path d="M 125 140 L 125 200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 295 140 L 295 200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 465 140 L 465 200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 635 140 L 635 200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Provider Creation Flow -->
+  <text x="400" y="300" text-anchor="middle" class="section-title">Provider Creation Flow</text>
+  
+  <!-- Configuration -->
+  <rect x="50" y="320" width="150" height="60" rx="5" class="config-box" filter="url(#shadow)"/>
+  <text x="125" y="345" text-anchor="middle" class="text">Configuration</text>
+  <text x="125" y="360" text-anchor="middle" class="small-text">provider: "openai"</text>
+  <text x="125" y="375" text-anchor="middle" class="small-text">api_key: "sk-..."</text>
+  
+  <!-- Registry Lookup -->
+  <rect x="250" y="320" width="150" height="60" rx="5" class="registry-box" filter="url(#shadow)"/>
+  <text x="325" y="345" text-anchor="middle" class="text">Registry</text>
+  <text x="325" y="360" text-anchor="middle" class="text">Lookup</text>
+  
+  <!-- Factory Execution -->
+  <rect x="450" y="320" width="150" height="60" rx="5" class="factory-box" filter="url(#shadow)"/>
+  <text x="525" y="345" text-anchor="middle" class="text">Factory</text>
+  <text x="525" y="360" text-anchor="middle" class="text">Execution</text>
+  
+  <!-- Provider Instance -->
+  <rect x="650" y="320" width="100" height="60" rx="5" class="provider-box" filter="url(#shadow)"/>
+  <text x="700" y="345" text-anchor="middle" class="text">Provider</text>
+  <text x="700" y="360" text-anchor="middle" class="text">Instance</text>
+  
+  <!-- Creation flow arrows -->
+  <path d="M 200 350 L 240 350" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 400 350 L 440 350" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 600 350 L 640 350" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Dynamic Registration -->
+  <text x="400" y="440" text-anchor="middle" class="section-title">Dynamic Registration</text>
+  
+  <!-- Runtime Registration -->
+  <rect x="100" y="460" width="150" height="50" rx="5" class="factory-box" filter="url(#shadow)"/>
+  <text x="175" y="485" text-anchor="middle" class="text">Register at Runtime</text>
+  
+  <!-- Plugin Loading -->
+  <rect x="300" y="460" width="150" height="50" rx="5" class="factory-box" filter="url(#shadow)"/>
+  <text x="375" y="485" text-anchor="middle" class="text">Plugin Loading</text>
+  
+  <!-- Discovery -->
+  <rect x="500" y="460" width="150" height="50" rx="5" class="registry-box" filter="url(#shadow)"/>
+  <text x="575" y="485" text-anchor="middle" class="text">Auto Discovery</text>
+  
+  <!-- Registry update arrows -->
+  <path d="M 175 460 L 175 420 L 400 420 L 400 140" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 375 460 L 375 420" stroke="#333" stroke-width="2"/>
+  <path d="M 575 460 L 575 420" stroke="#333" stroke-width="2"/>
+  
+  <!-- Features -->
+  <rect x="50" y="540" width="700" height="50" rx="5" fill="#f8f9fa" stroke="#ccc" stroke-width="1"/>
+  <text x="400" y="560" text-anchor="middle" class="text">Features: Thread-Safe Registration • Metadata Caching • Validation • Plugin Support</text>
+  <text x="400" y="575" text-anchor="middle" class="small-text">Providers can be registered at compile-time or runtime for maximum flexibility</text>
+</svg>

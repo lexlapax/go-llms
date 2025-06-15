@@ -1,0 +1,144 @@
+<svg width="800" height="700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .state-box { fill: #e6f3e6; stroke: #333; stroke-width: 2; }
+      .operation-box { fill: #e0f0ff; stroke: #333; stroke-width: 2; }
+      .immutable-box { fill: #f0e0ff; stroke: #333; stroke-width: 2; }
+      .metadata-box { fill: #ffe0e0; stroke: #333; stroke-width: 2; }
+      .text { font: 14px Arial, sans-serif; fill: #333; }
+      .title { font: bold 18px Arial, sans-serif; fill: #333; }
+      .section-title { font: bold 16px Arial, sans-serif; fill: #333; }
+      .small-text { font: 12px Arial, sans-serif; fill: #666; }
+    </style>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+            refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">State Management in Go-LLMs</text>
+  
+  <!-- State Lifecycle -->
+  <text x="400" y="70" text-anchor="middle" class="section-title">State Lifecycle</text>
+  
+  <!-- Initial State -->
+  <rect x="50" y="90" width="100" height="50" rx="5" class="state-box" filter="url(#shadow)"/>
+  <text x="100" y="115" text-anchor="middle" class="text">Initial</text>
+  <text x="100" y="130" text-anchor="middle" class="text">State</text>
+  
+  <!-- Input Transform -->
+  <rect x="200" y="90" width="100" height="50" rx="5" class="operation-box" filter="url(#shadow)"/>
+  <text x="250" y="115" text-anchor="middle" class="text">Input</text>
+  <text x="250" y="130" text-anchor="middle" class="text">Transform</text>
+  
+  <!-- Agent Processing -->
+  <rect x="350" y="90" width="100" height="50" rx="5" class="operation-box" filter="url(#shadow)"/>
+  <text x="400" y="115" text-anchor="middle" class="text">Agent</text>
+  <text x="400" y="130" text-anchor="middle" class="text">Processing</text>
+  
+  <!-- Output Transform -->
+  <rect x="500" y="90" width="100" height="50" rx="5" class="operation-box" filter="url(#shadow)"/>
+  <text x="550" y="115" text-anchor="middle" class="text">Output</text>
+  <text x="550" y="130" text-anchor="middle" class="text">Transform</text>
+  
+  <!-- Final State -->
+  <rect x="650" y="90" width="100" height="50" rx="5" class="state-box" filter="url(#shadow)"/>
+  <text x="700" y="115" text-anchor="middle" class="text">Final</text>
+  <text x="700" y="130" text-anchor="middle" class="text">State</text>
+  
+  <!-- Lifecycle arrows -->
+  <path d="M 150 115 L 190 115" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 300 115 L 340 115" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 450 115 L 490 115" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 600 115 L 640 115" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- State Operations -->
+  <text x="400" y="200" text-anchor="middle" class="section-title">State Operations</text>
+  
+  <!-- Original State -->
+  <rect x="100" y="220" width="120" height="60" rx="5" class="state-box" filter="url(#shadow)"/>
+  <text x="160" y="245" text-anchor="middle" class="text">Original State</text>
+  <text x="160" y="260" text-anchor="middle" class="small-text">key1: value1</text>
+  <text x="160" y="275" text-anchor="middle" class="small-text">key2: value2</text>
+  
+  <!-- Clone Operation -->
+  <rect x="300" y="220" width="100" height="60" rx="5" class="immutable-box" filter="url(#shadow)"/>
+  <text x="350" y="250" text-anchor="middle" class="text">Clone()</text>
+  
+  <!-- Cloned State -->
+  <rect x="480" y="220" width="120" height="60" rx="5" class="state-box" filter="url(#shadow)"/>
+  <text x="540" y="245" text-anchor="middle" class="text">Cloned State</text>
+  <text x="540" y="260" text-anchor="middle" class="small-text">key1: value1</text>
+  <text x="540" y="275" text-anchor="middle" class="small-text">key2: value2</text>
+  
+  <!-- Clone arrows -->
+  <path d="M 220 250 L 290 250" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 400 250 L 470 250" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Modification -->
+  <rect x="480" y="320" width="120" height="60" rx="5" class="operation-box" filter="url(#shadow)"/>
+  <text x="540" y="345" text-anchor="middle" class="text">Set("key3",</text>
+  <text x="540" y="360" text-anchor="middle" class="text">"value3")</text>
+  
+  <!-- Modified State -->
+  <rect x="480" y="420" width="120" height="80" rx="5" class="state-box" filter="url(#shadow)"/>
+  <text x="540" y="445" text-anchor="middle" class="text">Modified State</text>
+  <text x="540" y="460" text-anchor="middle" class="small-text">key1: value1</text>
+  <text x="540" y="475" text-anchor="middle" class="small-text">key2: value2</text>
+  <text x="540" y="490" text-anchor="middle" class="small-text">key3: value3</text>
+  
+  <!-- Modification arrows -->
+  <path d="M 540 280 L 540 310" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 540 380 L 540 410" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Metadata -->
+  <text x="200" y="380" text-anchor="middle" class="section-title">Metadata Support</text>
+  
+  <rect x="100" y="400" width="200" height="100" rx="5" class="metadata-box" filter="url(#shadow)"/>
+  <text x="200" y="425" text-anchor="middle" class="text">State with Metadata</text>
+  <text x="200" y="445" text-anchor="middle" class="small-text">Data:</text>
+  <text x="200" y="460" text-anchor="middle" class="small-text">  user_input: "Hello"</text>
+  <text x="200" y="475" text-anchor="middle" class="small-text">Metadata:</text>
+  <text x="200" y="490" text-anchor="middle" class="small-text">  source: "api"</text>
+  
+  <!-- Thread Safety -->
+  <text x="400" y="560" text-anchor="middle" class="section-title">Thread Safety</text>
+  
+  <!-- Concurrent Access -->
+  <rect x="150" y="580" width="100" height="50" rx="5" class="operation-box" filter="url(#shadow)"/>
+  <text x="200" y="605" text-anchor="middle" class="text">Goroutine 1</text>
+  
+  <rect x="550" y="580" width="100" height="50" rx="5" class="operation-box" filter="url(#shadow)"/>
+  <text x="600" y="605" text-anchor="middle" class="text">Goroutine 2</text>
+  
+  <!-- Shared State -->
+  <rect x="325" y="580" width="150" height="50" rx="5" class="state-box" filter="url(#shadow)"/>
+  <text x="400" y="605" text-anchor="middle" class="text">Thread-Safe State</text>
+  
+  <!-- Concurrent arrows -->
+  <path d="M 250 605 L 315 605" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 550 605 L 485 605" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Safety note -->
+  <text x="400" y="650" text-anchor="middle" class="small-text">Read/Write operations are mutex-protected</text>
+  
+  <!-- Legend -->
+  <rect x="50" y="340" width="180" height="120" rx="5" fill="#f8f9fa" stroke="#ccc" stroke-width="1"/>
+  <text x="140" y="360" text-anchor="middle" class="text">Legend</text>
+  
+  <rect x="60" y="370" width="15" height="10" rx="2" class="state-box"/>
+  <text x="85" y="380" class="small-text">State Objects</text>
+  
+  <rect x="60" y="390" width="15" height="10" rx="2" class="operation-box"/>
+  <text x="85" y="400" class="small-text">Operations</text>
+  
+  <rect x="60" y="410" width="15" height="10" rx="2" class="immutable-box"/>
+  <text x="85" y="420" class="small-text">Immutable Ops</text>
+  
+  <rect x="60" y="430" width="15" height="10" rx="2" class="metadata-box"/>
+  <text x="85" y="440" class="small-text">With Metadata</text>
+</svg>

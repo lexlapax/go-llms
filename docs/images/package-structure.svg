@@ -1,0 +1,112 @@
+<svg width="800" height="700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .folder { fill: #ffe0a0; stroke: #333; stroke-width: 1; }
+      .package { fill: #e0f0ff; stroke: #333; stroke-width: 1; }
+      .file { fill: #e6f3e6; stroke: #333; stroke-width: 1; }
+      .text { font: 14px Arial, sans-serif; fill: #333; }
+      .title { font: bold 18px Arial, sans-serif; fill: #333; }
+      .desc { font: italic 12px Arial, sans-serif; fill: #666; }
+    </style>
+    <filter id="shadow">
+      <feDropShadow dx="1" dy="1" stdDeviation="1" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Go-LLMs Package Structure</text>
+  
+  <!-- Root -->
+  <rect x="50" y="50" width="700" height="30" rx="3" class="folder" filter="url(#shadow)"/>
+  <text x="60" y="70" class="text">github.com/lexlapax/go-llms/</text>
+  
+  <!-- pkg/ -->
+  <rect x="80" y="90" width="650" height="30" rx="3" class="folder" filter="url(#shadow)"/>
+  <text x="90" y="110" class="text">pkg/</text>
+  
+  <!-- pkg/llm/ -->
+  <rect x="110" y="130" width="300" height="30" rx="3" class="folder" filter="url(#shadow)"/>
+  <text x="120" y="150" class="text">llm/</text>
+  <text x="280" y="150" class="desc">LLM provider layer</text>
+  
+  <rect x="140" y="170" width="250" height="25" rx="3" class="package"/>
+  <text x="150" y="188" class="text">domain/</text>
+  <text x="230" y="188" class="desc">Core interfaces</text>
+  
+  <rect x="140" y="200" width="250" height="25" rx="3" class="package"/>
+  <text x="150" y="218" class="text">provider/</text>
+  <text x="230" y="218" class="desc">Implementations</text>
+  
+  <!-- pkg/agent/ -->
+  <rect x="110" y="240" width="300" height="30" rx="3" class="folder" filter="url(#shadow)"/>
+  <text x="120" y="260" class="text">agent/</text>
+  <text x="280" y="260" class="desc">Agent framework</text>
+  
+  <rect x="140" y="280" width="250" height="25" rx="3" class="package"/>
+  <text x="150" y="298" class="text">core/</text>
+  <text x="230" y="298" class="desc">Core implementations</text>
+  
+  <rect x="140" y="310" width="250" height="25" rx="3" class="package"/>
+  <text x="150" y="328" class="text">domain/</text>
+  <text x="230" y="328" class="desc">Agent interfaces</text>
+  
+  <rect x="140" y="340" width="250" height="25" rx="3" class="package"/>
+  <text x="150" y="358" class="text">tools/</text>
+  <text x="230" y="358" class="desc">Tool implementations</text>
+  
+  <rect x="140" y="370" width="250" height="25" rx="3" class="package"/>
+  <text x="150" y="388" class="text">workflow/</text>
+  <text x="230" y="388" class="desc">Workflow agents</text>
+  
+  <!-- pkg/schema/ -->
+  <rect x="420" y="130" width="280" height="30" rx="3" class="folder" filter="url(#shadow)"/>
+  <text x="430" y="150" class="text">schema/</text>
+  <text x="550" y="150" class="desc">JSON Schema validation</text>
+  
+  <!-- pkg/structured/ -->
+  <rect x="420" y="170" width="280" height="30" rx="3" class="folder" filter="url(#shadow)"/>
+  <text x="430" y="190" class="text">structured/</text>
+  <text x="550" y="190" class="desc">Structured outputs</text>
+  
+  <!-- pkg/errors/ -->
+  <rect x="420" y="210" width="280" height="30" rx="3" class="folder" filter="url(#shadow)"/>
+  <text x="430" y="230" class="text">errors/</text>
+  <text x="550" y="230" class="desc">Error handling system</text>
+  
+  <!-- pkg/testutils/ -->
+  <rect x="420" y="250" width="280" height="30" rx="3" class="folder" filter="url(#shadow)"/>
+  <text x="430" y="270" class="text">testutils/</text>
+  <text x="550" y="270" class="desc">Testing utilities</text>
+  
+  <!-- pkg/util/ -->
+  <rect x="420" y="290" width="280" height="30" rx="3" class="folder" filter="url(#shadow)"/>
+  <text x="430" y="310" class="text">util/</text>
+  <text x="550" y="310" class="desc">Utility packages</text>
+  
+  <!-- cmd/ -->
+  <rect x="80" y="420" width="320" height="30" rx="3" class="folder" filter="url(#shadow)"/>
+  <text x="90" y="440" class="text">cmd/</text>
+  <text x="250" y="440" class="desc">Command-line tools</text>
+  
+  <rect x="110" y="460" width="270" height="25" rx="3" class="package"/>
+  <text x="120" y="478" class="text">examples/</text>
+  <text x="230" y="478" class="desc">Example applications</text>
+  
+  <rect x="110" y="490" width="270" height="25" rx="3" class="file"/>
+  <text x="120" y="508" class="text">cli.go</text>
+  <text x="230" y="508" class="desc">Main CLI entry point</text>
+  
+  <!-- tests/ -->
+  <rect x="80" y="530" width="320" height="30" rx="3" class="folder" filter="url(#shadow)"/>
+  <text x="90" y="550" class="text">tests/</text>
+  <text x="250" y="550" class="desc">Integration tests</text>
+  
+  <!-- Connection lines -->
+  <path d="M 65 80 L 65 560" stroke="#666" stroke-width="1" fill="none"/>
+  <path d="M 65 120 L 95 120" stroke="#666" stroke-width="1" fill="none"/>
+  <path d="M 95 120 L 95 400" stroke="#666" stroke-width="1" fill="none"/>
+  <path d="M 95 160 L 125 160" stroke="#666" stroke-width="1" fill="none"/>
+  <path d="M 95 270 L 125 270" stroke="#666" stroke-width="1" fill="none"/>
+  <path d="M 65 450 L 95 450" stroke="#666" stroke-width="1" fill="none"/>
+  <path d="M 65 560 L 95 560" stroke="#666" stroke-width="1" fill="none"/>
+</svg>

@@ -1,0 +1,134 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .process-box { fill: #e0f0ff; stroke: #333; stroke-width: 2; }
+      .external-box { fill: #ffe0e0; stroke: #333; stroke-width: 2; }
+      .result-box { fill: #e6f3e6; stroke: #333; stroke-width: 2; }
+      .text { font: 14px Arial, sans-serif; fill: #333; }
+      .title { font: bold 18px Arial, sans-serif; fill: #333; }
+      .flow-title { font: bold 16px Arial, sans-serif; fill: #333; }
+      .small-text { font: 12px Arial, sans-serif; fill: #666; }
+    </style>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+            refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Go-LLMs Data Flow</text>
+  
+  <!-- Basic LLM Request Flow -->
+  <text x="400" y="70" text-anchor="middle" class="flow-title">Basic LLM Request Flow</text>
+  
+  <rect x="30" y="90" width="100" height="40" rx="5" class="process-box" filter="url(#shadow)"/>
+  <text x="80" y="115" text-anchor="middle" class="text">Application</text>
+  
+  <rect x="180" y="90" width="100" height="40" rx="5" class="process-box" filter="url(#shadow)"/>
+  <text x="230" y="115" text-anchor="middle" class="text">Agent</text>
+  
+  <rect x="330" y="90" width="100" height="40" rx="5" class="process-box" filter="url(#shadow)"/>
+  <text x="380" y="115" text-anchor="middle" class="text">Provider</text>
+  
+  <rect x="480" y="90" width="100" height="40" rx="5" class="external-box" filter="url(#shadow)"/>
+  <text x="530" y="115" text-anchor="middle" class="text">LLM API</text>
+  
+  <!-- Top row arrows -->
+  <path d="M 130 110 L 170 110" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 280 110 L 320 110" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 430 110 L 470 110" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Bottom row (return flow) -->
+  <rect x="30" y="160" width="100" height="40" rx="5" class="result-box" filter="url(#shadow)"/>
+  <text x="80" y="185" text-anchor="middle" class="text">Result</text>
+  
+  <rect x="180" y="160" width="100" height="40" rx="5" class="process-box" filter="url(#shadow)"/>
+  <text x="230" y="185" text-anchor="middle" class="text">Process</text>
+  
+  <rect x="330" y="160" width="100" height="40" rx="5" class="process-box" filter="url(#shadow)"/>
+  <text x="380" y="185" text-anchor="middle" class="text">Transform</text>
+  
+  <rect x="480" y="160" width="100" height="40" rx="5" class="external-box" filter="url(#shadow)"/>
+  <text x="530" y="185" text-anchor="middle" class="text">Response</text>
+  
+  <!-- Bottom row arrows -->
+  <path d="M 170 180 L 130 180" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 320 180 L 280 180" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 470 180 L 430 180" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Vertical flow labels -->
+  <text x="80" y="150" text-anchor="middle" class="small-text">State</text>
+  <text x="230" y="150" text-anchor="middle" class="small-text">Tool Call</text>
+  <text x="380" y="150" text-anchor="middle" class="small-text">Request</text>
+  <text x="530" y="150" text-anchor="middle" class="small-text">Response</text>
+  
+  <!-- Tool Execution Flow -->
+  <text x="400" y="270" text-anchor="middle" class="flow-title">Tool Execution Flow</text>
+  
+  <rect x="30" y="290" width="100" height="40" rx="5" class="process-box" filter="url(#shadow)"/>
+  <text x="80" y="315" text-anchor="middle" class="text">Agent</text>
+  
+  <rect x="180" y="290" width="100" height="40" rx="5" class="process-box" filter="url(#shadow)"/>
+  <text x="230" y="305" text-anchor="middle" class="text">Parse Tool</text>
+  <text x="230" y="325" text-anchor="middle" class="text">Call</text>
+  
+  <rect x="330" y="290" width="100" height="40" rx="5" class="process-box" filter="url(#shadow)"/>
+  <text x="380" y="305" text-anchor="middle" class="text">Validate</text>
+  <text x="380" y="325" text-anchor="middle" class="text">Input</text>
+  
+  <rect x="480" y="290" width="100" height="40" rx="5" class="external-box" filter="url(#shadow)"/>
+  <text x="530" y="305" text-anchor="middle" class="text">Execute</text>
+  <text x="530" y="325" text-anchor="middle" class="text">Tool</text>
+  
+  <!-- Tool flow top arrows -->
+  <path d="M 130 310 L 170 310" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 280 310 L 320 310" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 430 310 L 470 310" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Tool flow bottom row -->
+  <rect x="30" y="360" width="100" height="40" rx="5" class="result-box" filter="url(#shadow)"/>
+  <text x="80" y="385" text-anchor="middle" class="text">State</text>
+  
+  <rect x="180" y="360" width="100" height="40" rx="5" class="process-box" filter="url(#shadow)"/>
+  <text x="230" y="375" text-anchor="middle" class="text">Format</text>
+  <text x="230" y="395" text-anchor="middle" class="text">Result</text>
+  
+  <rect x="330" y="360" width="100" height="40" rx="5" class="process-box" filter="url(#shadow)"/>
+  <text x="380" y="375" text-anchor="middle" class="text">Process</text>
+  <text x="380" y="395" text-anchor="middle" class="text">Output</text>
+  
+  <rect x="480" y="360" width="100" height="40" rx="5" class="external-box" filter="url(#shadow)"/>
+  <text x="530" y="375" text-anchor="middle" class="text">Tool</text>
+  <text x="530" y="395" text-anchor="middle" class="text">Response</text>
+  
+  <!-- Tool flow bottom arrows -->
+  <path d="M 170 380 L 130 380" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 320 380 L 280 380" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 470 380 L 430 380" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Tool flow vertical labels -->
+  <text x="80" y="350" text-anchor="middle" class="small-text">Event</text>
+  <text x="230" y="350" text-anchor="middle" class="small-text">Tool Found</text>
+  <text x="380" y="350" text-anchor="middle" class="small-text">Schema Valid</text>
+  <text x="530" y="350" text-anchor="middle" class="small-text">Tool Response</text>
+  
+  <text x="80" y="420" text-anchor="middle" class="small-text">Result</text>
+  <text x="230" y="420" text-anchor="middle" class="small-text">Process Output</text>
+  <text x="380" y="420" text-anchor="middle" class="small-text">Merge State</text>
+  
+  <!-- Legend -->
+  <rect x="50" y="480" width="250" height="100" rx="5" fill="#f8f9fa" stroke="#ccc" stroke-width="1"/>
+  <text x="175" y="500" text-anchor="middle" class="text">Data Flow Legend</text>
+  
+  <rect x="60" y="510" width="20" height="15" rx="2" class="process-box"/>
+  <text x="90" y="522" class="small-text">Internal Processing</text>
+  
+  <rect x="60" y="530" width="20" height="15" rx="2" class="external-box"/>
+  <text x="90" y="542" class="small-text">External Systems</text>
+  
+  <rect x="60" y="550" width="20" height="15" rx="2" class="result-box"/>
+  <text x="90" y="562" class="small-text">Results/State</text>
+</svg>

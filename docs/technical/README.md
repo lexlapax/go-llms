@@ -1,75 +1,134 @@
-# Technical Documentation
+# Go-LLMs Technical Documentation
 
-> **[Documentation Home](/docs/README.md) / Technical Documentation**
+> **[Project Root](/) / [Documentation](/docs/) / Technical Documentation**
 
-This directory contains technical documentation for the Go-LLMs library, intended for contributors and advanced users who need to understand the internal architecture, implementation patterns, and optimization strategies.
+Welcome to the Go-LLMs technical documentation. This guide is designed for developers, contributors, and advanced users who want to understand the internals of the go-llms library.
 
-*Related: [User Guide](/docs/user-guide/README.md) | [API Reference](/docs/api/README.md)*
+## 📚 Documentation Structure
 
-## Core Architecture
+![Architecture Overview](../images/architecture-layers.svg)
+*Figure 1: Go-LLMs architectural layers showing the relationship between applications, agents, core systems, and providers*
 
-- [Architecture Overview](architecture.md) - System design, component structure, and data flow patterns
-- [Agent Architecture](agents.md) - Agent system implementation details and patterns
-- [Tool Development](tool-development.md) - Internal tool architecture and development patterns
-- [Tool Discovery API](tool-discovery-api.md) - Metadata-first tool discovery system for scripting engines
-- [Built-in Components](built-in-components.md) - Registry system and component patterns
-- [Schema System](schema-system.md) - Comprehensive schema generation, storage, and validation
+![Package Structure](../images/package-structure.svg)
+*Figure 2: Package organization and dependencies within the go-llms codebase*
 
-## Implementation Guides
+### 🏗️ Foundation
+- [**Architecture Overview**](architecture.md) - System design, principles, and high-level structure
+- [**Core Concepts**](core-concepts.md) - Key abstractions and design patterns
 
-- [Provider Implementation](provider-implementation.md) - How to add new LLM providers
-- [Authentication System](authentication.md) - Authentication architecture and patterns
-- [Multimodal Content](multimodal-content.md) - Technical implementation of multimodal support
+### 🔧 Core Components
 
-## Performance & Optimization
+#### [Providers](providers/README.md)
+- [Provider System Overview](providers/overview.md) - Understanding LLM providers
+- [Implementing Providers](providers/implementing-providers.md) - Create custom providers
+- [Provider Registry](providers/provider-registry.md) - Dynamic registration and discovery
+- [Provider Metadata](providers/metadata.md) - Capabilities and configuration
 
-- [Performance Optimization](performance.md) - Optimization strategies and benchmarks
-- [Caching Mechanisms](caching.md) - Cache implementations and strategies
-- [Concurrency Patterns](concurrency.md) - Thread safety and concurrent execution
-- [Sync.Pool Implementation](sync-pool.md) - Memory optimization with object pooling
+#### [Agents](agents/README.md)
+- [Agent System Overview](agents/overview.md) - Agent architecture and concepts
+- [LLM Agents](agents/llm-agents.md) - AI-powered agents with tool support
+- [Workflow Agents](agents/workflow-agents.md) - Sequential, parallel, conditional, and loop patterns
+- [Multi-Agent Systems](agents/multi-agent-systems.md) - Coordination and communication
+- [State Management](agents/state-management.md) - Agent state and data flow
 
-## Testing & Quality
+#### [Tools](tools/README.md)
+- [Tool System Overview](tools/overview.md) - Tool architecture and integration
+- [Creating Tools](tools/creating-tools.md) - Build custom tools
+- [Tool Discovery](tools/tool-discovery.md) - Runtime registration and metadata
+- [Built-in Tools](tools/built-in-tools.md) - Available tools and examples
 
-- [Testing Framework](testing.md) - Testing strategies and patterns
-- [Benchmarking Framework](benchmarks.md) - Performance measurement approach
+### 🛠️ Development
 
-## Development Practices
+#### [Contributing](development/contributing.md)
+- Code organization and style guide
+- Development workflow
+- Submitting changes
 
-- [Logging](logging.md) - Logging patterns and best practices
-- [Dependency Reduction](dependency_reduction.md) - Journey from heavy dependencies to stdlib
-- [Tools](tools.md) - Tool system architecture and patterns
-- [Schema Package](schema-package.md) - Schema generation and storage implementation
-- [Structured Output Support](structured-output-support.md) - LLM output parsing and validation
-- [Documentation Generation](documentation-generation.md) - Auto-generation of API docs and specifications
+#### [Testing](development/testing.md)
+- Testing infrastructure
+- Writing tests
+- Mocks and fixtures
+- Integration testing
 
-## Navigation
+#### [API Design](development/api-design.md)
+- Design principles
+- Interface patterns
+- Backward compatibility
 
-### For Contributors
+### 🚀 Advanced Topics
+
+#### [Performance](advanced/performance.md)
+- Optimization strategies
+- Benchmarking
+- Resource management
+
+#### [Event System](advanced/event-system.md)
+- Event architecture
+- Custom event handlers
+- Event serialization
+
+#### [Error Handling](advanced/error-handling.md)
+- Error types and patterns
+- Recovery strategies
+- Bridge-compatible errors
+
+#### [Schema System](advanced/schema-system.md)
+- JSON Schema validation
+- Type conversion
+- Structured outputs
+
+#### [Bridge Integration](advanced/bridge-integration.md)
+- Scripting engine integration
+- Type conversion registry
+- Workflow serialization
+
+### 📖 Reference
+
+#### [API Reference](api-reference/README.md)
+- [Provider APIs](api-reference/providers.md)
+- [Agent APIs](api-reference/agents.md)
+- [Tool APIs](api-reference/tools.md)
+- [Type Definitions](api-reference/types.md)
+
+## 🎯 Quick Start Paths
+
+### For New Contributors
 1. Start with [Architecture Overview](architecture.md)
-2. Review relevant implementation guides
-3. Understand [Testing Framework](testing.md)
-4. Follow [Development Practices](#development-practices)
+2. Read [Core Concepts](core-concepts.md)
+3. Review [Contributing Guide](development/contributing.md)
+4. Explore component documentation based on your interest
 
 ### For Provider Implementers
-1. Read [Provider Implementation](provider-implementation.md)
-2. Understand [Authentication System](authentication.md)
-3. Review [Testing Framework](testing.md)
+1. Read [Provider System Overview](providers/overview.md)
+2. Follow [Implementing Providers](providers/implementing-providers.md)
+3. Understand [Provider Metadata](providers/metadata.md)
+4. Check [API Reference](api-reference/providers.md)
 
 ### For Tool Developers
-1. Study [Tool Development](tool-development.md)
-2. Learn [Tool Discovery API](tool-discovery-api.md) for scripting integration
-3. Review [Built-in Components](built-in-components.md)
-4. Understand [Agent Architecture](agents.md)
+1. Start with [Tool System Overview](tools/overview.md)
+2. Follow [Creating Tools](tools/creating-tools.md)
+3. Learn about [Tool Discovery](tools/tool-discovery.md)
+4. See [Built-in Tools](tools/built-in-tools.md) for examples
 
-### For Performance Optimization
-1. Read [Performance Optimization](performance.md)
-2. Understand [Caching Mechanisms](caching.md)
-3. Review [Concurrency Patterns](concurrency.md)
+### For Advanced Users
+1. Understand [Agent System](agents/overview.md)
+2. Explore [Workflow Patterns](agents/workflow-agents.md)
+3. Learn about [Event System](advanced/event-system.md)
+4. Deep dive into [Performance](advanced/performance.md)
 
-## Contributing
+## 📋 Document Standards
 
-When contributing technical documentation:
-1. Focus on implementation details, not usage
-2. Include code examples from actual implementation
-3. Cross-reference related documentation
-4. Keep content up-to-date with code changes
+All documentation follows these standards:
+- **Navigation**: Consistent breadcrumb navigation
+- **Structure**: Overview → Concepts → Details → Examples
+- **Code Examples**: Practical, runnable examples
+- **Cross-References**: Links to related topics
+- **Versioning**: Clear version annotations for features
+
+## 🔄 Version Information
+
+This documentation covers go-llms v0.3.5 and later. Features are annotated with their introduction version where relevant.
+
+## 🤝 Contributing to Documentation
+
+Found an issue or want to improve the documentation? See our [Contributing Guide](development/contributing.md#documentation).

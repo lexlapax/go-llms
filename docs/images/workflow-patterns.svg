@@ -1,0 +1,139 @@
+<svg width="800" height="700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .agent-box { fill: #e0f0ff; stroke: #333; stroke-width: 2; }
+      .input-box { fill: #e6f3e6; stroke: #333; stroke-width: 2; }
+      .output-box { fill: #ffe0e0; stroke: #333; stroke-width: 2; }
+      .condition-box { fill: #f0e0ff; stroke: #333; stroke-width: 2; }
+      .text { font: 14px Arial, sans-serif; fill: #333; }
+      .title { font: bold 18px Arial, sans-serif; fill: #333; }
+      .pattern-title { font: bold 16px Arial, sans-serif; fill: #333; }
+      .small-text { font: 12px Arial, sans-serif; fill: #666; }
+    </style>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+            refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">Workflow Patterns</text>
+  
+  <!-- Sequential Pattern -->
+  <text x="400" y="70" text-anchor="middle" class="pattern-title">Sequential Pattern</text>
+  
+  <rect x="50" y="80" width="80" height="40" rx="5" class="input-box" filter="url(#shadow)"/>
+  <text x="90" y="105" text-anchor="middle" class="text">Input</text>
+  
+  <rect x="180" y="80" width="80" height="40" rx="5" class="agent-box" filter="url(#shadow)"/>
+  <text x="220" y="105" text-anchor="middle" class="text">Agent1</text>
+  
+  <rect x="310" y="80" width="80" height="40" rx="5" class="agent-box" filter="url(#shadow)"/>
+  <text x="350" y="105" text-anchor="middle" class="text">Agent2</text>
+  
+  <rect x="440" y="80" width="80" height="40" rx="5" class="agent-box" filter="url(#shadow)"/>
+  <text x="480" y="105" text-anchor="middle" class="text">Agent3</text>
+  
+  <rect x="570" y="80" width="80" height="40" rx="5" class="output-box" filter="url(#shadow)"/>
+  <text x="610" y="105" text-anchor="middle" class="text">Output</text>
+  
+  <!-- Sequential arrows -->
+  <path d="M 130 100 L 170 100" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 260 100 L 300 100" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 390 100 L 430 100" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 520 100 L 560 100" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Parallel Pattern -->
+  <text x="400" y="200" text-anchor="middle" class="pattern-title">Parallel Pattern</text>
+  
+  <rect x="50" y="210" width="80" height="40" rx="5" class="input-box" filter="url(#shadow)"/>
+  <text x="90" y="235" text-anchor="middle" class="text">Input</text>
+  
+  <rect x="250" y="180" width="80" height="40" rx="5" class="agent-box" filter="url(#shadow)"/>
+  <text x="290" y="205" text-anchor="middle" class="text">Agent1</text>
+  
+  <rect x="250" y="230" width="80" height="40" rx="5" class="agent-box" filter="url(#shadow)"/>
+  <text x="290" y="255" text-anchor="middle" class="text">Agent2</text>
+  
+  <rect x="250" y="280" width="80" height="40" rx="5" class="agent-box" filter="url(#shadow)"/>
+  <text x="290" y="305" text-anchor="middle" class="text">Agent3</text>
+  
+  <rect x="450" y="210" width="80" height="40" rx="5" class="output-box" filter="url(#shadow)"/>
+  <text x="490" y="235" text-anchor="middle" class="text">Merge</text>
+  
+  <rect x="580" y="210" width="80" height="40" rx="5" class="output-box" filter="url(#shadow)"/>
+  <text x="620" y="235" text-anchor="middle" class="text">Output</text>
+  
+  <!-- Parallel arrows -->
+  <path d="M 130 230 L 200 230 L 200 200 L 240 200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 200 230 L 240 230" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 200 230 L 200 300 L 240 300" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <path d="M 330 200 L 380 200 L 380 230 L 440 230" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 330 250 L 380 250 L 380 230" stroke="#333" stroke-width="2"/>
+  <path d="M 330 300 L 380 300 L 380 230" stroke="#333" stroke-width="2"/>
+  
+  <path d="M 530 230 L 570 230" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Conditional Pattern -->
+  <text x="400" y="390" text-anchor="middle" class="pattern-title">Conditional Pattern</text>
+  
+  <rect x="50" y="400" width="80" height="40" rx="5" class="input-box" filter="url(#shadow)"/>
+  <text x="90" y="425" text-anchor="middle" class="text">Input</text>
+  
+  <polygon points="200,390 240,420 200,450 160,420" fill="#f0e0ff" stroke="#333" stroke-width="2" filter="url(#shadow)"/>
+  <text x="200" y="425" text-anchor="middle" class="text">Route</text>
+  
+  <rect x="300" y="360" width="80" height="40" rx="5" class="agent-box" filter="url(#shadow)"/>
+  <text x="340" y="385" text-anchor="middle" class="text">AgentA</text>
+  
+  <rect x="300" y="410" width="80" height="40" rx="5" class="agent-box" filter="url(#shadow)"/>
+  <text x="340" y="435" text-anchor="middle" class="text">AgentB</text>
+  
+  <rect x="300" y="460" width="80" height="40" rx="5" class="agent-box" filter="url(#shadow)"/>
+  <text x="340" y="485" text-anchor="middle" class="text">Default</text>
+  
+  <rect x="500" y="400" width="80" height="40" rx="5" class="output-box" filter="url(#shadow)"/>
+  <text x="540" y="425" text-anchor="middle" class="text">Output</text>
+  
+  <!-- Conditional arrows -->
+  <path d="M 130 420 L 150 420" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <path d="M 240 420 L 270 420 L 270 380 L 290 380" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 240 420 L 270 420 L 270 430 L 290 430" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 240 420 L 270 420 L 270 480 L 290 480" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <path d="M 380 380 L 430 380 L 430 420 L 490 420" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 380 430 L 430 430 L 430 420" stroke="#333" stroke-width="2"/>
+  <path d="M 380 480 L 430 480 L 430 420" stroke="#333" stroke-width="2"/>
+  
+  <!-- Loop Pattern -->
+  <text x="400" y="580" text-anchor="middle" class="pattern-title">Loop Pattern</text>
+  
+  <rect x="50" y="590" width="80" height="40" rx="5" class="input-box" filter="url(#shadow)"/>
+  <text x="90" y="615" text-anchor="middle" class="text">Input</text>
+  
+  <rect x="200" y="590" width="80" height="40" rx="5" class="agent-box" filter="url(#shadow)"/>
+  <text x="240" y="615" text-anchor="middle" class="text">Agent</text>
+  
+  <polygon points="360,580 400,610 360,640 320,610" fill="#f0e0ff" stroke="#333" stroke-width="2" filter="url(#shadow)"/>
+  <text x="360" y="615" text-anchor="middle" class="text">Check</text>
+  
+  <rect x="500" y="590" width="80" height="40" rx="5" class="output-box" filter="url(#shadow)"/>
+  <text x="540" y="615" text-anchor="middle" class="text">Output</text>
+  
+  <!-- Loop arrows -->
+  <path d="M 130 610 L 190 610" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 280 610 L 310 610" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 400 610 L 490 610" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Loop back arrow -->
+  <path d="M 360 580 L 360 560 L 240 560 L 240 580" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Labels -->
+  <text x="360" y="550" text-anchor="middle" class="small-text">No</text>
+  <text x="450" y="605" text-anchor="middle" class="small-text">Yes</text>
+</svg>
