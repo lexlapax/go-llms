@@ -25,19 +25,10 @@ func createTestToolContextForWrite() *domain.ToolContext {
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
 
 	// Create a simple event emitter
-	tc = tc.WithEventEmitter(&testWriteEventEmitter{})
+	tc = tc.WithEventEmitter(mocks.NewMockEventEmitter("test-agent", "Test Agent"))
 
 	return tc
 }
-
-// testWriteEventEmitter implements EventEmitter for testing
-type testWriteEventEmitter struct{}
-
-func (e *testWriteEventEmitter) Emit(eventType domain.EventType, data interface{}) {}
-func (e *testWriteEventEmitter) EmitProgress(current, total int, message string)   {}
-func (e *testWriteEventEmitter) EmitMessage(message string)                        {}
-func (e *testWriteEventEmitter) EmitError(err error)                               {}
-func (e *testWriteEventEmitter) EmitCustom(eventName string, data interface{})     {}
 
 func TestWriteFileRegistration(t *testing.T) {
 	// Test that the tool is registered

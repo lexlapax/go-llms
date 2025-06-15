@@ -13,53 +13,8 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
-
-// mockSystemAgent implements BaseAgent for testing
-type mockSystemAgent struct {
-	id          string
-	name        string
-	description string
-	agentType   domain.AgentType
-	metadata    map[string]interface{}
-}
-
-func (a *mockSystemAgent) ID() string                                { return a.id }
-func (a *mockSystemAgent) Name() string                              { return a.name }
-func (a *mockSystemAgent) Description() string                       { return a.description }
-func (a *mockSystemAgent) Type() domain.AgentType                    { return a.agentType }
-func (a *mockSystemAgent) Parent() domain.BaseAgent                  { return nil }
-func (a *mockSystemAgent) SetParent(parent domain.BaseAgent) error   { return nil }
-func (a *mockSystemAgent) SubAgents() []domain.BaseAgent             { return nil }
-func (a *mockSystemAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
-func (a *mockSystemAgent) RemoveSubAgent(name string) error          { return nil }
-func (a *mockSystemAgent) FindAgent(name string) domain.BaseAgent    { return nil }
-func (a *mockSystemAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
-func (a *mockSystemAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
-	return nil, nil
-}
-func (a *mockSystemAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
-	return nil, nil
-}
-func (a *mockSystemAgent) Initialize(ctx context.Context) error                     { return nil }
-func (a *mockSystemAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
-func (a *mockSystemAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
-	return nil
-}
-func (a *mockSystemAgent) Cleanup(ctx context.Context) error                     { return nil }
-func (a *mockSystemAgent) InputSchema() *sdomain.Schema                          { return nil }
-func (a *mockSystemAgent) OutputSchema() *sdomain.Schema                         { return nil }
-func (a *mockSystemAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
-func (a *mockSystemAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
-func (a *mockSystemAgent) Validate() error                                       { return nil }
-func (a *mockSystemAgent) Metadata() map[string]interface{}                      { return a.metadata }
-func (a *mockSystemAgent) SetMetadata(key string, value interface{}) {
-	if a.metadata == nil {
-		a.metadata = make(map[string]interface{})
-	}
-	a.metadata[key] = value
-}
 
 // testEventEmitterSystem implements EventEmitter for testing
 type testEventEmitterSystem struct{}
@@ -75,13 +30,7 @@ func createTestToolContext() *domain.ToolContext {
 	ctx := context.Background()
 	state := domain.NewState()
 	stateReader := domain.NewStateReader(state)
-	agent := &mockSystemAgent{
-		id:          "test-agent",
-		name:        "Test Agent",
-		description: "Test agent for system tools",
-		agentType:   domain.AgentTypeCustom,
-		metadata:    make(map[string]interface{}),
-	}
+	agent := mocks.NewMockAgent("Test Agent")
 
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
 	tc = tc.WithEventEmitter(&testEventEmitterSystem{})

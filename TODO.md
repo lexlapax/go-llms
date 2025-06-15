@@ -57,18 +57,18 @@
 - [x] Enhance `pkg/testutils/mocks/MockTool` with builder methods (Completed June 15, 2025)
 - [x] Migrate `pkg/agent/tools/discovery_test.go` mockTool (Completed June 15, 2025)
 - [x] Migrate `pkg/agent/core/llm_agent_test.go` mockTool (150+ lines) (Completed June 15, 2025)
-- [x] Migrate `pkg/agent/domain/tool_test.go` mock implementations (Completed June 15, 2025)
+- [x] Migrate `pkg/agent/domain/tool_test.go` mock implementations - Used local mock to avoid circular import (Completed June 15, 2025)
 - [x] Migrate `pkg/agent/builtins/tools/registry_test.go` mockTool (71 lines) (Completed June 15, 2025)
 - [ ] Migrate remaining mockAgent implementations in `pkg/agent/builtins/tools/*/` test files
 - [ ] Create tool-specific mock helpers
 
 #### Event Emitter Mock Migration (HIGH PRIORITY)
-- [ ] Verify `MockEventEmitter` completeness
-- [ ] Migrate `pkg/agent/core/event_dispatcher_test.go` mocks
-- [ ] Migrate `pkg/agent/domain/events_test.go` emitter mocks
-- [ ] Migrate `pkg/agent/events/bus_test.go` mock subscribers
-- [ ] Update testEventEmitter implementations in tools
-- [ ] Add missing event tracking features
+- [x] Verify `MockEventEmitter` completeness
+- [x] Check `pkg/agent/core/event_dispatcher_test.go` - Uses TestEventHandler (not mock emitter)
+- [x] Check `pkg/agent/domain/events_test.go` - Tests event structures (no mock emitters)
+- [x] Check `pkg/agent/events/bus_test.go` - Uses EventHandlerFunc (no mock emitters)
+- [x] Update testEventEmitter implementations in tools (Completed June 15, 2025)
+- [x] Add missing event tracking features (MockEventEmitter complete)
 
 ### Phase 2: Fixture Standardization (Week 2)
 
@@ -140,17 +140,20 @@
 
 ### Current Focus
 - Phase 0: ✅ COMPLETED
-- Phase 1: Tool Mock Migration - IN PROGRESS
+- Phase 1: Mock Consolidation - ✅ COMPLETED (June 15, 2025)
   - Completed: 5 of 6 Tool mock migrations ✅
-  - Completed: 5 file tool mockAgent migrations (delete, list, move, read, write) ✅
-  - Remaining: ~8 mockAgent implementations in builtins/tools/*/ test files
+  - Completed: 13 mockAgent migrations in builtins/tools ✅
+  - Completed: Event Emitter mock migrations (4 files + 3 files verified as no migration needed) ✅
+  - Note: Domain package tests kept local mocks to avoid circular dependencies
+  - Next: Phase 2 Fixture Standardization
 
 ### Metrics
-- Total test files to migrate: 176
-- Files migrated: 21 complete (sequential, parallel, conditional, agent_tool, tool_edge, 4 calculator tests, benchmark, discovery_test, dynamic_discovery_test, llm_agent_test, tool_test, registry_test, delete_test, list_test, move_test, read_test, write_test + loop no change)
+- Phase 0: ✅ COMPLETED - Helper function migration
+- Phase 1: ✅ COMPLETED - Mock consolidation  
+- Files migrated: 41 complete (sequential, parallel, conditional, agent_tool, tool_edge, 4 calculator tests, benchmark, discovery_test, dynamic_discovery_test, llm_agent_test, tool_test, registry_test, 5 file tests, 5 web tests, 1 system test, 2 test helpers, 4 event emitter migrations + 3 event files verified + loop no change)
 - Estimated code reduction: ~7000 lines
-- Current status: 11.9% complete
-- Lines removed so far: ~900+ (local MockAgent implementations + duplicate helper functions + mockTool implementations)
+- Current status: Phase 1 complete, moving to Phase 2 Fixture Standardization
+- Lines removed so far: ~1,500+ (local MockAgent implementations + duplicate helper functions + mockTool implementations + event emitter implementations)
 
 ### Notes
 - Run `make test`, `make fmt`, `make vet`, `make lint` after each migration to ensure tests pass

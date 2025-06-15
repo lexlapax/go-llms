@@ -26,19 +26,10 @@ func createTestToolContextForRead() *domain.ToolContext {
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
 
 	// Create a simple event emitter
-	tc = tc.WithEventEmitter(&testEventEmitter{})
+	tc = tc.WithEventEmitter(mocks.NewMockEventEmitter("test-agent", "Test Agent"))
 
 	return tc
 }
-
-// testEventEmitter implements EventEmitter for testing
-type testEventEmitter struct{}
-
-func (e *testEventEmitter) Emit(eventType domain.EventType, data interface{}) {}
-func (e *testEventEmitter) EmitProgress(current, total int, message string)   {}
-func (e *testEventEmitter) EmitMessage(message string)                        {}
-func (e *testEventEmitter) EmitError(err error)                               {}
-func (e *testEventEmitter) EmitCustom(eventName string, data interface{})     {}
 
 func TestReadFileRegistration(t *testing.T) {
 	// Test that the tool is registered

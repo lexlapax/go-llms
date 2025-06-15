@@ -14,6 +14,7 @@ import (
 
 	tools "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	. "github.com/lexlapax/go-llms/pkg/agent/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 // Note: BraveSearchResponse, BraveResult, TavilySearchResponse, and TavilyResult
@@ -1011,7 +1012,7 @@ func TestWebSearchIntegrationWithEngineAPIKey(t *testing.T) {
 	ctx := NewToolContext(
 		context.Background(),
 		NewStateReader(NewState()),
-		&mockSearchAgent{},
+		mocks.NewMockAgent("Test Agent"),
 		"test-run",
 	)
 

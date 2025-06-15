@@ -10,18 +10,71 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
-	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
-// Helper function to create a minimal tool using the centralized mock
-func createMinimalTool(name, description string) *mocks.MockTool {
-	return mocks.NewMockTool(name, description).
-		WithExecutor(func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
-			return "minimal result", nil
-		})
+// Local mock tool implementation to avoid circular imports
+type mockTool struct {
+	name          string
+	description   string
+	category      string
+	tags          []string
+	version       string
+	usageInstr    string
+	examples      []domain.ToolExample
+	constraints   []string
+	errorGuidance map[string]string
+	paramSchema   *sdomain.Schema
+	outputSchema  *sdomain.Schema
+	executor      func(ctx *domain.ToolContext, params interface{}) (interface{}, error)
 }
 
-// Helper function to create a full-featured tool using the centralized mock
+func (m *mockTool) Name() string                     { return m.name }
+func (m *mockTool) Description() string              { return m.description }
+func (m *mockTool) Category() string                 { return m.category }
+func (m *mockTool) Tags() []string                   { return m.tags }
+func (m *mockTool) Version() string                  { return m.version }
+func (m *mockTool) UsageInstructions() string        { return m.usageInstr }
+func (m *mockTool) Examples() []domain.ToolExample   { return m.examples }
+func (m *mockTool) Constraints() []string            { return m.constraints }
+func (m *mockTool) ErrorGuidance() map[string]string { return m.errorGuidance }
+func (m *mockTool) ParameterSchema() *sdomain.Schema { return m.paramSchema }
+func (m *mockTool) OutputSchema() *sdomain.Schema    { return m.outputSchema }
+func (m *mockTool) IsDeterministic() bool            { return true }
+func (m *mockTool) IsDestructive() bool              { return false }
+func (m *mockTool) RequiresConfirmation() bool       { return false }
+func (m *mockTool) EstimatedLatency() string         { return "fast" }
+
+func (m *mockTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+	if m.executor != nil {
+		return m.executor(ctx, params)
+	}
+	return "default result", nil
+}
+
+func (m *mockTool) ToMCPDefinition() domain.MCPToolDefinition {
+	return domain.MCPToolDefinition{
+		Name:        m.name,
+		Description: m.description,
+		InputSchema: m.paramSchema,
+	}
+}
+
+// Helper function to create a minimal tool using local mock
+func createMinimalTool(name, description string) *mockTool {
+	return &mockTool{
+		name:          name,
+		description:   description,
+		category:      "test",
+		tags:          []string{"test"},
+		version:       "1.0.0",
+		errorGuidance: make(map[string]string),
+		executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+			return "minimal result", nil
+		},
+	}
+}
+
+// Helper function to create a full-featured tool using local mock
 func createFullTool(config struct {
 	name              string
 	description       string
@@ -38,18 +91,20 @@ func createFullTool(config struct {
 	isDestructive     bool
 	requiresConfirm   bool
 	estimatedLatency  string
-}) *mocks.MockTool {
-	tool := mocks.NewMockTool(config.name, config.description).
-		WithCategory(config.category).
-		WithTags(config.tags...).
-		WithVersion(config.version).
-		WithUsageInstructions(config.usageInstructions).
-		WithExamples(config.examples...).
-		WithConstraints(config.constraints...).
-		WithErrorGuidance(config.errorGuidance).
-		WithParameterSchema(config.parameterSchema).
-		WithOutputSchema(config.outputSchema).
-		WithExecutor(func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+}) *mockTool {
+	return &mockTool{
+		name:          config.name,
+		description:   config.description,
+		category:      config.category,
+		tags:          config.tags,
+		version:       config.version,
+		usageInstr:    config.usageInstructions,
+		examples:      config.examples,
+		constraints:   config.constraints,
+		errorGuidance: config.errorGuidance,
+		paramSchema:   config.parameterSchema,
+		outputSchema:  config.outputSchema,
+		executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 			// Simulate execution based on params
 			if paramsMap, ok := params.(map[string]interface{}); ok {
 				if paramsMap["error"] == true {
@@ -61,11 +116,8 @@ func createFullTool(config struct {
 				"result":  "success",
 				"message": "Tool executed successfully",
 			}, nil
-		})
-
-	// Override behavioral properties based on config
-	// Note: MockTool doesn't have setters for these, so we'll need to work with what's available
-	return tool
+		},
+	}
 }
 
 func TestToolInterface(t *testing.T) {
@@ -278,10 +330,12 @@ func TestToolInterface(t *testing.T) {
 	})
 
 	t.Run("MCP export functionality", func(t *testing.T) {
-		tool := mocks.NewMockTool("test_tool", "Test tool for MCP export").
-			WithCategory("test").
-			WithVersion("1.0.0").
-			WithParameterSchema(&sdomain.Schema{
+		tool := &mockTool{
+			name:        "test_tool",
+			description: "Test tool for MCP export",
+			category:    "test",
+			version:     "1.0.0",
+			paramSchema: &sdomain.Schema{
 				Type: "object",
 				Properties: map[string]sdomain.Property{
 					"input": {
@@ -289,8 +343,8 @@ func TestToolInterface(t *testing.T) {
 						Description: "Test input",
 					},
 				},
-			}).
-			WithOutputSchema(&sdomain.Schema{
+			},
+			outputSchema: &sdomain.Schema{
 				Type: "object",
 				Properties: map[string]sdomain.Property{
 					"output": {
@@ -298,7 +352,8 @@ func TestToolInterface(t *testing.T) {
 						Description: "Test output",
 					},
 				},
-			})
+			},
+		}
 
 		mcp := tool.ToMCPDefinition()
 
@@ -338,11 +393,13 @@ func TestToolInterface(t *testing.T) {
 	})
 
 	t.Run("tool error handling", func(t *testing.T) {
-		tool := mocks.NewMockTool("error_test_tool", "Error test tool").
-			WithErrorGuidance(map[string]string{
+		tool := &mockTool{
+			name:        "error_test_tool",
+			description: "Error test tool",
+			errorGuidance: map[string]string{
 				"simulated_error": "This is a simulated error for testing",
-			}).
-			WithExecutor(func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+			},
+			executor: func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 				if paramsMap, ok := params.(map[string]interface{}); ok {
 					if paramsMap["error"] == true {
 						return nil, domain.NewToolErrorWithGuidance("error_test_tool", "simulated_error",
@@ -350,7 +407,8 @@ func TestToolInterface(t *testing.T) {
 					}
 				}
 				return "success", nil
-			})
+			},
+		}
 
 		ctx := &domain.ToolContext{
 			Context: context.Background(),
@@ -387,8 +445,11 @@ func TestToolSchemaValidation(t *testing.T) {
 			Required: []string{"required_field"},
 		}
 
-		tool := mocks.NewMockTool("schema_test", "Schema test tool").
-			WithParameterSchema(schema)
+		tool := &mockTool{
+			name:        "schema_test",
+			description: "Schema test tool",
+			paramSchema: schema,
+		}
 
 		// Test schema is properly set
 		if tool.ParameterSchema() == nil {
@@ -428,8 +489,11 @@ func TestToolSchemaValidation(t *testing.T) {
 			Required: []string{"result"},
 		}
 
-		tool := mocks.NewMockTool("output_schema_test", "Output schema test tool").
-			WithOutputSchema(schema)
+		tool := &mockTool{
+			name:         "output_schema_test",
+			description:  "Output schema test tool",
+			outputSchema: schema,
+		}
 
 		// Test schema is properly set
 		if tool.OutputSchema() == nil {
@@ -448,11 +512,14 @@ func TestToolSchemaValidation(t *testing.T) {
 }
 
 func TestToolBehavioralMetadata(t *testing.T) {
-	// Note: MockTool has fixed behavioral properties, so we can only test the default behavior
+	// Note: mockTool has fixed behavioral properties, so we can only test the default behavior
 	t.Run("mock tool behavioral metadata", func(t *testing.T) {
-		tool := mocks.NewMockTool("behavioral_test", "Testing behavioral metadata")
+		tool := &mockTool{
+			name:        "behavioral_test",
+			description: "Testing behavioral metadata",
+		}
 
-		// MockTool always returns these fixed values
+		// mockTool always returns these fixed values
 		if !tool.IsDeterministic() {
 			t.Error("MockTool should be deterministic")
 		}

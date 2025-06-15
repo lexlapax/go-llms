@@ -52,19 +52,10 @@ func createTestToolContextForMove() *domain.ToolContext {
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
 
 	// Create a simple event emitter
-	tc = tc.WithEventEmitter(&testEventEmitterMove{})
+	tc = tc.WithEventEmitter(mocks.NewMockEventEmitter("test-agent", "Test Agent"))
 
 	return tc
 }
-
-// testEventEmitterMove implements EventEmitter for testing
-type testEventEmitterMove struct{}
-
-func (e *testEventEmitterMove) Emit(eventType domain.EventType, data interface{}) {}
-func (e *testEventEmitterMove) EmitProgress(current, total int, message string)   {}
-func (e *testEventEmitterMove) EmitMessage(message string)                        {}
-func (e *testEventEmitterMove) EmitError(err error)                               {}
-func (e *testEventEmitterMove) EmitCustom(eventName string, data interface{})     {}
 
 func TestFileMoveBasic(t *testing.T) {
 	tool := FileMove()

@@ -13,7 +13,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 // Helper to create test ToolContext
@@ -23,44 +23,10 @@ func createTestToolContextWithTimeout(timeout time.Duration) *domain.ToolContext
 	return domain.NewToolContext(
 		ctx,
 		domain.NewStateReader(domain.NewState()),
-		&mockSearchAgent{},
+		mocks.NewMockAgent("Test Agent"),
 		"test-run",
 	)
 }
-
-// mockSearchAgent implements the minimum required methods for BaseAgent
-type mockSearchAgent struct{}
-
-func (m *mockSearchAgent) ID() string                                { return "test-agent" }
-func (m *mockSearchAgent) Name() string                              { return "Test Agent" }
-func (m *mockSearchAgent) Description() string                       { return "Mock agent for testing" }
-func (m *mockSearchAgent) Type() domain.AgentType                    { return domain.AgentTypeCustom }
-func (m *mockSearchAgent) Parent() domain.BaseAgent                  { return nil }
-func (m *mockSearchAgent) SetParent(parent domain.BaseAgent) error   { return nil }
-func (m *mockSearchAgent) SubAgents() []domain.BaseAgent             { return nil }
-func (m *mockSearchAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
-func (m *mockSearchAgent) RemoveSubAgent(name string) error          { return nil }
-func (m *mockSearchAgent) FindAgent(name string) domain.BaseAgent    { return nil }
-func (m *mockSearchAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
-func (m *mockSearchAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
-	return nil, nil
-}
-func (m *mockSearchAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
-	return nil, nil
-}
-func (m *mockSearchAgent) Initialize(ctx context.Context) error                     { return nil }
-func (m *mockSearchAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
-func (m *mockSearchAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
-	return nil
-}
-func (m *mockSearchAgent) Cleanup(ctx context.Context) error                     { return nil }
-func (m *mockSearchAgent) InputSchema() *sdomain.Schema                          { return nil }
-func (m *mockSearchAgent) OutputSchema() *sdomain.Schema                         { return nil }
-func (m *mockSearchAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
-func (m *mockSearchAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return m }
-func (m *mockSearchAgent) Validate() error                                       { return nil }
-func (m *mockSearchAgent) Metadata() map[string]interface{}                      { return nil }
-func (m *mockSearchAgent) SetMetadata(key string, value interface{})             {}
 
 func TestWebSearchRegistration(t *testing.T) {
 	// Test that the tool is registered
@@ -330,7 +296,7 @@ func TestWebSearchWithCustomEngine(t *testing.T) {
 	ctx := domain.NewToolContext(
 		context.Background(),
 		domain.NewStateReader(state),
-		&mockSearchAgent{},
+		mocks.NewMockAgent("Test Agent"),
 		"test-run",
 	)
 
