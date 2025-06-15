@@ -10,7 +10,8 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
-	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/fixtures"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 func TestCreateProvider(t *testing.T) {
@@ -184,7 +185,7 @@ func TestCreateProvider(t *testing.T) {
 }
 
 func TestBatchGenerate(t *testing.T) {
-	mockProvider := provider.NewMockProvider()
+	mockProvider := fixtures.ChatGPTMockProvider()
 	prompts := []string{
 		"Prompt 1",
 		"Prompt 2",
@@ -216,7 +217,7 @@ func TestBatchGenerate(t *testing.T) {
 
 func TestGenerateWithRetry(t *testing.T) {
 	t.Run("Success on first try", func(t *testing.T) {
-		mockProvider := provider.NewMockProvider()
+		mockProvider := fixtures.ChatGPTMockProvider()
 		result, err := GenerateWithRetry(context.Background(), mockProvider, "Test prompt", 3)
 
 		if err != nil {
@@ -228,11 +229,11 @@ func TestGenerateWithRetry(t *testing.T) {
 	})
 
 	t.Run("Non-retryable error", func(t *testing.T) {
-		// Create a failing provider that returns a non-retryable error
-		failingProvider := &mockFailingProvider{
-			err:       domain.ErrInvalidModelParameters,
-			failCount: 1,
-		}
+		// Use error mock provider for non-retryable errors
+		failingProvider := mocks.NewMockProvider("failing-test")
+		failingProvider.WithDefaultResponse(mocks.Response{
+			Error: domain.ErrInvalidModelParameters,
+		})
 
 		_, err := GenerateWithRetry(context.Background(), failingProvider, "Test prompt", 3)
 		if err == nil {
@@ -242,9 +243,14 @@ func TestGenerateWithRetry(t *testing.T) {
 
 	t.Run("Retryable error with eventual success", func(t *testing.T) {
 		// Create a provider that fails with retryable errors but succeeds after N attempts
-		failingProvider := &mockFailingProvider{
-			err:       domain.ErrNetworkConnectivity,
-			failCount: 2, // Fail twice then succeed
+		var attempts int
+		failingProvider := mocks.NewMockProvider("retry-test")
+		failingProvider.OnGenerate = func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+			attempts++
+			if attempts <= 2 { // Fail twice then succeed
+				return "", domain.ErrNetworkConnectivity
+			}
+			return "Success after retries", nil
 		}
 
 		result, err := GenerateWithRetry(context.Background(), failingProvider, "Test prompt", 3)
@@ -258,9 +264,9 @@ func TestGenerateWithRetry(t *testing.T) {
 
 	t.Run("Retryable error with max retries exceeded", func(t *testing.T) {
 		// Create a provider that always fails with retryable errors
-		failingProvider := &mockFailingProvider{
-			err:       domain.ErrNetworkConnectivity,
-			failCount: 10, // More than max retries
+		failingProvider := mocks.NewMockProvider("retry-fail-test")
+		failingProvider.OnGenerate = func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+			return "", domain.ErrNetworkConnectivity
 		}
 
 		_, err := GenerateWithRetry(context.Background(), failingProvider, "Test prompt", 3)
@@ -322,63 +328,6 @@ func TestIsRetryableError(t *testing.T) {
 }
 
 // Helper functions for the test
-
-// Mock provider implementation for testing retries
-type mockFailingProvider struct {
-	attempts  int
-	failCount int
-	err       error
-}
-
-func (m *mockFailingProvider) Generate(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
-	m.attempts++
-	if m.attempts <= m.failCount {
-		return "", m.err
-	}
-	return "Success after retries", nil
-}
-
-func (m *mockFailingProvider) GenerateMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
-	result, err := m.Generate(ctx, "message-based", options...)
-	return domain.Response{Content: result}, err
-}
-
-func (m *mockFailingProvider) GenerateWithSchema(ctx context.Context, prompt string, schema *schemaDomain.Schema, options ...domain.Option) (interface{}, error) {
-	result, err := m.Generate(ctx, prompt, options...)
-	if err != nil {
-		return nil, err
-	}
-	return map[string]interface{}{"result": result}, nil
-}
-
-func (m *mockFailingProvider) Stream(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
-	_, err := m.Generate(ctx, prompt, options...)
-	if err != nil {
-		return nil, err
-	}
-	return makeMockStream("Success"), nil
-}
-
-func (m *mockFailingProvider) StreamMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.ResponseStream, error) {
-	_, err := m.Generate(ctx, "message-based", options...)
-	if err != nil {
-		return nil, err
-	}
-	return makeMockStream("Success"), nil
-}
-
-// Helper function to create a simple mock response stream
-func makeMockStream(content string) domain.ResponseStream {
-	ch := make(chan domain.Token, 1)
-
-	// Start a goroutine to send the content to the channel
-	go func() {
-		defer close(ch)
-		ch <- domain.Token{Text: content, Finished: true}
-	}()
-
-	return ch
-}
 
 func TestWithProviderOptions(t *testing.T) {
 	// Save original environment variables
@@ -732,7 +681,7 @@ func TestProviderFromEnv(t *testing.T) {
 }
 
 func TestGenerateWithOptions(t *testing.T) {
-	mockProvider := provider.NewMockProvider()
+	mockProvider := fixtures.ChatGPTMockProvider()
 	ctx := context.Background()
 	prompt := "Test prompt"
 	temperature := 0.7
@@ -749,7 +698,7 @@ func TestGenerateWithOptions(t *testing.T) {
 }
 
 func TestConcurrentStreamMessages(t *testing.T) {
-	mockProvider := provider.NewMockProvider()
+	mockProvider := fixtures.StreamingMockProvider()
 	messageGroups := [][]domain.Message{
 		{
 			domain.NewTextMessage(domain.RoleUser, "Message 1"),

@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
-	"github.com/lexlapax/go-llms/pkg/llm/provider"
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/fixtures"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 func TestNewProviderPool(t *testing.T) {
-	mockProvider1 := provider.NewMockProvider()
-	mockProvider2 := provider.NewMockProvider()
+	mockProvider1 := fixtures.ChatGPTMockProvider()
+	mockProvider2 := fixtures.ClaudeMockProvider()
 
 	providers := []domain.Provider{mockProvider1, mockProvider2}
 
@@ -66,11 +67,16 @@ func TestNewProviderPool(t *testing.T) {
 }
 
 func TestPoolGenerate(t *testing.T) {
-	mockProvider := provider.NewMockProvider()
+	mockProvider := fixtures.ChatGPTMockProvider()
 	// Create a provider that fails once then succeeds
-	successAfterFailProvider := &mockFailingProvider{
-		err:       domain.ErrNetworkConnectivity,
-		failCount: 1,
+	var attempts int
+	successAfterFailProvider := mocks.NewMockProvider("fail-then-succeed")
+	successAfterFailProvider.OnGenerate = func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+		attempts++
+		if attempts <= 1 {
+			return "", domain.ErrNetworkConnectivity
+		}
+		return "Success after failure", nil
 	}
 
 	t.Run("RoundRobin strategy with multiple providers", func(t *testing.T) {
@@ -133,10 +139,10 @@ func TestPoolGenerate(t *testing.T) {
 
 	t.Run("Failover strategy with no fallback", func(t *testing.T) {
 		// Create a provider that always fails
-		alwaysFailingProvider := &mockFailingProvider{
-			err:       domain.ErrNetworkConnectivity,
-			failCount: 9999, // Always fail
-		}
+		alwaysFailingProvider := mocks.NewMockProvider("always-fail")
+		alwaysFailingProvider.WithDefaultResponse(mocks.Response{
+			Error: domain.ErrNetworkConnectivity,
+		})
 		providers := []domain.Provider{alwaysFailingProvider}
 		pool := NewProviderPool(providers, StrategyFailover)
 
@@ -160,11 +166,16 @@ func TestPoolGenerate(t *testing.T) {
 }
 
 func TestPoolMessageGeneration(t *testing.T) {
-	mockProvider := provider.NewMockProvider()
+	mockProvider := fixtures.ChatGPTMockProvider()
 	// Create a provider that fails once then succeeds
-	successAfterFailProvider := &mockFailingProvider{
-		err:       domain.ErrNetworkConnectivity,
-		failCount: 1,
+	var attempts2 int
+	successAfterFailProvider := mocks.NewMockProvider("fail-then-succeed-messages")
+	successAfterFailProvider.OnGenerateMessage = func(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.Response, error) {
+		attempts2++
+		if attempts2 <= 1 {
+			return domain.Response{}, domain.ErrNetworkConnectivity
+		}
+		return domain.Response{Content: "Success after failure"}, nil
 	}
 
 	providers := []domain.Provider{mockProvider, successAfterFailProvider}
@@ -187,7 +198,7 @@ func TestPoolSchemaGeneration(t *testing.T) {
 	// Skip this test since we're having issues with the mock failing
 	t.Skip("Skipping schema generation test due to mock issues")
 
-	mockProvider := provider.NewMockProvider()
+	mockProvider := fixtures.ChatGPTMockProvider()
 
 	providers := []domain.Provider{mockProvider}
 	pool := NewProviderPool(providers, StrategyRoundRobin)
@@ -211,11 +222,21 @@ func TestPoolSchemaGeneration(t *testing.T) {
 }
 
 func TestPoolStreaming(t *testing.T) {
-	mockProvider := provider.NewMockProvider()
+	mockProvider := fixtures.StreamingMockProvider()
 	// Create a provider that fails once then succeeds
-	successAfterFailProvider := &mockFailingProvider{
-		err:       domain.ErrNetworkConnectivity,
-		failCount: 1,
+	var attempts3 int
+	successAfterFailProvider := mocks.NewMockProvider("fail-then-succeed-stream")
+	successAfterFailProvider.OnStream = func(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
+		attempts3++
+		if attempts3 <= 1 {
+			return nil, domain.ErrNetworkConnectivity
+		}
+		ch := make(chan domain.Token, 1)
+		go func() {
+			defer close(ch)
+			ch <- domain.Token{Text: "Success after failure", Finished: true}
+		}()
+		return ch, nil
 	}
 
 	t.Run("Stream", func(t *testing.T) {
@@ -276,8 +297,8 @@ func TestPoolStreaming(t *testing.T) {
 }
 
 func TestPoolProviderSelection(t *testing.T) {
-	mockProvider1 := provider.NewMockProvider()
-	mockProvider2 := provider.NewMockProvider()
+	mockProvider1 := fixtures.ChatGPTMockProvider()
+	mockProvider2 := fixtures.ClaudeMockProvider()
 	providers := []domain.Provider{mockProvider1, mockProvider2}
 
 	t.Run("getProvider with RoundRobin", func(t *testing.T) {
@@ -379,7 +400,7 @@ func TestPoolProviderSelection(t *testing.T) {
 }
 
 func TestPoolMetrics(t *testing.T) {
-	mockProvider := provider.NewMockProvider()
+	mockProvider := fixtures.ChatGPTMockProvider()
 	providers := []domain.Provider{mockProvider}
 	pool := NewProviderPool(providers, StrategyRoundRobin)
 

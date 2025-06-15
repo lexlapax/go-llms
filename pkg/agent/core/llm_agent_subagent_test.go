@@ -7,12 +7,14 @@ import (
 	"testing"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 func TestLLMAgent_SubAgentAutoToolRegistration(t *testing.T) {
 	// Test basic sub-agent addition
 	t.Run("Add single sub-agent", func(t *testing.T) {
-		provider := &mockProvider{response: "Response"}
+		provider := mocks.NewMockProvider("test-provider")
+		provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 		parentAgent := NewAgent("parent-agent", provider)
 
 		// Create a sub-agent
@@ -58,7 +60,8 @@ func TestLLMAgent_SubAgentAutoToolRegistration(t *testing.T) {
 
 	// Test multiple sub-agents
 	t.Run("Add multiple sub-agents", func(t *testing.T) {
-		provider := &mockProvider{response: "Response"}
+		provider := mocks.NewMockProvider("test-provider")
+		provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 		parentAgent := NewAgent("parent-agent", provider)
 
 		// Add first sub-agent
@@ -84,7 +87,8 @@ func TestLLMAgent_SubAgentAutoToolRegistration(t *testing.T) {
 
 	// Test sub-agent removal
 	t.Run("Remove sub-agents", func(t *testing.T) {
-		provider := &mockProvider{response: "Response"}
+		provider := mocks.NewMockProvider("test-provider")
+		provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 		parentAgent := NewAgent("parent-agent", provider)
 
 		// Add two sub-agents

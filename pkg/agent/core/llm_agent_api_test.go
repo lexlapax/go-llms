@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 func TestNewLLMAgentWithSubAgents(t *testing.T) {
@@ -16,7 +17,8 @@ func TestNewLLMAgentWithSubAgents(t *testing.T) {
 	subAgent2 := NewBaseAgent("sub2", "Sub Agent 2", domain.AgentTypeLLM)
 
 	// Create main agent with sub-agents
-	mockProv := &mockProvider{response: "test response"}
+	mockProv := mocks.NewMockProvider("test-provider")
+	mockProv.WithDefaultResponse(mocks.Response{Content: "test response"})
 	agent, err := NewLLMAgentWithSubAgents("main", mockProv, subAgent1, subAgent2)
 
 	if err != nil {
@@ -74,7 +76,8 @@ func TestNewLLMAgentWithSubAgentsFromString(t *testing.T) {
 
 func TestWithSubAgents(t *testing.T) {
 	// Create main agent
-	mockProv := &mockProvider{response: "test response"}
+	mockProv := mocks.NewMockProvider("test-provider")
+	mockProv.WithDefaultResponse(mocks.Response{Content: "test response"})
 	agent := NewAgent("main", mockProv)
 
 	// Create sub-agents
@@ -102,7 +105,8 @@ func TestWithSubAgents(t *testing.T) {
 
 func TestTransferTo(t *testing.T) {
 	// Create main agent
-	mockProv := &mockProvider{response: "test response"}
+	mockProv := mocks.NewMockProvider("test-provider")
+	mockProv.WithDefaultResponse(mocks.Response{Content: "test response"})
 	agent := NewAgent("main", mockProv)
 
 	// Create a mock sub-agent that returns specific output
@@ -174,7 +178,8 @@ func TestTransferTo(t *testing.T) {
 
 func TestGetSubAgentByName(t *testing.T) {
 	// Create main agent
-	mockProv := &mockProvider{response: "test response"}
+	mockProv := mocks.NewMockProvider("test-provider")
+	mockProv.WithDefaultResponse(mocks.Response{Content: "test response"})
 	agent := NewAgent("main", mockProv)
 
 	// Create and add sub-agents
@@ -206,7 +211,8 @@ func TestGetSubAgentByName(t *testing.T) {
 
 func TestDeclarativeAgentCreation(t *testing.T) {
 	// Test declarative creation with chaining
-	mockProv := &mockProvider{response: "test response"}
+	mockProv := mocks.NewMockProvider("test-provider")
+	mockProv.WithDefaultResponse(mocks.Response{Content: "test response"})
 
 	// Create sub-agents
 	calculator := NewBaseAgent("calculator", "Math Calculator", domain.AgentTypeLLM)

@@ -12,44 +12,11 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	ldomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
-// Mock Provider for testing
-type mockProvider struct {
-	response string
-	err      error
-}
-
-func (m *mockProvider) Generate(ctx context.Context, prompt string, options ...ldomain.Option) (string, error) {
-	if m.err != nil {
-		return "", m.err
-	}
-	return m.response, nil
-}
-
-func (m *mockProvider) GenerateMessage(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.Response, error) {
-	if m.err != nil {
-		return ldomain.Response{}, m.err
-	}
-	return ldomain.Response{Content: m.response}, nil
-}
-
-func (m *mockProvider) GenerateWithSchema(ctx context.Context, prompt string, schema *sdomain.Schema, options ...ldomain.Option) (any, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	return map[string]any{"result": m.response}, nil
-}
-
-func (m *mockProvider) Stream(ctx context.Context, prompt string, options ...ldomain.Option) (ldomain.ResponseStream, error) {
-	return nil, fmt.Errorf("streaming not implemented in mock")
-}
-
-func (m *mockProvider) StreamMessage(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.ResponseStream, error) {
-	return nil, fmt.Errorf("streaming not implemented in mock")
-}
+// Mock types for testing moved to use testutils/mocks infrastructure
 
 // Mock Tool for testing
 type mockTool struct {
@@ -162,7 +129,8 @@ func (t *mockTool) ToMCPDefinition() domain.MCPToolDefinition {
 
 // Test NewAgent factory function (excellent DX)
 func TestNewAgent(t *testing.T) {
-	provider := &mockProvider{response: "Hello"}
+	provider := mocks.NewMockProvider("test-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Hello"})
 
 	agent := NewAgent("test-agent", provider)
 
@@ -181,7 +149,8 @@ func TestNewAgent(t *testing.T) {
 
 // Test NewAgentWithLogger factory function
 func TestNewAgentWithLogger(t *testing.T) {
-	provider := &mockProvider{response: "Hello"}
+	provider := mocks.NewMockProvider("test-provider-with-logger")
+	provider.WithDefaultResponse(mocks.Response{Content: "Hello"})
 	logger := slog.Default()
 
 	agent := NewAgentWithLogger("test-agent", provider, logger)
@@ -197,7 +166,8 @@ func TestNewAgentWithLogger(t *testing.T) {
 
 // Test basic Run functionality
 func TestLLMAgent_Run(t *testing.T) {
-	provider := &mockProvider{response: "Hello, World!"}
+	provider := mocks.NewMockProvider("test-run-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Hello, World!"})
 	agent := NewAgent("test-agent", provider)
 
 	state := domain.NewState()
@@ -224,7 +194,8 @@ func TestLLMAgent_Run(t *testing.T) {
 
 // Test RunAsync functionality
 func TestLLMAgent_RunAsync(t *testing.T) {
-	provider := &mockProvider{response: "Async response"}
+	provider := mocks.NewMockProvider("test-async-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Async response"})
 	agent := NewAgent("test-agent", provider)
 
 	state := domain.NewState()
@@ -248,7 +219,8 @@ func TestLLMAgent_RunAsync(t *testing.T) {
 
 // Test tool integration
 func TestLLMAgent_WithTools(t *testing.T) {
-	provider := &mockProvider{response: `{"tool": "calculator", "params": {"a": 2, "b": 2}}`}
+	provider := mocks.NewMockProvider("test-tools-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: `{"tool": "calculator", "params": {"a": 2, "b": 2}}`})
 	tool := &mockTool{
 		name:        "calculator",
 		description: "Simple calculator",
@@ -282,7 +254,8 @@ func TestLLMAgent_WithTools(t *testing.T) {
 
 // Test system prompt configuration
 func TestLLMAgent_SetSystemPrompt(t *testing.T) {
-	provider := &mockProvider{response: "Response"}
+	provider := mocks.NewMockProvider("test-system-prompt-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 	agent := NewAgent("test-agent", provider).
 		SetSystemPrompt("You are a helpful assistant")
 
@@ -295,7 +268,8 @@ func TestLLMAgent_SetSystemPrompt(t *testing.T) {
 
 // Test model configuration
 func TestLLMAgent_WithModel(t *testing.T) {
-	provider := &mockProvider{response: "Response"}
+	provider := mocks.NewMockProvider("test-model-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 	agent := NewAgent("test-agent", provider).
 		WithModel("gpt-4")
 
@@ -306,7 +280,8 @@ func TestLLMAgent_WithModel(t *testing.T) {
 
 // Test input guardrails
 func TestLLMAgent_WithInputGuardrails(t *testing.T) {
-	provider := &mockProvider{response: "Response"}
+	provider := mocks.NewMockProvider("test-guardrails-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 	guardrail := domain.RequiredKeysGuardrail("input-validation", "prompt")
 
 	agent := NewAgent("test-agent", provider).
@@ -336,7 +311,8 @@ func TestLLMAgent_WithInputGuardrails(t *testing.T) {
 
 // Test output guardrails
 func TestLLMAgent_WithOutputGuardrails(t *testing.T) {
-	provider := &mockProvider{response: "Valid response"}
+	provider := mocks.NewMockProvider("test-output-guardrails-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Valid response"})
 	guardrail := domain.RequiredKeysGuardrail("output-validation", "result")
 
 	agent := NewAgent("test-agent", provider).
@@ -356,7 +332,8 @@ func TestLLMAgent_WithOutputGuardrails(t *testing.T) {
 
 // Test state transforms
 func TestLLMAgent_WithStateTransforms(t *testing.T) {
-	provider := &mockProvider{response: "Transformed response"}
+	provider := mocks.NewMockProvider("test-transforms-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Transformed response"})
 
 	// Create a simple transform that adds metadata
 	inputTransform := func(ctx context.Context, state *domain.State) (*domain.State, error) {
@@ -385,7 +362,8 @@ func TestLLMAgent_WithStateTransforms(t *testing.T) {
 
 // Test handoff capability
 func TestLLMAgent_WithHandoff(t *testing.T) {
-	provider := &mockProvider{response: "Response"}
+	provider := mocks.NewMockProvider("test-handoff-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 	handoff := domain.NewSimpleHandoff("test-handoff", "target-agent")
 
 	agent := NewAgent("test-agent", provider).
@@ -403,7 +381,8 @@ func TestLLMAgent_WithHandoff(t *testing.T) {
 
 // Test tracing integration
 func TestLLMAgent_WithTracing(t *testing.T) {
-	provider := &mockProvider{response: "Response"}
+	provider := mocks.NewMockProvider("test-tracing-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 	mockTracer := &mockTracerImpl{}
 	tracingHook := NewTracingHook("test-tracer", mockTracer)
 
@@ -430,7 +409,8 @@ func TestLLMAgent_WithTracing(t *testing.T) {
 
 // Test event stream integration
 func TestLLMAgent_WithEventStream(t *testing.T) {
-	provider := &mockProvider{response: "Response"}
+	provider := mocks.NewMockProvider("test-event-stream-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 
 	eventChan := make(chan domain.Event, 10)
 	eventStream := domain.NewFunctionalEventStream(context.Background(), eventChan)
@@ -445,7 +425,10 @@ func TestLLMAgent_WithEventStream(t *testing.T) {
 
 // Test error handling
 func TestLLMAgent_ErrorHandling(t *testing.T) {
-	provider := &mockProvider{err: fmt.Errorf("provider error")}
+	provider := mocks.NewMockProvider("test-error-provider")
+	provider.WithDefaultResponse(mocks.Response{
+		Error: fmt.Errorf("provider error"),
+	})
 	agent := NewAgent("test-agent", provider)
 
 	state := domain.NewState()
@@ -463,7 +446,9 @@ func TestLLMAgent_ErrorHandling(t *testing.T) {
 
 // Test prompt extraction strategies
 func TestLLMAgent_PromptExtraction(t *testing.T) {
-	agent := NewAgent("test-agent", &mockProvider{})
+	provider := mocks.NewMockProvider("test-prompt-extraction")
+	provider.WithDefaultResponse(mocks.Response{Content: "test"})
+	agent := NewAgent("test-agent", provider)
 
 	tests := []struct {
 		name     string
@@ -509,7 +494,9 @@ func TestLLMAgent_PromptExtraction(t *testing.T) {
 // Test tool call extraction
 
 func TestLLMAgent_ToolCallExtraction(t *testing.T) {
-	agent := NewAgent("test-agent", &mockProvider{})
+	provider := mocks.NewMockProvider("test-tool-extraction")
+	provider.WithDefaultResponse(mocks.Response{Content: "test"})
+	agent := NewAgent("test-agent", provider)
 
 	tests := []struct {
 		name     string
@@ -589,7 +576,8 @@ func (s *mockTestSpan) IsRecording() bool                             { return t
 
 // Benchmark tests
 func BenchmarkLLMAgent_Run(b *testing.B) {
-	provider := &mockProvider{response: "Benchmark response"}
+	provider := mocks.NewMockProvider("benchmark-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Benchmark response"})
 	agent := NewAgent("benchmark-agent", provider)
 
 	state := domain.NewState()
@@ -605,7 +593,8 @@ func BenchmarkLLMAgent_Run(b *testing.B) {
 }
 
 func BenchmarkLLMAgent_RunWithTools(b *testing.B) {
-	provider := &mockProvider{response: `{"tool": "calculator", "params": {"a": 1, "b": 2}}`}
+	provider := mocks.NewMockProvider("benchmark-tools-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: `{"tool": "calculator", "params": {"a": 1, "b": 2}}`})
 	tool := &mockTool{name: "calculator", result: "3"}
 
 	agent := NewAgent("benchmark-agent", provider).AddTool(tool)
@@ -624,7 +613,8 @@ func BenchmarkLLMAgent_RunWithTools(b *testing.B) {
 
 // Test enhanced system content generation with full tool metadata
 func TestLLMAgent_EnhancedSystemContent(t *testing.T) {
-	provider := &mockProvider{response: "Response"}
+	provider := mocks.NewMockProvider("test-enhanced-system-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 
 	// Create a tool with full metadata
 	tool := &mockTool{
@@ -744,7 +734,8 @@ func TestLLMAgent_EnhancedSystemContent(t *testing.T) {
 
 // Test system content with multiple tools
 func TestLLMAgent_SystemContentMultipleTools(t *testing.T) {
-	provider := &mockProvider{response: "Response"}
+	provider := mocks.NewMockProvider("test-multiple-tools-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 
 	tool1 := &mockTool{
 		name:        "tool1",
@@ -779,7 +770,8 @@ func TestLLMAgent_SystemContentMultipleTools(t *testing.T) {
 
 // Test system content caching
 func TestLLMAgent_SystemContentCaching(t *testing.T) {
-	provider := &mockProvider{response: "Response"}
+	provider := mocks.NewMockProvider("test-caching-provider")
+	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 
 	tool := &mockTool{
 		name:        "test_tool",
