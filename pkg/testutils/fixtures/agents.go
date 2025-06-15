@@ -232,3 +232,339 @@ func StatefulMockAgent() *mocks.MockAgent {
 
 	return agent
 }
+
+// ComplexWorkflowMockAgent creates a mock agent that simulates complex workflow execution
+func ComplexWorkflowMockAgent() *mocks.MockAgent {
+	agent := mocks.NewMockAgent("complex_workflow_agent")
+
+	agent.OnRun = func(ctx context.Context, input *domain.State) (*domain.State, error) {
+		workflowType := "multi_step"
+		if input != nil {
+			if workflowData, exists := input.Get("workflow_type"); exists && workflowData != nil {
+				workflowType = fmt.Sprintf("%v", workflowData)
+			}
+		}
+
+		// Create comprehensive workflow result state
+		result := domain.NewState()
+		result.Set("type", "complex_workflow")
+		result.Set("workflow_type", workflowType)
+		result.Set("status", "completed")
+		result.Set("total_duration", "5.2s")
+
+		// Simulate complex workflow with multiple phases
+		var phases []map[string]interface{}
+
+		switch workflowType {
+		case "research_analysis":
+			phases = []map[string]interface{}{
+				{
+					"phase":       "data_collection",
+					"description": "Gather research data from multiple sources",
+					"status":      "completed",
+					"duration":    "1.2s",
+					"tools_used":  []string{"web_search", "document_reader"},
+					"output_size": 1024,
+				},
+				{
+					"phase":       "analysis",
+					"description": "Analyze collected data for patterns",
+					"status":      "completed",
+					"duration":    "2.1s",
+					"tools_used":  []string{"data_processor", "statistical_analyzer"},
+					"output_size": 2048,
+				},
+				{
+					"phase":       "synthesis",
+					"description": "Synthesize findings into report",
+					"status":      "completed",
+					"duration":    "1.5s",
+					"tools_used":  []string{"report_generator", "formatter"},
+					"output_size": 4096,
+				},
+				{
+					"phase":       "validation",
+					"description": "Validate results and conclusions",
+					"status":      "completed",
+					"duration":    "0.4s",
+					"tools_used":  []string{"validator", "fact_checker"},
+					"output_size": 512,
+				},
+			}
+
+		case "content_creation":
+			phases = []map[string]interface{}{
+				{
+					"phase":       "planning",
+					"description": "Plan content structure and outline",
+					"status":      "completed",
+					"duration":    "0.8s",
+					"tools_used":  []string{"outliner", "planner"},
+					"output_size": 256,
+				},
+				{
+					"phase":       "research",
+					"description": "Research topic and gather references",
+					"status":      "completed",
+					"duration":    "1.8s",
+					"tools_used":  []string{"web_search", "reference_manager"},
+					"output_size": 1536,
+				},
+				{
+					"phase":       "writing",
+					"description": "Generate content based on plan and research",
+					"status":      "completed",
+					"duration":    "2.2s",
+					"tools_used":  []string{"content_generator", "editor"},
+					"output_size": 8192,
+				},
+				{
+					"phase":       "review",
+					"description": "Review and refine generated content",
+					"status":      "completed",
+					"duration":    "0.4s",
+					"tools_used":  []string{"grammar_checker", "style_checker"},
+					"output_size": 512,
+				},
+			}
+
+		case "problem_solving":
+			phases = []map[string]interface{}{
+				{
+					"phase":       "problem_definition",
+					"description": "Define and understand the problem scope",
+					"status":      "completed",
+					"duration":    "0.6s",
+					"tools_used":  []string{"problem_analyzer"},
+					"output_size": 384,
+				},
+				{
+					"phase":       "solution_generation",
+					"description": "Generate multiple solution approaches",
+					"status":      "completed",
+					"duration":    "1.8s",
+					"tools_used":  []string{"brainstormer", "solution_generator"},
+					"output_size": 2048,
+				},
+				{
+					"phase":       "evaluation",
+					"description": "Evaluate and rank potential solutions",
+					"status":      "completed",
+					"duration":    "1.2s",
+					"tools_used":  []string{"evaluator", "ranker"},
+					"output_size": 1024,
+				},
+				{
+					"phase":       "implementation_plan",
+					"description": "Create implementation plan for best solution",
+					"status":      "completed",
+					"duration":    "1.6s",
+					"tools_used":  []string{"planner", "timeline_generator"},
+					"output_size": 1536,
+				},
+			}
+
+		default:
+			phases = []map[string]interface{}{
+				{
+					"phase":       "initialization",
+					"description": "Initialize workflow components",
+					"status":      "completed",
+					"duration":    "0.3s",
+					"tools_used":  []string{"initializer"},
+					"output_size": 128,
+				},
+				{
+					"phase":       "processing",
+					"description": "Process input through workflow",
+					"status":      "completed",
+					"duration":    "2.0s",
+					"tools_used":  []string{"processor", "transformer"},
+					"output_size": 1024,
+				},
+				{
+					"phase":       "finalization",
+					"description": "Finalize workflow output",
+					"status":      "completed",
+					"duration":    "0.5s",
+					"tools_used":  []string{"finalizer"},
+					"output_size": 256,
+				},
+			}
+		}
+
+		result.Set("phases", phases)
+
+		// Set aggregate metrics
+		totalOutputSize := 0
+		for _, phase := range phases {
+			if size, ok := phase["output_size"].(int); ok {
+				totalOutputSize += size
+			}
+		}
+
+		metrics := map[string]interface{}{
+			"total_phases":   len(phases),
+			"total_tools":    getUniqueToolCount(phases),
+			"total_output":   totalOutputSize,
+			"success_rate":   1.0,
+			"efficiency":     "high",
+			"resource_usage": "moderate",
+		}
+		result.Set("metrics", metrics)
+
+		// Set final summary
+		summary := map[string]interface{}{
+			"workflow_completed": true,
+			"quality_score":      0.95,
+			"recommendations":    []string{"Workflow executed successfully", "All phases completed within expected timeframes"},
+		}
+		result.Set("summary", summary)
+
+		return result, nil
+	}
+
+	return agent
+}
+
+// ConcurrentMockAgent creates a mock agent that simulates concurrent operations
+func ConcurrentMockAgent() *mocks.MockAgent {
+	agent := mocks.NewMockAgent("concurrent_agent")
+
+	// Simulate concurrent execution tracking
+	var executionCounter int64 = 0
+
+	agent.OnRun = func(ctx context.Context, input *domain.State) (*domain.State, error) {
+		// Increment counter atomically (simplified for mock)
+		executionCounter++
+		currentExecution := executionCounter
+
+		// Get concurrency level from input
+		concurrencyLevel := 1
+		if input != nil {
+			if level, exists := input.Get("concurrency_level"); exists {
+				if levelInt, ok := level.(int); ok {
+					concurrencyLevel = levelInt
+				}
+			}
+		}
+
+		// Create result state
+		result := domain.NewState()
+		result.Set("execution_id", currentExecution)
+		result.Set("agent_type", "concurrent")
+		result.Set("concurrency_level", concurrencyLevel)
+		result.Set("status", "completed")
+
+		// Simulate concurrent operations
+		operations := make([]map[string]interface{}, concurrencyLevel)
+		for i := 0; i < concurrencyLevel; i++ {
+			operations[i] = map[string]interface{}{
+				"operation_id": fmt.Sprintf("op_%d_%d", currentExecution, i+1),
+				"status":       "completed",
+				"duration":     fmt.Sprintf("0.%ds", (i%5)+1),
+				"result":       fmt.Sprintf("Result from operation %d", i+1),
+				"thread_id":    fmt.Sprintf("thread_%d", i+1),
+			}
+		}
+
+		result.Set("operations", operations)
+		result.Set("total_operations", len(operations))
+
+		// Set execution metadata
+		metadata := map[string]interface{}{
+			"execution_time":  "1.2s",
+			"memory_usage":    "moderate",
+			"cpu_utilization": "75%",
+			"success_rate":    100.0,
+		}
+		result.Set("execution_metadata", metadata)
+
+		return result, nil
+	}
+
+	return agent
+}
+
+// ErrorRecoveryMockAgent creates a mock agent that simulates error recovery scenarios
+func ErrorRecoveryMockAgent() *mocks.MockAgent {
+	agent := mocks.NewMockAgent("error_recovery_agent")
+
+	// Track recovery attempts
+	var recoveryAttempts = 0
+
+	agent.OnRun = func(ctx context.Context, input *domain.State) (*domain.State, error) {
+		// Get error simulation settings
+		shouldSimulateError := false
+		errorType := "none"
+		maxRetries := 3
+
+		if input != nil {
+			if simulate, exists := input.Get("simulate_error"); exists {
+				shouldSimulateError = simulate.(bool)
+			}
+			if errType, exists := input.Get("error_type"); exists {
+				errorType = errType.(string)
+			}
+			if retries, exists := input.Get("max_retries"); exists {
+				maxRetries = retries.(int)
+			}
+		}
+
+		// Create result state
+		result := domain.NewState()
+		result.Set("agent_type", "error_recovery")
+		result.Set("recovery_attempts", recoveryAttempts)
+
+		if shouldSimulateError && recoveryAttempts < maxRetries {
+			recoveryAttempts++
+			result.Set("status", "error_occurred")
+			result.Set("error_type", errorType)
+			result.Set("recovery_strategy", "retry_with_backoff")
+			result.Set("next_retry_delay", fmt.Sprintf("%ds", recoveryAttempts))
+
+			// Return error based on type
+			switch errorType {
+			case "network":
+				return result, fmt.Errorf("network error: connection timeout after %d attempts", recoveryAttempts)
+			case "validation":
+				return result, fmt.Errorf("validation error: invalid input format (attempt %d)", recoveryAttempts)
+			case "resource":
+				return result, fmt.Errorf("resource error: insufficient memory (attempt %d)", recoveryAttempts)
+			default:
+				return result, fmt.Errorf("unknown error occurred (attempt %d)", recoveryAttempts)
+			}
+		}
+
+		// Successful execution (either no error or recovered)
+		recoveryAttempts = 0
+		result.Set("status", "completed")
+		result.Set("recovery_successful", true)
+
+		// Set recovery statistics
+		recoveryStats := map[string]interface{}{
+			"total_attempts":    recoveryAttempts + 1,
+			"recovery_time":     fmt.Sprintf("0.%ds", recoveryAttempts*2),
+			"error_resolved":    shouldSimulateError,
+			"recovery_strategy": "retry_with_exponential_backoff",
+		}
+		result.Set("recovery_stats", recoveryStats)
+
+		return result, nil
+	}
+
+	return agent
+}
+
+// Helper function to count unique tools across workflow phases
+func getUniqueToolCount(phases []map[string]interface{}) int {
+	toolSet := make(map[string]bool)
+	for _, phase := range phases {
+		if tools, ok := phase["tools_used"].([]string); ok {
+			for _, tool := range tools {
+				toolSet[tool] = true
+			}
+		}
+	}
+	return len(toolSet)
+}

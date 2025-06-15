@@ -19,32 +19,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Mock implementations for testing
-
-type mockAgent struct {
-	*core.BaseAgentImpl
-	runFunc      func(ctx context.Context, state *domain.State) (*domain.State, error)
-	inputSchema  *sdomain.Schema
-	outputSchema *sdomain.Schema
-}
-
-func (m *mockAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
-	if m.runFunc != nil {
-		return m.runFunc(ctx, state)
-	}
-	return state, nil
-}
-
-func (m *mockAgent) InputSchema() *sdomain.Schema  { return m.inputSchema }
-func (m *mockAgent) OutputSchema() *sdomain.Schema { return m.outputSchema }
+// Mock implementations for testing - using centralized mocks
 
 // Tests
 
 func TestRegisterAgentAsTool(t *testing.T) {
 	// Create a mock agent
-	agent := &mockAgent{
-		BaseAgentImpl: core.NewBaseAgent("test-agent", "Test agent", domain.AgentTypeCustom),
-	}
+	agent := mocks.NewMockAgent("test-agent")
+	agent.AgentDescription = "Test agent"
+	agent.AgentType = domain.AgentTypeCustom
 
 	// Create a registry
 	registry := builtins.NewRegistry[domain.Tool]()
@@ -62,9 +45,9 @@ func TestRegisterAgentAsTool(t *testing.T) {
 }
 
 func TestRegisterAgentAsToolWithPrefix(t *testing.T) {
-	agent := &mockAgent{
-		BaseAgentImpl: core.NewBaseAgent("calculator", "Calculator agent", domain.AgentTypeCustom),
-	}
+	agent := mocks.NewMockAgent("calculator")
+	agent.AgentDescription = "Calculator agent"
+	agent.AgentType = domain.AgentTypeCustom
 
 	registry := builtins.NewRegistry[domain.Tool]()
 
@@ -158,9 +141,9 @@ func TestNewToolAgentWithEvents(t *testing.T) {
 }
 
 func TestCreateEventForwardingToolContext(t *testing.T) {
-	agent := &mockAgent{
-		BaseAgentImpl: core.NewBaseAgent("test", "Test", domain.AgentTypeCustom),
-	}
+	agent := mocks.NewMockAgent("test")
+	agent.AgentDescription = "Test"
+	agent.AgentType = domain.AgentTypeCustom
 
 	dispatcher := core.NewEventDispatcher(10)
 	defer dispatcher.Close() // Properly close the dispatcher
@@ -199,10 +182,10 @@ func TestDeriveToolSchemaFromAgent(t *testing.T) {
 		Required: []string{"name"},
 	}
 
-	agent := &mockAgent{
-		BaseAgentImpl: core.NewBaseAgent("test", "Test", domain.AgentTypeCustom),
-		inputSchema:   inputSchema,
-	}
+	agent := mocks.NewMockAgent("test")
+	agent.AgentDescription = "Test"
+	agent.AgentType = domain.AgentTypeCustom
+	agent.InputSchemaVal = inputSchema
 
 	toolSchema := DeriveToolSchemaFromAgent(agent)
 	assert.NotNil(t, toolSchema)
@@ -282,22 +265,22 @@ func TestWrapLLMAgentAsTool(t *testing.T) {
 
 func TestCreateToolChainFromAgents(t *testing.T) {
 	// Create test agents
-	agent1 := &mockAgent{
-		BaseAgentImpl: core.NewBaseAgent("agent1", "Agent 1", domain.AgentTypeCustom),
-		runFunc: func(ctx context.Context, state *domain.State) (*domain.State, error) {
-			newState := state.Clone()
-			newState.Set("step1", "completed")
-			return newState, nil
-		},
+	agent1 := mocks.NewMockAgent("agent1")
+	agent1.AgentDescription = "Agent 1"
+	agent1.AgentType = domain.AgentTypeCustom
+	agent1.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		newState := state.Clone()
+		newState.Set("step1", "completed")
+		return newState, nil
 	}
 
-	agent2 := &mockAgent{
-		BaseAgentImpl: core.NewBaseAgent("agent2", "Agent 2", domain.AgentTypeCustom),
-		runFunc: func(ctx context.Context, state *domain.State) (*domain.State, error) {
-			newState := state.Clone()
-			newState.Set("step2", "completed")
-			return newState, nil
-		},
+	agent2 := mocks.NewMockAgent("agent2")
+	agent2.AgentDescription = "Agent 2"
+	agent2.AgentType = domain.AgentTypeCustom
+	agent2.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		newState := state.Clone()
+		newState.Set("step2", "completed")
+		return newState, nil
 	}
 
 	// Create chain tool
@@ -307,9 +290,9 @@ func TestCreateToolChainFromAgents(t *testing.T) {
 
 	// Execute the chain
 	// Create a minimal agent for the tool context
-	minAgent := &mockAgent{
-		BaseAgentImpl: core.NewBaseAgent("test", "Test", domain.AgentTypeCustom),
-	}
+	minAgent := mocks.NewMockAgent("test")
+	minAgent.AgentDescription = "Test"
+	minAgent.AgentType = domain.AgentTypeCustom
 	ctx := domain.NewToolContext(context.Background(), nil, minAgent, "test-run")
 	result, err := chainTool.Execute(ctx, map[string]interface{}{})
 	assert.NoError(t, err)
@@ -322,9 +305,9 @@ func TestCreateToolChainFromAgents(t *testing.T) {
 }
 
 func TestRoundTripConvert(t *testing.T) {
-	originalAgent := &mockAgent{
-		BaseAgentImpl: core.NewBaseAgent("test-agent", "Test agent", domain.AgentTypeCustom),
-	}
+	originalAgent := mocks.NewMockAgent("test-agent")
+	originalAgent.AgentDescription = "Test agent"
+	originalAgent.AgentType = domain.AgentTypeCustom
 
 	// Do round trip conversion
 	resultAgent, err := RoundTripConvert(originalAgent)
@@ -449,9 +432,9 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("RegisterAgentAsTool with nil registry", func(t *testing.T) {
-		agent := &mockAgent{
-			BaseAgentImpl: core.NewBaseAgent("test", "Test", domain.AgentTypeCustom),
-		}
+		agent := mocks.NewMockAgent("test")
+		agent.AgentDescription = "Test"
+		agent.AgentType = domain.AgentTypeCustom
 		err := RegisterAgentAsTool(agent, nil)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "registry cannot be nil")
@@ -466,17 +449,17 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("CreateToolChainFromAgents with failing agent", func(t *testing.T) {
-		failingAgent := &mockAgent{
-			BaseAgentImpl: core.NewBaseAgent("failing", "Failing", domain.AgentTypeCustom),
-			runFunc: func(ctx context.Context, state *domain.State) (*domain.State, error) {
-				return nil, errors.New("agent failed")
-			},
+		failingAgent := mocks.NewMockAgent("failing")
+		failingAgent.AgentDescription = "Failing"
+		failingAgent.AgentType = domain.AgentTypeCustom
+		failingAgent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+			return nil, errors.New("agent failed")
 		}
 
 		chainTool := CreateToolChainFromAgents(failingAgent)
-		minAgent := &mockAgent{
-			BaseAgentImpl: core.NewBaseAgent("test", "Test", domain.AgentTypeCustom),
-		}
+		minAgent := mocks.NewMockAgent("test")
+		minAgent.AgentDescription = "Test"
+		minAgent.AgentType = domain.AgentTypeCustom
 		ctx := domain.NewToolContext(context.Background(), nil, minAgent, "test")
 
 		_, err := chainTool.Execute(ctx, map[string]interface{}{})

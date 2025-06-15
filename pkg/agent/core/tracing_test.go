@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 // Mock implementations for testing
@@ -70,94 +70,7 @@ func (t *mockTracer) Start(ctx context.Context, name string, opts ...SpanOption)
 	return ContextWithSpan(ctx, span), span
 }
 
-// mockAgent implements domain.BaseAgent for testing
-type mockAgent struct {
-	id          string
-	name        string
-	agentType   domain.AgentType
-	description string
-	parent      domain.BaseAgent
-	subAgents   []domain.BaseAgent
-	config      domain.AgentConfig
-	metadata    map[string]interface{}
-}
-
-func (a *mockAgent) ID() string               { return a.id }
-func (a *mockAgent) Name() string             { return a.name }
-func (a *mockAgent) Type() domain.AgentType   { return a.agentType }
-func (a *mockAgent) Description() string      { return a.description }
-func (a *mockAgent) Parent() domain.BaseAgent { return a.parent }
-func (a *mockAgent) SetParent(p domain.BaseAgent) error {
-	a.parent = p
-	return nil
-}
-func (a *mockAgent) SubAgents() []domain.BaseAgent { return a.subAgents }
-func (a *mockAgent) AddSubAgent(s domain.BaseAgent) error {
-	a.subAgents = append(a.subAgents, s)
-	return nil
-}
-func (a *mockAgent) RemoveSubAgent(name string) error {
-	for i, sub := range a.subAgents {
-		if sub.Name() == name {
-			a.subAgents = append(a.subAgents[:i], a.subAgents[i+1:]...)
-			break
-		}
-	}
-	return nil
-}
-func (a *mockAgent) FindAgent(name string) domain.BaseAgent {
-	if a.name == name {
-		return a
-	}
-	for _, sub := range a.subAgents {
-		if found := sub.FindAgent(name); found != nil {
-			return found
-		}
-	}
-	return nil
-}
-func (a *mockAgent) FindSubAgent(name string) domain.BaseAgent {
-	for _, sub := range a.subAgents {
-		if sub.Name() == name {
-			return sub
-		}
-	}
-	return nil
-}
-func (a *mockAgent) Initialize(ctx context.Context) error { return nil }
-func (a *mockAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
-	return state, nil
-}
-func (a *mockAgent) RunAsync(ctx context.Context, state *domain.State) (<-chan domain.Event, error) {
-	ch := make(chan domain.Event)
-	close(ch)
-	return ch, nil
-}
-func (a *mockAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
-func (a *mockAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
-	return nil
-}
-func (a *mockAgent) Cleanup(ctx context.Context) error { return nil }
-func (a *mockAgent) InputSchema() *sdomain.Schema      { return nil }
-func (a *mockAgent) OutputSchema() *sdomain.Schema     { return nil }
-func (a *mockAgent) Config() domain.AgentConfig        { return a.config }
-func (a *mockAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent {
-	a.config = config
-	return a
-}
-func (a *mockAgent) Validate() error { return nil }
-func (a *mockAgent) Metadata() map[string]interface{} {
-	if a.metadata == nil {
-		a.metadata = make(map[string]interface{})
-	}
-	return a.metadata
-}
-func (a *mockAgent) SetMetadata(key string, value interface{}) {
-	if a.metadata == nil {
-		a.metadata = make(map[string]interface{})
-	}
-	a.metadata[key] = value
-}
+// mockAgent implementations migrated to use centralized mocks.MockAgent
 
 // Tests
 
@@ -165,11 +78,9 @@ func TestTracingHook(t *testing.T) {
 	tracer := &mockTracer{}
 	hook := NewTracingHook("test-tracer", tracer)
 
-	agent := &mockAgent{
-		id:        "test-agent",
-		name:      "TestAgent",
-		agentType: domain.AgentTypeLLM,
-	}
+	agent := mocks.NewMockAgent("TestAgent")
+	agent.AgentID = "test-agent"
+	agent.AgentType = domain.AgentTypeLLM
 
 	state := domain.NewState()
 	state.Set("test", "value")
@@ -366,7 +277,9 @@ func TestCompositeTracingHook(t *testing.T) {
 	}
 
 	// Test that they all use the same tracer
-	agent := &mockAgent{id: "test", name: "Test", agentType: domain.AgentTypeLLM}
+	agent := mocks.NewMockAgent("Test")
+	agent.AgentID = "test"
+	agent.AgentType = domain.AgentTypeLLM
 	state := domain.NewState()
 
 	ctx := context.Background()
@@ -476,12 +389,10 @@ func TestHelperFunctions(t *testing.T) {
 	}
 
 	// Test AddAgentAttributes
-	agent := &mockAgent{
-		id:          "test-agent",
-		name:        "TestAgent",
-		agentType:   domain.AgentTypeLLM,
-		description: "Test agent",
-	}
+	agent := mocks.NewMockAgent("TestAgent")
+	agent.AgentID = "test-agent"
+	agent.AgentType = domain.AgentTypeLLM
+	agent.AgentDescription = "Test agent"
 
 	AddAgentAttributes(span, agent)
 
@@ -543,11 +454,9 @@ func TestInitializeAndCleanupHooks(t *testing.T) {
 	tracer := &mockTracer{}
 	hook := NewTracingHook("test-tracer", tracer)
 
-	agent := &mockAgent{
-		id:        "test-agent",
-		name:      "TestAgent",
-		agentType: domain.AgentTypeLLM,
-	}
+	agent := mocks.NewMockAgent("TestAgent")
+	agent.AgentID = "test-agent"
+	agent.AgentType = domain.AgentTypeLLM
 
 	ctx := context.Background()
 
