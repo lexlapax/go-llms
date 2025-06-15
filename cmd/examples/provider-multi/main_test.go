@@ -7,19 +7,20 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
+	"github.com/lexlapax/go-llms/pkg/testutils/fixtures"
 	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 // TestMultiProviderFastest tests the fastest strategy of MultiProvider
 func TestMultiProviderFastest(t *testing.T) {
 	// Create mock providers with different latencies
-	fastProvider := mocks.NewMockProvider("fast")
+	fastProvider := fixtures.BasicMockProviderWithContent("Fast provider response")
 	fastProvider.OnGenerate = func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
 		time.Sleep(10 * time.Millisecond)
 		return "Fast provider response", nil
 	}
 
-	slowProvider := mocks.NewMockProvider("slow")
+	slowProvider := fixtures.SlowMockProvider(30 * time.Millisecond)
 	slowProvider.OnGenerate = func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
 		time.Sleep(30 * time.Millisecond)
 		return "Slow provider response", nil

@@ -13,6 +13,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/fixtures"
 	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
@@ -20,8 +21,7 @@ import (
 
 // Test NewAgent factory function (excellent DX)
 func TestNewAgent(t *testing.T) {
-	provider := mocks.NewMockProvider("test-provider")
-	provider.WithDefaultResponse(mocks.Response{Content: "Hello"})
+	provider := fixtures.BasicMockProvider()
 
 	agent := NewAgent("test-agent", provider)
 
@@ -40,8 +40,7 @@ func TestNewAgent(t *testing.T) {
 
 // Test NewAgentWithLogger factory function
 func TestNewAgentWithLogger(t *testing.T) {
-	provider := mocks.NewMockProvider("test-provider-with-logger")
-	provider.WithDefaultResponse(mocks.Response{Content: "Hello"})
+	provider := fixtures.BasicMockProvider()
 	logger := slog.Default()
 
 	agent := NewAgentWithLogger("test-agent", provider, logger)
@@ -57,8 +56,7 @@ func TestNewAgentWithLogger(t *testing.T) {
 
 // Test basic Run functionality
 func TestLLMAgent_Run(t *testing.T) {
-	provider := mocks.NewMockProvider("test-run-provider")
-	provider.WithDefaultResponse(mocks.Response{Content: "Hello, World!"})
+	provider := fixtures.BasicMockProviderWithContent("Hello, World!")
 	agent := NewAgent("test-agent", provider)
 
 	state := domain.NewState()
@@ -85,8 +83,7 @@ func TestLLMAgent_Run(t *testing.T) {
 
 // Test RunAsync functionality
 func TestLLMAgent_RunAsync(t *testing.T) {
-	provider := mocks.NewMockProvider("test-async-provider")
-	provider.WithDefaultResponse(mocks.Response{Content: "Async response"})
+	provider := fixtures.BasicMockProviderWithContent("Async response")
 	agent := NewAgent("test-agent", provider)
 
 	state := domain.NewState()
