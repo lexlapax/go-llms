@@ -6,6 +6,7 @@ package fixtures
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
@@ -551,6 +552,305 @@ func ErrorRecoveryMockAgent() *mocks.MockAgent {
 		result.Set("recovery_stats", recoveryStats)
 
 		return result, nil
+	}
+
+	return agent
+}
+
+// TrackingMockAgent creates a mock agent that tracks execution with delays
+func TrackingMockAgent(name string, delay time.Duration) *mocks.MockAgent {
+	agent := mocks.NewMockAgent(name)
+
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		// Simulate delay
+		if delay > 0 {
+			timer := time.NewTimer(delay)
+			select {
+			case <-timer.C:
+				// Delay completed
+			case <-ctx.Done():
+				timer.Stop()
+				return nil, ctx.Err()
+			}
+		}
+
+		// Track execution
+		newState := state.Clone()
+		newState.Set(fmt.Sprintf("%s_result", name), fmt.Sprintf("data_from_%s", name))
+		newState.Set(fmt.Sprintf("%s_executed", name), true)
+		newState.Set(fmt.Sprintf("%s_timestamp", name), time.Now().Unix())
+
+		// Pass through any existing data
+		if data, exists := state.Get("accumulated_data"); exists {
+			if accData, ok := data.([]string); ok {
+				accData = append(accData, fmt.Sprintf("processed_by_%s", name))
+				newState.Set("accumulated_data", accData)
+			}
+		} else {
+			newState.Set("accumulated_data", []string{fmt.Sprintf("processed_by_%s", name)})
+		}
+
+		return newState, nil
+	}
+
+	return agent
+}
+
+// SpecialistMockAgent creates a mock agent with a specific specialty and processing time
+func SpecialistMockAgent(name, specialty string, processTime time.Duration) *mocks.MockAgent {
+	agent := mocks.NewMockAgent(name)
+	agent.AgentDescription = fmt.Sprintf("Specialist in %s", specialty)
+
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		// Simulate processing time
+		if processTime > 0 {
+			select {
+			case <-time.After(processTime):
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
+
+		task, _ := state.Get("task")
+
+		output := domain.NewState()
+		output.Set("output", fmt.Sprintf("%s specialist processed: %v", specialty, task))
+		output.Set("specialty", specialty)
+		output.Set("processed_at", time.Now().Unix())
+		output.Set("processing_duration", processTime.String())
+
+		// Add specialty-specific results
+		switch specialty {
+		case "data_analysis":
+			output.Set("analysis", map[string]interface{}{
+				"patterns_found":  3,
+				"confidence":      0.85,
+				"recommendations": []string{"optimize query", "add index", "cache results"},
+			})
+		case "research":
+			output.Set("research_findings", []string{
+				"Finding 1: Key insight about " + fmt.Sprintf("%v", task),
+				"Finding 2: Related work in the field",
+				"Finding 3: Future directions",
+			})
+		case "development":
+			output.Set("code_artifacts", map[string]interface{}{
+				"files_created": 2,
+				"tests_written": 5,
+				"coverage":      "85%",
+			})
+		}
+
+		return output, nil
+	}
+
+	return agent
+}
+
+// ErrorSimulationMockAgent creates a mock agent that simulates various error scenarios
+func ErrorSimulationMockAgent(name string, errorType string, errorAfterCalls int) *mocks.MockAgent {
+	agent := mocks.NewMockAgent(name)
+	callCount := 0
+
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		callCount++
+
+		// Return error after specified number of calls
+		if errorAfterCalls > 0 && callCount >= errorAfterCalls {
+			switch errorType {
+			case "timeout":
+				return nil, context.DeadlineExceeded
+			case "canceled":
+				return nil, context.Canceled
+			case "network":
+				return nil, fmt.Errorf("network error: connection timeout")
+			case "rate_limit":
+				return nil, fmt.Errorf("rate limit exceeded: retry after 60s")
+			case "validation":
+				return nil, fmt.Errorf("validation error: invalid input format")
+			case "panic":
+				panic(fmt.Sprintf("simulated panic from %s", name))
+			default:
+				return nil, fmt.Errorf("simulated error: %s", errorType)
+			}
+		}
+
+		// Normal execution before error
+		result := domain.NewState()
+		result.Set("output", fmt.Sprintf("Success from %s (call %d)", name, callCount))
+		result.Set("call_count", callCount)
+
+		return result, nil
+	}
+
+	return agent
+}
+
+// StateBuilderMockAgent creates a mock agent that builds complex state data
+func StateBuilderMockAgent(name string, modifications map[string]interface{}) *mocks.MockAgent {
+	agent := mocks.NewMockAgent(name)
+
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		newState := state.Clone()
+
+		// Apply all modifications
+		for key, value := range modifications {
+			newState.Set(key, value)
+		}
+
+		// Track which agent modified the state
+		if history, exists := state.Get("modification_history"); exists {
+			if histList, ok := history.([]string); ok {
+				histList = append(histList, name)
+				newState.Set("modification_history", histList)
+			}
+		} else {
+			newState.Set("modification_history", []string{name})
+		}
+
+		// Add metadata about modifications
+		newState.Set(fmt.Sprintf("%s_modifications", name), len(modifications))
+		newState.Set(fmt.Sprintf("%s_timestamp", name), time.Now().Unix())
+
+		return newState, nil
+	}
+
+	return agent
+}
+
+// CoordinatorMockAgent creates a mock agent that simulates coordination behavior
+func CoordinatorMockAgent(name string) *mocks.MockAgent {
+	agent := mocks.NewMockAgent(name)
+	agent.AgentDescription = "Coordinator agent for multi-agent workflows"
+	delegationCount := 0
+
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		delegationCount++
+
+		// Analyze task and decide delegation
+		task, _ := state.Get("task")
+
+		output := domain.NewState()
+		output.Set("output", fmt.Sprintf("Coordinator analyzed task '%v' and delegated to %d sub-agents", task, delegationCount))
+		output.Set("delegated", true)
+		output.Set("delegation_count", delegationCount)
+		output.Set("coordinator", name)
+
+		// Create delegation plan
+		delegationPlan := []map[string]interface{}{
+			{"agent": "specialist1", "task": "analyze", "priority": "high"},
+			{"agent": "specialist2", "task": "process", "priority": "medium"},
+			{"agent": "specialist3", "task": "finalize", "priority": "low"},
+		}
+		output.Set("delegation_plan", delegationPlan)
+
+		// Pass through any sub-agent results
+		if subResults, exists := state.Get("sub_results"); exists {
+			output.Set("aggregated_results", subResults)
+		}
+
+		return output, nil
+	}
+
+	return agent
+}
+
+// QualityRefinementMockAgent creates a mock agent that simulates iterative quality improvement
+func QualityRefinementMockAgent(name string, initialQuality float64, improvementRate float64) *mocks.MockAgent {
+	agent := mocks.NewMockAgent(name)
+	iterationCount := 0
+	currentQuality := initialQuality
+
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		iterationCount++
+
+		// Improve quality
+		currentQuality = currentQuality + (1-currentQuality)*improvementRate
+		if currentQuality > 1.0 {
+			currentQuality = 1.0
+		}
+
+		output := domain.NewState()
+		output.Set("iteration", iterationCount)
+		output.Set("quality", currentQuality)
+		output.Set("output", fmt.Sprintf("Iteration %d: Improved quality to %.2f", iterationCount, currentQuality))
+
+		// Add refinement details
+		refinementDetails := map[string]interface{}{
+			"improvements_made": []string{
+				"Enhanced clarity",
+				"Fixed issues",
+				"Added details",
+			},
+			"quality_delta":    improvementRate,
+			"time_spent":       fmt.Sprintf("%dms", iterationCount*100),
+			"confidence_level": currentQuality * 0.9,
+		}
+		output.Set("refinement_details", refinementDetails)
+
+		// Pass through content being refined
+		if content, exists := state.Get("content"); exists {
+			output.Set("content", fmt.Sprintf("%v [refined x%d]", content, iterationCount))
+		}
+
+		return output, nil
+	}
+
+	return agent
+}
+
+// TimeoutMockAgent creates a mock agent that simulates timeout scenarios
+func TimeoutMockAgent(name string, timeout time.Duration) *mocks.MockAgent {
+	agent := mocks.NewMockAgent(name)
+
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		// Create a context with timeout
+		timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+
+		// Simulate work that takes longer than timeout
+		workDuration := timeout + 100*time.Millisecond
+
+		select {
+		case <-time.After(workDuration):
+			// This should not happen due to timeout
+			result := domain.NewState()
+			result.Set("output", "Completed successfully")
+			return result, nil
+		case <-timeoutCtx.Done():
+			// Timeout occurred
+			return nil, fmt.Errorf("operation timed out after %v", timeout)
+		}
+	}
+
+	return agent
+}
+
+// SharedDataBuilderMockAgent creates a mock agent that accumulates data in shared_data
+func SharedDataBuilderMockAgent(name string, key string, value interface{}) *mocks.MockAgent {
+	agent := mocks.NewMockAgent(name)
+
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		// Get existing shared data
+		existingData := make(map[string]interface{})
+		if data, exists := state.Get("shared_data"); exists {
+			if m, ok := data.(map[string]interface{}); ok {
+				// Make a copy to avoid modifying original
+				for k, v := range m {
+					existingData[k] = v
+				}
+			}
+		}
+
+		// Add our data
+		existingData[key] = value
+
+		// Create new state with updated shared data
+		newState := state.Clone()
+		newState.Set("shared_data", existingData)
+		newState.Set("output", fmt.Sprintf("Added %s: %v", key, value))
+
+		return newState, nil
 	}
 
 	return agent

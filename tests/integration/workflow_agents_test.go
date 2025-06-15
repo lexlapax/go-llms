@@ -15,6 +15,7 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	ldomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
+	"github.com/lexlapax/go-llms/pkg/testutils/fixtures"
 )
 
 // TestSequentialWorkflow tests sequential agent execution
@@ -283,11 +284,8 @@ func TestLoopWorkflow(t *testing.T) {
 	refiner := core.NewLLMAgent("refiner", "test", core.LLMDeps{Provider: mockProvider})
 	refiner.SetSystemPrompt("Improve the quality of the work")
 
-	// Create a custom agent that updates quality in state
-	qualityUpdater := &qualityAgent{
-		BaseAgentImpl: core.NewBaseAgent("quality-updater", "Updates quality metric", domain.AgentTypeCustom),
-		refiner:       refiner,
-	}
+	// Create a quality refinement agent using fixture
+	qualityUpdater := fixtures.QualityRefinementMockAgent("quality-updater", 0.0, 0.2)
 
 	// Create loop workflow that runs until quality > 0.8
 	loop := workflow.NewLoopAgent("test-loop").
@@ -323,28 +321,4 @@ func TestLoopWorkflow(t *testing.T) {
 	}
 }
 
-// qualityAgent is a test agent that updates quality metric
-type qualityAgent struct {
-	*core.BaseAgentImpl
-	refiner domain.BaseAgent
-}
-
-func (q *qualityAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
-	// Run the refiner
-	result, err := q.refiner.Run(ctx, state)
-	if err != nil {
-		return nil, err
-	}
-
-	// Update quality based on iteration
-	qualityVal, _ := state.Get("quality")
-	quality, _ := qualityVal.(float64)
-	if quality == 0 {
-		quality = 0.5
-	} else {
-		quality += 0.2
-	}
-
-	result.Set("quality", quality)
-	return result, nil
-}
+// Note: qualityAgent replaced with fixtures.QualityRefinementMockAgent

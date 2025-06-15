@@ -86,12 +86,12 @@
 - [x] Create data processing tool fixtures (3 fixtures: json_process, csv_process, text_process) (Completed June 15, 2025)
 - [x] Document fixture usage patterns (Usage documented in fixtures/tools.go) (Completed June 15, 2025)
 
-#### Agent Fixtures (MEDIUM PRIORITY)
-- [ ] Create workflow agent fixtures if required (requires scanning code)
-- [ ] Create stateful agent fixtures if required (requires scanning code)
-- [ ] Create error handling agent fixtures if required (requires scanning code)
-- [ ] Create concurrent agent fixtures if required (requires scanning code)
-- [ ] Migrate inline agent setups
+#### Agent Fixtures (MEDIUM PRIORITY) - ✅ COMPLETED (June 15, 2025)
+- [x] Create workflow agent fixtures (8 fixtures created) (Completed June 15, 2025)
+- [x] Create stateful agent fixtures (StatefulMockAgent, StateBuilderMockAgent) (Completed June 15, 2025)
+- [x] Create error handling agent fixtures (ErrorSimulationMockAgent, TimeoutMockAgent) (Completed June 15, 2025)
+- [x] Create concurrent agent fixtures (TrackingMockAgent, CoordinatorMockAgent) (Completed June 15, 2025)
+- [x] Migrate inline agent setups (Migrated multi_agent_coordination_test.go, workflow_agents_test.go) (Completed June 15, 2025)
 
 ### Phase 3: Scenario Builder Adoption (Week 3)
 
@@ -145,6 +145,13 @@
 - [x] Created configuration-specific fixtures for OpenAI and Anthropic (June 15, 2025)
 - [x] Migrated inline provider configurations in llm_agent_test.go and provider-multi tests (June 15, 2025)
 - [x] Created MIGRATION_GUIDE.md for provider fixture adoption (June 15, 2025)
+- [x] Created comprehensive agent fixtures with 8+ new fixture functions (June 15, 2025)
+- [x] Added workflow agent fixtures: SimpleMockAgent, ResearchMockAgent, WorkflowMockAgent (June 15, 2025)
+- [x] Added stateful agent fixtures: StatefulMockAgent, StateBuilderMockAgent, SharedDataBuilderMockAgent (June 15, 2025)
+- [x] Added specialized agent fixtures: TrackingMockAgent, SpecialistMockAgent, CoordinatorMockAgent (June 15, 2025)
+- [x] Added error handling fixtures: ErrorSimulationMockAgent, TimeoutMockAgent, QualityRefinementMockAgent (June 15, 2025)
+- [x] Migrated inline agent setups in multi_agent_coordination_test.go (~175 lines removed) (June 15, 2025)
+- [x] Migrated inline agent setups in workflow_agents_test.go (~25 lines removed) (June 15, 2025)
 
 ### Current Focus
 - Phase 0: ✅ COMPLETED
@@ -158,6 +165,7 @@
   - Extended tool fixtures with 14 new mock tools for built-in categories ✅
   - Created ScenarioBuilder system for complex test patterns ✅
   - Enhanced provider fixtures with streaming, error scenarios ✅
+  - Completed Agent Fixtures with 8 new agent fixture functions ✅
 - Phase 3: Scenario Builder Adoption - ✅ CORE COMPLETED (June 15, 2025)
   - Identified complex integration test patterns for migration ✅
   - Created advanced agent fixtures (ComplexWorkflow, Concurrent, ErrorRecovery) ✅
@@ -168,19 +176,20 @@
 ### Metrics
 - Phase 0: ✅ COMPLETED - Helper function migration
 - Phase 1: ✅ COMPLETED - Mock consolidation  
-- Phase 2: ✅ COMPLETED - Fixture standardization (including Provider Fixtures)
+- Phase 2: ✅ COMPLETED - Fixture standardization (including Provider Fixtures and Agent Fixtures)
 - Phase 3: ✅ CORE COMPLETED - Scenario builder adoption
-- Files migrated: 45 complete (sequential, parallel, conditional, agent_tool, tool_edge, 4 calculator tests, benchmark, discovery_test, dynamic_discovery_test, llm_agent_test, tool_test, registry_test, 5 file tests, 5 web tests, 1 system test, 2 test helpers, 4 event emitter migrations + 3 event files verified + loop no change + conversion_utils_test + tracing_test + llm_agent_test provider migration + provider-multi test migration)
+- Files migrated: 47 complete (sequential, parallel, conditional, agent_tool, tool_edge, 4 calculator tests, benchmark, discovery_test, dynamic_discovery_test, llm_agent_test, tool_test, registry_test, 5 file tests, 5 web tests, 1 system test, 2 test helpers, 4 event emitter migrations + 3 event files verified + loop no change + conversion_utils_test + tracing_test + llm_agent_test provider migration + provider-multi test migration + multi_agent_coordination_test + workflow_agents_test)
 - New fixtures created: 
   - 14 tool fixtures (file ops, web tools, data processing)
   - 12+ provider fixtures (Basic, OpenAI, Anthropic, Gemini, Streaming, Error scenarios, Configured)
+  - 8 agent fixtures (Simple, Research, Workflow, Stateful, Tracking, Specialist, ErrorSimulation, StateBuilder, Coordinator, QualityRefinement, Timeout, SharedDataBuilder)
   - 3 advanced agent fixtures (ComplexWorkflow, Concurrent, ErrorRecovery)  
   - ScenarioBuilder system with 11+ scenario templates
   - Hook testing scenarios and workflow patterns
 - Estimated code reduction: ~7500 lines
 - Current status: Phase 1-3 FULLY completed, comprehensive test infrastructure established
-- Lines removed so far: ~1,750+ (local MockAgent implementations + duplicate helper functions + mockTool implementations + event emitter implementations + 2 additional files + inline provider configs)
-- Lines added: ~1,450+ (centralized tool fixtures, provider fixtures, scenario builder system, scenario templates, advanced agent fixtures)
+- Lines removed so far: ~1,950+ (local MockAgent implementations + duplicate helper functions + mockTool implementations + event emitter implementations + 2 additional files + inline provider configs + inline agent setups)
+- Lines added: ~1,750+ (centralized tool fixtures, provider fixtures, scenario builder system, scenario templates, agent fixtures, advanced agent fixtures)
 
 ### Notes
 - Run `make test`, `make fmt`, `make vet`, `make lint` after each migration to ensure tests pass

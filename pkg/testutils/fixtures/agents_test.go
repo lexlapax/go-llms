@@ -3,6 +3,7 @@ package fixtures
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -163,4 +164,282 @@ func TestStatefulMockAgent(t *testing.T) {
 
 	totalCalls3, _ := result3.Get("total_calls")
 	assert.Equal(t, 3, totalCalls3) // Call count should not reset
+}
+
+func TestTrackingMockAgent(t *testing.T) {
+	agent := TrackingMockAgent("tracker1", 10*time.Millisecond)
+
+	ctx := context.Background()
+	state := domain.NewState()
+	state.Set("initial_data", "test")
+
+	start := time.Now()
+	result, err := agent.Run(ctx, state)
+	elapsed := time.Since(start)
+
+	require.NoError(t, err)
+
+	// Verify delay occurred
+	assert.GreaterOrEqual(t, elapsed, 10*time.Millisecond)
+
+	// Verify tracking data
+	data, exists := result.Get("tracker1_result")
+	assert.True(t, exists)
+	assert.Equal(t, "data_from_tracker1", data)
+
+	executed, exists := result.Get("tracker1_executed")
+	assert.True(t, exists)
+	assert.True(t, executed.(bool))
+
+	// Verify accumulated data
+	accData, exists := result.Get("accumulated_data")
+	assert.True(t, exists)
+	assert.Contains(t, accData.([]string), "processed_by_tracker1")
+}
+
+func TestSpecialistMockAgent(t *testing.T) {
+	tests := []struct {
+		name      string
+		specialty string
+		wantKey   string
+	}{
+		{
+			name:      "data_analysis specialist",
+			specialty: "data_analysis",
+			wantKey:   "analysis",
+		},
+		{
+			name:      "research specialist",
+			specialty: "research",
+			wantKey:   "research_findings",
+		},
+		{
+			name:      "development specialist",
+			specialty: "development",
+			wantKey:   "code_artifacts",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			agent := SpecialistMockAgent("specialist", tt.specialty, 50*time.Millisecond)
+
+			ctx := context.Background()
+			state := domain.NewState()
+			state.Set("task", "analyze customer data")
+
+			result, err := agent.Run(ctx, state)
+			require.NoError(t, err)
+
+			// Verify specialty output
+			output, _ := result.Get("output")
+			assert.Contains(t, output.(string), tt.specialty)
+
+			// Verify specialty-specific data
+			_, exists := result.Get(tt.wantKey)
+			assert.True(t, exists, "Expected key %s not found", tt.wantKey)
+		})
+	}
+}
+
+func TestErrorSimulationMockAgent(t *testing.T) {
+	tests := []struct {
+		name          string
+		errorType     string
+		errorAfter    int
+		expectedError string
+	}{
+		{
+			name:          "timeout error",
+			errorType:     "timeout",
+			errorAfter:    2,
+			expectedError: "deadline exceeded",
+		},
+		{
+			name:          "network error",
+			errorType:     "network",
+			errorAfter:    1,
+			expectedError: "network error",
+		},
+		{
+			name:          "rate limit error",
+			errorType:     "rate_limit",
+			errorAfter:    3,
+			expectedError: "rate limit exceeded",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			agent := ErrorSimulationMockAgent("error-agent", tt.errorType, tt.errorAfter)
+			ctx := context.Background()
+			state := domain.NewState()
+
+			// Run until error
+			var err error
+			for i := 0; i < tt.errorAfter; i++ {
+				result, runErr := agent.Run(ctx, state)
+				if runErr != nil {
+					err = runErr
+					break
+				}
+				// Verify successful calls before error
+				if i < tt.errorAfter-1 {
+					assert.NotNil(t, result)
+					callCount, _ := result.Get("call_count")
+					assert.Equal(t, i+1, callCount)
+				}
+			}
+
+			// Verify error occurred
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.expectedError)
+		})
+	}
+}
+
+func TestStateBuilderMockAgent(t *testing.T) {
+	modifications := map[string]interface{}{
+		"key1": "value1",
+		"key2": 42,
+		"key3": []string{"a", "b", "c"},
+	}
+
+	agent := StateBuilderMockAgent("builder1", modifications)
+
+	ctx := context.Background()
+	state := domain.NewState()
+	state.Set("existing", "data")
+
+	result, err := agent.Run(ctx, state)
+	require.NoError(t, err)
+
+	// Verify modifications applied
+	for key, expectedValue := range modifications {
+		actualValue, exists := result.Get(key)
+		assert.True(t, exists)
+		assert.Equal(t, expectedValue, actualValue)
+	}
+
+	// Verify existing data preserved
+	existing, _ := result.Get("existing")
+	assert.Equal(t, "data", existing)
+
+	// Verify metadata
+	history, _ := result.Get("modification_history")
+	assert.Contains(t, history.([]string), "builder1")
+}
+
+func TestCoordinatorMockAgent(t *testing.T) {
+	agent := CoordinatorMockAgent("coordinator")
+
+	ctx := context.Background()
+	state := domain.NewState()
+	state.Set("task", "process customer order")
+
+	// First run
+	result1, err := agent.Run(ctx, state)
+	require.NoError(t, err)
+
+	delegated, _ := result1.Get("delegated")
+	assert.True(t, delegated.(bool))
+
+	count1, _ := result1.Get("delegation_count")
+	assert.Equal(t, 1, count1)
+
+	plan, _ := result1.Get("delegation_plan")
+	assert.Len(t, plan.([]map[string]interface{}), 3)
+
+	// Second run - delegation count should increment
+	result2, err := agent.Run(ctx, state)
+	require.NoError(t, err)
+
+	count2, _ := result2.Get("delegation_count")
+	assert.Equal(t, 2, count2)
+}
+
+func TestQualityRefinementMockAgent(t *testing.T) {
+	agent := QualityRefinementMockAgent("refiner", 0.3, 0.25)
+
+	ctx := context.Background()
+	state := domain.NewState()
+	state.Set("content", "Initial content")
+
+	qualities := []float64{}
+
+	// Run multiple iterations
+	for i := 0; i < 4; i++ {
+		result, err := agent.Run(ctx, state)
+		require.NoError(t, err)
+
+		quality, _ := result.Get("quality")
+		qualities = append(qualities, quality.(float64))
+
+		iteration, _ := result.Get("iteration")
+		assert.Equal(t, i+1, iteration)
+
+		// Update state for next iteration
+		state = result
+	}
+
+	// Verify quality improvement
+	for i := 1; i < len(qualities); i++ {
+		assert.Greater(t, qualities[i], qualities[i-1])
+	}
+
+	// Verify quality approaches but doesn't exceed 1.0
+	assert.LessOrEqual(t, qualities[len(qualities)-1], 1.0)
+}
+
+func TestTimeoutMockAgent(t *testing.T) {
+	agent := TimeoutMockAgent("timeout-agent", 50*time.Millisecond)
+
+	ctx := context.Background()
+	state := domain.NewState()
+
+	start := time.Now()
+	_, err := agent.Run(ctx, state)
+	elapsed := time.Since(start)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "operation timed out")
+
+	// Verify timeout occurred around the expected time
+	assert.GreaterOrEqual(t, elapsed, 50*time.Millisecond)
+	assert.Less(t, elapsed, 200*time.Millisecond)
+}
+
+func TestSharedDataBuilderMockAgent(t *testing.T) {
+	ctx := context.Background()
+
+	// Create initial state with some shared data
+	state := domain.NewState()
+	state.Set("shared_data", map[string]interface{}{
+		"existing": "data",
+	})
+
+	// Create agent that adds to shared data
+	agent1 := SharedDataBuilderMockAgent("builder1", "key1", "value1")
+	result1, err := agent1.Run(ctx, state)
+	require.NoError(t, err)
+
+	// Verify data was added
+	sharedData1, exists := result1.Get("shared_data")
+	assert.True(t, exists)
+	dataMap1 := sharedData1.(map[string]interface{})
+	assert.Equal(t, "data", dataMap1["existing"])
+	assert.Equal(t, "value1", dataMap1["key1"])
+
+	// Create another agent that adds more data
+	agent2 := SharedDataBuilderMockAgent("builder2", "key2", "value2")
+	result2, err := agent2.Run(ctx, result1)
+	require.NoError(t, err)
+
+	// Verify both data entries exist
+	sharedData2, exists := result2.Get("shared_data")
+	assert.True(t, exists)
+	dataMap2 := sharedData2.(map[string]interface{})
+	assert.Equal(t, "data", dataMap2["existing"])
+	assert.Equal(t, "value1", dataMap2["key1"])
+	assert.Equal(t, "value2", dataMap2["key2"])
 }

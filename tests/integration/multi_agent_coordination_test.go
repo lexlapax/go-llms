@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -16,77 +15,11 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/workflow"
 	ldomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
+	"github.com/lexlapax/go-llms/pkg/testutils/fixtures"
 )
 
-// MockCoordinatorAgent simulates a coordinator that delegates to sub-agents
-type MockCoordinatorAgent struct {
-	*core.BaseAgentImpl
-	delegationCount int
-	mu              sync.Mutex
-}
-
-func NewMockCoordinatorAgent(name string) *MockCoordinatorAgent {
-	return &MockCoordinatorAgent{
-		BaseAgentImpl: core.NewBaseAgent(name, "Coordinator agent", domain.AgentTypeLLM),
-	}
-}
-
-func (m *MockCoordinatorAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
-	m.mu.Lock()
-	m.delegationCount++
-	count := m.delegationCount
-	m.mu.Unlock()
-
-	// Simulate analyzing the task and deciding delegation
-	task, _ := state.Get("task")
-
-	output := domain.NewState()
-	output.Set("output", fmt.Sprintf("Coordinator analyzed task '%v' and delegated to %d sub-agents", task, count))
-	output.Set("delegated", true)
-	output.Set("delegation_count", count)
-
-	// Pass through any sub-agent results
-	if subResults, exists := state.Get("sub_results"); exists {
-		output.Set("aggregated_results", subResults)
-	}
-
-	return output, nil
-}
-
-// MockSpecialistAgent simulates a specialist agent
-type MockSpecialistAgent struct {
-	*core.BaseAgentImpl
-	specialty   string
-	processTime time.Duration
-}
-
-func NewMockSpecialistAgent(name, specialty string, processTime time.Duration) *MockSpecialistAgent {
-	return &MockSpecialistAgent{
-		BaseAgentImpl: core.NewBaseAgent(name, fmt.Sprintf("Specialist in %s", specialty), domain.AgentTypeLLM),
-		specialty:     specialty,
-		processTime:   processTime,
-	}
-}
-
-func (m *MockSpecialistAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
-	// Simulate processing time
-	if m.processTime > 0 {
-		select {
-		case <-time.After(m.processTime):
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-	}
-
-	task, _ := state.Get("task")
-
-	output := domain.NewState()
-	output.Set("output", fmt.Sprintf("%s specialist processed: %v", m.specialty, task))
-	output.Set("specialty", m.specialty)
-	output.Set("processed_at", time.Now().Unix())
-
-	return output, nil
-}
+// Note: Using centralized agent fixtures from pkg/testutils/fixtures
+// MockCoordinatorAgent and MockSpecialistAgent have been replaced with fixtures.CoordinatorMockAgent and fixtures.SpecialistMockAgent
 
 // TestBasicMultiAgentCoordination tests basic coordinator-specialist pattern
 func TestBasicMultiAgentCoordination(t *testing.T) {
@@ -100,9 +33,9 @@ func TestBasicMultiAgentCoordination(t *testing.T) {
 	coordinator := core.NewLLMAgent("coordinator", "Main coordinator", deps)
 	coordinator.SetSystemPrompt("You coordinate tasks between specialists.")
 
-	// Create specialist sub-agents
-	dataSpecialist := NewMockSpecialistAgent("data_specialist", "data analysis", 0)
-	mlSpecialist := NewMockSpecialistAgent("ml_specialist", "machine learning", 0)
+	// Create specialist sub-agents using fixtures
+	dataSpecialist := fixtures.SpecialistMockAgent("data_specialist", "data_analysis", 0)
+	mlSpecialist := fixtures.SpecialistMockAgent("ml_specialist", "machine learning", 0)
 
 	// Add specialists as sub-agents
 	err := coordinator.AddSubAgent(dataSpecialist)
@@ -195,10 +128,10 @@ func TestHierarchicalMultiAgentSystem(t *testing.T) {
 	cmo := core.NewLLMAgent("cmo", "Chief Marketing Officer", deps)
 	cmo.SetSystemPrompt("You are the CMO who manages marketing teams.")
 
-	// Level 3: Team Leads
-	devLead := NewMockSpecialistAgent("dev_lead", "development", 0)
-	qaLead := NewMockSpecialistAgent("qa_lead", "quality assurance", 0)
-	marketingLead := NewMockSpecialistAgent("marketing_lead", "marketing campaigns", 0)
+	// Level 3: Team Leads using fixtures
+	devLead := fixtures.SpecialistMockAgent("dev_lead", "development", 0)
+	qaLead := fixtures.SpecialistMockAgent("qa_lead", "quality assurance", 0)
+	marketingLead := fixtures.SpecialistMockAgent("marketing_lead", "marketing campaigns", 0)
 
 	// Build hierarchy
 	err := cto.AddSubAgent(devLead)
@@ -254,26 +187,26 @@ func TestHierarchicalMultiAgentSystem(t *testing.T) {
 
 // TestMultiAgentWorkflowIntegration tests agents in workflow patterns
 func TestMultiAgentWorkflowIntegration(t *testing.T) {
-	// Create research team
-	webResearcher := NewMockSpecialistAgent("web_researcher", "web research", 50*time.Millisecond)
-	academicResearcher := NewMockSpecialistAgent("academic_researcher", "academic research", 50*time.Millisecond)
+	// Create research team using fixtures
+	webResearcher := fixtures.SpecialistMockAgent("web_researcher", "research", 50*time.Millisecond)
+	academicResearcher := fixtures.SpecialistMockAgent("academic_researcher", "research", 50*time.Millisecond)
 
 	// Create research team workflow (parallel)
 	researchTeam := workflow.NewParallelAgent("research_team")
 	researchTeam.AddAgent(webResearcher)
 	researchTeam.AddAgent(academicResearcher)
 
-	// Create analysis team
-	dataAnalyst := NewMockSpecialistAgent("data_analyst", "data analysis", 30*time.Millisecond)
-	trendAnalyst := NewMockSpecialistAgent("trend_analyst", "trend analysis", 30*time.Millisecond)
+	// Create analysis team using fixtures
+	dataAnalyst := fixtures.SpecialistMockAgent("data_analyst", "data_analysis", 30*time.Millisecond)
+	trendAnalyst := fixtures.SpecialistMockAgent("trend_analyst", "data_analysis", 30*time.Millisecond)
 
 	// Create analysis team workflow (parallel)
 	analysisTeam := workflow.NewParallelAgent("analysis_team")
 	analysisTeam.AddAgent(dataAnalyst)
 	analysisTeam.AddAgent(trendAnalyst)
 
-	// Create report writer
-	reportWriter := NewMockSpecialistAgent("report_writer", "report writing", 20*time.Millisecond)
+	// Create report writer using fixture
+	reportWriter := fixtures.SpecialistMockAgent("report_writer", "report writing", 20*time.Millisecond)
 
 	// Create main workflow (sequential: research -> analysis -> report)
 	mainWorkflow := workflow.NewSequentialAgent("main_workflow")
@@ -383,28 +316,15 @@ func TestMultiAgentCommunication(t *testing.T) {
 	}
 }
 
-// FailingSpecialistAgent is a specialist that always fails
-type FailingSpecialistAgent struct {
-	*core.BaseAgentImpl
-}
-
-func NewFailingSpecialistAgent(name string) *FailingSpecialistAgent {
-	return &FailingSpecialistAgent{
-		BaseAgentImpl: core.NewBaseAgent(name, "Agent that always fails", domain.AgentTypeLLM),
-	}
-}
-
-func (f *FailingSpecialistAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
-	return nil, fmt.Errorf("intentional failure from %s", f.Name())
-}
+// Note: FailingSpecialistAgent replaced with fixtures.ErrorSimulationMockAgent
 
 // TestMultiAgentErrorHandling tests error handling in multi-agent systems
 func TestMultiAgentErrorHandling(t *testing.T) {
 	// Create workflow with failing agent
 	workflow := workflow.NewSequentialAgent("workflow")
 
-	successAgent := NewMockSpecialistAgent("success_agent", "success", 0)
-	failingAgent := NewFailingSpecialistAgent("failing_agent")
+	successAgent := fixtures.SpecialistMockAgent("success_agent", "success", 0)
+	failingAgent := fixtures.ErrorSimulationMockAgent("failing_agent", "always_fail", 1)
 
 	workflow.AddAgent(successAgent)
 	workflow.AddAgent(failingAgent)
@@ -433,15 +353,15 @@ func TestMultiAgentErrorHandling(t *testing.T) {
 
 // TestMultiAgentScalability tests handling many agents
 func TestMultiAgentScalability(t *testing.T) {
-	// Create a coordinator
-	coordinator := NewMockCoordinatorAgent("main_coordinator")
+	// Create a coordinator using fixture
+	coordinator := fixtures.CoordinatorMockAgent("main_coordinator")
 
 	// Create many specialist agents
 	numSpecialists := 20
 	specialists := make([]domain.BaseAgent, numSpecialists)
 
 	for i := 0; i < numSpecialists; i++ {
-		specialist := NewMockSpecialistAgent(
+		specialist := fixtures.SpecialistMockAgent(
 			fmt.Sprintf("specialist_%d", i),
 			fmt.Sprintf("domain_%d", i),
 			time.Duration(i)*time.Millisecond,
@@ -491,40 +411,7 @@ func TestMultiAgentScalability(t *testing.T) {
 	}
 }
 
-// StateModifierAgent modifies shared state
-type StateModifierAgent struct {
-	*core.BaseAgentImpl
-	key   string
-	value interface{}
-}
-
-func NewStateModifierAgent(name, key string, value interface{}) *StateModifierAgent {
-	return &StateModifierAgent{
-		BaseAgentImpl: core.NewBaseAgent(name, "Modifies state", domain.AgentTypeLLM),
-		key:           key,
-		value:         value,
-	}
-}
-
-func (s *StateModifierAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
-	// Get existing data
-	existingData := make(map[string]interface{})
-	if data, exists := state.Get("shared_data"); exists {
-		if m, ok := data.(map[string]interface{}); ok {
-			existingData = m
-		}
-	}
-
-	// Add our data
-	existingData[s.key] = s.value
-
-	// Create output state
-	output := domain.NewState()
-	output.Set("shared_data", existingData)
-	output.Set("output", fmt.Sprintf("Added %s: %v", s.key, s.value))
-
-	return output, nil
-}
+// Note: StateModifierAgent replaced with fixtures.StateBuilderMockAgent
 
 // TestMultiAgentStateSharing tests shared state between agents
 func TestMultiAgentStateSharing(t *testing.T) {
@@ -532,9 +419,10 @@ func TestMultiAgentStateSharing(t *testing.T) {
 	// Create sequential workflow
 	workflow := workflow.NewSequentialAgent("state_sharing")
 
-	agent1 := NewStateModifierAgent("agent1", "step1", "data1")
-	agent2 := NewStateModifierAgent("agent2", "step2", "data2")
-	agent3 := NewStateModifierAgent("agent3", "step3", "data3")
+	// Create agents that build shared data
+	agent1 := fixtures.SharedDataBuilderMockAgent("agent1", "step1", "data1")
+	agent2 := fixtures.SharedDataBuilderMockAgent("agent2", "step2", "data2")
+	agent3 := fixtures.SharedDataBuilderMockAgent("agent3", "step3", "data3")
 
 	workflow.AddAgent(agent1)
 	workflow.AddAgent(agent2)
@@ -585,9 +473,9 @@ func TestGetSubAgentByName(t *testing.T) {
 	// Create main agent
 	mainAgent := core.NewLLMAgent("main", "Main agent", deps)
 
-	// Create sub-agents
-	subAgent1 := NewMockSpecialistAgent("sub1", "specialty1", 0)
-	subAgent2 := NewMockSpecialistAgent("sub2", "specialty2", 0)
+	// Create sub-agents using fixtures
+	subAgent1 := fixtures.SpecialistMockAgent("sub1", "specialty1", 0)
+	subAgent2 := fixtures.SpecialistMockAgent("sub2", "specialty2", 0)
 
 	// Add sub-agents
 	err := mainAgent.AddSubAgent(subAgent1)
