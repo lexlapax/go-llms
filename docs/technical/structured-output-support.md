@@ -1,5 +1,7 @@
 # Structured Output Support
 
+> **[Documentation Home](/docs/README.md) / [Technical Documentation](/docs/technical/README.md) / Structured Output Support**
+
 The `outputs` package provides comprehensive support for parsing, validating, and converting structured outputs from LLMs.
 
 ## Features

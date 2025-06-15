@@ -1,5 +1,7 @@
 # Schema Package Documentation
 
+> **[Documentation Home](/docs/README.md) / [Technical Documentation](/docs/technical/README.md) / Schema Package**
+
 The schema package in go-llms provides comprehensive JSON Schema generation and storage capabilities, designed specifically to support scripting engine integration (go-llmspell).
 
 ## Overview

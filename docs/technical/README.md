@@ -13,6 +13,7 @@ This directory contains technical documentation for the Go-LLMs library, intende
 - [Tool Development](tool-development.md) - Internal tool architecture and development patterns
 - [Tool Discovery API](tool-discovery-api.md) - Metadata-first tool discovery system for scripting engines
 - [Built-in Components](built-in-components.md) - Registry system and component patterns
+- [Schema System](schema-system.md) - Comprehensive schema generation, storage, and validation
 
 ## Implementation Guides
 
@@ -37,6 +38,7 @@ This directory contains technical documentation for the Go-LLMs library, intende
 - [Logging](logging.md) - Logging patterns and best practices
 - [Dependency Reduction](dependency_reduction.md) - Journey from heavy dependencies to stdlib
 - [Tools](tools.md) - Tool system architecture and patterns
+- [Schema Package](schema-package.md) - Schema generation and storage implementation
 - [Structured Output Support](structured-output-support.md) - LLM output parsing and validation
 
 ## Navigation

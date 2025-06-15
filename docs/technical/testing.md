@@ -1,58 +1,586 @@
-# Testing Framework and Strategy
+# Testing Framework and Infrastructure
 
 > **[Documentation Home](/docs/README.md) / [Technical Documentation](/docs/technical/README.md) / Testing Framework**
 
-This document outlines the testing approach implemented in Go-LLMs, focusing on comprehensive test coverage, error condition handling, and stress testing for high-load scenarios.
+This document provides comprehensive information on testing with the go-llms testing infrastructure, covering the framework, patterns, and best practices for effective testing.
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
-2. [Error Condition Test Suite](#error-condition-test-suite)
-3. [Agent Testing Considerations](#agent-testing-considerations)
-4. [Schema Validation Testing](#schema-validation-testing)
-5. [Stress Testing](#stress-testing)
-6. [Running Tests](#running-tests)
-   1. [Test Skip Control](#test-skip-control)
-7. [Related Documentation](#related-documentation)
+1. [Overview](#overview)
+2. [Quick Start](#quick-start)
+3. [Core Components](#core-components)
+   - [Fixtures](#fixtures)
+   - [Pattern-Based Responses](#pattern-based-responses)
+   - [Scenario Builder](#scenario-builder)
+   - [Matchers](#matchers)
+   - [Helpers](#helpers)
+4. [Usage Patterns](#usage-patterns)
+   - [Testing Provider Functionality](#testing-provider-functionality)
+   - [Testing Tool Execution](#testing-tool-execution)
+   - [Testing Agent Workflows](#testing-agent-workflows)
+   - [Testing Error Conditions](#testing-error-conditions)
+   - [Testing Concurrent Access](#testing-concurrent-access)
+5. [Error Condition Test Suite](#error-condition-test-suite)
+6. [Agent Testing Considerations](#agent-testing-considerations)
+7. [Schema Validation Testing](#schema-validation-testing)
+8. [Stress Testing](#stress-testing)
+9. [Best Practices](#best-practices)
+10. [Performance Considerations](#performance-considerations)
+11. [Migration Guide](#migration-guide)
+12. [Running Tests](#running-tests)
+13. [Troubleshooting](#troubleshooting)
+14. [Related Documentation](#related-documentation)
 
-## Introduction
+## Overview
 
-The Go-LLMs library implements a comprehensive testing strategy with several layers:
+The go-llms testing infrastructure provides a comprehensive set of tools for testing LLM-related code:
 
-- **Unit tests**: Verify individual component behavior
-- **Integration tests**: Test the interaction between multiple components
-- **Error condition tests**: Validate error handling and recovery mechanisms
-- **Benchmarks**: Measure performance characteristics and identify bottlenecks (see [Benchmarking Framework](benchmarks.md))
-- **Stress tests**: Evaluate behavior under high-load scenarios
+- **Fixtures**: Pre-configured mock objects for common scenarios
+- **Scenario Builder**: Fluent API for complex test setups
+- **Matchers**: Flexible assertion capabilities
+- **Helpers**: Utilities for context creation and state management
+- **Mocks**: Core mock implementations with pattern matching
 
-This layered approach ensures that the library is robust, performant, and reliable in various usage scenarios. This document focuses specifically on error condition testing and stress testing aspects of the framework.
+### Key Benefits
 
-### Recent Test Additions (June 2025)
+1. **Reduced Boilerplate**: Eliminate repetitive mock setup code
+2. **Realistic Behavior**: Pattern-based responses simulate real LLM behavior
+3. **Thread Safety**: All components work correctly with concurrent tests
+4. **Performance**: Optimized for fast test execution
+5. **Maintainability**: Consistent patterns across the codebase
 
-As part of Phase 7 of the Agent Architecture Restructuring, we've added comprehensive tests for new agent features:
+### Recent Changes (June 15, 2025)
 
-#### Integration Tests
-- **Hook Integration Tests** (`tests/integration/hook_integration_test.go`): Tests the hook system across different agent types with 8 comprehensive scenarios including basic hook functionality, tool call hooks, multiple hooks, error handling, metrics/logging hooks, workflow agent hooks, and concurrent hook safety.
+- **47 files migrated** to use centralized test infrastructure
+- **37+ new fixtures created**: 14 tools, 12 providers, 8 agents, 3 advanced
+- **~200 lines net reduction** with vastly improved maintainability
+- **Comprehensive fixture library** covering all major testing scenarios
 
-- **Multi-Agent Coordination Tests** (`tests/integration/multi_agent_coordination_test.go`): Tests multi-agent patterns with 8 scenarios including basic coordinator-specialist patterns, hierarchical agent systems (3 levels), workflow integration, agent-to-agent communication, error handling, scalability (20+ agents), state sharing, and convenience methods.
+See [TESTING_INFRA_CHANGES.md](../../TESTING_INFRA_CHANGES.md) for complete details.
 
-#### Stress Tests
-- **Workflow Agent Stress Tests** (`tests/stress/workflow_stress_test.go`): Comprehensive stress tests for all workflow agent types (Sequential, Parallel, Conditional, Loop, Nested) under high concurrency, including state management stress tests, memory leak detection, and error handling under load.
+## Quick Start
 
-#### Benchmarks
-- **Advanced Agent Benchmarks** (`tests/benchmarks/agent_advanced_bench_test.go`): New performance benchmarks covering agent creation methods, state management operations, tool execution performance, workflow agent performance, hook execution overhead, and event stream operations.
+### Basic Provider Testing
+
+```go
+func TestBasicProvider(t *testing.T) {
+    // Create an OpenAI-like provider
+    provider := fixtures.OpenAIMockProvider()
+    
+    // Test basic generation
+    response, err := provider.Generate(context.Background(), "Hello!")
+    assert.NoError(t, err)
+    assert.Contains(t, response, "Hello")
+}
+```
+
+### Basic Tool Testing
+
+```go
+func TestBasicTool(t *testing.T) {
+    // Create a calculator tool
+    calc := fixtures.CalculatorMockTool()
+    ctx := helpers.CreateTestToolContext()
+    
+    // Test addition
+    result, err := calc.Execute(ctx, map[string]interface{}{
+        "operation": "add",
+        "a": 5.0,
+        "b": 3.0,
+    })
+    
+    assert.NoError(t, err)
+    assert.Equal(t, 8.0, result["result"])
+}
+```
+
+### Basic Agent Testing
+
+```go
+func TestBasicAgent(t *testing.T) {
+    // Create a research agent
+    agent := fixtures.ResearchMockAgent()
+    input := fixtures.BasicTestState()
+    input.Set("query", "AI trends")
+    
+    result, err := agent.Run(context.Background(), input)
+    assert.NoError(t, err)
+    
+    taskType, _ := result.Get("task_type")
+    assert.Equal(t, "research", taskType)
+}
+```
+
+## Core Components
+
+### Fixtures
+
+Fixtures provide pre-configured mock objects that behave realistically:
+
+#### Provider Fixtures
+
+```go
+// Basic providers
+provider := fixtures.BasicMockProvider()                    // Simple responses
+provider := fixtures.BasicMockProviderWithContent("Hello")  // Fixed content
+
+// Provider-specific fixtures
+provider := fixtures.OpenAIMockProvider()      // OpenAI-like responses
+provider := fixtures.AnthropicMockProvider()   // Claude-like responses
+provider := fixtures.GeminiMockProvider()      // Gemini-like responses
+
+// Streaming providers
+provider := fixtures.RealisticStreamingProvider()  // Variable delays
+provider := fixtures.FastStreamingProvider()       // Minimal latency
+
+// Error scenarios
+provider := fixtures.RateLimitErrorProvider()     // Rate limit errors
+provider := fixtures.AuthErrorProvider()          // Authentication errors
+provider := fixtures.NetworkErrorProvider()       // Network failures
+provider := fixtures.IntermittentErrorProvider()  // Random errors
+
+// Configuration-specific
+provider := fixtures.ConfiguredOpenAIProvider()     // With OpenAI config
+provider := fixtures.ConfiguredAnthropicProvider()  // With Anthropic config
+```
+
+#### Tool Fixtures
+
+```go
+// File operation tools
+readTool := fixtures.FileReadMockTool()      // Read files
+writeTool := fixtures.FileWriteMockTool()    // Write files
+listTool := fixtures.FileListMockTool()      // List directory
+deleteTool := fixtures.FileDeleteMockTool()  // Delete files
+moveTool := fixtures.FileMoveMockTool()      // Move/rename files
+
+// Web tools
+scrapeTool := fixtures.WebScrapeMockTool()        // Web scraping
+fetchTool := fixtures.WebFetchMockTool()          // URL fetching
+httpTool := fixtures.HTTPRequestMockTool()        // HTTP requests
+searchTool := fixtures.WebSearchMockTool()        // Web search
+
+// Data processing tools
+jsonTool := fixtures.JSONProcessMockTool()    // JSON manipulation
+csvTool := fixtures.CSVProcessMockTool()      // CSV processing
+textTool := fixtures.TextProcessMockTool()    // Text analysis
+
+// Calculator tool (from original fixtures)
+calc := fixtures.CalculatorMockTool()         // Basic arithmetic
+```
+
+#### Agent Fixtures
+
+```go
+// Basic agents
+agent := fixtures.SimpleMockAgent()      // Basic responses
+agent := fixtures.ResearchMockAgent()    // Research workflows
+agent := fixtures.WorkflowMockAgent()    // Multi-step workflows
+
+// Stateful agents
+agent := fixtures.StatefulMockAgent()                        // Maintains state
+agent := fixtures.StateBuilderMockAgent("name", mods)       // Builds state
+agent := fixtures.SharedDataBuilderMockAgent("n", "k", "v") // Shared data
+
+// Specialized agents
+agent := fixtures.TrackingMockAgent("name", delay)             // Execution tracking
+agent := fixtures.SpecialistMockAgent("name", "specialty", t)  // Domain expert
+agent := fixtures.CoordinatorMockAgent("name")                 // Multi-agent coord
+
+// Error handling agents
+agent := fixtures.ErrorSimulationMockAgent("name", "type", n)  // Error scenarios
+agent := fixtures.TimeoutMockAgent("name", timeout)            // Timeout testing
+agent := fixtures.QualityRefinementMockAgent("n", q, rate)     // Iterative improve
+```
+
+#### State Fixtures
+
+```go
+// Empty state for basic testing
+state := fixtures.EmptyTestState()
+
+// Basic state with common test data
+state := fixtures.BasicTestState()
+
+// Workflow state with execution context
+state := fixtures.WorkflowTestState()
+
+// Conversation state with message history
+state := fixtures.ConversationTestState()
+
+// State with artifacts (files, documents)
+state := fixtures.StateWithArtifacts()
+
+// State with metadata
+state := fixtures.StateWithMetadata()
+
+// Error state for testing error conditions
+state := fixtures.ErrorTestState()
+
+// Large state for performance testing
+state := fixtures.LargeTestState()
+```
+
+### Pattern-Based Responses
+
+Fixtures support regex patterns for realistic response matching:
+
+```go
+provider := fixtures.OpenAIMockProvider()
+
+// Add custom pattern responses
+provider.WithPatternResponse("(?i).*weather.*", mocks.Response{
+    Content: "Today is sunny with 75°F",
+    Metadata: map[string]interface{}{
+        "location": "test-city",
+        "confidence": 0.95,
+    },
+})
+
+provider.WithPatternResponse("(?i).*programming.*", mocks.Response{
+    Content: "Programming is the art of solving problems with code.",
+    Metadata: map[string]interface{}{
+        "topic": "software-development",
+        "complexity": "beginner",
+    },
+})
+```
+
+### Scenario Builder
+
+The scenario builder provides a fluent API for complex test setups:
+
+```go
+// Pre-built scenario templates
+scenario := fixtures.SimpleScenarioTemplate(t)
+scenario := fixtures.ResearchScenarioTemplate(t)
+scenario := fixtures.CalculationScenarioTemplate(t)
+scenario := fixtures.FileProcessingScenarioTemplate(t)
+scenario := fixtures.ErrorHandlingScenarioTemplate(t)
+scenario := fixtures.StreamingScenarioTemplate(t)
+scenario := fixtures.MultiToolScenarioTemplate(t)
+scenario := fixtures.ConversationScenarioTemplate(t)
+
+// Custom scenario with fluent API
+scenario.NewScenario(t).
+    WithMockProvider("chatgpt", map[string]mocks.Response{
+        "(?i).*analyze.*": {
+            Content: "Analysis complete: Market shows growth potential.",
+            Metadata: map[string]interface{}{
+                "confidence": 0.92,
+                "data_points": 127,
+            },
+        },
+    }).
+    WithTool(fixtures.WebSearchMockTool()).
+    WithTool(fixtures.CalculatorMockTool()).
+    WithAgent(fixtures.WorkflowMockAgent()).
+    WithInput("task", "analyze market trends").
+    WithInput("sector", "renewable energy").
+    ExpectOutput("status", matchers.Equals("completed")).
+    ExpectOutput("confidence", matchers.GreaterThan(0.9)).
+    ExpectMetadata("execution_time", matchers.IsType[time.Duration]()).
+    ExpectToolCall("web_search", matchers.HasField("query", matchers.Contains("renewable"))).
+    ExpectEvent("agent.complete", matchers.HasField("status", matchers.Equals("success"))).
+    ExpectNoError().
+    Run()
+```
+
+### Matchers
+
+Matchers provide flexible assertion capabilities:
+
+```go
+// String matchers
+matchers.Equals("exact value")
+matchers.Contains("substring")
+matchers.HasPrefix("prefix")
+matchers.HasSuffix("suffix")
+matchers.MatchesRegex(`^\d{4}-\d{2}-\d{2}$`)
+
+// Numeric matchers
+matchers.GreaterThan(10)
+matchers.LessThan(100)
+matchers.GreaterThanOrEqual(10)
+matchers.LessThanOrEqual(100)
+
+// Type matchers
+matchers.IsType[string]()
+matchers.IsType[[]int]()
+matchers.IsType[map[string]interface{}]()
+
+// Collection matchers
+matchers.HasLength(5)
+matchers.Contains("item")
+matchers.IsEmpty()
+
+// Boolean and nil matchers
+matchers.IsTrue()
+matchers.IsFalse()
+matchers.IsNil()
+matchers.IsNotNil()
+
+// Composite matchers
+matchers.AllOf(matchers.HasPrefix("test"), matchers.Contains("data"))
+matchers.AnyOf(matchers.Equals("success"), matchers.Equals("completed"))
+matchers.Not(matchers.IsEmpty())
+
+// Field matchers
+matchers.HasField("status", matchers.Equals("success"))
+matchers.MatchesJSON(`{"status": "success", "count": 42}`)
+```
+
+### Helpers
+
+Helpers provide utilities for common testing tasks:
+
+```go
+// Context creation
+ctx := helpers.CreateTestToolContext()
+ctx := helpers.CreateToolContextWithState(map[string]interface{}{
+    "mode": "test",
+    "debug": true,
+})
+
+// Event testing
+capture := helpers.NewEventCapture()
+// ... run code that emits events
+events := capture.GetEvents()
+
+helpers.AssertEvents(t, events).
+    HasType("agent.start").
+    HasType("tool.execute").
+    HasType("agent.complete").
+    InOrder()
+
+// Event capture with filters
+capture := helpers.NewEventCapture()
+capture.WithFilter(func(event domain.Event) bool {
+    return event.Type == "agent.complete"
+})
+
+// Event assertions
+capture.AssertEventEmitted(t, "agent.start", matchers.HasField("agentID", matchers.Equals("test-agent")))
+capture.AssertEventCount(t, "tool.execute", 3)
+capture.AssertNoEvents(t, "agent.error")
+
+// Pointer helpers (for optional fields)
+stringPtr := helpers.StringPtr("value")
+intPtr := helpers.IntPtr(42)
+boolPtr := helpers.BoolPtr(true)
+```
+
+### Mock Registry
+
+The testing infrastructure includes a centralized mock registry for managing mock instances:
+
+```go
+// Register and retrieve mocks by name
+registry := mocks.NewMockRegistry()
+registry.RegisterProvider("openai", provider)
+registry.RegisterTool("calculator", tool)
+registry.RegisterAgent("research", agent)
+
+// Retrieve registered mocks
+provider := registry.GetProvider("openai")
+tool := registry.GetTool("calculator")
+agent := registry.GetAgent("research")
+
+// List all registered mocks
+providers := registry.ListProviders()
+tools := registry.ListTools()
+agents := registry.ListAgents()
+```
+
+## Usage Patterns
+
+### Testing Provider Functionality
+
+```go
+func TestProviderFunctionality(t *testing.T) {
+    provider := fixtures.OpenAIMockProvider()
+    
+    // Test different message types
+    messages := []domain.Message{
+        {Role: "system", Content: "You are a helpful assistant"},
+        {Role: "user", Content: "What is Go programming?"},
+    }
+    
+    response, err := provider.GenerateMessage(context.Background(), messages)
+    assert.NoError(t, err)
+    assert.Contains(t, response.Content, "Go")
+    
+    // Test streaming
+    stream, err := provider.Stream(context.Background(), "Count to 5")
+    assert.NoError(t, err)
+    
+    var tokens []string
+    for token := range stream {
+        if token.Text != "" {
+            tokens = append(tokens, token.Text)
+        }
+    }
+    assert.Greater(t, len(tokens), 3)
+}
+```
+
+### Testing Tool Execution
+
+```go
+func TestToolExecution(t *testing.T) {
+    // Test calculator operations
+    calc := fixtures.CalculatorMockTool()
+    ctx := helpers.CreateTestToolContext()
+    
+    operations := []struct {
+        name     string
+        op       string
+        a, b     float64
+        expected float64
+    }{
+        {"addition", "add", 5, 3, 8},
+        {"subtraction", "subtract", 10, 4, 6},
+        {"multiplication", "multiply", 3, 7, 21},
+        {"division", "divide", 15, 3, 5},
+    }
+    
+    for _, test := range operations {
+        t.Run(test.name, func(t *testing.T) {
+            result, err := calc.Execute(ctx, map[string]interface{}{
+                "operation": test.op,
+                "a": test.a,
+                "b": test.b,
+            })
+            
+            assert.NoError(t, err)
+            assert.Equal(t, test.expected, result["result"])
+        })
+    }
+}
+```
+
+### Testing Agent Workflows
+
+```go
+func TestAgentWorkflows(t *testing.T) {
+    tests := []struct {
+        name       string
+        agent      func() *mocks.MockAgent
+        input      *domain.State
+        assertions func(t *testing.T, result *domain.State, err error)
+    }{
+        {
+            name:  "simple processing",
+            agent: fixtures.SimpleMockAgent,
+            input: fixtures.BasicTestState(),
+            assertions: func(t *testing.T, result *domain.State, err error) {
+                assert.NoError(t, err)
+                message, _ := result.Get("message")
+                assert.Equal(t, "Simple agent response", message)
+            },
+        },
+        {
+            name: "research workflow",
+            agent: fixtures.ResearchMockAgent,
+            input: func() *domain.State {
+                state := fixtures.BasicTestState()
+                state.Set("query", "machine learning trends")
+                return state
+            }(),
+            assertions: func(t *testing.T, result *domain.State, err error) {
+                assert.NoError(t, err)
+                taskType, _ := result.Get("task_type")
+                assert.Equal(t, "research", taskType)
+            },
+        },
+    }
+    
+    for _, test := range tests {
+        t.Run(test.name, func(t *testing.T) {
+            agent := test.agent()
+            result, err := agent.Run(context.Background(), test.input)
+            test.assertions(t, result, err)
+        })
+    }
+}
+```
+
+### Testing Error Conditions
+
+```go
+func TestErrorConditions(t *testing.T) {
+    // Test provider errors
+    t.Run("provider rate limiting", func(t *testing.T) {
+        provider := fixtures.RateLimitErrorProvider()
+        
+        _, err := provider.Generate(context.Background(), "test")
+        assert.Error(t, err)
+        assert.Contains(t, err.Error(), "rate limit")
+    })
+    
+    // Test timeout scenarios
+    t.Run("provider timeout", func(t *testing.T) {
+        provider := fixtures.SlowMockProvider(2 * time.Second)
+        
+        ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+        defer cancel()
+        
+        _, err := provider.Generate(ctx, "test")
+        assert.Error(t, err)
+        assert.Contains(t, err.Error(), "context deadline exceeded")
+    })
+    
+    // Test tool errors
+    t.Run("tool execution error", func(t *testing.T) {
+        errorTool := fixtures.ErrorMockTool(1.0) // 100% error rate
+        ctx := helpers.CreateTestToolContext()
+        
+        _, err := errorTool.Execute(ctx, map[string]interface{}{})
+        assert.Error(t, err)
+        assert.Contains(t, err.Error(), "simulated error")
+    })
+}
+```
+
+### Testing Concurrent Access
+
+```go
+func TestConcurrentAccess(t *testing.T) {
+    provider := fixtures.OpenAIMockProvider()
+    
+    // Test thread safety
+    const numGoroutines = 10
+    const requestsPerGoroutine = 10
+    
+    var wg sync.WaitGroup
+    wg.Add(numGoroutines)
+    
+    for i := 0; i < numGoroutines; i++ {
+        go func(routineID int) {
+            defer wg.Done()
+            
+            for j := 0; j < requestsPerGoroutine; j++ {
+                prompt := fmt.Sprintf("Request %d-%d", routineID, j)
+                response, err := provider.Generate(context.Background(), prompt)
+                assert.NoError(t, err)
+                assert.NotEmpty(t, response)
+            }
+        }(i)
+    }
+    
+    wg.Wait()
+    
+    // Verify all requests were recorded
+    history := provider.GetCallHistory()
+    assert.Len(t, history, numGoroutines*requestsPerGoroutine)
+}
+```
 
 ## Error Condition Test Suite
 
-The error condition test suite systematically tests how the library handles various error scenarios, focusing on:
-
-1. Provider error conditions
-2. Schema validation error conditions
-3. Agent error conditions
+The error condition test suite systematically tests how the library handles various error scenarios:
 
 ### Provider Error Handling
-
-Provider error tests validate that the library correctly handles various API error scenarios:
 
 ```go
 func TestProviderErrors(t *testing.T) {
@@ -65,155 +593,58 @@ func TestProviderErrors(t *testing.T) {
             } else if strings.Contains(r.URL.Path, "rate-limit") {
                 w.WriteHeader(http.StatusTooManyRequests)
                 w.Write([]byte(`{"error":{"message":"Rate limit exceeded"}}`))
-            } else if strings.Contains(r.URL.Path, "context-length") {
-                w.WriteHeader(http.StatusBadRequest)
-                w.Write([]byte(`{"error":{"message":"Context length exceeded"}}`))
             }
-            // Additional error types handled...
+            // Additional error types...
         }))
         defer mockServer.Close()
 
         // Test providers with different error conditions
-        testErrorConditions(t, mockServer.URL, "auth-error", domain.ErrAuthenticationFailure, "OpenAI")
-        testErrorConditions(t, mockServer.URL, "rate-limit", domain.ErrRateLimitExceeded, "Anthropic")
-        testErrorConditions(t, mockServer.URL, "context-length", domain.ErrContextLengthExceeded, "Gemini")
-        // Additional error types tested...
+        testErrorConditions(t, mockServer.URL, "auth-error", domain.ErrAuthenticationFailure)
+        testErrorConditions(t, mockServer.URL, "rate-limit", domain.ErrRateLimitExceeded)
     })
-
-    // Additional error scenarios tested
-    t.Run("NetworkFailure", func(t *testing.T) { /* Test network failures */ })
-    t.Run("RetryMechanism", func(t *testing.T) { /* Test retry behavior */ })
 }
 ```
 
-This approach tests:
-
-- Authentication errors
-- Rate limiting
-- Context length errors
-- Content filtering
-- Server errors
-- Malformed responses
-- Network connectivity issues
-- Timeout handling
-- Retry mechanisms
-
 ### Schema Validation Errors
-
-Schema validation error tests ensure that the library properly validates input data and provides helpful error messages:
 
 ```go
 func TestSchemaValidationErrors(t *testing.T) {
     t.Run("TypeValidationErrors", func(t *testing.T) {
-        schema := `{
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "age": {"type": "integer"},
-                "active": {"type": "boolean"}
-            }
-        }`
+        schema := &domain.Schema{
+            Type: "object",
+            Properties: map[string]domain.Property{
+                "name": {Type: "string"},
+                "age": {Type: "integer"},
+            },
+            Required: []string{"name", "age"},
+        }
         
-        // Test invalid types
-        data := `{
+        // Test with wrong types
+        wrongTypesJSON := `{
             "name": 123,
-            "age": "twenty",
-            "active": "yes"
+            "age": "twenty"
         }`
         
-        result, err := validation.ValidateJSON(data, schema)
-        
-        // Verify appropriate error types and messages
+        result, err := validator.Validate(schema, wrongTypesJSON)
         require.Error(t, err)
         require.False(t, result.Valid)
-        require.Contains(t, err.Error(), "name: expected string, got number")
-        require.Contains(t, err.Error(), "age: expected integer, got string")
-        require.Contains(t, err.Error(), "active: expected boolean, got string")
     })
-
-    // Additional validation error types tested
-    t.Run("ConstraintValidationErrors", func(t *testing.T) { /* ... */ })
-    t.Run("RequiredFieldsValidation", func(t *testing.T) { /* ... */ })
-    t.Run("NestedObjectValidation", func(t *testing.T) { /* ... */ })
-    t.Run("ArrayItemValidation", func(t *testing.T) { /* ... */ })
-    // More validation scenarios...
 }
 ```
-
-These tests cover:
-
-- Type validation errors
-- Constraint validation (min/max, pattern, format)
-- Required field validation
-- Nested object validation
-- Array item validation
-- Complex schema validation scenarios
-
-### Agent Error Conditions
-
-Agent error tests validate how the agent system handles tool errors, invalid schemas, timeouts, and more:
-
-```go
-func TestAgentErrors(t *testing.T) {
-    t.Run("FailingProvider", func(t *testing.T) {
-        mockProvider := provider.NewMockProvider()
-        mockProvider.WithGenerateFunc(func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
-            return "", errors.New("simulated provider error")
-        })
-
-        agent := workflow.NewAgent(mockProvider)
-        _, err := agent.Run(context.Background(), "test prompt")
-
-        require.Error(t, err)
-        require.Contains(t, err.Error(), "simulated provider error")
-    })
-
-    // Additional agent error scenarios
-    t.Run("FailingTool", func(t *testing.T) { /* ... */ })
-    t.Run("InvalidToolName", func(t *testing.T) { /* ... */ })
-    t.Run("InvalidToolParams", func(t *testing.T) { /* ... */ })
-    t.Run("InvalidSchema", func(t *testing.T) { /* ... */ })
-    t.Run("Timeout", func(t *testing.T) { /* ... */ })
-    // More error scenarios...
-}
-```
-
-These tests verify:
-
-- Provider failure handling
-- Tool execution errors
-- Invalid tool name handling
-- Parameter validation
-- Schema validation errors
-- Timeout handling
-- Error propagation through hooks
-- Recursion depth handling
 
 ## Agent Testing Considerations
-
-When testing agent workflows, there are special considerations for handling edge cases and limitations.
 
 ### Mock Testing Limitations
 
 When testing agent workflows with mock LLM providers, there are several limitations to be aware of:
 
-#### Tool Call Handling
-
-1. **Direct Response Return**: When a mock provider returns a tool call JSON, the agent may return the raw JSON response directly instead of executing the tool. This behavior was observed in the edge case tests where the agent would return the tool call JSON as a string rather than properly executing the tool.
-
-2. **Recursive Tool Calls**: Testing recursive depth limits requires special handling. Instead of relying on the agent's ability to execute tools during testing, create a controlled test where:
-   - The test triggers a known error condition
-   - The mock provider surfaces this error back through the agent
-
-3. **Sequential Tool Calls**: Similar to the recursive case, testing a sequence of tool calls requires careful setup to ensure proper chaining of calls.
+1. **Direct Response Return**: Mock providers may return tool call JSON directly instead of executing tools
+2. **Recursive Tool Calls**: Testing recursive depth limits requires special handling
+3. **Sequential Tool Calls**: Testing tool call sequences requires careful setup
 
 ### Effective Testing Patterns
 
-Based on our findings, here are recommended patterns for testing agent workflows:
-
-#### 1. Direct Tool Extraction Testing
-
-Test the `ExtractToolCall` method directly to verify tool call extraction:
+#### Direct Tool Extraction Testing
 
 ```go
 func TestExtractToolCall(t *testing.T) {
@@ -233,13 +664,10 @@ func TestExtractToolCall(t *testing.T) {
 }
 ```
 
-#### 2. Testing Tool Functionality with Error Conditions
-
-For testing edge cases like recursion depth limits:
+#### Testing Tool Functionality with Error Conditions
 
 ```go
 func TestRecursionDepthLimit(t *testing.T) {
-    // Create a counter to track recursion depth
     recursionCount := 0
     maxRecursion := 5
 
@@ -249,93 +677,34 @@ func TestRecursionDepthLimit(t *testing.T) {
         "A tool that tracks calls and errors at max depth",
         func(params map[string]interface{}) (interface{}, error) {
             recursionCount++
-
             if recursionCount >= maxRecursion {
                 return nil, fmt.Errorf("maximum recursion depth (%d) exceeded", maxRecursion)
             }
-
             return fmt.Sprintf("Success at depth %d", recursionCount), nil
         },
-        &sdomain.Schema{
-            Type: "object",
-            Properties: map[string]sdomain.Property{},
-        },
+        &sdomain.Schema{},
     )
 
-    // Configure the mock provider to surface the error
+    // Configure mock provider to surface the error
     mockProvider := provider.NewMockProvider()
-    mockProvider.WithGenerateMessageFunc(func(ctx context.Context, messages []llmDomain.Message, options ...llmDomain.Option) (llmDomain.Response, error) {
-        // Check if previous message contains an error about max recursion
-        if len(messages) > 1 {
-            lastMsg := messages[len(messages)-1]
-            if strings.Contains(lastMsg.Content, "maximum recursion depth") {
-                // Re-surface the error from the tool
-                return llmDomain.Response{}, fmt.Errorf("tool execution failed: %s", lastMsg.Content)
-            }
-        }
+    // ... provider configuration
 
-        // Always call the tool in testing
-        return llmDomain.Response{
-            Content: `{"tool": "recursive_error_tool", "params": {}}`,
-        }, nil
-    })
-
-    // Setup agent with tool
     agent := workflow.NewAgent(mockProvider)
     agent.AddTool(recursiveErrorTool)
 
-    // Run the agent
     _, err := agent.Run(context.Background(), "Test recursive tool error")
-
-    // Assertions
-    assert.Error(t, err, "Agent should surface the recursion depth error")
+    assert.Error(t, err)
     assert.Contains(t, err.Error(), "maximum recursion depth")
-    assert.Equal(t, maxRecursion, recursionCount)
 }
 ```
 
-#### 3. JSON Format Considerations
-
-Ensure all tool call JSON in tests uses the `params` field rather than `parameters`:
-
-```go
-// Correct format
-`{
-  "tool": "test_tool",
-  "params": {
-    "key": "value"
-  }
-}`
-
-// Incorrect format
-`{
-  "tool": "test_tool",
-  "parameters": {
-    "key": "value"
-  }
-}`
-```
-
-### Future Improvements for Agent Testing
-
-Potential improvements to make agent testing more robust:
-
-1. Enhanced test mode for agents that prioritizes tool execution during testing
-2. Better instrumentation to track tool calls without relying on hooks
-3. Extension of the mock provider to better support tool execution chains
-
 ## Schema Validation Testing
 
-The schema validation system in Go-LLMs provides comprehensive validation features for structured data. Testing this system requires specific approaches to ensure all validation features work as expected.
+The schema validation system provides comprehensive validation features:
 
 ### Implementation Status
 
-The schema validation system has two categories of features:
-
 #### Core Validation Features (Fully Implemented)
-
-These features are fully implemented and have complete test coverage:
-
 - ✅ Type validation (string, number, integer, boolean, object, array)
 - ✅ Constraint validation (min/max length, min/max items, pattern, enum, etc.)
 - ✅ Required fields validation
@@ -345,9 +714,6 @@ These features are fully implemented and have complete test coverage:
 - ✅ Type coercion
 
 #### Conditional Validation Features (Partially Implemented)
-
-These features have the core implementation in place but need additional work:
-
 - 🔄 If/Then/Else conditional validation
 - 🔄 AllOf validation
 - 🔄 AnyOf validation
@@ -356,123 +722,42 @@ These features have the core implementation in place but need additional work:
 
 ### Validation Test Structure
 
-Schema validation tests are structured to check specific validation features:
-
 ```go
 func TestSchemaValidationErrors(t *testing.T) {
-    // Test type validation for various data types
     t.Run("TypeValidationErrors", func(t *testing.T) {
         schema := &domain.Schema{
             Type: "object",
             Properties: map[string]domain.Property{
                 "string_prop": {Type: "string"},
                 "number_prop": {Type: "number"},
-                "integer_prop": {Type: "integer"},
-                "boolean_prop": {Type: "boolean"},
-                "array_prop": {Type: "array"},
-                "object_prop": {Type: "object"},
             },
-            Required: []string{"string_prop", "number_prop", "integer_prop", "boolean_prop"},
+            Required: []string{"string_prop", "number_prop"},
         }
 
-        // Test with wrong types
         wrongTypesJSON := `{
             "string_prop": 123,
-            "number_prop": "not a number",
-            "integer_prop": 3.14,
-            "boolean_prop": "true",
-            "array_prop": {},
-            "object_prop": []
+            "number_prop": "not a number"
         }`
 
         result, err := validator.Validate(schema, wrongTypesJSON)
-        // Verify error messages match expected format
-        // ...
+        require.Error(t, err)
+        require.False(t, result.Valid)
     })
-
-    // Additional test suites for other validation features
-    t.Run("ConstraintValidationErrors", func(t *testing.T) { /* ... */ })
-    t.Run("RequiredFieldsValidation", func(t *testing.T) { /* ... */ })
-    t.Run("NestedObjectValidation", func(t *testing.T) { /* ... */ })
-    t.Run("ArrayItemValidation", func(t *testing.T) { /* ... */ })
-    t.Run("FormatValidation", func(t *testing.T) { /* ... */ })
-
-    // Tests for conditional validation features (currently skipped)
-    t.Run("ConditionalValidation", func(t *testing.T) {
-        t.Skip("Top-level conditional validation not fully implemented yet")
-        // ...
-    })
-
-    // Additional conditional validation tests (skipped until implementation complete)
-    t.Run("AnyOfValidation", func(t *testing.T) { /* ... */ })
-    t.Run("OneOfValidation", func(t *testing.T) { /* ... */ })
-    t.Run("NotValidation", func(t *testing.T) { /* ... */ })
 }
 ```
-
-### Testing Complex Validation Scenarios
-
-For complex validation scenarios like nested objects and arrays:
-
-```go
-func TestNestedObjectValidation(t *testing.T) {
-    schema := &domain.Schema{
-        Type: "object",
-        Properties: map[string]domain.Property{
-            "nested": {
-                Type: "object",
-                Properties: map[string]domain.Property{
-                    "field1": {Type: "string"},
-                    "field2": {Type: "number"},
-                },
-                Required: []string{"field1", "field2"},
-            },
-        },
-        Required: []string{"nested"},
-    }
-
-    // Test with invalid nested object
-    invalidNestedJSON := `{
-        "nested": {
-            "field1": 123,
-            "field3": "extra"
-        }
-    }`
-
-    result, err := validator.Validate(schema, invalidNestedJSON)
-    // Expect errors for type mismatch and missing required field
-}
-```
-
-### Recent Improvements and Future Work
-
-Recent improvements to the schema validation testing framework include:
-
-- Added AnyOf, OneOf, Not properties to Property struct to support nested validation
-- Enhanced validateValue to support conditional validation at all levels
-- Implemented property-level conditional validation infrastructure
-- Added tests for schema validation edge cases
-
-Future work will focus on:
-- Completing implementation of AnyOf, OneOf, Not validation at the property level
-- Enhancing error handling for conditional validation
-- Adding documentation for schema validation best practices
-- Creating examples showing how to use conditional validation effectively
 
 ## Stress Testing
 
-Stress tests evaluate the library's behavior under high-concurrency and load conditions, ensuring stability and reliability in production environments.
+Stress tests evaluate the library's behavior under high-concurrency and load conditions:
 
 ### Provider Stress Tests
 
 ```go
 func TestProviderConcurrentRequests(t *testing.T) {
-    // Skip in short test mode
     if testing.Short() {
         t.Skip("Skipping stress test in short mode")
     }
     
-    // Create providers to test
     providers := []struct {
         name     string
         provider domain.Provider
@@ -480,200 +765,15 @@ func TestProviderConcurrentRequests(t *testing.T) {
         {"OpenAI", mockOpenAIProvider()},
         {"Anthropic", mockAnthropicProvider()},
         {"Gemini", mockGeminiProvider()},
-        {"Multi", mockMultiProvider()},
     }
     
-    // Test different concurrency levels
     concurrencyLevels := []int{10, 50, 100, 250, 500}
     
-    // Run tests for each provider and concurrency level
     for _, p := range providers {
         for _, concurrency := range concurrencyLevels {
             t.Run(fmt.Sprintf("%s_Concurrency_%d", p.name, concurrency), func(t *testing.T) {
-                var (
-                    wg            sync.WaitGroup
-                    successful    int32
-                    failed        int32
-                    totalLatencyMs int64
-                )
-                
-                // Create a semaphore to limit concurrent goroutines
-                sem := make(chan struct{}, concurrency)
-                
-                // Track peak goroutine count
-                initialGoroutines := runtime.NumGoroutine()
-                
-                // Launch concurrent requests
-                for i := 0; i < concurrency*2; i++ {
-                    wg.Add(1)
-                    sem <- struct{}{} // Acquire semaphore
-                    go func(id int) {
-                        defer func() {
-                            <-sem // Release semaphore
-                            wg.Done()
-                        }()
-                        
-                        // Select a prompt randomly
-                        prompt := selectRandomPrompt()
-                        
-                        // Measure request time
-                        requestStart := time.Now()
-                        _, err := p.provider.Generate(context.Background(), prompt)
-                        latencyMs := time.Since(requestStart).Milliseconds()
-                        
-                        // Update metrics atomically
-                        atomic.AddInt64(&totalLatencyMs, latencyMs)
-                        
-                        if err != nil {
-                            atomic.AddInt32(&failed, 1)
-                        } else {
-                            atomic.AddInt32(&successful, 1)
-                        }
-                    }(i)
-                }
-                
-                // Wait for all requests to complete
-                wg.Wait()
-                
-                // Record results with comprehensive metrics
-                t.Logf("Results for %s at concurrency %d:", p.name, concurrency)
-                t.Logf("  Success rate: %.2f%% (%d/%d)", 
-                    float64(successful)/float64(successful+failed)*100, successful, successful+failed)
-                t.Logf("  Average latency: %.2f ms", float64(totalLatencyMs)/float64(successful+failed))
-                t.Logf("  Total duration: %v", totalDuration)
-                t.Logf("  Goroutines: %d initial, %d peak", initialGoroutines, peakGoroutines)
-            })
-        }
-    }
-}
-```
-
-### Agent Workflow Stress Tests
-
-```go
-func TestAgentConcurrentRequests(t *testing.T) {
-    if testing.Short() {
-        t.Skip("Skipping stress test in short mode")
-    }
-    
-    // Test different agent types
-    agents := []struct {
-        name  string
-        agent domain.Agent
-    }{
-        {"BaseAgent", createBaseAgent()},
-        {"CachedAgent", createCachedAgent()},
-        {"MultiAgent", createMultiAgent()},
-    }
-    
-    // Test different concurrency levels
-    concurrencyLevels := []int{5, 20, 50, 100}
-    
-    // Run tests for each agent and concurrency level
-    for _, a := range agents {
-        for _, concurrency := range concurrencyLevels {
-            t.Run(fmt.Sprintf("%s_Concurrency_%d", a.name, concurrency), func(t *testing.T) {
-                // Create thread-safe tool counter
-                toolCounter := &safeToolCounter{}
-                
-                // Add tool counters to agent
-                addToolCounterHook(a.agent, toolCounter)
-                
-                // Create a semaphore to limit concurrent goroutines
-                sem := make(chan struct{}, concurrency)
-                
-                // Run concurrency test with comprehensive metrics
-                // Similar pattern to provider stress test...
-                
-                // Report specific agent metrics
-                t.Logf("  Average tool invocations per request: %.2f", 
-                    float64(toolCounter.Count())/float64(successful+failed))
-            })
-        }
-    }
-}
-```
-
-### Memory Pool Stress Tests
-
-```go
-func TestResponsePoolStress(t *testing.T) {
-    if testing.Short() {
-        t.Skip("Skipping stress test in short mode")
-    }
-    
-    // Test different content sizes
-    contentSizes := []struct {
-        name        string
-        size        string
-        contentFunc func() string
-    }{
-        {"Tiny", "small", generateTinyContent},
-        {"Small", "small", generateSmallContent},
-        {"Medium", "medium", generateMediumContent},
-        {"Large", "large", generateLargeContent},
-        {"XLarge", "large", generateXLargeContent},
-    }
-    
-    // Test different concurrency levels
-    concurrencyLevels := []int{10, 100, 1000}
-    
-    // Response pool
-    pool := domain.NewResponsePool()
-    
-    // Run stress tests
-    for _, size := range contentSizes {
-        for _, concurrency := range concurrencyLevels {
-            t.Run(fmt.Sprintf("ResponsePool_Concurrency_%d_Size_%s", concurrency, size.name), func(t *testing.T) {
-                // Run pool stress test with metrics for acquisition time, release time, throughput
-                // Similar pattern to other stress tests...
-                
-                // Additional metrics specific to pools
-                t.Logf("  Total processed: %.2f MB", float64(totalBytesProcessed)/1024/1024)
-                t.Logf("  Throughput: %.2f operations/sec", float64(operationsCompleted)/totalDuration.Seconds())
-            })
-        }
-    }
-}
-```
-
-### Structured Output Processor Stress Tests
-
-```go
-func TestStructuredProcessorConcurrentRequests(t *testing.T) {
-    if testing.Short() {
-        t.Skip("Skipping stress test in short mode")
-    }
-    
-    // Test different schema complexities
-    schemas := []struct {
-        name        string
-        description string
-        schema      string
-        mockFunc    func() string
-    }{
-        {"SmallSchema", "small schema, low complexity", smallSchema, mockSmallResponse},
-        {"MediumSchema", "medium schema, medium complexity", mediumSchema, mockMediumResponse},
-        {"LargeSchema", "large schema, high complexity", largeSchema, mockLargeResponse},
-    }
-    
-    // Test different concurrency levels
-    concurrencyLevels := []int{10, 50, 100, 200}
-    
-    // Run stress tests for each schema and concurrency level
-    for _, s := range schemas {
-        for _, concurrency := range concurrencyLevels {
-            t.Run(fmt.Sprintf("%s_Concurrency_%d", s.name, concurrency), func(t *testing.T) {
                 // Run stress test with metrics
-                // Similar pattern to other stress tests...
-                
-                // Structured processor specific metrics
-                t.Logf("  Validation error rate: %.2f%% (%d/%d)", 
-                    float64(validationErrors)/float64(total)*100, validationErrors, total)
-                t.Logf("  Average LLM latency: %.2f ms (%.2f%%)", 
-                    float64(llmLatencyMs)/float64(total), percentLLM)
-                t.Logf("  Average processing latency: %.2f ms (%.2f%%)", 
-                    float64(processingLatencyMs)/float64(total), percentProcessing)
+                // Track success rate, latency, throughput
             })
         }
     }
@@ -682,11 +782,10 @@ func TestStructuredProcessorConcurrentRequests(t *testing.T) {
 
 ### Workflow Agent Stress Tests (New in June 2025)
 
-As part of Phase 7 of the Agent Architecture Restructuring, comprehensive workflow agent stress tests have been added in `tests/stress/workflow_stress_test.go`:
+Comprehensive workflow agent stress tests have been added:
 
 ```go
 func TestWorkflowAgentsConcurrentExecution(t *testing.T) {
-    // Tests different workflow types under concurrent load
     workflowTypes := []struct {
         name        string
         createFunc  func() domain.BaseAgent
@@ -699,7 +798,6 @@ func TestWorkflowAgentsConcurrentExecution(t *testing.T) {
         {"Nested", createNestedWorkflow, "high"},
     }
     
-    // Run with different concurrency levels
     concurrencyLevels := []int{10, 50, 100}
     
     // Metrics tracked:
@@ -710,51 +808,261 @@ func TestWorkflowAgentsConcurrentExecution(t *testing.T) {
 }
 ```
 
-Additional workflow stress tests include:
+## Best Practices
 
-1. **State Management Stress Test**: Tests concurrent state operations with shared contexts
-2. **Memory Leak Detection**: Monitors memory usage across hundreds of workflow executions
-3. **Error Handling Under Load**: Tests workflow behavior when agents fail under high concurrency
+### 1. Use Appropriate Fixtures
 
-### Advanced Agent Benchmarks (New in June 2025)
-
-New comprehensive benchmarks have been added in `tests/benchmarks/agent_advanced_bench_test.go`:
+Choose the most specific fixture for your test case:
 
 ```go
-// Agent creation benchmarks
-BenchmarkAgentCreation/DirectCreation     // Direct instantiation
-BenchmarkAgentCreation/StringCreation     // From provider string
-BenchmarkAgentCreation/WithTools          // With tool addition
-BenchmarkAgentCreation/WithHooks          // With hook addition
+// ✅ Good: Use specific fixture
+provider := fixtures.OpenAIMockProvider()
 
-// State management benchmarks
-BenchmarkStateManagement/StateCreation    // New state creation
-BenchmarkStateManagement/StateSetGet      // Set/Get operations
-BenchmarkStateManagement/StateNestedData  // Nested data handling
-BenchmarkStateManagement/StateClone       // State cloning
-BenchmarkStateManagement/SharedStateContext // Shared state access
-
-// Tool execution benchmarks
-BenchmarkToolExecution/SingleToolCall     // Single tool invocation
-BenchmarkToolExecution/MultipleToolCalls  // Multiple tools
-
-// Workflow agent benchmarks
-BenchmarkWorkflowAgents/SequentialWorkflow
-BenchmarkWorkflowAgents/ParallelWorkflow
-BenchmarkWorkflowAgents/ConditionalWorkflow
-BenchmarkWorkflowAgents/LoopWorkflow
-
-// Hook execution benchmarks
-BenchmarkHookExecution/NoHooks            // Baseline without hooks
-BenchmarkHookExecution/SingleHook         // Single hook overhead
-BenchmarkHookExecution/MultipleHooks      // Multiple hooks overhead
-
-// Event stream benchmarks
-BenchmarkEventStream/EventCreation
-BenchmarkEventStream/EventStreamOperations
+// ❌ Avoid: Generic mock requiring manual setup
+provider := mocks.NewMockProvider("generic")
 ```
 
-These benchmarks help identify performance bottlenecks and ensure the new agent architecture maintains high performance under various workloads.
+### 2. Leverage Pattern Matching
+
+Use patterns for realistic behavior simulation:
+
+```go
+// ✅ Good: Pattern-based responses
+provider.WithPatternResponse("(?i).*weather.*", mocks.Response{
+    Content: "Weather information response",
+})
+
+// ❌ Avoid: Single static response
+provider.WithDefaultResponse("Static response")
+```
+
+### 3. Use Scenario Builder for Complex Tests
+
+For multi-component tests, use the scenario builder:
+
+```go
+// ✅ Good: Scenario builder for complex setup
+scenario.NewScenario(t).
+    WithMockProvider("chatgpt", responses).
+    WithTool(tool).
+    WithAgent(agent).
+    Run()
+
+// ❌ Avoid: Manual setup for complex scenarios
+// ... lots of manual setup code
+```
+
+### 4. Test Error Conditions
+
+Always test error scenarios:
+
+```go
+func TestWithErrors(t *testing.T) {
+    // Test normal case
+    t.Run("success", func(t *testing.T) {
+        // ... success test
+    })
+    
+    // Test error cases
+    t.Run("rate_limit_error", func(t *testing.T) {
+        provider := fixtures.RateLimitErrorProvider()
+        // ... error test
+    })
+}
+```
+
+### 5. Use Table-Driven Tests
+
+For testing multiple similar scenarios:
+
+```go
+func TestMultipleScenarios(t *testing.T) {
+    tests := []struct {
+        name     string
+        input    string
+        expected string
+    }{
+        {"greeting", "hello", "Hello"},
+        {"question", "what is", "What is"},
+    }
+    
+    provider := fixtures.OpenAIMockProvider()
+    
+    for _, test := range tests {
+        t.Run(test.name, func(t *testing.T) {
+            response, err := provider.Generate(context.Background(), test.input)
+            assert.NoError(t, err)
+            assert.Contains(t, response, test.expected)
+        })
+    }
+}
+```
+
+### 6. Clean Up Resources
+
+Ensure proper cleanup in tests:
+
+```go
+func TestWithCleanup(t *testing.T) {
+    provider := fixtures.OpenAIMockProvider()
+    
+    t.Cleanup(func() {
+        provider.Reset() // Reset call history if needed
+    })
+    
+    // ... test code
+}
+```
+
+## Performance Considerations
+
+### Fixture Reuse
+
+Fixtures are designed for reuse within tests:
+
+```go
+func TestFixtureReuse(t *testing.T) {
+    // Create once, use multiple times
+    provider := fixtures.OpenAIMockProvider()
+    
+    t.Run("test1", func(t *testing.T) {
+        response, err := provider.Generate(context.Background(), "hello")
+        assert.NoError(t, err)
+    })
+    
+    t.Run("test2", func(t *testing.T) {
+        response, err := provider.Generate(context.Background(), "goodbye")
+        assert.NoError(t, err)
+    })
+}
+```
+
+### Parallel Testing
+
+Enable parallel testing for better performance:
+
+```go
+func TestParallel(t *testing.T) {
+    t.Parallel() // Enable parallel execution
+    
+    provider := fixtures.OpenAIMockProvider()
+    
+    t.Run("subtest1", func(t *testing.T) {
+        t.Parallel()
+        // ... test code
+    })
+}
+```
+
+### Memory Usage
+
+For large test suites, consider memory usage:
+
+```go
+func TestMemoryEfficient(t *testing.T) {
+    // Use smaller state fixtures when possible
+    state := fixtures.BasicTestState() // Instead of LargeTestState()
+    
+    // Reset call history if not needed
+    provider := fixtures.OpenAIMockProvider()
+    defer func() {
+        if len(provider.GetCallHistory()) > 100 {
+            provider.Reset()
+        }
+    }()
+}
+```
+
+## Migration Guide
+
+### From Legacy MockProvider
+
+```go
+// OLD: Manual mock setup
+func TestOldWay(t *testing.T) {
+    mock := provider.NewMockProvider()
+    mock.WithGenerateFunc(func(ctx context.Context, prompt string, options ...domain.Option) (string, error) {
+        if strings.Contains(prompt, "hello") {
+            return "Hello response", nil
+        }
+        return "Default response", nil
+    })
+    
+    response, err := mock.Generate(context.Background(), "hello world")
+    assert.NoError(t, err)
+    assert.Contains(t, response, "Hello")
+}
+
+// NEW: Using fixtures
+func TestNewWay(t *testing.T) {
+    provider := fixtures.OpenAIMockProvider()  // Use specific provider fixture
+    // Patterns are pre-configured for realistic behavior
+    
+    response, err := provider.Generate(context.Background(), "hello world")
+    assert.NoError(t, err)
+    assert.Contains(t, response, "Hello")
+}
+```
+
+### From Manual Context Creation
+
+```go
+// OLD: Manual context creation
+func TestOldContext(t *testing.T) {
+    mockAgent := &MockAgent{
+        BaseAgentImpl: core.NewBaseAgent("test", "desc", domain.AgentTypeCustom),
+    }
+    ctx := domain.NewToolContext(
+        context.Background(),
+        domain.NewStateReader(domain.NewState()),
+        mockAgent,
+        "test-run",
+    )
+    
+    // ... test code
+}
+
+// NEW: Using helpers
+func TestNewContext(t *testing.T) {
+    ctx := helpers.CreateTestToolContext()
+    
+    // Or with custom state
+    ctx := helpers.CreateToolContextWithState(map[string]interface{}{
+        "key": "value",
+    })
+    
+    // ... test code
+}
+```
+
+### From Inline Agent Setup
+
+```go
+// OLD: Inline mock agent
+func TestOldAgent(t *testing.T) {
+    agent := &mockAgent{
+        BaseAgentImpl: core.NewBaseAgent("test", "desc", domain.AgentTypeCustom),
+        runFunc: func(ctx context.Context, state *domain.State) (*domain.State, error) {
+            result := state.Clone()
+            result.Set("output", "processed")
+            return result, nil
+        },
+    }
+    
+    // ... test code
+}
+
+// NEW: Using fixtures
+func TestNewAgent(t *testing.T) {
+    // Use pre-built fixture
+    agent := fixtures.SimpleMockAgent()
+    
+    // Or create specialized agent
+    agent := fixtures.SpecialistMockAgent("analyzer", "data_analysis", 50*time.Millisecond)
+    
+    // ... test code
+}
+```
 
 ## Running Tests
 
@@ -785,47 +1093,163 @@ go test -v ./tests/stress/workflow_stress_test.go -run TestWorkflow
 make benchmark                 # Run all benchmarks
 make benchmark-pkg PKG=agent   # Run benchmarks for specific package
 make benchmark-specific BENCH=BenchmarkAgentCreation  # Run specific benchmark
-
-# Run new advanced benchmarks (June 2025)
-go test -bench=BenchmarkAgentCreation ./tests/benchmarks/agent_advanced_bench_test.go
-go test -bench=BenchmarkStateManagement ./tests/benchmarks/agent_advanced_bench_test.go
-go test -bench=BenchmarkWorkflowAgents ./tests/benchmarks/agent_advanced_bench_test.go
 ```
 
 ### Test Skip Control
 
-Go-LLMs uses environment variables to control which tests are run. This is particularly useful for tests that require external API keys, special configurations, or are designed to test edge cases.
-
-#### OpenAI API Compatible Provider Tests
-
-OpenAI API compatible provider integration tests can be controlled with the `ENABLE_OPENAPI_COMPATIBLE_API_TESTS` environment variable:
+Go-LLMs uses environment variables to control which tests are run:
 
 ```bash
 # Run all tests including OpenAI API compatible provider integration tests
 ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...
 
-# Run specific OpenAI API compatible provider tests
-ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/openai_api_compatible_providers_test.go
-ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/ollama_integration_test.go
-```
-
-
-#### Provider-Specific Skip Controls
-
-For fine-grained control over specific provider tests, you can use these variables:
-
-```bash
-# Skip specific provider tests even when ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1
+# Skip specific provider tests even when enabled
 SKIP_OPEN_ROUTER=1 ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...
 SKIP_OLLAMA=1 ENABLE_OPENAPI_COMPATIBLE_API_TESTS=1 go test ./tests/integration/...
 ```
 
-This system allows for efficient CI/CD pipeline configuration and enables developers to run only the tests relevant to their current work.
+## Troubleshooting
+
+### Common Issues
+
+#### Pattern Not Matching
+
+```go
+// ❌ Problem: Pattern doesn't match
+provider.WithPatternResponse("hello", mocks.Response{
+    Content: "Hello response",
+})
+
+// Input: "Hello world!" (capital H)
+// Result: No match, uses default response
+
+// ✅ Solution: Use case-insensitive regex
+provider.WithPatternResponse("(?i).*hello.*", mocks.Response{
+    Content: "Hello response",
+})
+```
+
+#### Context Creation Errors
+
+```go
+// ❌ Problem: Wrong context creation
+ctx := domain.NewToolContext(context.Background(), nil, nil, "")
+
+// ✅ Solution: Use helper
+ctx := helpers.CreateTestToolContext()
+```
+
+#### Thread Safety Issues
+
+```go
+// ❌ Problem: Shared mutable state
+var sharedProvider = fixtures.OpenAIMockProvider()
+
+func TestConcurrent1(t *testing.T) {
+    sharedProvider.WithPatternResponse("test1", response1)
+    // ... test
+}
+
+// ✅ Solution: Create separate instances
+func TestConcurrent1(t *testing.T) {
+    provider := fixtures.OpenAIMockProvider()
+    provider.WithPatternResponse("test1", response1)
+    // ... test
+}
+```
+
+### Debugging Tips
+
+#### Enable Debug Logging
+
+```go
+func TestWithDebug(t *testing.T) {
+    provider := fixtures.OpenAIMockProvider()
+    provider.EnableDebugLogging(t)
+    
+    // Now all provider interactions will be logged
+    response, err := provider.Generate(context.Background(), "test")
+}
+```
+
+#### Inspect Call History
+
+```go
+func TestWithHistory(t *testing.T) {
+    provider := fixtures.OpenAIMockProvider()
+    
+    // Make some calls
+    provider.Generate(context.Background(), "test1")
+    provider.Generate(context.Background(), "test2")
+    
+    // Inspect history for debugging
+    history := provider.GetCallHistory()
+    for i, call := range history {
+        t.Logf("Call %d: %s -> %s", i, call.Input, call.Output)
+    }
+}
+```
+
+## Future Work and TODO Items
+
+### Phase 3: Scenario Builder Adoption - Remaining Tasks
+
+#### Complex Test Migration
+- Identify tests with 5+ setup steps for migration
+- Migrate integration tests to scenario builder
+- Migrate workflow tests to scenario builder
+- Create migration patterns documentation
+
+#### Integration Test Patterns
+- Standardize provider integration test setup
+- Create multi-component scenario templates
+- Migrate end-to-end tests to new patterns
+- Document integration testing best practices
+
+#### Documentation
+- Add comprehensive scenario builder examples
+- Create scenario builder cookbook with common patterns
+- Document advanced testing techniques
+- Create video tutorials for complex scenarios
+
+### Phase 4: Matcher Standardization (Optional)
+
+#### Custom Assertion Migration
+- Audit existing custom assertion logic across tests
+- Create domain-specific matchers for:
+  - String assertions (beyond basic contains/equals)
+  - State assertions (complex state validation)
+  - Event assertions (event sequence validation)
+- Migrate tests from custom assertions to standardized matchers
+- Create matcher composition patterns
+
+#### Event Assertion Patterns
+- Standardize event verification approaches
+- Create event sequence matchers for complex workflows
+- Create event data matchers for payload validation
+- Document event testing patterns and anti-patterns
+- Add event timeline visualization support
+
+### Long-term Enhancements
+
+1. **Property-based testing support** - Generate test cases based on properties
+2. **Fuzzing integration** - Automated testing with random inputs
+3. **Test data generation** - Smart generation of test data based on schemas
+4. **Visual test reporting** - HTML reports with test execution visualization
+5. **CI/CD pipeline integration** - Better integration with GitHub Actions and other CI systems
+6. **Performance profiling** - Built-in profiling support for identifying bottlenecks
+7. **Test coverage visualization** - Visual representation of code coverage
+8. **Distributed testing** - Support for running tests across multiple machines
+9. **Snapshot testing** - Support for snapshot-based testing of complex outputs
+10. **Contract testing** - Support for testing provider/consumer contracts
 
 ## Related Documentation
 
-For more detailed information on various aspects of testing and performance:
-
+- [TESTING_INFRA_CHANGES.md](../../TESTING_INFRA_CHANGES.md) - Complete summary of test infrastructure changes
+- [MIGRATION_GUIDE.md](../../MIGRATION_GUIDE.md) - Step-by-step migration instructions
+- [pkg/testutils/](../../pkg/testutils/) - Test utilities package
+- [pkg/testutils/fixtures/](../../pkg/testutils/fixtures/) - All available fixtures
+- [migration-analysis.md](../../migration-analysis.md) - Detailed migration analysis
 - [Benchmarking Framework](benchmarks.md) - Detailed overview of performance benchmarks
 - [Performance Optimization](performance.md) - Comprehensive overview of performance optimization strategies
 - [Sync.Pool Implementation](sync-pool.md) - Detailed guide on sync.Pool usage for memory optimization
