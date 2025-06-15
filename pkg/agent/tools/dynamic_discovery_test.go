@@ -13,6 +13,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 // mockScriptHandler implements ScriptHandler for testing
@@ -89,7 +90,7 @@ func TestDynamicToolRegistration(t *testing.T) {
 	}
 
 	factory := func() (domain.Tool, error) {
-		return &mockTool{name: "test_tool"}, nil
+		return mocks.NewMockTool("test_tool", "test tool"), nil
 	}
 
 	// Register the tool
@@ -229,7 +230,7 @@ func TestToolVersioning(t *testing.T) {
 
 	factory1 := func() (domain.Tool, error) {
 		return &versionedMockTool{
-			mockTool: &mockTool{name: "versioned_tool"},
+			MockTool: mocks.NewMockTool("versioned_tool", "versioned tool"),
 			version:  "1.0.0",
 		}, nil
 	}
@@ -248,7 +249,7 @@ func TestToolVersioning(t *testing.T) {
 
 	factory2 := func() (domain.Tool, error) {
 		return &versionedMockTool{
-			mockTool: &mockTool{name: "versioned_tool"},
+			MockTool: mocks.NewMockTool("versioned_tool", "versioned tool"),
 			version:  "2.0.0",
 		}, nil
 	}
@@ -314,7 +315,7 @@ func TestNamespaceIsolation(t *testing.T) {
 	}
 
 	factory1 := func() (domain.Tool, error) {
-		return &mockTool{name: "tenant_tool"}, nil
+		return mocks.NewMockTool("tenant_tool", "tenant tool"), nil
 	}
 
 	err = discovery.RegisterTool(toolInfo1, factory1)
@@ -334,7 +335,7 @@ func TestNamespaceIsolation(t *testing.T) {
 	}
 
 	factory2 := func() (domain.Tool, error) {
-		return &mockTool{name: "other_tool"}, nil
+		return mocks.NewMockTool("other_tool", "other tool"), nil
 	}
 
 	err = discovery.RegisterTool(toolInfo2, factory2)
@@ -383,7 +384,7 @@ func TestRegistryPersistence(t *testing.T) {
 	}
 
 	factory := func() (domain.Tool, error) {
-		return &mockTool{name: "persistent_tool"}, nil
+		return mocks.NewMockTool("persistent_tool", "persistent tool"), nil
 	}
 
 	err := discovery.RegisterTool(toolInfo, factory)
@@ -454,7 +455,7 @@ func TestConcurrentToolRegistration(t *testing.T) {
 				}
 
 				factory := func() (domain.Tool, error) {
-					return &mockTool{name: toolName}, nil
+					return mocks.NewMockTool(toolName, toolName+" tool"), nil
 				}
 
 				err := discovery.RegisterTool(toolInfo, factory)
@@ -541,9 +542,9 @@ func TestScriptToolIntegration(t *testing.T) {
 	}
 }
 
-// Use mockTool from discovery_test.go - extend with version field if needed
+// versionedMockTool wraps MockTool to override version
 type versionedMockTool struct {
-	*mockTool
+	*mocks.MockTool
 	version string
 }
 
@@ -551,5 +552,5 @@ func (v *versionedMockTool) Version() string {
 	if v.version != "" {
 		return v.version
 	}
-	return v.mockTool.Version()
+	return v.MockTool.Version()
 }

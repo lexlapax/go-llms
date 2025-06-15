@@ -14,7 +14,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 // Helper to create test ToolContext
@@ -22,44 +22,10 @@ func createTestDeleteToolContext() *domain.ToolContext {
 	return domain.NewToolContext(
 		context.Background(),
 		domain.NewStateReader(domain.NewState()),
-		&mockDeleteAgent{},
+		mocks.NewMockAgent("test-agent"),
 		"test-run",
 	)
 }
-
-// mockDeleteAgent implements the minimum required methods for BaseAgent
-type mockDeleteAgent struct{}
-
-func (m *mockDeleteAgent) ID() string                                { return "test-agent" }
-func (m *mockDeleteAgent) Name() string                              { return "Test Agent" }
-func (m *mockDeleteAgent) Description() string                       { return "Mock agent for testing" }
-func (m *mockDeleteAgent) Type() domain.AgentType                    { return domain.AgentTypeCustom }
-func (m *mockDeleteAgent) Parent() domain.BaseAgent                  { return nil }
-func (m *mockDeleteAgent) SetParent(parent domain.BaseAgent) error   { return nil }
-func (m *mockDeleteAgent) SubAgents() []domain.BaseAgent             { return nil }
-func (m *mockDeleteAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
-func (m *mockDeleteAgent) RemoveSubAgent(name string) error          { return nil }
-func (m *mockDeleteAgent) FindAgent(name string) domain.BaseAgent    { return nil }
-func (m *mockDeleteAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
-func (m *mockDeleteAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
-	return nil, nil
-}
-func (m *mockDeleteAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
-	return nil, nil
-}
-func (m *mockDeleteAgent) Initialize(ctx context.Context) error                     { return nil }
-func (m *mockDeleteAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
-func (m *mockDeleteAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
-	return nil
-}
-func (m *mockDeleteAgent) Cleanup(ctx context.Context) error                     { return nil }
-func (m *mockDeleteAgent) InputSchema() *sdomain.Schema                          { return nil }
-func (m *mockDeleteAgent) OutputSchema() *sdomain.Schema                         { return nil }
-func (m *mockDeleteAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
-func (m *mockDeleteAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return m }
-func (m *mockDeleteAgent) Validate() error                                       { return nil }
-func (m *mockDeleteAgent) Metadata() map[string]interface{}                      { return nil }
-func (m *mockDeleteAgent) SetMetadata(key string, value interface{})             {}
 
 func TestFileDeleteRegistration(t *testing.T) {
 	// Test that the tool is registered

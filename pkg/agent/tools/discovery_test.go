@@ -2,54 +2,14 @@ package tools
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-// mockTool implements domain.Tool for testing
-type mockTool struct {
-	name              string
-	description       string
-	category          string
-	tags              []string
-	version           string
-	paramSchema       *sdomain.Schema
-	outputSchema      *sdomain.Schema
-	usageInstructions string
-	examples          []domain.ToolExample
-	constraints       []string
-	errorGuidance     map[string]string
-}
-
-func (m *mockTool) Name() string        { return m.name }
-func (m *mockTool) Description() string { return m.description }
-func (m *mockTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
-	return fmt.Sprintf("Executed %s with %v", m.name, params), nil
-}
-func (m *mockTool) ParameterSchema() *sdomain.Schema { return m.paramSchema }
-func (m *mockTool) OutputSchema() *sdomain.Schema    { return m.outputSchema }
-func (m *mockTool) UsageInstructions() string        { return m.usageInstructions }
-func (m *mockTool) Examples() []domain.ToolExample   { return m.examples }
-func (m *mockTool) Constraints() []string            { return m.constraints }
-func (m *mockTool) ErrorGuidance() map[string]string { return m.errorGuidance }
-func (m *mockTool) Category() string                 { return m.category }
-func (m *mockTool) Tags() []string                   { return m.tags }
-func (m *mockTool) Version() string                  { return m.version }
-func (m *mockTool) IsDeterministic() bool            { return true }
-func (m *mockTool) IsDestructive() bool              { return false }
-func (m *mockTool) RequiresConfirmation() bool       { return false }
-func (m *mockTool) EstimatedLatency() string         { return "fast" }
-func (m *mockTool) ToMCPDefinition() domain.MCPToolDefinition {
-	return domain.MCPToolDefinition{
-		Name:        m.name,
-		Description: m.description,
-	}
-}
 
 func createTestDiscovery() *toolDiscovery {
 	discovery := &toolDiscovery{
@@ -83,7 +43,9 @@ func TestToolDiscovery_ListTools(t *testing.T) {
 		Version:     "2.0.0",
 	}
 
-	factory := func() (domain.Tool, error) { return &mockTool{name: "test"}, nil }
+	factory := func() (domain.Tool, error) {
+		return mocks.NewMockTool("test", "test tool"), nil
+	}
 
 	_ = discovery.RegisterTool(info1, factory)
 	_ = discovery.RegisterTool(info2, factory)
@@ -126,7 +88,9 @@ func TestToolDiscovery_SearchTools(t *testing.T) {
 		},
 	}
 
-	factory := func() (domain.Tool, error) { return &mockTool{name: "test"}, nil }
+	factory := func() (domain.Tool, error) {
+		return mocks.NewMockTool("test", "test tool"), nil
+	}
 	for _, tool := range tools {
 		_ = discovery.RegisterTool(tool, factory)
 	}
@@ -196,7 +160,9 @@ func TestToolDiscovery_ListByCategory(t *testing.T) {
 		{Name: "csv_process", Category: "data"},
 	}
 
-	factory := func() (domain.Tool, error) { return &mockTool{name: "test"}, nil }
+	factory := func() (domain.Tool, error) {
+		return mocks.NewMockTool("test", "test tool"), nil
+	}
 	for _, tool := range tools {
 		_ = discovery.RegisterTool(tool, factory)
 	}
@@ -242,7 +208,9 @@ func TestToolDiscovery_GetToolSchema(t *testing.T) {
 	info.ParameterSchema = paramBytes
 	info.OutputSchema = outputBytes
 
-	factory := func() (domain.Tool, error) { return &mockTool{name: "calculator"}, nil }
+	factory := func() (domain.Tool, error) {
+		return mocks.NewMockTool("calculator", "calculator tool"), nil
+	}
 	_ = discovery.RegisterTool(info, factory)
 
 	// Test getting schema
@@ -272,10 +240,7 @@ func TestToolDiscovery_CreateTool(t *testing.T) {
 	}
 
 	factory := func() (domain.Tool, error) {
-		return &mockTool{
-			name:        "calculator",
-			description: "A simple calculator",
-		}, nil
+		return mocks.NewMockTool("calculator", "A simple calculator"), nil
 	}
 
 	_ = discovery.RegisterTool(info, factory)
@@ -292,7 +257,9 @@ func TestToolDiscovery_CreateTools(t *testing.T) {
 
 	// Register multiple tools
 	tools := []string{"calculator", "file_reader"}
-	factory := func() (domain.Tool, error) { return &mockTool{name: "test"}, nil }
+	factory := func() (domain.Tool, error) {
+		return mocks.NewMockTool("test", "test tool"), nil
+	}
 
 	for _, toolName := range tools {
 		info := ToolInfo{Name: toolName}
@@ -342,7 +309,9 @@ func TestToolDiscovery_GetToolHelp(t *testing.T) {
 	paramBytes, _ := json.Marshal(paramSchema)
 	info.ParameterSchema = paramBytes
 
-	factory := func() (domain.Tool, error) { return &mockTool{name: "calculator"}, nil }
+	factory := func() (domain.Tool, error) {
+		return mocks.NewMockTool("calculator", "calculator tool"), nil
+	}
 	_ = discovery.RegisterTool(info, factory)
 
 	// Test getting help

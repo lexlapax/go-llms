@@ -12,66 +12,15 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
-
-// mockWriteAgent implements the BaseAgent interface for testing
-type mockWriteAgent struct {
-	id          string
-	name        string
-	description string
-	agentType   domain.AgentType
-	metadata    map[string]interface{}
-}
-
-func (a *mockWriteAgent) ID() string                                { return a.id }
-func (a *mockWriteAgent) Name() string                              { return a.name }
-func (a *mockWriteAgent) Description() string                       { return a.description }
-func (a *mockWriteAgent) Type() domain.AgentType                    { return a.agentType }
-func (a *mockWriteAgent) Parent() domain.BaseAgent                  { return nil }
-func (a *mockWriteAgent) SetParent(parent domain.BaseAgent) error   { return nil }
-func (a *mockWriteAgent) SubAgents() []domain.BaseAgent             { return nil }
-func (a *mockWriteAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
-func (a *mockWriteAgent) RemoveSubAgent(name string) error          { return nil }
-func (a *mockWriteAgent) FindAgent(name string) domain.BaseAgent    { return nil }
-func (a *mockWriteAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
-func (a *mockWriteAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
-	return nil, nil
-}
-func (a *mockWriteAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
-	return nil, nil
-}
-func (a *mockWriteAgent) Initialize(ctx context.Context) error                     { return nil }
-func (a *mockWriteAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
-func (a *mockWriteAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
-	return nil
-}
-func (a *mockWriteAgent) Cleanup(ctx context.Context) error                     { return nil }
-func (a *mockWriteAgent) InputSchema() *sdomain.Schema                          { return nil }
-func (a *mockWriteAgent) OutputSchema() *sdomain.Schema                         { return nil }
-func (a *mockWriteAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
-func (a *mockWriteAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
-func (a *mockWriteAgent) Validate() error                                       { return nil }
-func (a *mockWriteAgent) Metadata() map[string]interface{}                      { return a.metadata }
-func (a *mockWriteAgent) SetMetadata(key string, value interface{}) {
-	if a.metadata == nil {
-		a.metadata = make(map[string]interface{})
-	}
-	a.metadata[key] = value
-}
 
 // createTestToolContextForWrite creates a ToolContext for testing
 func createTestToolContextForWrite() *domain.ToolContext {
 	ctx := context.Background()
 	state := domain.NewState()
 	stateReader := domain.NewStateReader(state)
-	agent := &mockWriteAgent{
-		id:          "test-agent",
-		name:        "Test Agent",
-		description: "Test agent for file write tests",
-		agentType:   domain.AgentTypeCustom,
-		metadata:    make(map[string]interface{}),
-	}
+	agent := mocks.NewMockAgent("Test Agent")
 
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
 

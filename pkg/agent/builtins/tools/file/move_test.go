@@ -12,7 +12,7 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 func TestFileMoveRegistration(t *testing.T) {
@@ -42,63 +42,12 @@ func TestFileMoveRegistration(t *testing.T) {
 	}
 }
 
-// mockMoveAgent implements BaseAgent for testing
-type mockMoveAgent struct {
-	id          string
-	name        string
-	description string
-	agentType   domain.AgentType
-	metadata    map[string]interface{}
-}
-
-func (a *mockMoveAgent) ID() string                                { return a.id }
-func (a *mockMoveAgent) Name() string                              { return a.name }
-func (a *mockMoveAgent) Description() string                       { return a.description }
-func (a *mockMoveAgent) Type() domain.AgentType                    { return a.agentType }
-func (a *mockMoveAgent) Parent() domain.BaseAgent                  { return nil }
-func (a *mockMoveAgent) SetParent(parent domain.BaseAgent) error   { return nil }
-func (a *mockMoveAgent) SubAgents() []domain.BaseAgent             { return nil }
-func (a *mockMoveAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
-func (a *mockMoveAgent) RemoveSubAgent(name string) error          { return nil }
-func (a *mockMoveAgent) FindAgent(name string) domain.BaseAgent    { return nil }
-func (a *mockMoveAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
-func (a *mockMoveAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
-	return nil, nil
-}
-func (a *mockMoveAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
-	return nil, nil
-}
-func (a *mockMoveAgent) Initialize(ctx context.Context) error                     { return nil }
-func (a *mockMoveAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
-func (a *mockMoveAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
-	return nil
-}
-func (a *mockMoveAgent) Cleanup(ctx context.Context) error                     { return nil }
-func (a *mockMoveAgent) InputSchema() *sdomain.Schema                          { return nil }
-func (a *mockMoveAgent) OutputSchema() *sdomain.Schema                         { return nil }
-func (a *mockMoveAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
-func (a *mockMoveAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
-func (a *mockMoveAgent) Validate() error                                       { return nil }
-func (a *mockMoveAgent) Metadata() map[string]interface{}                      { return a.metadata }
-func (a *mockMoveAgent) SetMetadata(key string, value interface{}) {
-	if a.metadata == nil {
-		a.metadata = make(map[string]interface{})
-	}
-	a.metadata[key] = value
-}
-
 // createTestToolContextForMove creates a ToolContext for testing
 func createTestToolContextForMove() *domain.ToolContext {
 	ctx := context.Background()
 	state := domain.NewState()
 	stateReader := domain.NewStateReader(state)
-	agent := &mockMoveAgent{
-		id:          "test-agent",
-		name:        "Test Agent",
-		description: "Test agent for file move tests",
-		agentType:   domain.AgentTypeCustom,
-		metadata:    make(map[string]interface{}),
-	}
+	agent := mocks.NewMockAgent("Test Agent")
 
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
 

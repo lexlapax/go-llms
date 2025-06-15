@@ -54,11 +54,12 @@
 - [ ] Remove duplicated MockAgent implementations
 
 #### Tool Mock Migration (HIGH PRIORITY)
-- [ ] Enhance `pkg/testutils/mocks/MockTool` with builder methods
-- [ ] Migrate `pkg/agent/tools/discovery_test.go` mockTool
-- [ ] Migrate `pkg/agent/core/llm_agent_test.go` mockTool (150+ lines)
-- [ ] Migrate `pkg/agent/domain/tool_test.go` mock implementations
-- [ ] Migrate built-in tool mocks in `pkg/agent/builtins/tools/*/`
+- [x] Enhance `pkg/testutils/mocks/MockTool` with builder methods (Completed June 15, 2025)
+- [x] Migrate `pkg/agent/tools/discovery_test.go` mockTool (Completed June 15, 2025)
+- [x] Migrate `pkg/agent/core/llm_agent_test.go` mockTool (150+ lines) (Completed June 15, 2025)
+- [x] Migrate `pkg/agent/domain/tool_test.go` mock implementations (Completed June 15, 2025)
+- [x] Migrate `pkg/agent/builtins/tools/registry_test.go` mockTool (71 lines) (Completed June 15, 2025)
+- [ ] Migrate remaining mockAgent implementations in `pkg/agent/builtins/tools/*/` test files
 - [ ] Create tool-specific mock helpers
 
 #### Event Emitter Mock Migration (HIGH PRIORITY)
@@ -139,14 +140,17 @@
 
 ### Current Focus
 - Phase 0: ✅ COMPLETED
-- Ready to proceed with remaining Phase 1 mock consolidation tasks
+- Phase 1: Tool Mock Migration - IN PROGRESS
+  - Completed: 5 of 6 Tool mock migrations ✅
+  - Completed: 5 file tool mockAgent migrations (delete, list, move, read, write) ✅
+  - Remaining: ~8 mockAgent implementations in builtins/tools/*/ test files
 
 ### Metrics
 - Total test files to migrate: 176
-- Files migrated: 11 complete (sequential, parallel, conditional, agent_tool, tool_edge, 4 calculator tests, benchmark + loop no change)
+- Files migrated: 21 complete (sequential, parallel, conditional, agent_tool, tool_edge, 4 calculator tests, benchmark, discovery_test, dynamic_discovery_test, llm_agent_test, tool_test, registry_test, delete_test, list_test, move_test, read_test, write_test + loop no change)
 - Estimated code reduction: ~7000 lines
-- Current status: 6.3% complete
-- Lines removed so far: ~300 (local MockAgent implementations + duplicate helper functions)
+- Current status: 11.9% complete
+- Lines removed so far: ~900+ (local MockAgent implementations + duplicate helper functions + mockTool implementations)
 
 ### Notes
 - Run `make test`, `make fmt`, `make vet`, `make lint` after each migration to ensure tests pass

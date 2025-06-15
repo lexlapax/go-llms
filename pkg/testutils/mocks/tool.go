@@ -117,6 +117,78 @@ func (t *MockTool) WithOutputSchema(schema *sdomain.Schema) *MockTool {
 	return t
 }
 
+// WithCategory sets the tool category
+func (t *MockTool) WithCategory(category string) *MockTool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.ToolCategory = category
+	return t
+}
+
+// WithTags sets the tool tags
+func (t *MockTool) WithTags(tags ...string) *MockTool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.ToolTags = tags
+	return t
+}
+
+// WithVersion sets the tool version
+func (t *MockTool) WithVersion(version string) *MockTool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.ToolVersion = version
+	return t
+}
+
+// WithUsageInstructions sets usage instructions
+func (t *MockTool) WithUsageInstructions(instructions string) *MockTool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.UsageInstr = instructions
+	return t
+}
+
+// WithExamples sets tool examples
+func (t *MockTool) WithExamples(examples ...domain.ToolExample) *MockTool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.ToolExamples = examples
+	return t
+}
+
+// WithConstraints sets tool constraints
+func (t *MockTool) WithConstraints(constraints ...string) *MockTool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.ToolConstraints = constraints
+	return t
+}
+
+// WithErrorGuidance sets error guidance
+func (t *MockTool) WithErrorGuidance(guidance map[string]string) *MockTool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.ErrorGuid = guidance
+	return t
+}
+
+// WithExecutor sets a custom executor function
+func (t *MockTool) WithExecutor(executor func(ctx *domain.ToolContext, params interface{}) (interface{}, error)) *MockTool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.Executor = executor
+	return t
+}
+
+// WithOnExecute sets a custom execute handler
+func (t *MockTool) WithOnExecute(handler func(ctx *domain.ToolContext, input map[string]interface{}) (map[string]interface{}, error)) *MockTool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.OnExecute = handler
+	return t
+}
+
 // Name returns the tool name
 func (t *MockTool) Name() string {
 	return t.ToolName

@@ -18,115 +18,6 @@ import (
 
 // Mock types for testing moved to use testutils/mocks infrastructure
 
-// Mock Tool for testing
-type mockTool struct {
-	name              string
-	description       string
-	result            any
-	err               error
-	usageInstructions string
-	examples          []domain.ToolExample
-	constraints       []string
-	errorGuidance     map[string]string
-	category          string
-	tags              []string
-	version           string
-	deterministic     bool
-	destructive       bool
-	requiresConfirm   bool
-	latency           string
-	paramSchema       *sdomain.Schema
-	outputSchema      *sdomain.Schema
-}
-
-func (t *mockTool) Name() string                     { return t.name }
-func (t *mockTool) Description() string              { return t.description }
-func (t *mockTool) ParameterSchema() *sdomain.Schema { return t.paramSchema }
-func (t *mockTool) OutputSchema() *sdomain.Schema    { return t.outputSchema }
-
-func (t *mockTool) Execute(ctx *domain.ToolContext, params any) (any, error) {
-	if t.err != nil {
-		return nil, t.err
-	}
-	return t.result, nil
-}
-
-func (t *mockTool) UsageInstructions() string {
-	if t.usageInstructions != "" {
-		return t.usageInstructions
-	}
-	return "Basic usage instructions for " + t.name
-}
-
-func (t *mockTool) Examples() []domain.ToolExample {
-	if t.examples != nil {
-		return t.examples
-	}
-	return []domain.ToolExample{}
-}
-
-func (t *mockTool) Constraints() []string {
-	if t.constraints != nil {
-		return t.constraints
-	}
-	return []string{}
-}
-
-func (t *mockTool) ErrorGuidance() map[string]string {
-	if t.errorGuidance != nil {
-		return t.errorGuidance
-	}
-	return map[string]string{}
-}
-
-func (t *mockTool) Category() string {
-	if t.category != "" {
-		return t.category
-	}
-	return "test"
-}
-
-func (t *mockTool) Tags() []string {
-	if t.tags != nil {
-		return t.tags
-	}
-	return []string{"test"}
-}
-
-func (t *mockTool) Version() string {
-	if t.version != "" {
-		return t.version
-	}
-	return "1.0.0"
-}
-
-func (t *mockTool) IsDeterministic() bool {
-	return t.deterministic
-}
-
-func (t *mockTool) IsDestructive() bool {
-	return t.destructive
-}
-
-func (t *mockTool) RequiresConfirmation() bool {
-	return t.requiresConfirm
-}
-
-func (t *mockTool) EstimatedLatency() string {
-	if t.latency != "" {
-		return t.latency
-	}
-	return "fast"
-}
-
-func (t *mockTool) ToMCPDefinition() domain.MCPToolDefinition {
-	return domain.MCPToolDefinition{
-		Name:        t.name,
-		Description: t.description,
-		InputSchema: t.paramSchema,
-	}
-}
-
 // Test NewAgent factory function (excellent DX)
 func TestNewAgent(t *testing.T) {
 	provider := mocks.NewMockProvider("test-provider")
@@ -221,11 +112,10 @@ func TestLLMAgent_RunAsync(t *testing.T) {
 func TestLLMAgent_WithTools(t *testing.T) {
 	provider := mocks.NewMockProvider("test-tools-provider")
 	provider.WithDefaultResponse(mocks.Response{Content: `{"tool": "calculator", "params": {"a": 2, "b": 2}}`})
-	tool := &mockTool{
-		name:        "calculator",
-		description: "Simple calculator",
-		result:      "4",
-	}
+	tool := mocks.NewMockTool("calculator", "Simple calculator").
+		WithExecutor(func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+			return "4", nil
+		})
 
 	agent := NewAgent("test-agent", provider).
 		AddTool(tool)
@@ -595,7 +485,10 @@ func BenchmarkLLMAgent_Run(b *testing.B) {
 func BenchmarkLLMAgent_RunWithTools(b *testing.B) {
 	provider := mocks.NewMockProvider("benchmark-tools-provider")
 	provider.WithDefaultResponse(mocks.Response{Content: `{"tool": "calculator", "params": {"a": 1, "b": 2}}`})
-	tool := &mockTool{name: "calculator", result: "3"}
+	tool := mocks.NewMockTool("calculator", "calculator").
+		WithExecutor(func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+			return "3", nil
+		})
 
 	agent := NewAgent("benchmark-agent", provider).AddTool(tool)
 
@@ -617,12 +510,14 @@ func TestLLMAgent_EnhancedSystemContent(t *testing.T) {
 	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 
 	// Create a tool with full metadata
-	tool := &mockTool{
-		name:              "calculator",
-		description:       "Perform mathematical calculations",
-		usageInstructions: "Use this tool for any mathematical operations. Supports +, -, *, / operations.",
-		examples: []domain.ToolExample{
-			{
+	// Create a tool with full metadata
+	tool := mocks.NewMockTool("calculator", "Perform mathematical calculations").
+		WithCategory("math").
+		WithTags("calculation", "arithmetic").
+		WithVersion("2.0.0").
+		WithUsageInstructions("Use this tool for any mathematical operations. Supports +, -, *, / operations.").
+		WithExamples(
+			domain.ToolExample{
 				Name:        "Addition",
 				Description: "Add two numbers together",
 				Scenario:    "When you need to find the sum of numbers",
@@ -630,7 +525,7 @@ func TestLLMAgent_EnhancedSystemContent(t *testing.T) {
 				Output:      8,
 				Explanation: "5 + 3 = 8",
 			},
-			{
+			domain.ToolExample{
 				Name:        "Division",
 				Description: "Divide one number by another",
 				Scenario:    "When you need to find the quotient",
@@ -638,25 +533,18 @@ func TestLLMAgent_EnhancedSystemContent(t *testing.T) {
 				Output:      5,
 				Explanation: "10 / 2 = 5",
 			},
-		},
-		constraints: []string{
+		).
+		WithConstraints(
 			"Division by zero is not allowed",
 			"Only numeric operands are supported",
 			"Operations limited to +, -, *, /",
-		},
-		errorGuidance: map[string]string{
+		).
+		WithErrorGuidance(map[string]string{
 			"division_by_zero":  "Cannot divide by zero. Please ensure operand2 is not 0.",
 			"invalid_operation": "Operation must be one of: +, -, *, /",
 			"invalid_operand":   "Both operands must be numeric values",
-		},
-		category:        "math",
-		tags:            []string{"calculation", "arithmetic"},
-		version:         "2.0.0",
-		deterministic:   true,
-		destructive:     false,
-		requiresConfirm: false,
-		latency:         "fast",
-		paramSchema: &sdomain.Schema{
+		}).
+		WithParameterSchema(&sdomain.Schema{
 			Type: "object",
 			Properties: map[string]sdomain.Property{
 				"operation": {
@@ -674,12 +562,11 @@ func TestLLMAgent_EnhancedSystemContent(t *testing.T) {
 				},
 			},
 			Required: []string{"operation", "operand1", "operand2"},
-		},
-		outputSchema: &sdomain.Schema{
+		}).
+		WithOutputSchema(&sdomain.Schema{
 			Type:        "number",
 			Description: "The result of the calculation",
-		},
-	}
+		})
 
 	agent := NewAgent("test-agent", provider).
 		SetSystemPrompt("You are a helpful math assistant.").
@@ -737,19 +624,13 @@ func TestLLMAgent_SystemContentMultipleTools(t *testing.T) {
 	provider := mocks.NewMockProvider("test-multiple-tools-provider")
 	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 
-	tool1 := &mockTool{
-		name:        "tool1",
-		description: "First tool for testing",
-		category:    "test",
-		version:     "1.0.0",
-	}
+	tool1 := mocks.NewMockTool("tool1", "First tool for testing").
+		WithCategory("test").
+		WithVersion("1.0.0")
 
-	tool2 := &mockTool{
-		name:        "tool2",
-		description: "Second tool for testing",
-		category:    "test",
-		version:     "1.0.0",
-	}
+	tool2 := mocks.NewMockTool("tool2", "Second tool for testing").
+		WithCategory("test").
+		WithVersion("1.0.0")
 
 	agent := NewAgent("test-agent", provider).
 		SetSystemPrompt("Test system prompt").
@@ -773,10 +654,7 @@ func TestLLMAgent_SystemContentCaching(t *testing.T) {
 	provider := mocks.NewMockProvider("test-caching-provider")
 	provider.WithDefaultResponse(mocks.Response{Content: "Response"})
 
-	tool := &mockTool{
-		name:        "test_tool",
-		description: "Test tool",
-	}
+	tool := mocks.NewMockTool("test_tool", "Test tool")
 
 	agent := NewAgent("test-agent", provider).
 		SetSystemPrompt("Initial prompt").
@@ -793,10 +671,7 @@ func TestLLMAgent_SystemContentCaching(t *testing.T) {
 	}
 
 	// Modify agent (add another tool) - should invalidate cache
-	tool2 := &mockTool{
-		name:        "another_tool",
-		description: "Another test tool",
-	}
+	tool2 := mocks.NewMockTool("another_tool", "Another test tool")
 
 	agent.AddTool(tool2)
 

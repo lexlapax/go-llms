@@ -8,80 +8,29 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
-// mockTool implements domain.Tool for testing
-type mockTool struct {
-	name                 string
-	description          string
-	category             string
-	tags                 []string
-	version              string
-	usageInstructions    string
-	examples             []domain.ToolExample
-	constraints          []string
-	errorGuidance        map[string]string
-	isDeterministic      bool
-	isDestructive        bool
-	requiresConfirmation bool
-	estimatedLatency     string
+// Helper function to create mock tools with specific configurations
+func createMockTool(name, description string) *mocks.MockTool {
+	return mocks.NewMockTool(name, description).
+		WithExecutor(func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+			return "mock result", nil
+		})
 }
 
-func (m *mockTool) Name() string        { return m.name }
-func (m *mockTool) Description() string { return m.description }
-func (m *mockTool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
-	return "mock result", nil
-}
-func (m *mockTool) ParameterSchema() *sdomain.Schema { return nil }
-func (m *mockTool) OutputSchema() *sdomain.Schema    { return nil }
-func (m *mockTool) UsageInstructions() string {
-	if m.usageInstructions != "" {
-		return m.usageInstructions
-	}
-	return "Default usage instructions"
-}
-func (m *mockTool) Examples() []domain.ToolExample   { return m.examples }
-func (m *mockTool) Constraints() []string            { return m.constraints }
-func (m *mockTool) ErrorGuidance() map[string]string { return m.errorGuidance }
-func (m *mockTool) Category() string {
-	if m.category != "" {
-		return m.category
-	}
-	return "test"
-}
-func (m *mockTool) Tags() []string {
-	if m.tags != nil {
-		return m.tags
-	}
-	return []string{"test"}
-}
-func (m *mockTool) Version() string {
-	if m.version != "" {
-		return m.version
-	}
-	return "1.0.0"
-}
-func (m *mockTool) IsDeterministic() bool      { return m.isDeterministic }
-func (m *mockTool) IsDestructive() bool        { return m.isDestructive }
-func (m *mockTool) RequiresConfirmation() bool { return m.requiresConfirmation }
-func (m *mockTool) EstimatedLatency() string {
-	if m.estimatedLatency != "" {
-		return m.estimatedLatency
-	}
-	return "medium"
-}
-func (m *mockTool) ToMCPDefinition() domain.MCPToolDefinition {
-	return domain.MCPToolDefinition{
-		Name:         m.name,
-		Description:  m.description,
-		InputSchema:  m.ParameterSchema(),
-		OutputSchema: m.OutputSchema(),
-		Annotations: map[string]interface{}{
-			"category": m.Category(),
-			"version":  m.Version(),
-		},
-	}
+// Create a mock tool with custom properties
+func createCustomMockTool(name, description, category string, tags []string, version string) *mocks.MockTool {
+	tool := mocks.NewMockTool(name, description).
+		WithCategory(category).
+		WithTags(tags...).
+		WithVersion(version).
+		WithExecutor(func(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
+			return "mock result", nil
+		})
+
+	// Note: MockTool has fixed behavioral properties, but we can still use it for testing
+	return tool
 }
 
 func TestToolRegistry_RegisterTool(t *testing.T) {
@@ -102,7 +51,7 @@ func TestToolRegistry_RegisterTool(t *testing.T) {
 		{
 			name:     "successful registration",
 			toolName: "test_tool",
-			tool:     &mockTool{name: "test_tool", description: "Test tool"},
+			tool:     createMockTool("test_tool", "Test tool"),
 			metadata: ToolMetadata{
 				Metadata: builtins.Metadata{
 					Category:    "test",
@@ -121,7 +70,7 @@ func TestToolRegistry_RegisterTool(t *testing.T) {
 		{
 			name:     "tool name mismatch",
 			toolName: "test_tool",
-			tool:     &mockTool{name: "different_name", description: "Test tool"},
+			tool:     createMockTool("different_name", "Test tool"),
 			metadata: ToolMetadata{
 				Metadata: builtins.Metadata{
 					Category: "test",
@@ -133,7 +82,7 @@ func TestToolRegistry_RegisterTool(t *testing.T) {
 		{
 			name:     "invalid memory level",
 			toolName: "test_tool",
-			tool:     &mockTool{name: "test_tool", description: "Test tool"},
+			tool:     createMockTool("test_tool", "Test tool"),
 			metadata: ToolMetadata{
 				Metadata: builtins.Metadata{
 					Category: "test",
@@ -148,7 +97,7 @@ func TestToolRegistry_RegisterTool(t *testing.T) {
 		{
 			name:     "empty permission",
 			toolName: "test_tool",
-			tool:     &mockTool{name: "test_tool", description: "Test tool"},
+			tool:     createMockTool("test_tool", "Test tool"),
 			metadata: ToolMetadata{
 				Metadata: builtins.Metadata{
 					Category: "test",
@@ -183,7 +132,7 @@ func TestToolRegistry_ListByPermission(t *testing.T) {
 	}
 
 	// Register tools with different permissions
-	tool1 := &mockTool{name: "file_reader", description: "Reads files"}
+	tool1 := createMockTool("file_reader", "Reads files")
 	if err := registry.RegisterTool("file_reader", tool1, ToolMetadata{
 		Metadata: builtins.Metadata{
 			Name:        "file_reader",
@@ -195,7 +144,7 @@ func TestToolRegistry_ListByPermission(t *testing.T) {
 		t.Fatalf("failed to register file_reader: %v", err)
 	}
 
-	tool2 := &mockTool{name: "file_writer", description: "Writes files"}
+	tool2 := createMockTool("file_writer", "Writes files")
 	if err := registry.RegisterTool("file_writer", tool2, ToolMetadata{
 		Metadata: builtins.Metadata{
 			Name:        "file_writer",
@@ -207,7 +156,7 @@ func TestToolRegistry_ListByPermission(t *testing.T) {
 		t.Fatalf("failed to register file_writer: %v", err)
 	}
 
-	tool3 := &mockTool{name: "network_fetch", description: "Fetches from network"}
+	tool3 := createMockTool("network_fetch", "Fetches from network")
 	if err := registry.RegisterTool("network_fetch", tool3, ToolMetadata{
 		Metadata: builtins.Metadata{
 			Name:        "network_fetch",
@@ -243,7 +192,7 @@ func TestToolRegistry_ListByResourceUsage(t *testing.T) {
 	}
 
 	// Register tools with different resource characteristics
-	tool1 := &mockTool{name: "low_memory_tool", description: "Uses low memory"}
+	tool1 := createMockTool("low_memory_tool", "Uses low memory")
 	if err := registry.RegisterTool("low_memory_tool", tool1, ToolMetadata{
 		Metadata: builtins.Metadata{
 			Name:        "low_memory_tool",
@@ -257,7 +206,7 @@ func TestToolRegistry_ListByResourceUsage(t *testing.T) {
 		t.Fatalf("failed to register low_memory_tool: %v", err)
 	}
 
-	tool2 := &mockTool{name: "high_memory_network", description: "High memory network tool"}
+	tool2 := createMockTool("high_memory_network", "High memory network tool")
 	if err := registry.RegisterTool("high_memory_network", tool2, ToolMetadata{
 		Metadata: builtins.Metadata{
 			Name:        "high_memory_network",
@@ -272,7 +221,7 @@ func TestToolRegistry_ListByResourceUsage(t *testing.T) {
 		t.Fatalf("failed to register high_memory_network: %v", err)
 	}
 
-	tool3 := &mockTool{name: "file_tool", description: "File system tool"}
+	tool3 := createMockTool("file_tool", "File system tool")
 	if err := registry.RegisterTool("file_tool", tool3, ToolMetadata{
 		Metadata: builtins.Metadata{
 			Name:        "file_tool",
@@ -358,7 +307,7 @@ func TestToolRegistry_GlobalRegistry(t *testing.T) {
 	}
 
 	// Test MustRegisterTool
-	tool := &mockTool{name: "global_tool", description: "Global tool"}
+	tool := createMockTool("global_tool", "Global tool")
 	MustRegisterTool("global_tool", tool, ToolMetadata{
 		Metadata: builtins.Metadata{
 			Category:    "global",
@@ -414,7 +363,7 @@ func TestToolRegistry_Validation(t *testing.T) {
 		{
 			name:        "valid permissions format",
 			toolName:    "test1",
-			tool:        &mockTool{name: "test1"},
+			tool:        createMockTool("test1", "Test tool 1"),
 			permissions: []string{"resource:action", "another:permission"},
 			memory:      "medium",
 			wantErr:     false,
@@ -422,7 +371,7 @@ func TestToolRegistry_Validation(t *testing.T) {
 		{
 			name:        "valid memory levels",
 			toolName:    "test2",
-			tool:        &mockTool{name: "test2"},
+			tool:        createMockTool("test2", "Test tool 2"),
 			permissions: []string{},
 			memory:      "high",
 			wantErr:     false,
@@ -430,7 +379,7 @@ func TestToolRegistry_Validation(t *testing.T) {
 		{
 			name:        "empty memory is valid",
 			toolName:    "test3",
-			tool:        &mockTool{name: "test3"},
+			tool:        createMockTool("test3", "Test tool 3"),
 			permissions: []string{},
 			memory:      "",
 			wantErr:     false,
@@ -470,16 +419,9 @@ func TestEnhancedToolMetadata(t *testing.T) {
 	registry := NewTestRegistry()
 
 	t.Run("register tool with enhanced metadata", func(t *testing.T) {
-		tool := &mockTool{
-			name:              "test_tool",
-			description:       "A test tool",
-			category:          "test",
-			tags:              []string{"test", "mock"},
-			version:           "1.0.0",
-			usageInstructions: "Use this for testing",
-			isDeterministic:   true,
-			estimatedLatency:  "fast",
-		}
+		tool := createCustomMockTool("test_tool", "A test tool", "test",
+			[]string{"test", "mock"}, "1.0.0").
+			WithUsageInstructions("Use this for testing")
 
 		// Create enhanced metadata that pulls from tool
 		metadata := ToolMetadata{
@@ -517,17 +459,10 @@ func TestEnhancedToolMetadata(t *testing.T) {
 	t.Run("enhanced metadata populated from tool interface", func(t *testing.T) {
 		registry.Clear()
 
-		tool := &mockTool{
-			name:              "auto_tool",
-			description:       "Auto metadata tool",
-			category:          "auto",
-			tags:              []string{"auto", "test"},
-			version:           "2.0.0",
-			usageInstructions: "Auto-populated instructions",
-			constraints:       []string{"Must be deterministic"},
-			isDeterministic:   true,
-			estimatedLatency:  "fast",
-		}
+		tool := createCustomMockTool("auto_tool", "Auto metadata tool", "auto",
+			[]string{"auto", "test"}, "2.0.0").
+			WithUsageInstructions("Auto-populated instructions").
+			WithConstraints("Must be deterministic")
 
 		// Register with minimal metadata - should auto-populate from tool
 		metadata := ToolMetadata{
@@ -564,24 +499,18 @@ func TestMCPExportFunctionality(t *testing.T) {
 	registry.Clear()
 
 	t.Run("export single tool to MCP", func(t *testing.T) {
-		tool := &mockTool{
-			name:        "calculator",
-			description: "Performs calculations",
-			category:    "math",
-			version:     "2.0.0",
-			examples: []domain.ToolExample{
-				{
-					Name:        "Addition",
-					Description: "Add two numbers",
-					Input:       map[string]interface{}{"operation": "add", "a": 5, "b": 3},
-					Output:      8,
-				},
-			},
-			constraints: []string{"Only basic operations"},
-			errorGuidance: map[string]string{
+		tool := createCustomMockTool("calculator", "Performs calculations", "math",
+			[]string{"calculation", "math"}, "2.0.0").
+			WithExamples(domain.ToolExample{
+				Name:        "Addition",
+				Description: "Add two numbers",
+				Input:       map[string]interface{}{"operation": "add", "a": 5, "b": 3},
+				Output:      8,
+			}).
+			WithConstraints("Only basic operations").
+			WithErrorGuidance(map[string]string{
 				"division_by_zero": "Cannot divide by zero",
-			},
-		}
+			})
 
 		metadata := ToolMetadata{
 			Metadata: builtins.Metadata{
@@ -616,19 +545,11 @@ func TestMCPExportFunctionality(t *testing.T) {
 		// Clear and register multiple tools
 		registry.Clear()
 
-		toolsToRegister := []*mockTool{
-			{
-				name:        "web_search",
-				description: "Search the web",
-				category:    "web",
-				version:     "1.0.0",
-			},
-			{
-				name:        "file_read",
-				description: "Read files",
-				category:    "file",
-				version:     "1.0.0",
-			},
+		toolsToRegister := []domain.Tool{
+			createCustomMockTool("web_search", "Search the web", "web",
+				[]string{"web", "search"}, "1.0.0"),
+			createCustomMockTool("file_read", "Read files", "file",
+				[]string{"file", "read"}, "1.0.0"),
 		}
 
 		for _, tool := range toolsToRegister {
@@ -671,15 +592,12 @@ func TestEnhancedResourceFiltering(t *testing.T) {
 
 	// Register tools with different resource requirements
 	tools := []struct {
-		tool     *mockTool
+		tool     domain.Tool
 		metadata ToolMetadata
 	}{
 		{
-			tool: &mockTool{
-				name:        "web_tool",
-				description: "Web tool",
-				category:    "web",
-			},
+			tool: createCustomMockTool("web_tool", "Web tool", "web",
+				[]string{"web"}, "1.0.0"),
 			metadata: ToolMetadata{
 				Metadata: builtins.Metadata{
 					Name:     "web_tool",
@@ -693,11 +611,8 @@ func TestEnhancedResourceFiltering(t *testing.T) {
 			},
 		},
 		{
-			tool: &mockTool{
-				name:        "file_tool",
-				description: "File tool",
-				category:    "file",
-			},
+			tool: createCustomMockTool("file_tool", "File tool", "file",
+				[]string{"file"}, "1.0.0"),
 			metadata: ToolMetadata{
 				Metadata: builtins.Metadata{
 					Name:     "file_tool",
@@ -711,11 +626,8 @@ func TestEnhancedResourceFiltering(t *testing.T) {
 			},
 		},
 		{
-			tool: &mockTool{
-				name:        "compute_tool",
-				description: "Compute tool",
-				category:    "compute",
-			},
+			tool: createCustomMockTool("compute_tool", "Compute tool", "compute",
+				[]string{"compute"}, "1.0.0"),
 			metadata: ToolMetadata{
 				Metadata: builtins.Metadata{
 					Name:     "compute_tool",
@@ -784,30 +696,19 @@ func TestToolDocumentation(t *testing.T) {
 	registry := NewTestRegistry()
 	registry.Clear()
 
-	tool := &mockTool{
-		name:              "doc_tool",
-		description:       "Documentation test tool",
-		category:          "test",
-		tags:              []string{"test", "documentation"},
-		version:           "3.0.0",
-		usageInstructions: "Detailed usage instructions here",
-		examples: []domain.ToolExample{
-			{
-				Name:        "Example 1",
-				Description: "Basic example",
-				Input:       "test input",
-				Output:      "test output",
-			},
-		},
-		constraints: []string{"Constraint 1", "Constraint 2"},
-		errorGuidance: map[string]string{
+	tool := createCustomMockTool("doc_tool", "Documentation test tool", "test",
+		[]string{"test", "documentation"}, "3.0.0").
+		WithUsageInstructions("Detailed usage instructions here").
+		WithExamples(domain.ToolExample{
+			Name:        "Example 1",
+			Description: "Basic example",
+			Input:       "test input",
+			Output:      "test output",
+		}).
+		WithConstraints("Constraint 1", "Constraint 2").
+		WithErrorGuidance(map[string]string{
 			"error1": "How to fix error 1",
-		},
-		isDeterministic:      true,
-		isDestructive:        false,
-		requiresConfirmation: false,
-		estimatedLatency:     "fast",
-	}
+		})
 
 	metadata := ToolMetadata{
 		Metadata: builtins.Metadata{

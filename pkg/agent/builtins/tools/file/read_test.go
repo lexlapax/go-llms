@@ -13,66 +13,15 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
-	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
-
-// mockReadAgent implements the BaseAgent interface for testing
-type mockReadAgent struct {
-	id          string
-	name        string
-	description string
-	agentType   domain.AgentType
-	metadata    map[string]interface{}
-}
-
-func (a *mockReadAgent) ID() string                                { return a.id }
-func (a *mockReadAgent) Name() string                              { return a.name }
-func (a *mockReadAgent) Description() string                       { return a.description }
-func (a *mockReadAgent) Type() domain.AgentType                    { return a.agentType }
-func (a *mockReadAgent) Parent() domain.BaseAgent                  { return nil }
-func (a *mockReadAgent) SetParent(parent domain.BaseAgent) error   { return nil }
-func (a *mockReadAgent) SubAgents() []domain.BaseAgent             { return nil }
-func (a *mockReadAgent) AddSubAgent(agent domain.BaseAgent) error  { return nil }
-func (a *mockReadAgent) RemoveSubAgent(name string) error          { return nil }
-func (a *mockReadAgent) FindAgent(name string) domain.BaseAgent    { return nil }
-func (a *mockReadAgent) FindSubAgent(name string) domain.BaseAgent { return nil }
-func (a *mockReadAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
-	return nil, nil
-}
-func (a *mockReadAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
-	return nil, nil
-}
-func (a *mockReadAgent) Initialize(ctx context.Context) error                     { return nil }
-func (a *mockReadAgent) BeforeRun(ctx context.Context, state *domain.State) error { return nil }
-func (a *mockReadAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
-	return nil
-}
-func (a *mockReadAgent) Cleanup(ctx context.Context) error                     { return nil }
-func (a *mockReadAgent) InputSchema() *sdomain.Schema                          { return nil }
-func (a *mockReadAgent) OutputSchema() *sdomain.Schema                         { return nil }
-func (a *mockReadAgent) Config() domain.AgentConfig                            { return domain.AgentConfig{} }
-func (a *mockReadAgent) WithConfig(config domain.AgentConfig) domain.BaseAgent { return a }
-func (a *mockReadAgent) Validate() error                                       { return nil }
-func (a *mockReadAgent) Metadata() map[string]interface{}                      { return a.metadata }
-func (a *mockReadAgent) SetMetadata(key string, value interface{}) {
-	if a.metadata == nil {
-		a.metadata = make(map[string]interface{})
-	}
-	a.metadata[key] = value
-}
 
 // createTestToolContextForRead creates a ToolContext for testing
 func createTestToolContextForRead() *domain.ToolContext {
 	ctx := context.Background()
 	state := domain.NewState()
 	stateReader := domain.NewStateReader(state)
-	agent := &mockReadAgent{
-		id:          "test-agent",
-		name:        "Test Agent",
-		description: "Test agent for file read tests",
-		agentType:   domain.AgentTypeCustom,
-		metadata:    make(map[string]interface{}),
-	}
+	agent := mocks.NewMockAgent("Test Agent")
 
 	tc := domain.NewToolContext(ctx, stateReader, agent, "test-run-id")
 
