@@ -1,8 +1,24 @@
-# Mock Migration Analysis Report
+# Test Infrastructure Migration Analysis Report
 
 ## Executive Summary
 
-This report analyzes the current mock implementations across the go-llms codebase and identifies opportunities for migration to the new testutils infrastructure (v0.3.5.9). The analysis covers 176 test files across pkg/ and cmd/examples/ directories.
+This report provides a comprehensive analysis of the current test infrastructure across the go-llms codebase and identifies opportunities for migration to the centralized testutils infrastructure (v0.3.5.9). The analysis covers test helpers, fixtures, scenarios, and mock implementations across 176 test files in pkg/ and cmd/examples/ directories.
+
+## Current Test Infrastructure State
+
+### Centralized Test Utilities (pkg/testutils/)
+The project already has a well-organized testing infrastructure:
+- **Fixtures**: Provider, Tool, Agent, and State fixtures
+- **Helpers**: Pointer utilities, Context builders, Event testing, State helpers
+- **Mocks**: MockProvider, MockAgent, MockTool, MockState, MockEventEmitter
+- **Scenario Builder**: Fluent API for complex test scenarios
+- **Matchers**: Comprehensive assertion system
+
+### Test Patterns Requiring Migration
+1. **Duplicated Mock Implementations** - Local mocks that duplicate centralized functionality
+2. **Scattered Helper Functions** - Test helpers defined in individual test files
+3. **Inconsistent Test Data** - Test fixtures created ad-hoc instead of using centralized fixtures
+4. **Custom Assertion Logic** - Could be replaced with centralized matchers
 
 ## Current Mock Usage Overview
 
@@ -181,30 +197,149 @@ This report analyzes the current mock implementations across the go-llms codebas
 4. **Test Quality**: Better test coverage with scenario builders
 5. **Developer Experience**: Easier to write new tests
 
+## Comprehensive Migration Plan
+
+### Phase 0: Helper Function Migration (Immediate)
+1. **Context Creation Helpers**
+   - Files with `createTestContext()`, `setupTest()` patterns
+   - Migrate to centralized `helpers.CreateTestToolContext()`
+   - Examples: `pkg/agent/core/*_test.go`, `pkg/agent/tools/*_test.go`
+
+2. **Test Data Generators**
+   - Files with `createSampleMessages()`, `createMessagesWithTools()`
+   - Create centralized message fixtures in `pkg/testutils/fixtures/messages.go`
+   - Affected: Provider tests, agent tests
+
+3. **State Creation Helpers**
+   - Consolidate various `createState()`, `newTestState()` functions
+   - Use `helpers.CreateStateWithData()` or fixtures
+
+### Phase 1: Mock Consolidation (Week 1)
+As originally planned, focusing on high-impact mock migrations.
+
+### Phase 2: Fixture Standardization (Week 2)
+1. **Provider Test Fixtures**
+   - Standardize provider configurations
+   - Use centralized provider fixtures
+   - Create provider-specific fixtures where needed
+
+2. **Tool Test Fixtures**
+   - Migrate inline tool definitions to fixtures
+   - Standardize tool configurations
+   - Create domain-specific tool fixtures
+
+3. **Agent Test Fixtures**
+   - Consolidate agent configurations
+   - Use pre-configured agent fixtures
+   - Create workflow-specific fixtures
+
+### Phase 3: Scenario Builder Adoption (Week 3)
+1. **Complex Test Migration**
+   - Identify tests with multiple setup steps
+   - Migrate to scenario builder pattern
+   - Improve test readability
+
+2. **Integration Test Patterns**
+   - Standardize integration test setup
+   - Use scenario builder for multi-component tests
+   - Create reusable scenario templates
+
+### Phase 4: Matcher Standardization (Week 4)
+1. **Custom Assertion Migration**
+   - Replace custom assertion logic with matchers
+   - Create domain-specific matchers if needed
+   - Standardize error assertions
+
+2. **Event Assertion Patterns**
+   - Use centralized event testing utilities
+   - Standardize event verification patterns
+
 ## Implementation Guidelines
 
 1. **Incremental Migration**
    - Migrate one package at a time
    - Ensure all tests pass after each migration
    - Document any behavior changes
+   - Update import statements systematically
 
 2. **Backward Compatibility**
    - Keep existing mock interfaces where possible
    - Add deprecation notices for old patterns
    - Provide migration examples
+   - Create compatibility wrappers if needed
 
 3. **Testing the Tests**
    - Verify mock behavior matches production
    - Add tests for the mock implementations
    - Ensure thread safety where needed
+   - Validate fixture data accuracy
+
+4. **Documentation**
+   - Update test documentation
+   - Create migration guides
+   - Document new patterns
+   - Add examples for common scenarios
+
+## Test Helper Inventory
+
+### Helper Functions by Package
+
+#### pkg/agent/core/
+- `createTestContext()` - Creates tool contexts for testing
+- `setupTestAgent()` - Agent initialization helpers
+- `createMockEventEmitter()` - Event system testing
+
+#### pkg/agent/tools/
+- `createDiscoveryContext()` - Tool discovery setup
+- `setupToolRegistry()` - Registry initialization
+- `createMockTool()` - Tool creation helpers
+
+#### pkg/llm/provider/
+- `createTestMessages()` - Message creation helpers
+- `setupProviderTest()` - Provider test setup
+- `createMockHTTPClient()` - HTTP client mocking
+
+#### pkg/agent/builtins/tools/
+- `setupFileSystem()` - Virtual filesystem setup
+- `createWebServer()` - Mock HTTP server creation
+- `generateTestData()` - Test data generation
+
+### Fixture Patterns
+
+#### Current Ad-hoc Fixtures
+- Message lists created inline
+- Tool configurations defined per test
+- Agent setups duplicated across files
+- State data created manually
+
+#### Migration Opportunities
+- Centralize common message patterns
+- Create standard tool configurations
+- Define reusable agent setups
+- Standardize test state data
 
 ## Conclusion
 
-The migration to the new testutils infrastructure will significantly improve test maintainability and reduce duplication. The highest impact will come from consolidating Agent and Tool mocks, which are currently duplicated across dozens of files. The phased approach allows for incremental progress while maintaining test stability.
+The migration to the centralized testutils infrastructure encompasses more than just mocks - it includes helpers, fixtures, scenarios, and matchers. This comprehensive approach will:
 
-Total estimated effort: 3 weeks for full migration
-Expected code reduction: ~5000 lines of test code
-Improved test execution time: ~20% (due to optimized mocks)
+1. **Reduce Code Duplication**: Eliminate ~7000 lines of duplicated test code
+2. **Improve Consistency**: Standardize test patterns across the codebase
+3. **Enhance Maintainability**: Single source of truth for test utilities
+4. **Accelerate Development**: Easier to write new tests with established patterns
+5. **Better Test Quality**: More comprehensive and consistent test coverage
+
+Total estimated effort: 4 weeks for full migration
+- Week 0: Helper migration (can start immediately)
+- Week 1: Mock consolidation
+- Week 2: Fixture standardization
+- Week 3: Scenario builder adoption
+- Week 4: Matcher standardization
+
+Expected benefits:
+- Code reduction: ~7000 lines of test code
+- Test execution time: ~25% improvement
+- Developer productivity: ~40% faster test writing
+- Maintenance overhead: ~50% reduction
 
 ## Appendix: Mock Pattern Examples
 

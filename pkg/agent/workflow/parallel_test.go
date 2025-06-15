@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 func TestParallelAgent_BasicExecution(t *testing.T) {
@@ -19,18 +20,28 @@ func TestParallelAgent_BasicExecution(t *testing.T) {
 	var executionOrder []string
 	var orderMutex sync.Mutex
 
-	createTrackingAgent := func(name string, delay time.Duration) *MockAgent {
-		return NewMockAgent(name).
-			WithDelay(delay).
-			WithRunFunc(func(ctx context.Context, state *domain.State) (*domain.State, error) {
-				orderMutex.Lock()
-				executionOrder = append(executionOrder, name)
-				orderMutex.Unlock()
+	createTrackingAgent := func(name string, delay time.Duration) *mocks.MockAgent {
+		agent := mocks.NewMockAgent(name)
+		agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+			// Use a timer to respect context cancellation
+			timer := time.NewTimer(delay)
+			select {
+			case <-timer.C:
+				// Delay completed
+			case <-ctx.Done():
+				timer.Stop()
+				return nil, ctx.Err()
+			}
+			
+			orderMutex.Lock()
+			executionOrder = append(executionOrder, name)
+			orderMutex.Unlock()
 
-				newState := state.Clone()
-				newState.Set(fmt.Sprintf("%s_result", name), fmt.Sprintf("data_from_%s", name))
-				return newState, nil
-			})
+			newState := state.Clone()
+			newState.Set(fmt.Sprintf("%s_result", name), fmt.Sprintf("data_from_%s", name))
+			return newState, nil
+		}
+		return agent
 	}
 
 	agent1 := createTrackingAgent("agent1", 50*time.Millisecond)
@@ -106,8 +117,9 @@ func TestParallelAgent_MaxConcurrency(t *testing.T) {
 	var currentConcurrent int32
 	var maxConcurrent int32
 
-	createConcurrencyAgent := func(name string) *MockAgent {
-		return NewMockAgent(name).WithRunFunc(func(ctx context.Context, state *domain.State) (*domain.State, error) {
+	createConcurrencyAgent := func(name string) *mocks.MockAgent {
+		agent := mocks.NewMockAgent(name)
+		agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
 			// Increment concurrent count
 			current := atomic.AddInt32(&currentConcurrent, 1)
 
@@ -126,7 +138,8 @@ func TestParallelAgent_MaxConcurrency(t *testing.T) {
 			atomic.AddInt32(&currentConcurrent, -1)
 
 			return state.Clone(), nil
-		})
+		}
+		return agent
 	}
 
 	// Create 5 agents

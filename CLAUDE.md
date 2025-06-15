@@ -6,10 +6,11 @@ Project guidance for Claude Code when working with go-llms.
 
 Unified Go interface for LLM providers with agent tooling.
 
-**Status**: v0.3.5.9 Testing Infrastructure (Phase 1 Complete - June 14, 2025)
+**Status**: v0.3.5.9 Testing Infrastructure - Test Migration in Progress (June 15, 2025)
 **Providers**: OpenAI, Anthropic, Google (Gemini, Vertex AI), Ollama, OpenRouter  
-**Current**: Phase 2 - Scenario Builder System
+**Current**: Comprehensive Test Infrastructure Migration (Phase 0 - Helpers)
 **Next**: Complete v0.3.5.9 Testing Infrastructure
+**Build Status**: make test; make fmt; make vet; make lint - All passing ✅
 
 ## Recent Progress:
 ### v0.3.5.8 Structured Output Support ✅
@@ -19,7 +20,7 @@ Unified Go interface for LLM providers with agent tooling.
 - Format conversion between JSON/XML/YAML
 - Bridge adapter for go-llmspell compatibility
 
-### v0.3.5.9 Testing Infrastructure (Phase 1 Complete)
+### v0.3.5.9 Testing Infrastructure (Phase 1 Complete, Test Migration Active)
 - Enhanced mock implementations with pattern-based responses ✅
 - Centralized mock registry ✅
 - Call history tracking ✅
@@ -29,6 +30,15 @@ Unified Go interface for LLM providers with agent tooling.
   - MockEventEmitter with recording, filtering, assertions ✅
   - Comprehensive test coverage for all mocks ✅
   - Fixed import cycles by removing circular dependencies ✅
+- Current: Test Infrastructure Migration (4-week plan)
+  - Phase 0: Helper Function Migration (Immediate) - In Progress
+  - Phase 1: Mock Consolidation (Week 1) - Started
+  - Phase 2: Fixture Standardization (Week 2)
+  - Phase 3: Scenario Builder Adoption (Week 3)
+  - Phase 4: Matcher Standardization (Week 4)
+  - Following migration-analysis.md for systematic approach
+  - Tracking progress in TODO.md (original roadmap in TODO-PAUSED.md)
+  - Maintaining all tests passing throughout migration
 - Next: Phase 2 Scenario Builder System
 
 ## Current Test Status:
@@ -68,4 +78,10 @@ make generate    # Generate tool metadata
 - `pkg/schema/` - JSON validation
 - `pkg/structured/` - Structured outputs
 
-See TODO.md for roadmap.
+## Important Files
+- `TODO.md` - Active migration tasks and progress tracking
+- `TODO-PAUSED.md` - Original project roadmap (temporarily paused)
+- `migration-analysis.md` - Comprehensive test migration analysis
+- `pkg/testutils/` - Centralized test infrastructure
+
+See TODO.md for current migration progress.
