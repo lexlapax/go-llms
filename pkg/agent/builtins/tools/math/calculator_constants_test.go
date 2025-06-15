@@ -6,11 +6,13 @@ package math
 import (
 	"math"
 	"testing"
+
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 )
 
 func TestCalculator_AllConstants(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	// Test constants as operations
 	constantTests := []struct {
@@ -57,7 +59,7 @@ func TestCalculator_AllConstants(t *testing.T) {
 
 func TestCalculator_ConstantsAsOperands(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	// Test using constants as string operands
 	tests := []struct {

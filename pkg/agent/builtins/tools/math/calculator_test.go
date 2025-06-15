@@ -4,39 +4,15 @@
 package math
 
 import (
-	"context"
 	"math"
 	"testing"
 
-	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 )
-
-// Helper function to create test context
-func createTestContext() *domain.ToolContext {
-	ctx := context.Background()
-	agentInfo := domain.AgentInfo{
-		ID:          "test-agent",
-		Name:        "Test Agent",
-		Description: "A test agent",
-		Type:        domain.AgentTypeLLM,
-	}
-
-	state := domain.NewState()
-	stateReader := domain.NewStateReader(state)
-
-	tc := &domain.ToolContext{
-		Context: ctx,
-		State:   stateReader,
-		Agent:   agentInfo,
-		RunID:   "test-run-123",
-	}
-
-	return tc
-}
 
 func TestCalculator_BasicArithmetic(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	tests := []struct {
 		name      string
@@ -93,7 +69,7 @@ func TestCalculator_BasicArithmetic(t *testing.T) {
 
 func TestCalculator_Roots(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	tests := []struct {
 		name      string
@@ -135,7 +111,7 @@ func TestCalculator_Roots(t *testing.T) {
 
 func TestCalculator_Logarithms(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	tests := []struct {
 		name      string
@@ -179,7 +155,7 @@ func TestCalculator_Logarithms(t *testing.T) {
 
 func TestCalculator_Trigonometry(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	tests := []struct {
 		name      string
@@ -226,7 +202,7 @@ func TestCalculator_Trigonometry(t *testing.T) {
 
 func TestCalculator_Rounding(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	tests := []struct {
 		name      string
@@ -269,7 +245,7 @@ func TestCalculator_Rounding(t *testing.T) {
 
 func TestCalculator_Constants(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	tests := []struct {
 		name      string
@@ -305,7 +281,7 @@ func TestCalculator_Constants(t *testing.T) {
 
 func TestCalculator_Advanced(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	tests := []struct {
 		name      string
@@ -350,7 +326,7 @@ func TestCalculator_Advanced(t *testing.T) {
 
 func TestCalculator_ErrorCases(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	tests := []struct {
 		name      string
@@ -401,7 +377,7 @@ func TestCalculator_ErrorCases(t *testing.T) {
 
 func TestCalculator_EdgeCases(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	// Test very large factorial
 	params := map[string]interface{}{

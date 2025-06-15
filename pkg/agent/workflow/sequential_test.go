@@ -8,58 +8,17 @@ import (
 	"errors"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
-// Helper functions for creating mock agents with specific behaviors
-func createMockAgentWithDelay(name string, delay time.Duration) *mocks.MockAgent {
-	agent := mocks.NewMockAgent(name)
-	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
-		// Use a timer to respect context cancellation
-		timer := time.NewTimer(delay)
-		select {
-		case <-timer.C:
-			// Delay completed
-		case <-ctx.Done():
-			timer.Stop()
-			return nil, ctx.Err()
-		}
-		
-		// Default behavior: add a marker to the state
-		newState := state.Clone()
-		newState.Set(fmt.Sprintf("%s_executed", name), true)
-		newState.Set("last_agent", name)
-		return newState, nil
-	}
-	return agent
-}
-
-func createMockAgentWithError(name string) *mocks.MockAgent {
-	agent := mocks.NewMockAgent(name)
-	agent.AddError(fmt.Errorf("mock error from %s", name))
-	return agent
-}
-
-func createMockAgentWithDefault(name string) *mocks.MockAgent {
-	agent := mocks.NewMockAgent(name)
-	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
-		// Default behavior: add a marker to the state
-		newState := state.Clone()
-		newState.Set(fmt.Sprintf("%s_executed", name), true)
-		newState.Set("last_agent", name)
-		return newState, nil
-	}
-	return agent
-}
-
 func TestSequentialAgent_BasicExecution(t *testing.T) {
 	// Create agents
-	agent1 := createMockAgentWithDefault("agent1")
-	agent2 := createMockAgentWithDefault("agent2")
-	agent3 := createMockAgentWithDefault("agent3")
+	agent1 := helpers.CreateMockAgentWithDefault("agent1")
+	agent2 := helpers.CreateMockAgentWithDefault("agent2")
+	agent3 := helpers.CreateMockAgentWithDefault("agent3")
 
 	// Create sequential workflow
 	workflow := NewSequentialAgent("test-workflow")
@@ -103,9 +62,9 @@ func TestSequentialAgent_BasicExecution(t *testing.T) {
 func TestSequentialAgent_ErrorHandling(t *testing.T) {
 	t.Run("StopOnError", func(t *testing.T) {
 		// Create agents
-		agent1 := createMockAgentWithDefault("agent1")
-		agent2 := createMockAgentWithError("agent2")
-		agent3 := createMockAgentWithDefault("agent3")
+		agent1 := helpers.CreateMockAgentWithDefault("agent1")
+		agent2 := helpers.CreateMockAgentWithError("agent2")
+		agent3 := helpers.CreateMockAgentWithDefault("agent3")
 
 		// Create workflow with stop on error
 		workflow := NewSequentialAgent("test-workflow").
@@ -132,9 +91,9 @@ func TestSequentialAgent_ErrorHandling(t *testing.T) {
 
 	t.Run("ContinueOnError", func(t *testing.T) {
 		// Create agents
-		agent1 := createMockAgentWithDefault("agent1")
-		agent2 := createMockAgentWithError("agent2")
-		agent3 := createMockAgentWithDefault("agent3")
+		agent1 := helpers.CreateMockAgentWithDefault("agent1")
+		agent2 := helpers.CreateMockAgentWithError("agent2")
+		agent3 := helpers.CreateMockAgentWithDefault("agent3")
 
 		// Create workflow without stop on error
 		workflow := NewSequentialAgent("test-workflow").

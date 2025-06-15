@@ -6,11 +6,13 @@ package math
 import (
 	"math"
 	"testing"
+
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 )
 
 func TestCalculator_NullHandling(t *testing.T) {
 	tool := Calculator()
-	ctx := createTestContext()
+	ctx := helpers.CreateTestToolContext()
 
 	tests := []struct {
 		name      string

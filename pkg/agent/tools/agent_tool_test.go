@@ -8,39 +8,17 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// MockAgent for testing
-type MockAgent struct {
-	*core.BaseAgentImpl
-	runFunc func(ctx context.Context, state *domain.State) (*domain.State, error)
-}
-
-func NewMockAgent(name, description string) *MockAgent {
-	return &MockAgent{
-		BaseAgentImpl: core.NewBaseAgent(name, description, domain.AgentTypeCustom),
-	}
-}
-
-func (m *MockAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
-	if m.runFunc != nil {
-		return m.runFunc(ctx, state)
-	}
-	// Default behavior - echo input
-	result := state.Clone()
-	result.Set("result", "processed")
-	return result, nil
-}
-
 // Helper function to create a test ToolContext
 func createTestToolContext() *domain.ToolContext {
 	state := domain.NewState()
-	agent := NewMockAgent("test", "test")
+	agent := mocks.NewMockAgent("test")
 	return domain.NewToolContext(
 		context.Background(),
 		domain.NewStateReader(state),
@@ -51,8 +29,9 @@ func createTestToolContext() *domain.ToolContext {
 
 func TestAgentTool_Basic(t *testing.T) {
 	// Create a mock agent
-	agent := NewMockAgent("test-agent", "Test agent for testing")
-	agent.runFunc = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+	agent := mocks.NewMockAgent("test-agent")
+	agent.AgentDescription = "Test agent for testing"
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		input, _ := state.Get("input")
 		result := domain.NewState()
 		result.Set("result", fmt.Sprintf("processed: %v", input))
@@ -74,8 +53,9 @@ func TestAgentTool_Basic(t *testing.T) {
 }
 
 func TestAgentTool_MapParameters(t *testing.T) {
-	agent := NewMockAgent("map-agent", "Tests map parameters")
-	agent.runFunc = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+	agent := mocks.NewMockAgent("map-agent")
+	agent.AgentDescription = "Tests map parameters"
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		// Echo all values
 		result := domain.NewState()
 		for k, v := range state.Values() {
@@ -101,8 +81,9 @@ func TestAgentTool_MapParameters(t *testing.T) {
 }
 
 func TestAgentTool_CustomMappers(t *testing.T) {
-	agent := NewMockAgent("custom-mapper", "Tests custom mappers")
-	agent.runFunc = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+	agent := mocks.NewMockAgent("custom-mapper")
+	agent.AgentDescription = "Tests custom mappers"
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		name, _ := state.Get("name")
 		age, _ := state.Get("age")
 		result := domain.NewState()
@@ -135,7 +116,14 @@ func TestAgentTool_CustomMappers(t *testing.T) {
 }
 
 func TestAgentTool_StateInput(t *testing.T) {
-	agent := NewMockAgent("state-agent", "Tests state input")
+	agent := mocks.NewMockAgent("state-agent")
+	agent.AgentDescription = "Tests state input"
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		// Default behavior - echo input
+		result := state.Clone()
+		result.Set("result", "processed")
+		return result, nil
+	}
 
 	tool := NewAgentTool(agent)
 
@@ -152,8 +140,9 @@ func TestAgentTool_StateInput(t *testing.T) {
 }
 
 func TestAgentTool_ErrorHandling(t *testing.T) {
-	agent := NewMockAgent("error-agent", "Tests error handling")
-	agent.runFunc = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+	agent := mocks.NewMockAgent("error-agent")
+	agent.AgentDescription = "Tests error handling"
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		return nil, fmt.Errorf("agent execution failed")
 	}
 
@@ -166,7 +155,8 @@ func TestAgentTool_ErrorHandling(t *testing.T) {
 }
 
 func TestAgentTool_ParameterSchema(t *testing.T) {
-	agent := NewMockAgent("schema-agent", "Tests schema")
+	agent := mocks.NewMockAgent("schema-agent")
+	agent.AgentDescription = "Tests schema"
 
 	// Test with custom schema
 	customSchema := &sdomain.Schema{
@@ -194,8 +184,9 @@ func TestAgentTool_ParameterSchema(t *testing.T) {
 }
 
 func TestAgentTool_MultipleResultFields(t *testing.T) {
-	agent := NewMockAgent("multi-result", "Tests multiple result fields")
-	agent.runFunc = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+	agent := mocks.NewMockAgent("multi-result")
+	agent.AgentDescription = "Tests multiple result fields"
+	agent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		result := domain.NewState()
 		result.Set("field1", "value1")
 		result.Set("field2", "value2")

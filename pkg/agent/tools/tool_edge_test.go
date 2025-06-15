@@ -6,17 +6,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
 // Helper to create test ToolContext
 func createEdgeTestContext() *domain.ToolContext {
-	// Create a simple mock agent using MockAgent from agent_tool_test.go
-	mockAgent := &MockAgent{
-		BaseAgentImpl: core.NewBaseAgent("test-agent", "Test agent for edge cases", domain.AgentTypeCustom),
-	}
+	// Create a simple mock agent using centralized mocks
+	mockAgent := mocks.NewMockAgent("test-agent")
+	mockAgent.AgentDescription = "Test agent for edge cases"
 
 	return domain.NewToolContext(
 		context.Background(),

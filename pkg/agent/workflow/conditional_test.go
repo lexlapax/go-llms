@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lexlapax/go-llms/pkg/agent/core"
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 )
 
 func TestConditionalAgent_BasicExecution(t *testing.T) {
 	// Create test agents
-	agent1 := createMockAgentWithResponse("agent1", "branch1 executed")
-	agent2 := createMockAgentWithResponse("agent2", "branch2 executed")
-	defaultAgent := createMockAgentWithResponse("default", "default executed")
+	agent1 := helpers.CreateMockAgentWithResponse("agent1", "branch1 executed")
+	agent2 := helpers.CreateMockAgentWithResponse("agent2", "branch2 executed")
+	defaultAgent := helpers.CreateMockAgentWithResponse("default", "default executed")
 
 	// Create conditional workflow
 	conditional := NewConditionalAgent("test-conditional").
@@ -129,8 +129,8 @@ func TestConditionalAgent_Priority(t *testing.T) {
 
 func TestConditionalAgent_MultipleMatches(t *testing.T) {
 	// Create test agents
-	agent1 := createMockAgentWithResponse("agent1", "result1")
-	agent2 := createMockAgentWithResponse("agent2", "result2")
+	agent1 := helpers.CreateMockAgentWithResponse("agent1", "result1")
+	agent2 := helpers.CreateMockAgentWithResponse("agent2", "result2")
 
 	// Create conditional workflow that allows multiple matches
 	conditional := NewConditionalAgent("multi-match").
@@ -158,7 +158,7 @@ func TestConditionalAgent_MultipleMatches(t *testing.T) {
 
 func TestConditionalAgent_NoMatches(t *testing.T) {
 	// Create test agents
-	agent1 := createMockAgentWithResponse("agent1", "result1")
+	agent1 := helpers.CreateMockAgentWithResponse("agent1", "result1")
 
 	// Create conditional workflow without default
 	conditional := NewConditionalAgent("no-matches").
@@ -182,11 +182,7 @@ func TestConditionalAgent_NoMatches(t *testing.T) {
 
 func TestConditionalAgent_ErrorHandling(t *testing.T) {
 	// Create agent that returns an error
-	errorAgent := &mockAgent{
-		BaseAgent: createBaseAgent("error-agent", "Error agent", domain.AgentTypeCustom),
-		shouldErr: true,
-		response:  "should not see this",
-	}
+	errorAgent := helpers.CreateMockAgentWithError("error-agent")
 
 	// Create conditional workflow
 	conditional := NewConditionalAgent("error-test").
@@ -222,7 +218,7 @@ func TestConditionalAgent_Validation(t *testing.T) {
 		{
 			name: "Valid workflow",
 			setup: func() *ConditionalAgent {
-				agent := createMockAgentWithResponse("test", "result")
+				agent := helpers.CreateMockAgentWithResponse("test", "result")
 				return NewConditionalAgent("valid").
 					AddAgent("branch1", func(state *domain.State) bool { return true }, agent)
 			},
@@ -239,7 +235,7 @@ func TestConditionalAgent_Validation(t *testing.T) {
 		{
 			name: "Branch with nil condition",
 			setup: func() *ConditionalAgent {
-				agent := createMockAgentWithResponse("test", "result")
+				agent := helpers.CreateMockAgentWithResponse("test", "result")
 				conditional := NewConditionalAgent("nil-condition")
 				// Manually add branch with nil condition
 				conditional.branches = append(conditional.branches, ConditionalBranch{
@@ -274,8 +270,8 @@ func TestConditionalAgent_Validation(t *testing.T) {
 
 func TestConditionalAgent_Metadata(t *testing.T) {
 	// Create test agents
-	agent1 := createMockAgentWithResponse("agent1", "result1")
-	agent2 := createMockAgentWithResponse("agent2", "result2")
+	agent1 := helpers.CreateMockAgentWithResponse("agent1", "result1")
+	agent2 := helpers.CreateMockAgentWithResponse("agent2", "result2")
 
 	// Create conditional workflow
 	conditional := NewConditionalAgent("metadata-test").
@@ -361,33 +357,4 @@ func (m *mockStep) Validate() error {
 		return fmt.Errorf("mock step has nil exec function")
 	}
 	return nil
-}
-
-func createMockAgentWithResponse(name, response string) domain.BaseAgent {
-	return &mockAgent{
-		BaseAgent: createBaseAgent(name, "Mock agent", domain.AgentTypeCustom),
-		response:  response,
-	}
-}
-
-// Helper function to create base agent
-func createBaseAgent(name, description string, agentType domain.AgentType) domain.BaseAgent {
-	return core.NewBaseAgent(name, description, agentType)
-}
-
-// mockAgent for testing
-type mockAgent struct {
-	domain.BaseAgent
-	response  string
-	shouldErr bool
-}
-
-func (m *mockAgent) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
-	if m.shouldErr {
-		return nil, fmt.Errorf("mock error from %s", m.Name())
-	}
-
-	newState := state.Clone()
-	newState.Set("response", m.response)
-	return newState, nil
 }

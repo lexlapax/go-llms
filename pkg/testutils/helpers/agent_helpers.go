@@ -45,7 +45,7 @@ func CreateMockAgentWithDelay(name string, delay time.Duration) *mocks.MockAgent
 			timer.Stop()
 			return nil, ctx.Err()
 		}
-		
+
 		// Default behavior: add a marker to the state
 		newState := state.Clone()
 		newState.Set(fmt.Sprintf("%s_executed", name), true)

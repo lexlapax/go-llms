@@ -5,71 +5,20 @@ import (
 
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 	"github.com/lexlapax/go-llms/pkg/llm/provider"
+	"github.com/lexlapax/go-llms/pkg/testutils/fixtures"
 )
 
 // Removed unused testHTTPClient
 
-// createSampleMessages creates test message arrays of different sizes
-func createSampleMessages(size int) []domain.Message {
-	// Pre-allocate the slice
-	messages := make([]domain.Message, 0, size)
-
-	// Always start with a system message
-	messages = append(messages, domain.NewTextMessage(domain.RoleSystem, "You are a helpful assistant that provides accurate and concise information."))
-
-	// Add user-assistant message pairs
-	for i := 1; i < size; i += 2 {
-		// Add user message
-		if i < size {
-			messages = append(messages, domain.NewTextMessage(domain.RoleUser, "This is a user message for testing performance."))
-		}
-
-		// Add assistant message
-		if i+1 < size {
-			messages = append(messages, domain.NewTextMessage(domain.RoleAssistant, "This is an assistant response for testing performance."))
-		}
-	}
-
-	return messages
-}
-
-// createMessagesWithTools creates test message arrays that include tool calls
-func createMessagesWithTools(size int) []domain.Message {
-	// Pre-allocate the slice
-	messages := make([]domain.Message, 0, size)
-
-	// Add system message
-	messages = append(messages, domain.NewTextMessage(domain.RoleSystem, "You are a helpful assistant that can use tools."))
-
-	// Add user message first
-	messages = append(messages, domain.NewTextMessage(domain.RoleUser, "I need help with a calculation."))
-
-	// Fill remaining messages with assistant-tool pairs
-	remaining := size - 2
-	for i := 0; i < remaining; i += 2 {
-		// Add assistant message with tool call
-		if i < remaining {
-			messages = append(messages, domain.NewTextMessage(domain.RoleAssistant, "I'll use the calculator tool to help you."))
-		}
-
-		// Add tool response
-		if i+1 < remaining {
-			messages = append(messages, domain.NewTextMessage(domain.RoleTool, "Result: 42"))
-		}
-	}
-
-	return messages
-}
-
 // BenchmarkProviderMessageConversion benchmarks the message conversion process
 func BenchmarkProviderMessageConversion(b *testing.B) {
 	// Create sample message arrays of different sizes
-	smallMessages := createSampleMessages(3)  // System + User + Assistant
-	mediumMessages := createSampleMessages(7) // System + 3 exchanges
-	largeMessages := createSampleMessages(21) // System + 10 exchanges
+	smallMessages := fixtures.CreateSampleMessages(fixtures.MessageSizes.Small)   // System + User + Assistant
+	mediumMessages := fixtures.CreateSampleMessages(fixtures.MessageSizes.Medium) // System + 3 exchanges
+	largeMessages := fixtures.CreateSampleMessages(fixtures.MessageSizes.Large)   // System + 10 exchanges
 
 	// Messages with tool calls
-	toolMessages := createMessagesWithTools(7) // System + User + 2 tool exchanges
+	toolMessages := fixtures.CreateMessagesWithTools(7) // System + User + 2 tool exchanges
 
 	// Create unoptimized providers - we're just testing conversion, not actual API calls
 	// so we use dummy API keys and models

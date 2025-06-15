@@ -1,38 +1,55 @@
 # TODO.md - Test Infrastructure Migration
+**Run make test; make fmt; make vet; make lint; after every task and fix errors before proceeding to next task**
 
 ## Migration Status: Active (Started: June 15, 2025)
 
 ### Phase 0: Helper Function Migration (Immediate Priority)
 
+#### Scan Results Summary (June 15, 2025)
+**Context Creation Helpers Found:**
+- 4 calculator test files with identical `createTestContext()` implementations
+- 1 tools_test.go already using centralized helper
+- All calculator tests should migrate to `helpers.CreateTestToolContext()`
+
+**Message Creation Functions Found:**
+- `createSampleMessages(size int)` in benchmarks/provider_bench_test.go
+- `createMessagesWithTools(size int)` in benchmarks/provider_bench_test.go
+- Both create test message arrays for performance testing
+
+**State Creation Patterns Found:**
+- No dedicated state creation helper functions found
+- Most tests use inline `domain.NewState()` directly
+- Some tests create states within OnRun functions of mocks
+
 #### Context Creation Helpers
-- [ ] Scan all test files for `createTestContext()`, `setupTest()` patterns
-- [ ] Create centralized context builders in `pkg/testutils/helpers/context_helpers.go`
-- [ ] Migrate `pkg/agent/core/*_test.go` context helpers
-- [ ] Migrate `pkg/agent/tools/*_test.go` context helpers
-- [ ] Update imports and verify tests pass
+- [x] Scan all test files for `createTestContext()`, `setupTest()` patterns
+- [ ] ~~Create centralized context builders in `pkg/testutils/helpers/context_helpers.go`~~ (Already exists)
+- [x] Migrate calculator test context helpers (4 files) (Completed June 15, 2025)
+- [ ] ~~Migrate `pkg/agent/tools/*_test.go` context helpers~~ (Already migrated)
+- [x] Update imports and verify tests pass
 
 #### Test Data Generators
-- [ ] Identify all `createSampleMessages()`, `createMessagesWithTools()` functions
-- [ ] Create `pkg/testutils/fixtures/messages.go` with standard message fixtures
-- [ ] Migrate provider test message generators
-- [ ] Migrate agent test message generators
-- [ ] Standardize message creation patterns
+- [x] Identify all `createSampleMessages()`, `createMessagesWithTools()` functions
+- [x] Create `pkg/testutils/fixtures/messages.go` with standard message fixtures (Completed June 15, 2025)
+- [x] Migrate benchmark message generators to centralized fixtures (Completed June 15, 2025)
+- [ ] ~~Migrate agent test message generators~~ (None found)
+- [x] Standardize message creation patterns
 
 #### State Creation Helpers
-- [ ] Find all `createState()`, `newTestState()` variations
-- [ ] Extend `pkg/testutils/helpers/state_helpers.go` with common patterns
-- [ ] Migrate state creation in agent tests
-- [ ] Migrate state creation in workflow tests
+- [x] Find all `createState()`, `newTestState()` variations
+- [ ] ~~Extend `pkg/testutils/helpers/state_helpers.go` with common patterns~~ (Not needed - inline creation is simple)
+- [ ] ~~Migrate state creation in agent tests~~ (No helpers to migrate)
+- [ ] ~~Migrate state creation in workflow tests~~ (No helpers to migrate)
 - [ ] Document state fixture patterns
 
 ### Phase 1: Mock Consolidation (Week 1)
 
 #### Agent Mock Migration (HIGH PRIORITY)
-- [ ] ~~Migrate `pkg/agent/workflow/sequential_test.go` MockAgent~~ (Started)
-- [ ] Migrate `pkg/agent/workflow/conditional_test.go` MockAgent
-- [ ] Migrate `pkg/agent/workflow/loop_test.go` MockAgent
-- [ ] Migrate `pkg/agent/workflow/parallel_test.go` MockAgent references
-- [ ] Migrate `pkg/agent/tools/agent_tool_test.go` MockAgent
+- [x] Migrate `pkg/agent/workflow/sequential_test.go` MockAgent (Completed June 15, 2025)
+- [x] Migrate `pkg/agent/workflow/conditional_test.go` MockAgent (Completed June 15, 2025)
+- [x] Migrate `pkg/agent/workflow/loop_test.go` MockAgent (No migration needed - uses steps)
+- [x] Migrate `pkg/agent/workflow/parallel_test.go` MockAgent references (Completed June 15, 2025)
+- [x] Migrate `pkg/agent/tools/agent_tool_test.go` MockAgent (Completed June 15, 2025)
 - [ ] Update all agent tests to use `pkg/testutils/mocks/MockAgent`
 - [ ] Remove duplicated MockAgent implementations
 
@@ -111,19 +128,28 @@
 
 ### Completed Items
 - [x] Created `pkg/testutils/helpers/agent_helpers.go` with reusable mock agent creators (June 15, 2025)
-- [x] Started migration of `pkg/agent/workflow/sequential_test.go` (June 15, 2025)
+- [x] Migrated `pkg/agent/workflow/sequential_test.go` to use centralized mocks (June 15, 2025)
+- [x] Migrated `pkg/agent/workflow/parallel_test.go` to use centralized mocks (June 15, 2025)
+- [x] Migrated `pkg/agent/workflow/conditional_test.go` to use centralized mocks (June 15, 2025)
+- [x] Migrated `pkg/agent/tools/agent_tool_test.go` and `tool_edge_test.go` to use centralized mocks (June 15, 2025)
+- [x] Completed Phase 0 scan for helper function patterns (June 15, 2025)
+- [x] Migrated 4 calculator test files to use centralized context helpers (June 15, 2025)
+- [x] Created `pkg/testutils/fixtures/messages.go` with message creation functions (June 15, 2025)
+- [x] Migrated benchmark tests to use centralized message fixtures (June 15, 2025)
 
 ### Current Focus
-- Migrating workflow package MockAgent implementations to use centralized mocks
+- Phase 0: ✅ COMPLETED
+- Ready to proceed with remaining Phase 1 mock consolidation tasks
 
 ### Metrics
 - Total test files to migrate: 176
-- Files migrated: 1 (in progress)
+- Files migrated: 11 complete (sequential, parallel, conditional, agent_tool, tool_edge, 4 calculator tests, benchmark + loop no change)
 - Estimated code reduction: ~7000 lines
-- Current status: 0.5% complete
+- Current status: 6.3% complete
+- Lines removed so far: ~300 (local MockAgent implementations + duplicate helper functions)
 
 ### Notes
-- Run `make test` after each migration to ensure tests pass
+- Run `make test`, `make fmt`, `make vet`, `make lint` after each migration to ensure tests pass
 - Update imports systematically
 - Document any behavior changes
 - Create compatibility wrappers if needed

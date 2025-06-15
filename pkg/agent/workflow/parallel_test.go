@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
+	"github.com/lexlapax/go-llms/pkg/testutils/helpers"
 	"github.com/lexlapax/go-llms/pkg/testutils/mocks"
 )
 
@@ -32,7 +33,7 @@ func TestParallelAgent_BasicExecution(t *testing.T) {
 				timer.Stop()
 				return nil, ctx.Err()
 			}
-			
+
 			orderMutex.Lock()
 			executionOrder = append(executionOrder, name)
 			orderMutex.Unlock()
@@ -168,21 +169,43 @@ func TestParallelAgent_MaxConcurrency(t *testing.T) {
 func TestParallelAgent_MergeStrategies(t *testing.T) {
 	t.Run("MergeFirst", func(t *testing.T) {
 		// Create agents with different delays
-		fastAgent := NewMockAgent("fast").
-			WithDelay(10 * time.Millisecond).
-			WithRunFunc(func(ctx context.Context, state *domain.State) (*domain.State, error) {
-				newState := state.Clone()
-				newState.Set("winner", "fast")
-				return newState, nil
-			})
+		// Create fast agent with custom behavior
+		fastAgent := helpers.CreateMockAgentWithDelay("fast", 10*time.Millisecond)
+		fastAgent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+			// Use a timer to respect context cancellation
+			timer := time.NewTimer(10 * time.Millisecond)
+			select {
+			case <-timer.C:
+				// Delay completed
+			case <-ctx.Done():
+				timer.Stop()
+				return nil, ctx.Err()
+			}
 
-		slowAgent := NewMockAgent("slow").
-			WithDelay(100 * time.Millisecond).
-			WithRunFunc(func(ctx context.Context, state *domain.State) (*domain.State, error) {
-				newState := state.Clone()
-				newState.Set("winner", "slow")
-				return newState, nil
-			})
+			newState := state.Clone()
+			newState.Set("winner", "fast")
+			newState.Set("fast_executed", true)
+			return newState, nil
+		}
+
+		// Create slow agent with custom behavior
+		slowAgent := helpers.CreateMockAgentWithDelay("slow", 100*time.Millisecond)
+		slowAgent.OnRun = func(ctx context.Context, state *domain.State) (*domain.State, error) {
+			// Use a timer to respect context cancellation
+			timer := time.NewTimer(100 * time.Millisecond)
+			select {
+			case <-timer.C:
+				// Delay completed
+			case <-ctx.Done():
+				timer.Stop()
+				return nil, ctx.Err()
+			}
+
+			newState := state.Clone()
+			newState.Set("winner", "slow")
+			newState.Set("slow_executed", true)
+			return newState, nil
+		}
 
 		workflow := NewParallelAgent("test-merge-first").
 			WithMergeStrategy(MergeFirst)
@@ -205,19 +228,19 @@ func TestParallelAgent_MergeStrategies(t *testing.T) {
 	})
 
 	t.Run("MergeCustom", func(t *testing.T) {
-		agent1 := NewMockAgent("agent1").WithRunFunc(func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		agent1 := helpers.CreateMockAgentWithRunFunc("agent1", func(ctx context.Context, state *domain.State) (*domain.State, error) {
 			newState := state.Clone()
 			newState.Set("value", 10)
 			return newState, nil
 		})
 
-		agent2 := NewMockAgent("agent2").WithRunFunc(func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		agent2 := helpers.CreateMockAgentWithRunFunc("agent2", func(ctx context.Context, state *domain.State) (*domain.State, error) {
 			newState := state.Clone()
 			newState.Set("value", 20)
 			return newState, nil
 		})
 
-		agent3 := NewMockAgent("agent3").WithRunFunc(func(ctx context.Context, state *domain.State) (*domain.State, error) {
+		agent3 := helpers.CreateMockAgentWithRunFunc("agent3", func(ctx context.Context, state *domain.State) (*domain.State, error) {
 			newState := state.Clone()
 			newState.Set("value", 30)
 			return newState, nil
@@ -271,9 +294,9 @@ func TestParallelAgent_MergeStrategies(t *testing.T) {
 
 func TestParallelAgent_ErrorHandling(t *testing.T) {
 	t.Run("PartialFailure", func(t *testing.T) {
-		agent1 := NewMockAgent("agent1")
-		agent2 := NewMockAgent("agent2").WithError()
-		agent3 := NewMockAgent("agent3")
+		agent1 := helpers.CreateMockAgentWithDefault("agent1")
+		agent2 := helpers.CreateMockAgentWithError("agent2")
+		agent3 := helpers.CreateMockAgentWithDefault("agent3")
 
 		workflow := NewParallelAgent("test-partial-failure")
 		workflow.AddAgent(agent1)
@@ -308,7 +331,7 @@ func TestParallelAgent_ErrorHandling(t *testing.T) {
 	})
 
 	t.Run("Timeout", func(t *testing.T) {
-		slowAgent := NewMockAgent("slow").WithDelay(200 * time.Millisecond)
+		slowAgent := helpers.CreateMockAgentWithDelay("slow", 200*time.Millisecond)
 
 		workflow := NewParallelAgent("test-timeout").
 			WithTimeout(50 * time.Millisecond)
