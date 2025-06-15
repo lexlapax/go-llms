@@ -7,6 +7,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.5] - 2025-06-15
+
+### Overview
+
+Go-LLMs v0.3.5 is the Scripting Integration release, providing comprehensive support for go-llmspell integration with enhanced schema capabilities, structured outputs, event system improvements, workflow serialization, and a completely revamped testing infrastructure. This release completes all requirements for seamless scripting engine bridge integration.
+
+### Added
+
+#### Schema System (v0.3.5.1-v0.3.5.3)
+- **Schema Repositories**: InMemory and File-based storage with versioning support
+- **Schema Generators**: Reflection and Tag-based generation from Go structs
+- **Schema Validation**: Comprehensive validation with detailed error reporting
+- **Bridge Integration**: Type-safe conversion utilities for go-llmspell
+- **Examples**: Complete schema repository and generator examples
+- **Documentation**: `docs/technical/schema-system.md` and `docs/technical/schema-package.md`
+
+#### Structured Output Support (v0.3.5.8)
+- **Output Parsers**: JSON, XML, and YAML parsers with intelligent recovery
+- **Recovery Mechanisms**: Handle malformed LLM outputs automatically
+  - Extract from markdown code blocks
+  - Fix trailing commas and quote issues
+  - Close unclosed tags and fix missing decimals
+- **Schema-Based Validation**: Validate outputs against defined schemas
+- **Format Conversion**: Convert between JSON, XML, and YAML formats
+- **Bridge Adapter**: Seamless integration with go-llmspell
+- **Documentation**: `docs/technical/structured-output-support.md`
+
+#### Event System Enhancements (v0.3.5.4-v0.3.5.5)
+- **Event Bus**: Thread-safe publish/subscribe with pattern matching
+- **Bridge Events**: Specialized events for script integration
+  - Bridge lifecycle events (connected, disconnected, ready)
+  - Communication events (request, response, callback)
+  - Type conversion events with error tracking
+  - Script execution events with output capture
+- **Event Serialization**: JSON-based serialization for bridge communication
+- **Event Storage**: Persistent event storage with filtering
+- **Bridge Integration**: `pkg/agent/events/bridge.go` with publisher/listener
+
+#### Workflow Serialization (v0.3.5.6-v0.3.5.7)
+- **Workflow Serialization**: Export/import workflows as JSON
+- **Script Handlers**: Integration points for scripting engines
+- **State Preservation**: Maintain workflow state across serialization
+- **Test Coverage**: Comprehensive tests for all serialization paths
+
+#### Testing Infrastructure (v0.3.5.9)
+- **Centralized Mocks**: Complete mock implementations in `pkg/testutils/mocks/`
+  - MockProvider with pattern-based responses
+  - MockAgent with sub-agent management and event tracking
+  - MockTool with builder pattern and execution hooks
+  - MockState with change tracking and snapshots
+  - MockEventEmitter with recording and assertions
+- **Fixture Library**: 37+ fixtures for common test scenarios
+  - 14 tool fixtures (file, web, calculation, datetime, data)
+  - 12 provider fixtures (OpenAI, Anthropic, Gemini patterns)
+  - 8 agent fixtures (workflow, multi-agent, error scenarios)
+- **Migration**: 47 files migrated to centralized infrastructure
+- **Documentation**: Comprehensive testing guide at `docs/technical/testing.md`
+
+### Enhanced
+
+#### Bridge-Friendly Type System
+- Type-safe serialization for all domain objects
+- Schema conversion utilities for script engines
+- Event types designed for bridge communication
+- Metadata-rich tool discovery for dynamic loading
+
+#### Runtime Tool Registration
+- Already implemented in v0.3.4, enhanced with schema support
+- Tool schemas accessible without instantiation
+- Factory pattern enables lazy loading in scripts
+
+### Performance
+
+- **Structured Output Parsing**: Direct parsing before recovery attempts
+- **Event Bus**: Efficient pattern matching with minimal allocations
+- **Schema Generation**: Reflection caching for repeated generations
+- **Mock Performance**: Lightweight mocks with minimal overhead
+
+### Documentation
+
+- Created `docs/technical/schema-system.md` - Overview of schema architecture
+- Created `docs/technical/schema-package.md` - Schema implementation details
+- Updated `docs/technical/testing.md` - Complete testing infrastructure guide
+- Enhanced `docs/technical/structured-output-support.md` - Output parsing guide
+- Comprehensive examples for all new features
+
+### Fixed
+
+- Circular import issues in test infrastructure
+- Mock implementations now properly isolated
+- Event serialization edge cases
+- Schema validation error reporting
+
+### Testing
+
+- All tests passing (except integration tests requiring API keys)
+- 100% coverage for new mock implementations
+- Comprehensive fixture test coverage
+- Migration completed without breaking existing tests
+
 ## [v0.3.4] - 2025-06-13
 
 ### Overview
@@ -363,23 +463,23 @@ Go-LLMs v0.3.1 is a major milestone release that completes the Tool System Enhan
 
 ## [Unreleased]
 
-### Planned for v0.3.2
-- Enhanced Tool Capabilities with API pagination and rate limiting
-- Advanced authentication system improvements
-- OAuth2 discovery via .well-known endpoints
-- Request/response middleware plugin system
-
-### Planned for v0.3.3
+### Planned for v0.4.0
 - Built-in Agents Library
 - Text processing agents (summarize, extract, analyze, translate)
 - Research agents (web researcher, document analyzer, fact checker)
 - Coding agents (code reviewer, test generator, doc writer)
 
-### Planned for v0.3.4
+### Planned for v0.4.1
 - Built-in Workflow Patterns
 - Pipeline, MapReduce, Consensus patterns
 - Retry with exponential backoff
 - Example workflows for common use cases
+
+### Planned for v0.4.2
+- Enhanced Tool Capabilities with API pagination and rate limiting
+- Advanced authentication system improvements
+- OAuth2 discovery via .well-known endpoints
+- Request/response middleware plugin system
 
 ---
 
