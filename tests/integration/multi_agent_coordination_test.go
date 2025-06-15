@@ -341,7 +341,7 @@ func TestMultiAgentErrorHandling(t *testing.T) {
 		t.Error("Expected error from failing agent")
 	}
 
-	if !strings.Contains(err.Error(), "intentional failure") {
+	if !strings.Contains(err.Error(), "simulated error") {
 		t.Errorf("Unexpected error: %v", err)
 	}
 

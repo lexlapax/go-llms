@@ -15,28 +15,29 @@ A lightweight Go library providing a simplified, unified interface to interact w
 - **Type-safe configuration** with interface-based provider options
 - **Minimal dependencies** leveraging Go's standard library
 
-## What's New in v0.3.4
+## What's New in v0.3.5
 
 See [CHANGELOG.md](CHANGELOG.md) for the complete version history.
+
+### v0.3.5 (June 15, 2025) - Scripting Engine Integration 🚀
+Complete support for go-llmspell scripting engine integration:
+- **Schema System**: Repositories and generators for schema management
+- **Structured Outputs**: JSON/XML/YAML parsers with recovery mechanisms
+- **Event System**: Serialization, filtering, replay with bridge support
+- **Workflow Serialization**: Templates and script-based steps
+- **Testing Infrastructure**: Comprehensive mocks, fixtures, and scenarios
+- **Documentation Generation**: Auto-generate OpenAPI, Markdown, and JSON docs
 
 ### v0.3.4 (June 13, 2025) - Tool Discovery System 🔍
 - **Metadata-First Discovery**: Explore 33+ tools without imports - perfect for scripting engines
 - **Lazy Loading**: Factory pattern with on-demand tool instantiation using build tags
 - **Bridge Integration**: Designed for go-llmspell Lua/JavaScript bridges 
 - **Rich Metadata Access**: Get schemas, examples, help text without tool instances
-- **Performance**: Excellent benchmarks with thread-safe concurrent access
-- **Complete Documentation**: Enhanced examples and technical guides
 
 ### v0.3.3 (January 11, 2025) - Major Provider Expansion
-- **Ollama**: Local model hosting with GPU acceleration and model management
-- **OpenRouter**: Access to 400+ models (68 free) from multiple providers via unified API
-- **Vertex AI**: Enterprise Google Cloud deployment with Gemini and partner models (Claude)
-- Full integration with utilities, CLI, and configuration systems
-
-### v0.3.2 (January 11, 2025) - Documentation Update
-- Complete documentation restructuring for better user experience
-- Modularized API documentation with dedicated files for each component
-- Enhanced technical documentation with new guides for providers and tools
+- **Ollama**: Local model hosting with GPU acceleration
+- **OpenRouter**: Access to 400+ models (68 free) via unified API
+- **Vertex AI**: Enterprise Google Cloud deployment with Gemini models
 
 ## Installation
 

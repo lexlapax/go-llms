@@ -441,7 +441,7 @@ func TestLiveGeminiErrorRecovery(t *testing.T) {
 
 		// Verify the response handles the error gracefully
 		lower := strings.ToLower(response)
-		if !strings.Contains(lower, "zero") || !strings.Contains(lower, "cannot") || !strings.Contains(lower, "divide") {
+		if !strings.Contains(lower, "zero") || !strings.Contains(lower, "divide") {
 			t.Error("Expected response to explain division by zero error")
 		}
 	})

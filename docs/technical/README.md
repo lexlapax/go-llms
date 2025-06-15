@@ -40,6 +40,7 @@ This directory contains technical documentation for the Go-LLMs library, intende
 - [Tools](tools.md) - Tool system architecture and patterns
 - [Schema Package](schema-package.md) - Schema generation and storage implementation
 - [Structured Output Support](structured-output-support.md) - LLM output parsing and validation
+- [Documentation Generation](documentation-generation.md) - Auto-generation of API docs and specifications
 
 ## Navigation
 
