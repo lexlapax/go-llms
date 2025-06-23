@@ -249,21 +249,7 @@
   - [ ] Support dynamic registration
   - [ ] Enable documentation discovery
 
-### 0.3.6.6: Package Documentation Review
-- [ ] Review doc.go files for missing ABOUTME comments
-  - [x] pkg/testutils/doc.go - Has ABOUTME ✅
-  - [ ] pkg/util/llmutil/modelinfo/cache/doc.go - Missing ABOUTME
-  - [x] pkg/util/llmutil/modelinfo/doc.go - Has ABOUTME ✅
-  - [ ] pkg/util/llmutil/modelinfo/domain/doc.go - Missing ABOUTME
-  - [x] pkg/util/llmutil/modelinfo/fetchers/doc.go - Has ABOUTME ✅
-  - [ ] pkg/util/llmutil/modelinfo/service/doc.go - Missing ABOUTME
-- [ ] Create doc.go files for packages missing them (31 packages)
-  - [ ] Agent packages: core, domain, events, utils, workflow
-  - [ ] Built-in tools: data, datetime, feed, file, math, system, web
-  - [ ] Schema packages: adapter/reflection, generator, repository, validation
-  - [ ] Other packages: errors, docs, internal/debug, llm/outputs, structured/processor
-  - [ ] Utility packages: auth, json, llmutil, metrics, profiling, types
-
+### 0.3.6.6: Package Documentation Review ✅ COMPLETED (June 21, 2025)
 
 ## v0.3.7: [Reserved for future features]
 

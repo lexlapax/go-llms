@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"mime"
 	"os"
 	"path/filepath"
 	"strings"
@@ -384,35 +383,74 @@ func readFile(path string) ([]byte, error) {
 	return data, nil
 }
 
+// staticMimeTypes provides OS-agnostic MIME type detection
+var staticMimeTypes = map[string]string{
+	// Images
+	".jpg":  "image/jpeg",
+	".jpeg": "image/jpeg",
+	".png":  "image/png",
+	".gif":  "image/gif",
+	".bmp":  "image/bmp",
+	".webp": "image/webp",
+	".ico":  "image/vnd.microsoft.icon",
+	".svg":  "image/svg+xml",
+	".tiff": "image/tiff",
+	".tif":  "image/tiff",
+
+	// Audio
+	".mp3":  "audio/mpeg",
+	".wav":  "audio/vnd.wave",
+	".ogg":  "audio/ogg",
+	".aac":  "audio/aac",
+	".flac": "audio/flac",
+	".m4a":  "audio/mp4",
+	".wma":  "audio/x-ms-wma",
+
+	// Video
+	".mp4":  "video/mp4",
+	".avi":  "video/vnd.avi",
+	".mov":  "video/quicktime",
+	".wmv":  "video/x-ms-wmv",
+	".flv":  "video/x-flv",
+	".webm": "video/webm",
+	".mkv":  "video/x-matroska",
+	".m4v":  "video/mp4",
+
+	// Documents
+	".pdf":  "application/pdf",
+	".doc":  "application/msword",
+	".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	".xls":  "application/vnd.ms-excel",
+	".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	".ppt":  "application/vnd.ms-powerpoint",
+	".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+	".txt":  "text/plain",
+	".rtf":  "application/rtf",
+
+	// Archives
+	".zip": "application/zip",
+	".rar": "application/vnd.rar",
+	".tar": "application/x-tar",
+	".gz":  "application/gzip",
+	".7z":  "application/x-7z-compressed",
+
+	// Web
+	".html": "text/html",
+	".htm":  "text/html",
+	".css":  "text/css",
+	".js":   "application/javascript",
+	".json": "application/json",
+	".xml":  "application/xml",
+}
+
 func getMimeType(path string) string {
-	ext := filepath.Ext(path)
-	mimeType := mime.TypeByExtension(ext)
-
-	// If mime package doesn't recognize extension, use some common defaults
-	if mimeType == "" {
-		switch strings.ToLower(ext) {
-		case ".jpg", ".jpeg":
-			mimeType = "image/jpeg"
-		case ".png":
-			mimeType = "image/png"
-		case ".gif":
-			mimeType = "image/gif"
-		case ".mp3":
-			mimeType = "audio/mp3"
-		case ".wav":
-			mimeType = "audio/wav"
-		case ".mp4":
-			mimeType = "video/mp4"
-		case ".avi":
-			mimeType = "video/avi"
-		case ".mov":
-			mimeType = "video/quicktime"
-		case ".pdf":
-			mimeType = "application/pdf"
-		default:
-			mimeType = "application/octet-stream"
-		}
+	ext := strings.ToLower(filepath.Ext(path))
+	
+	// Use static registry for consistent OS-agnostic results
+	if mimeType, exists := staticMimeTypes[ext]; exists {
+		return mimeType
 	}
-
-	return mimeType
+	
+	// Fallback to default for unknown extensions
+	return "application/octet-stream"
 }

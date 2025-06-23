@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+#### Comprehensive Godoc and Documentation Standards (v0.3.6.1 - January 23, 2025)
+
+- **Complete Godoc Documentation**: Added comprehensive godoc comments to all Go files across the entire codebase
+  - Enhanced 300+ Go files with proper godoc documentation
+  - All exported functions, types, methods, and interfaces now have detailed documentation
+  - Parameter descriptions, return value explanations, and usage examples where appropriate
+  - Error condition documentation for robust error handling guidance
+
+- **ABOUTME Comment Standardization**: Implemented consistent 2-line file identification system
+  - All Go files now include standardized ABOUTME comments for easy file identification
+  - Format: Two lines starting with "ABOUTME: " describing file purpose and key functionality
+  - Enables easy grep-based file discovery: `grep -r "ABOUTME:" pkg/`
+  - Consistent across all packages for maintainability
+
+- **Documentation Style Guide**: Created comprehensive `CONTRIBUTING-DOCS.md`
+  - Complete standards for ABOUTME comments, package documentation, function/method docs
+  - Type and interface documentation guidelines with examples
+  - Common patterns for error documentation, context parameters, and option parameters
+  - Documentation validation tools and checklist for contributors
+  - Examples and anti-patterns to ensure consistent quality
+
+- **Package Documentation Enhancement**: Improved package-level documentation across all modules
+  - Enhanced doc.go files with comprehensive package descriptions
+  - Added usage examples and architectural notes where relevant
+  - Documented key features, relationships between types, and integration points
+  - Consistent markdown formatting with proper headers and structure
+
+- **Cross-Reference Integration**: Updated project documentation to reference style guide
+  - Added documentation style guide links to README.md and docs/README.md
+  - Updated technical documentation to reference contribution standards
+  - Ensured consistency between main project docs and style guide
+  - Fixed all documentation cross-references and validation
+
+- **Static MIME Type Registry**: Implemented OS-agnostic MIME detection system
+  - Replaced OS-dependent `mime.TypeByExtension()` with static registry
+  - Comprehensive support for 40+ file extensions (images, audio, video, documents, archives, web)
+  - Consistent MIME type detection across all operating systems
+  - Fixed multimodal provider tests that were failing due to OS-specific MIME differences
+  - Predictable behavior for LLM provider integrations requiring specific MIME types
+
+### Fixed
+
+- **OS-Agnostic MIME Detection**: Resolved cross-platform MIME type inconsistencies
+  - Fixed failing tests on different operating systems (.wav, .avi, .xyz files)
+  - Ensured consistent multimodal content handling across deployment environments
+  - Improved reliability for LLM provider multimodal features
+
 ## [v0.3.5] - 2025-06-15
 
 ### Overview

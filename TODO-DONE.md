@@ -2120,3 +2120,17 @@ EOF < /dev/null
 - ✅ Comments describe main functionality, key features, and use cases
 - ✅ All godoc comments follow Go conventions and are comprehensive
 - ✅ Improved documentation helps developers understand tool capabilities at a glance
+### 0.3.6.6: Package Documentation Review ✅ COMPLETED (June 21, 2025)
+- [x] Review doc.go files for missing ABOUTME comments
+  - [x] pkg/testutils/doc.go - Has ABOUTME ✅
+  - [x] pkg/util/llmutil/modelinfo/cache/doc.go - Has ABOUTME ✅
+  - [x] pkg/util/llmutil/modelinfo/doc.go - Has ABOUTME ✅
+  - [x] pkg/util/llmutil/modelinfo/domain/doc.go - Has ABOUTME ✅
+  - [x] pkg/util/llmutil/modelinfo/fetchers/doc.go - Has ABOUTME ✅
+  - [x] pkg/util/llmutil/modelinfo/service/doc.go - Has ABOUTME ✅
+- [x] Create doc.go files for packages missing them (all 39 packages created)
+  - [x] Agent packages: core, domain, events, utils, workflow ✅
+  - [x] Built-in tools: data, datetime, feed, file, math, system, web ✅
+  - [x] Schema packages: adapter/reflection, generator, repository, validation ✅
+  - [x] Other packages: errors, docs, internal/debug, llm/outputs, structured/processor ✅
+  - [x] Utility packages: auth, json, llmutil, metrics, profiling, types ✅
