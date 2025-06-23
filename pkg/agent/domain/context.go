@@ -11,7 +11,9 @@ import (
 	"github.com/google/uuid"
 )
 
-// RunContext provides type-safe dependency injection for agent execution
+// RunContext provides type-safe dependency injection for agent execution.
+// It carries dependencies, state, and metadata throughout the agent workflow.
+// The generic type D allows custom dependency types while maintaining type safety.
 type RunContext[D any] struct {
 	ctx  context.Context
 	deps D
@@ -31,7 +33,9 @@ type RunContext[D any] struct {
 	EmitEvent func(Event)
 }
 
-// NewRunContext creates a new run context
+// NewRunContext creates a new run context with the provided dependencies.
+// Generates a unique run ID and initializes with current timestamp.
+// The event emitter defaults to a no-op function.
 func NewRunContext[D any](ctx context.Context, deps D) *RunContext[D] {
 	return &RunContext[D]{
 		ctx:       ctx,
@@ -42,14 +46,17 @@ func NewRunContext[D any](ctx context.Context, deps D) *RunContext[D] {
 	}
 }
 
-// NewRunContextWithState creates a new run context with state
+// NewRunContextWithState creates a new run context with initial state.
+// Useful when state needs to be pre-populated before agent execution.
 func NewRunContextWithState[D any](ctx context.Context, deps D, state *State) *RunContext[D] {
 	rc := NewRunContext(ctx, deps)
 	rc.State = state
 	return rc
 }
 
-// NewRunContextWithSharedState creates a new run context with shared state
+// NewRunContextWithSharedState creates a new run context with shared state access.
+// The shared state allows coordination between multiple agents in a workflow.
+// Local state is automatically initialized from the shared state.
 func NewRunContextWithSharedState[D any](ctx context.Context, deps D, sharedState *SharedStateContext) *RunContext[D] {
 	rc := NewRunContext(ctx, deps)
 	rc.SharedState = sharedState
@@ -58,31 +65,36 @@ func NewRunContextWithSharedState[D any](ctx context.Context, deps D, sharedStat
 	return rc
 }
 
-// Deps returns the dependencies
+// Deps returns the typed dependencies stored in the context.
+// These dependencies are available throughout the agent execution.
 func (r *RunContext[D]) Deps() D {
 	return r.deps
 }
 
-// Context returns the context
+// Context returns the underlying Go context for cancellation and deadlines.
+// This context flows through all agent operations.
 func (r *RunContext[D]) Context() context.Context {
 	return r.ctx
 }
 
-// WithRetry creates a new context for retry attempt
+// WithRetry creates a new context for a retry attempt.
+// Preserves all other context data while updating the retry count.
 func (rc *RunContext[D]) WithRetry(retry int) *RunContext[D] {
 	newCtx := *rc
 	newCtx.Retry = retry
 	return &newCtx
 }
 
-// WithState creates a new context with different state
+// WithState creates a new context with different state.
+// Useful for creating isolated state contexts in agent hierarchies.
 func (rc *RunContext[D]) WithState(state *State) *RunContext[D] {
 	newCtx := *rc
 	newCtx.State = state
 	return &newCtx
 }
 
-// WithSharedState creates a new context with shared state
+// WithSharedState creates a new context with shared state access.
+// Updates both shared state reference and local state snapshot.
 func (rc *RunContext[D]) WithSharedState(sharedState *SharedStateContext) *RunContext[D] {
 	newCtx := *rc
 	newCtx.SharedState = sharedState
@@ -90,19 +102,22 @@ func (rc *RunContext[D]) WithSharedState(sharedState *SharedStateContext) *RunCo
 	return &newCtx
 }
 
-// WithEventEmitter sets the event emission function
+// WithEventEmitter sets the event emission function for the context.
+// Events emitted through this function flow to the agent's event stream.
 func (rc *RunContext[D]) WithEventEmitter(emitter func(Event)) *RunContext[D] {
 	newCtx := *rc
 	newCtx.EmitEvent = emitter
 	return &newCtx
 }
 
-// Elapsed returns the time elapsed since the run started
+// Elapsed returns the time elapsed since the run started.
+// Useful for monitoring execution time and implementing timeouts.
 func (rc *RunContext[D]) Elapsed() time.Duration {
 	return time.Since(rc.StartTime)
 }
 
-// EmitProgress emits a progress event
+// EmitProgress emits a progress event with current/total counts.
+// Agent ID and name are filled by the event emitter infrastructure.
 func (rc *RunContext[D]) EmitProgress(current, total int, message string) {
 	if rc.EmitEvent != nil {
 		rc.EmitEvent(NewEvent(
@@ -118,7 +133,8 @@ func (rc *RunContext[D]) EmitProgress(current, total int, message string) {
 	}
 }
 
-// EmitMessage emits a message event
+// EmitMessage emits a simple message event for logging or debugging.
+// The message flows through the agent's event stream to observers.
 func (rc *RunContext[D]) EmitMessage(message string) {
 	if rc.EmitEvent != nil {
 		rc.EmitEvent(NewEvent(
@@ -132,34 +148,39 @@ func (rc *RunContext[D]) EmitMessage(message string) {
 
 // Example dependency types that can be used with RunContext
 
-// DatabaseDeps holds database-related dependencies
+// DatabaseDeps holds database-related dependencies for data access.
+// Interface types allow flexibility in concrete implementations.
 type DatabaseDeps struct {
 	DB     interface{} // *sql.DB
 	Cache  interface{} // *redis.Client
 	Logger interface{} // *slog.Logger
 }
 
-// ServiceDeps holds service layer dependencies
+// ServiceDeps holds service layer dependencies for business logic.
+// Commonly used for domain services in layered architectures.
 type ServiceDeps struct {
 	UserService    interface{}
 	ProductService interface{}
 	OrderService   interface{}
 }
 
-// ToolDeps holds tool-related dependencies
+// ToolDeps holds tool-related dependencies for agent tool execution.
+// Includes available tools and execution timeout configuration.
 type ToolDeps struct {
 	Tools       map[string]Tool
 	ToolTimeout time.Duration
 }
 
-// LLMDeps holds LLM provider dependencies
+// LLMDeps holds LLM provider dependencies for language model interactions.
+// Supports different providers, models, and provider-specific options.
 type LLMDeps struct {
 	Provider interface{} // llm.Provider
 	Model    string
 	Options  map[string]interface{}
 }
 
-// HTTPDeps holds HTTP client dependencies
+// HTTPDeps holds HTTP client dependencies for external API calls.
+// Includes authentication, base URLs, and rate limiting support.
 type HTTPDeps struct {
 	Client      interface{} // *http.Client
 	BaseURL     string
@@ -167,7 +188,8 @@ type HTTPDeps struct {
 	RateLimiter interface{} // rate.Limiter
 }
 
-// ObservabilityDeps holds observability dependencies
+// ObservabilityDeps holds observability dependencies for monitoring.
+// Supports distributed tracing, metrics, logging, and sampling.
 type ObservabilityDeps struct {
 	Tracer  interface{} // trace.Tracer
 	Meter   interface{} // metric.Meter
@@ -175,7 +197,8 @@ type ObservabilityDeps struct {
 	Sampler interface{} // trace.Sampler
 }
 
-// CompositeDeps combines multiple dependency types
+// CompositeDeps combines multiple dependency types in a single structure.
+// Useful for agents that need access to various infrastructure components.
 type CompositeDeps struct {
 	DB            DatabaseDeps
 	Services      ServiceDeps
@@ -185,7 +208,9 @@ type CompositeDeps struct {
 
 // Helper functions for common context operations
 
-// GetFromState safely gets a typed value from state (supports shared state)
+// GetFromState safely gets a typed value from state with a default fallback.
+// Checks shared state first if available, then falls back to local state.
+// Returns defaultVal if the key is not found or type conversion fails.
 func GetFromState[T any](rc *RunContext[any], key string, defaultVal T) T {
 	// Try shared state first if available
 	if rc.SharedState != nil {
@@ -214,7 +239,9 @@ func GetFromState[T any](rc *RunContext[any], key string, defaultVal T) T {
 	return typed
 }
 
-// MustGetFromState gets a value from state or panics (supports shared state)
+// MustGetFromState gets a typed value from state or panics if not found.
+// Checks shared state first if available, then falls back to local state.
+// Panics with descriptive message if key is missing or type is wrong.
 func MustGetFromState[T any](rc *RunContext[any], key string) T {
 	// Try shared state first if available
 	if rc.SharedState != nil {

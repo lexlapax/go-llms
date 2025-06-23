@@ -15,7 +15,9 @@ import (
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// ConversionOptions configures agent-tool conversion behavior
+// ConversionOptions configures agent-tool conversion behavior.
+// It provides various customization points for the conversion process,
+// including naming, mapping functions, and event handling.
 type ConversionOptions struct {
 	// Prefix for converted names
 	NamePrefix string
@@ -41,7 +43,15 @@ type ConversionOptions struct {
 
 // Registry Integration Utilities
 
-// RegisterAgentAsTool converts an agent to a tool and registers it
+// RegisterAgentAsTool converts an agent to a tool and registers it in the registry.
+// This enables agents to be used in tool-based contexts while preserving their functionality.
+//
+// Parameters:
+//   - agent: The agent to convert and register
+//   - registry: The tool registry to register in
+//   - opts: Optional conversion configuration
+//
+// Returns an error if registration fails.
 func RegisterAgentAsTool(agent domain.BaseAgent, registry builtins.Registry[domain.Tool], opts ...ConversionOptions) error {
 	if agent == nil {
 		return fmt.Errorf("agent cannot be nil")
@@ -92,7 +102,15 @@ func RegisterAgentAsTool(agent domain.BaseAgent, registry builtins.Registry[doma
 	return registry.Register(toolName, agentTool, metadata)
 }
 
-// ConvertToolCategoryToAgents converts all tools in a category to agents
+// ConvertToolCategoryToAgents converts all tools in a category to agents.
+// This is useful for batch conversion of related tools.
+//
+// Parameters:
+//   - registry: The tool registry to search
+//   - category: The category to convert
+//   - opts: Optional conversion configuration
+//
+// Returns a slice of converted agents or an error.
 func ConvertToolCategoryToAgents(registry builtins.Registry[domain.Tool], category string, opts ...ConversionOptions) ([]domain.BaseAgent, error) {
 	if registry == nil {
 		return nil, fmt.Errorf("registry cannot be nil")
@@ -124,7 +142,15 @@ func ConvertToolCategoryToAgents(registry builtins.Registry[domain.Tool], catego
 	return agents, nil
 }
 
-// RegisterAgentsAsTools registers multiple agents as tools
+// RegisterAgentsAsTools registers multiple agents as tools in a single operation.
+// This is a convenience function for batch registration.
+//
+// Parameters:
+//   - agents: The agents to convert and register
+//   - registry: The tool registry to register in
+//   - opts: Optional conversion configuration
+//
+// Returns an error if any registration fails.
 func RegisterAgentsAsTools(agents []domain.BaseAgent, registry builtins.Registry[domain.Tool], opts ...ConversionOptions) error {
 	if registry == nil {
 		return fmt.Errorf("registry cannot be nil")
@@ -141,7 +167,14 @@ func RegisterAgentsAsTools(agents []domain.BaseAgent, registry builtins.Registry
 
 // Event Dispatcher Integration
 
-// NewToolAgentWithEvents creates a ToolAgent with event dispatcher support
+// NewToolAgentWithEvents creates a ToolAgent with event dispatcher support.
+// This enables the agent to emit events during execution.
+//
+// Parameters:
+//   - tool: The tool to wrap as an agent
+//   - dispatcher: The event dispatcher for event emission
+//
+// Returns a configured ToolAgent.
 func NewToolAgentWithEvents(tool domain.Tool, dispatcher domain.EventDispatcher) *ToolAgent {
 	ta := NewToolAgent(tool)
 
@@ -151,7 +184,16 @@ func NewToolAgentWithEvents(tool domain.Tool, dispatcher domain.EventDispatcher)
 	return ta
 }
 
-// CreateEventForwardingToolContext creates a ToolContext that forwards events
+// CreateEventForwardingToolContext creates a ToolContext that forwards events to a dispatcher.
+// This bridges tool events with the agent event system.
+//
+// Parameters:
+//   - ctx: The base context
+//   - dispatcher: The event dispatcher to forward to
+//   - agent: The agent associated with the context
+//   - runID: The execution run ID
+//
+// Returns a configured ToolContext.
 func CreateEventForwardingToolContext(ctx context.Context, dispatcher domain.EventDispatcher, agent domain.BaseAgent, runID string) *domain.ToolContext {
 	// Create a basic tool context
 	toolCtx := domain.NewToolContext(ctx, nil, agent, runID)
@@ -170,7 +212,8 @@ func CreateEventForwardingToolContext(ctx context.Context, dispatcher domain.Eve
 	return toolCtx
 }
 
-// eventForwardingEmitter forwards events to a dispatcher
+// eventForwardingEmitter implements domain.ToolEventEmitter by forwarding events to a dispatcher.
+// It adds agent metadata to all emitted events.
 type eventForwardingEmitter struct {
 	dispatcher domain.EventDispatcher
 	agentID    string
@@ -243,7 +286,13 @@ func (e *eventForwardingEmitter) EmitCustom(eventName string, data interface{}) 
 
 // Schema Mapping Utilities
 
-// DeriveToolSchemaFromAgent generates a tool parameter schema from agent's input schema
+// DeriveToolSchemaFromAgent generates a tool parameter schema from agent's input schema.
+// This helps maintain schema consistency during conversion.
+//
+// Parameters:
+//   - agent: The agent to derive schema from
+//
+// Returns a tool-compatible schema or nil if no input schema exists.
 func DeriveToolSchemaFromAgent(agent domain.BaseAgent) *sdomain.Schema {
 	if agent == nil || agent.InputSchema() == nil {
 		return nil
@@ -267,7 +316,14 @@ func DeriveToolSchemaFromAgent(agent domain.BaseAgent) *sdomain.Schema {
 	return toolSchema
 }
 
-// ValidateConversionCompatibility checks if agent-tool conversion is valid
+// ValidateConversionCompatibility checks if agent-tool conversion is valid.
+// It performs basic compatibility checks including schema validation.
+//
+// Parameters:
+//   - agent: The agent to validate
+//   - tool: The tool to validate against
+//
+// Returns an error if conversion would be invalid.
 func ValidateConversionCompatibility(agent domain.BaseAgent, tool domain.Tool) error {
 	// Check basic compatibility
 	if agent == nil {
@@ -290,7 +346,14 @@ func ValidateConversionCompatibility(agent domain.BaseAgent, tool domain.Tool) e
 	return nil
 }
 
-// GenerateSmartMappers creates mappers based on schema analysis
+// GenerateSmartMappers creates mappers based on schema analysis.
+// It intelligently generates state and result mappers by analyzing schemas.
+//
+// Parameters:
+//   - inputSchema: The input schema to analyze
+//   - outputSchema: The output schema to analyze
+//
+// Returns generated StateMapper and ResultMapper functions.
 func GenerateSmartMappers(inputSchema, outputSchema *sdomain.Schema) (StateMapper, ResultMapper) {
 	var stateMapper StateMapper
 	var resultMapper ResultMapper
@@ -340,7 +403,13 @@ func GenerateSmartMappers(inputSchema, outputSchema *sdomain.Schema) (StateMappe
 
 // Common Conversion Patterns
 
-// WrapLLMAgentAsTool wraps an LLM agent as a tool with sensible defaults
+// WrapLLMAgentAsTool wraps an LLM agent as a tool with sensible defaults.
+// It handles common LLM agent patterns like prompt/response mapping.
+//
+// Parameters:
+//   - agent: The LLM agent to wrap
+//
+// Returns a tool implementation or nil if agent is nil.
 func WrapLLMAgentAsTool(agent *core.LLMAgent) domain.Tool {
 	if agent == nil {
 		return nil
@@ -390,7 +459,13 @@ func WrapLLMAgentAsTool(agent *core.LLMAgent) domain.Tool {
 	return agentTool
 }
 
-// WrapWorkflowAgentAsTool wraps a workflow agent as a tool
+// WrapWorkflowAgentAsTool wraps a workflow agent as a tool.
+// It uses schema-based mapping when available for better conversion.
+//
+// Parameters:
+//   - agent: The workflow agent to wrap
+//
+// Returns a tool implementation or nil if agent is nil.
 func WrapWorkflowAgentAsTool(agent domain.BaseAgent) domain.Tool {
 	if agent == nil {
 		return nil
@@ -413,7 +488,14 @@ func WrapWorkflowAgentAsTool(agent domain.BaseAgent) domain.Tool {
 	return agentTool
 }
 
-// CreateToolChainFromAgents creates a single tool that chains multiple agents
+// CreateToolChainFromAgents creates a single tool that chains multiple agents.
+// The agents are executed sequentially, with each agent's output becoming
+// the next agent's input.
+//
+// Parameters:
+//   - agents: The agents to chain together
+//
+// Returns a tool that executes the agent chain or nil if no agents provided.
 func CreateToolChainFromAgents(agents ...domain.BaseAgent) domain.Tool {
 	if len(agents) == 0 {
 		return nil
@@ -433,13 +515,21 @@ func CreateToolChainFromAgents(agents ...domain.BaseAgent) domain.Tool {
 	return NewAgentTool(chainAgent)
 }
 
-// chainAgentImpl implements a simple agent that chains other agents
+// chainAgentImpl implements a simple agent that chains other agents.
+// It executes agents sequentially, passing state between them.
 type chainAgentImpl struct {
 	*core.BaseAgentImpl
 	agents []domain.BaseAgent
 }
 
-// Run executes all agents in sequence
+// Run executes all agents in sequence.
+// Each agent receives the output state from the previous agent.
+//
+// Parameters:
+//   - ctx: The execution context
+//   - state: The initial state
+//
+// Returns the final state or an error if any agent fails.
 func (c *chainAgentImpl) Run(ctx context.Context, state *domain.State) (*domain.State, error) {
 	currentState := state.Clone()
 
@@ -454,7 +544,13 @@ func (c *chainAgentImpl) Run(ctx context.Context, state *domain.State) (*domain.
 	return currentState, nil
 }
 
-// RoundTripConvert validates that an agent can be converted to tool and back
+// RoundTripConvert validates that an agent can be converted to tool and back.
+// This is useful for testing conversion fidelity.
+//
+// Parameters:
+//   - agent: The agent to test
+//
+// Returns the round-trip converted agent or an error if conversion fails.
 func RoundTripConvert(agent domain.BaseAgent) (domain.BaseAgent, error) {
 	if agent == nil {
 		return nil, fmt.Errorf("agent cannot be nil")
@@ -480,7 +576,13 @@ func RoundTripConvert(agent domain.BaseAgent) (domain.BaseAgent, error) {
 
 // Advanced Mapping Utilities
 
-// CreatePathMapper creates a mapper that extracts values using paths
+// CreatePathMapper creates a mapper that extracts values using paths.
+// Paths use dot notation for nested access (e.g., "user.name").
+//
+// Parameters:
+//   - paths: Map of state keys to parameter paths
+//
+// Returns a StateMapper that extracts values by path.
 func CreatePathMapper(paths map[string]string) StateMapper {
 	return func(ctx context.Context, params interface{}) (*domain.State, error) {
 		state := domain.NewState()
@@ -507,7 +609,13 @@ func CreatePathMapper(paths map[string]string) StateMapper {
 	}
 }
 
-// CreateTypeConversionMapper creates a mapper with type conversions
+// CreateTypeConversionMapper creates a mapper with type conversions.
+// This allows custom transformation of parameter values.
+//
+// Parameters:
+//   - conversions: Map of parameter keys to conversion functions
+//
+// Returns a StateMapper that applies type conversions.
 func CreateTypeConversionMapper(conversions map[string]func(interface{}) interface{}) StateMapper {
 	return func(ctx context.Context, params interface{}) (*domain.State, error) {
 		// First use default mapper
@@ -528,7 +636,13 @@ func CreateTypeConversionMapper(conversions map[string]func(interface{}) interfa
 	}
 }
 
-// CreateNestedStateMapper handles deeply nested state structures
+// CreateNestedStateMapper handles deeply nested state structures.
+// It can either preserve nesting or flatten structures.
+//
+// Parameters:
+//   - flatten: If true, nested structures are flattened to dot notation
+//
+// Returns a StateMapper for handling nested structures.
 func CreateNestedStateMapper(flatten bool) StateMapper {
 	return func(ctx context.Context, params interface{}) (*domain.State, error) {
 		state := domain.NewState()

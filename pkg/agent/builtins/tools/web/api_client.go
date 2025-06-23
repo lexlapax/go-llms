@@ -595,7 +595,10 @@ GraphQL Modes:
 	return builder.Build()
 }
 
-// NewAPIClientTool creates a new instance of the API client tool
+// NewAPIClientTool creates a new instance of the API client tool for making REST API and GraphQL calls.
+// It provides comprehensive HTTP client functionality with multiple authentication methods (API key, bearer, basic, OAuth2),
+// automatic JSON encoding/decoding, OpenAPI specification support for discovery and validation,
+// and GraphQL query execution with introspection capabilities for seamless API integration.
 func NewAPIClientTool() domain.Tool {
 	return createAPIClientTool()
 }

@@ -349,12 +349,10 @@ func getSystemInfo(ctx *domain.ToolContext, params GetSystemInfoParams) (*System
 	return info, nil
 }
 
-// GetSystemInfo creates a tool for retrieving system information
-// This is a built-in tool optimized for:
-// - Quick system identification
-// - Resource monitoring
-// - Environment discovery
-// - Cross-platform compatibility
+// GetSystemInfo creates a tool for retrieving comprehensive system information including OS details,
+// architecture, CPU count, hostname, and optionally memory statistics, Go runtime information, and
+// environment summary. The tool provides cross-platform compatibility and returns consistent structured
+// data suitable for system identification, resource monitoring, and environment discovery.
 func GetSystemInfo() domain.Tool {
 	builder := atools.NewToolBuilder("get_system_info", "Retrieves comprehensive system information").
 		WithFunction(getSystemInfo).

@@ -62,6 +62,8 @@ var (
 )
 
 // ProviderError represents an error from an LLM provider with additional context.
+// It extends BaseError with provider-specific information including
+// provider name, operation, and HTTP status code.
 type ProviderError struct {
 	*errors.BaseError
 
@@ -76,6 +78,10 @@ type ProviderError struct {
 }
 
 // Error implements the error interface.
+// Returns a formatted error message including provider name,
+// operation, and optionally the HTTP status code.
+//
+// Returns the formatted error message.
 func (e *ProviderError) Error() string {
 	if e.StatusCode > 0 {
 		return fmt.Sprintf("%s %s error (status %d): %s", e.Provider, e.Operation, e.StatusCode, e.Message)
@@ -84,6 +90,18 @@ func (e *ProviderError) Error() string {
 }
 
 // NewProviderError creates a new ProviderError.
+// Automatically selects appropriate base error type based on status code
+// and message content. If no underlying error is provided, it intelligently
+// maps common scenarios to specific error types.
+//
+// Parameters:
+//   - provider: The name of the LLM provider
+//   - operation: The operation that failed
+//   - statusCode: HTTP status code (0 if not applicable)
+//   - message: Error message
+//   - err: Underlying error (nil to auto-detect type)
+//
+// Returns a new ProviderError with appropriate context.
 func NewProviderError(provider, operation string, statusCode int, message string, err error) *ProviderError {
 	// If no underlying error is provided, determine the most specific error based on status code or message
 	var baseErr *errors.BaseError
@@ -138,6 +156,12 @@ func NewProviderError(provider, operation string, statusCode int, message string
 }
 
 // IsAuthenticationError checks if the error is an authentication error.
+// Checks for authentication failure error codes.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error indicates authentication failure.
 func IsAuthenticationError(err error) bool {
 	if baseErr, ok := err.(*errors.BaseError); ok {
 		return baseErr.Code == ErrAuthenticationFailed.Code
@@ -146,6 +170,12 @@ func IsAuthenticationError(err error) bool {
 }
 
 // IsRateLimitError checks if the error is a rate limit error.
+// Checks for rate limit exceeded error codes.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error indicates rate limiting.
 func IsRateLimitError(err error) bool {
 	if baseErr, ok := err.(*errors.BaseError); ok {
 		return baseErr.Code == ErrRateLimitExceeded.Code
@@ -154,6 +184,12 @@ func IsRateLimitError(err error) bool {
 }
 
 // IsTimeoutError checks if the error is a timeout error.
+// Checks for request timeout error codes.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error indicates a timeout.
 func IsTimeoutError(err error) bool {
 	if baseErr, ok := err.(*errors.BaseError); ok {
 		return baseErr.Code == ErrTimeout.Code
@@ -162,6 +198,12 @@ func IsTimeoutError(err error) bool {
 }
 
 // IsProviderUnavailableError checks if the error is a provider unavailable error.
+// Checks for provider unavailability error codes.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error indicates provider unavailability.
 func IsProviderUnavailableError(err error) bool {
 	if baseErr, ok := err.(*errors.BaseError); ok {
 		return baseErr.Code == ErrProviderUnavailable.Code
@@ -170,6 +212,12 @@ func IsProviderUnavailableError(err error) bool {
 }
 
 // IsContentFilteredError checks if the error is a content filtered error.
+// Checks for content filtering error codes.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error indicates content was filtered.
 func IsContentFilteredError(err error) bool {
 	if baseErr, ok := err.(*errors.BaseError); ok {
 		return baseErr.Code == ErrContentFiltered.Code
@@ -178,6 +226,12 @@ func IsContentFilteredError(err error) bool {
 }
 
 // IsNetworkConnectivityError checks if the error is a network connectivity error.
+// Checks for network connectivity error codes.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error indicates network connectivity issues.
 func IsNetworkConnectivityError(err error) bool {
 	if baseErr, ok := err.(*errors.BaseError); ok {
 		return baseErr.Code == ErrNetworkConnectivity.Code
@@ -186,6 +240,12 @@ func IsNetworkConnectivityError(err error) bool {
 }
 
 // IsTokenQuotaExceededError checks if the error is a token quota exceeded error.
+// Checks for token quota exceeded error codes.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error indicates quota exhaustion.
 func IsTokenQuotaExceededError(err error) bool {
 	if baseErr, ok := err.(*errors.BaseError); ok {
 		return baseErr.Code == ErrTokenQuotaExceeded.Code
@@ -194,6 +254,12 @@ func IsTokenQuotaExceededError(err error) bool {
 }
 
 // IsInvalidModelParametersError checks if the error is an invalid model parameters error.
+// Checks for invalid model parameter error codes.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error indicates invalid parameters.
 func IsInvalidModelParametersError(err error) bool {
 	if baseErr, ok := err.(*errors.BaseError); ok {
 		return baseErr.Code == ErrInvalidModelParameters.Code
@@ -201,7 +267,9 @@ func IsInvalidModelParametersError(err error) bool {
 	return false
 }
 
-// UnsupportedContentTypeError represents an error when a provider doesn't support a specific content type
+// UnsupportedContentTypeError represents an error when a provider doesn't support a specific content type.
+// This error is used when attempting to send content (like images, audio, video)
+// to a provider that doesn't support that content type.
 type UnsupportedContentTypeError struct {
 	*errors.BaseError
 
@@ -209,12 +277,23 @@ type UnsupportedContentTypeError struct {
 	ContentType ContentType `json:"content_type"`
 }
 
-// Error implements the error interface
+// Error implements the error interface.
+// Returns a formatted message indicating which provider and content type.
+//
+// Returns the formatted error message.
 func (e *UnsupportedContentTypeError) Error() string {
 	return fmt.Sprintf("provider %s does not support content type %s", e.Provider, e.ContentType)
 }
 
-// NewUnsupportedContentTypeError creates a new error for unsupported content types
+// NewUnsupportedContentTypeError creates a new error for unsupported content types.
+// This function creates an error when a provider doesn't support a specific
+// content type (e.g., sending images to a text-only model).
+//
+// Parameters:
+//   - provider: The name of the provider
+//   - contentType: The unsupported content type
+//
+// Returns a new UnsupportedContentTypeError.
 func NewUnsupportedContentTypeError(provider string, contentType ContentType) *UnsupportedContentTypeError {
 	baseErr := errors.Wrap(ErrUnsupportedContentType, fmt.Sprintf("provider %s does not support content type %s", provider, contentType))
 	_ = baseErr.WithContext("provider", provider).
@@ -228,7 +307,13 @@ func NewUnsupportedContentTypeError(provider string, contentType ContentType) *U
 	}
 }
 
-// IsUnsupportedContentTypeError checks if the error is an unsupported content type error
+// IsUnsupportedContentTypeError checks if the error is an unsupported content type error.
+// Checks for unsupported content type error codes.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error indicates unsupported content type.
 func IsUnsupportedContentTypeError(err error) bool {
 	return errors.As(err, &ErrUnsupportedContentType)
 }

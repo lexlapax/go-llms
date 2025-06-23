@@ -1,5 +1,10 @@
 package provider
 
+// File vertexai.go implements the Provider interface for Google Vertex AI service.
+// It supports Gemini and partner models through the Vertex AI REST API, providing
+// both standard and streaming generation capabilities with OAuth2 authentication
+// using service accounts or Application Default Credentials (ADC).
+
 // ABOUTME: Google Vertex AI provider implementation using REST API
 // ABOUTME: Supports Gemini and partner models with OAuth2 authentication
 
@@ -38,7 +43,12 @@ type VertexAIProvider struct {
 	messageCache *MessageCache
 }
 
-// NewVertexAIProvider creates a new Vertex AI provider
+// NewVertexAIProvider creates a new Vertex AI provider instance.
+// The projectID parameter specifies the Google Cloud project. The location parameter
+// specifies the region (e.g., "us-central1"). The model parameter specifies which
+// model to use (e.g., "gemini-1.0-pro", "claude-3-sonnet@20240229").
+// Authentication is handled automatically using Application Default Credentials or
+// service account credentials if specified via options.
 func NewVertexAIProvider(projectID, location, model string, options ...domain.ProviderOption) (*VertexAIProvider, error) {
 	if projectID == "" {
 		return nil, fmt.Errorf("project ID is required for Vertex AI provider")

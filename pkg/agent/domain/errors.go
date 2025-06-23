@@ -60,7 +60,9 @@ var (
 	ErrStateReadOnly = errors.NewErrorWithCode("state_readonly", "state is read-only").SetFatal(true)
 )
 
-// AgentError represents an error that occurred during agent execution
+// AgentError represents an error that occurred during agent execution.
+// It includes agent identification and execution phase information
+// to help with debugging and error handling decisions.
 type AgentError struct {
 	*errors.BaseError
 
@@ -69,12 +71,15 @@ type AgentError struct {
 	Phase     string `json:"phase"` // "initialize", "before_run", "run", "after_run", "cleanup"
 }
 
-// Error implements the error interface
+// Error implements the error interface for AgentError.
+// Provides a formatted error message with agent and phase context.
 func (e *AgentError) Error() string {
 	return fmt.Sprintf("agent error [%s/%s] in %s: %v", e.AgentID, e.AgentName, e.Phase, e.Message)
 }
 
-// NewAgentError creates a new agent error
+// NewAgentError creates a new agent error with context information.
+// Automatically sets retryability based on the execution phase:
+// initialization and cleanup errors are fatal, others are retryable.
 func NewAgentError(agentID, agentName, phase string, err error) *AgentError {
 	baseErr := errors.Wrap(err, fmt.Sprintf("agent error in %s phase", phase))
 	_ = baseErr.WithContext("agent_id", agentID).
@@ -97,13 +102,16 @@ func NewAgentError(agentID, agentName, phase string, err error) *AgentError {
 	}
 }
 
-// WithContext adds context to the error
+// WithContext adds additional context information to the agent error.
+// Returns the error for method chaining.
 func (e *AgentError) WithContext(key string, value interface{}) *AgentError {
 	_ = e.BaseError.WithContext(key, value)
 	return e
 }
 
-// ValidationError represents a validation error
+// ValidationError represents a validation error for configuration or data.
+// Includes the field name and value that failed validation
+// for better debugging and user feedback.
 type ValidationError struct {
 	*errors.BaseError
 
@@ -111,7 +119,8 @@ type ValidationError struct {
 	Value interface{} `json:"value,omitempty"`
 }
 
-// Error implements the error interface
+// Error implements the error interface for ValidationError.
+// Provides a formatted error message with field context.
 func (e *ValidationError) Error() string {
 	if e.Field != "" {
 		return fmt.Sprintf("validation error for field '%s': %s", e.Field, e.Message)
@@ -119,7 +128,9 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("validation error: %s", e.Message)
 }
 
-// NewValidationError creates a new validation error
+// NewValidationError creates a new validation error for a specific field.
+// Validation errors are always fatal since they indicate configuration issues.
+// Includes the field name, invalid value, and descriptive message.
 func NewValidationError(field string, value interface{}, message string) *ValidationError {
 	baseErr := errors.Wrap(ErrSchemaValidation, message)
 	_ = baseErr.WithContext("field", field).
@@ -134,13 +145,16 @@ func NewValidationError(field string, value interface{}, message string) *Valida
 	}
 }
 
-// MultiError represents multiple errors - use ErrorAggregator for new code
+// MultiError represents multiple errors that occurred together.
+// Deprecated: Use ErrorAggregator from the errors package for new code.
+// This type is maintained for backward compatibility.
 type MultiError struct {
 	*errors.BaseError
 	Errors []error `json:"errors"`
 }
 
-// Error implements the error interface
+// Error implements the error interface for MultiError.
+// Provides a summary message about the number of errors collected.
 func (e *MultiError) Error() string {
 	if len(e.Errors) == 0 {
 		return "no errors"
@@ -151,7 +165,8 @@ func (e *MultiError) Error() string {
 	return fmt.Sprintf("multiple errors occurred (%d errors)", len(e.Errors))
 }
 
-// Add adds an error to the multi-error
+// Add adds an error to the multi-error collection.
+// Automatically updates the error count in the context.
 func (e *MultiError) Add(err error) {
 	if err != nil {
 		e.Errors = append(e.Errors, err)
@@ -162,17 +177,20 @@ func (e *MultiError) Add(err error) {
 	}
 }
 
-// HasErrors returns true if there are any errors
+// HasErrors returns true if the multi-error contains any errors.
+// Useful for checking if any errors were collected.
 func (e *MultiError) HasErrors() bool {
 	return len(e.Errors) > 0
 }
 
-// Unwrap returns the errors as a slice
+// Unwrap returns the collected errors as a slice.
+// Implements the standard library's error unwrapping interface.
 func (e *MultiError) Unwrap() []error {
 	return e.Errors
 }
 
-// NewMultiError creates a new MultiError
+// NewMultiError creates a new MultiError instance.
+// Initializes with an empty error collection ready for use.
 func NewMultiError() *MultiError {
 	baseErr := errors.NewErrorWithCode("multi_error", "multiple errors occurred")
 	_ = baseErr.WithType("MultiError")
@@ -183,7 +201,9 @@ func NewMultiError() *MultiError {
 	}
 }
 
-// ToolError represents an error that occurred during tool execution
+// ToolError represents an error that occurred during tool execution.
+// Includes tool name, execution phase, and optional input/output context
+// for comprehensive debugging information.
 type ToolError struct {
 	*errors.BaseError
 
@@ -193,12 +213,15 @@ type ToolError struct {
 	Output   interface{} `json:"output,omitempty"`
 }
 
-// Error implements the error interface
+// Error implements the error interface for ToolError.
+// Provides a formatted error message with tool and phase context.
 func (e *ToolError) Error() string {
 	return fmt.Sprintf("tool error [%s] in %s: %v", e.ToolName, e.Phase, e.Message)
 }
 
-// NewToolError creates a new tool error
+// NewToolError creates a new tool error with phase information.
+// Execution phase errors are retryable, validation errors are fatal.
+// Automatically sets appropriate retryability based on the phase.
 func NewToolError(toolName, phase string, err error) *ToolError {
 	baseErr := errors.Wrap(err, fmt.Sprintf("tool error in %s phase", phase))
 	_ = baseErr.WithContext("tool_name", toolName).
@@ -219,7 +242,9 @@ func NewToolError(toolName, phase string, err error) *ToolError {
 	}
 }
 
-// NewToolErrorWithGuidance creates a new tool error with guidance message
+// NewToolErrorWithGuidance creates a new tool error with helpful guidance.
+// The guidance provides suggestions for fixing the error condition.
+// Useful for providing actionable feedback to users or agents.
 func NewToolErrorWithGuidance(toolName, errorType, message, guidance string) error {
 	// Create a custom error that includes guidance
 	errMsg := message
@@ -241,21 +266,25 @@ func NewToolErrorWithGuidance(toolName, errorType, message, guidance string) err
 	}
 }
 
-// WithInput adds input context to the error
+// WithInput adds the tool input parameters to the error context.
+// Useful for debugging what parameters caused the tool to fail.
 func (e *ToolError) WithInput(input interface{}) *ToolError {
 	e.Input = input
 	_ = e.WithContext("input", input)
 	return e
 }
 
-// WithOutput adds output context to the error
+// WithOutput adds the tool output to the error context.
+// Useful when the tool succeeded but output processing failed.
 func (e *ToolError) WithOutput(output interface{}) *ToolError {
 	e.Output = output
 	_ = e.WithContext("output", output)
 	return e
 }
 
-// IsRetryable checks if an error is retryable
+// IsRetryable checks if an error should be retried.
+// Uses the enhanced errors package and checks domain-specific error types.
+// Returns true for transient errors that might succeed on retry.
 func IsRetryable(err error) bool {
 	// Use the enhanced errors package's retryable check
 	if errors.IsRetryableError(err) {
@@ -278,7 +307,9 @@ func IsRetryable(err error) bool {
 	return false
 }
 
-// IsFatal checks if an error is fatal and should stop execution
+// IsFatal checks if an error is fatal and should stop execution.
+// Fatal errors indicate unrecoverable conditions like configuration issues.
+// Returns true for errors that should not be retried.
 func IsFatal(err error) bool {
 	// Use the enhanced errors package's fatal check
 	if errors.IsFatalError(err) {

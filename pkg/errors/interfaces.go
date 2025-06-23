@@ -9,7 +9,9 @@ import (
 	"time"
 )
 
-// SerializableError defines the interface for errors that can be serialized to JSON
+// SerializableError defines the interface for errors that can be serialized to JSON.
+// Implementing types can be converted to JSON for transmission, logging, or storage,
+// while preserving context and recovery information.
 type SerializableError interface {
 	error
 	ToJSON() ([]byte, error)
@@ -17,7 +19,9 @@ type SerializableError interface {
 	GetRecoveryStrategy() RecoveryStrategy
 }
 
-// RecoveryStrategy defines how to recover from an error
+// RecoveryStrategy defines how to recover from an error.
+// Implementations provide different recovery mechanisms such as
+// retry with backoff, circuit breaking, or fallback strategies.
 type RecoveryStrategy interface {
 	// Name returns the strategy name
 	Name() string
@@ -36,7 +40,9 @@ type RecoveryStrategy interface {
 	BackoffDuration(attempt int) time.Duration
 }
 
-// ErrorContext provides rich context for errors
+// ErrorContext provides rich context for errors.
+// It offers a fluent interface for building error context with
+// key-value pairs, stack traces, and timestamps.
 type ErrorContext interface {
 	// Add adds a key-value pair to the context
 	Add(key string, value interface{}) ErrorContext
@@ -60,13 +66,17 @@ type ErrorContext interface {
 	Clone() ErrorContext
 }
 
-// ContextProvider allows errors to provide additional context
+// ContextProvider allows errors to provide additional context.
+// Errors implementing this interface can enrich an ErrorContext
+// with their specific contextual information.
 type ContextProvider interface {
 	// ProvideContext adds context to the error
 	ProvideContext(ctx ErrorContext) ErrorContext
 }
 
-// ErrorSerializer handles error serialization
+// ErrorSerializer handles error serialization.
+// Implementations support converting errors to and from
+// various formats (JSON, XML, protobuf, etc.).
 type ErrorSerializer interface {
 	// Serialize converts an error to the specified format
 	Serialize(err error, format string) ([]byte, error)
@@ -78,7 +88,9 @@ type ErrorSerializer interface {
 	SupportedFormats() []string
 }
 
-// ErrorRegistry manages error types and their serialization
+// ErrorRegistry manages error types and their serialization.
+// It provides a central registry for error types and their
+// corresponding serializers, enabling polymorphic serialization.
 type ErrorRegistry interface {
 	// Register registers an error type with its serializer
 	Register(errorType string, serializer ErrorSerializer) error
@@ -93,7 +105,9 @@ type ErrorRegistry interface {
 	DeserializeAny(data []byte) (error, error)
 }
 
-// ErrorMetadata contains metadata about an error
+// ErrorMetadata contains metadata about an error.
+// This structure captures comprehensive error information including
+// type, message, code, context, stack trace, and recovery hints.
 type ErrorMetadata struct {
 	Type       string                 `json:"type"`
 	Message    string                 `json:"message"`
@@ -105,14 +119,18 @@ type ErrorMetadata struct {
 	Fatal      bool                   `json:"fatal"`
 }
 
-// StackFrame represents a single frame in a stack trace
+// StackFrame represents a single frame in a stack trace.
+// It captures the function name, file path, and line number
+// for debugging and error analysis.
 type StackFrame struct {
 	Function string `json:"function"`
 	File     string `json:"file"`
 	Line     int    `json:"line"`
 }
 
-// ErrorWrapper wraps errors with additional functionality
+// ErrorWrapper wraps errors with additional functionality.
+// It provides methods to enhance existing errors with context,
+// messages, and recovery strategies.
 type ErrorWrapper interface {
 	// Wrap wraps an error with context
 	Wrap(err error, message string) SerializableError
@@ -124,7 +142,9 @@ type ErrorWrapper interface {
 	WrapWithRecovery(err error, message string, strategy RecoveryStrategy) SerializableError
 }
 
-// ErrorMatcher matches errors based on patterns
+// ErrorMatcher matches errors based on patterns.
+// Implementations can match errors by type, message pattern,
+// code, or other criteria, and extract relevant information.
 type ErrorMatcher interface {
 	// Match checks if an error matches the pattern
 	Match(err error) bool
@@ -133,7 +153,9 @@ type ErrorMatcher interface {
 	Extract(err error) map[string]interface{}
 }
 
-// ErrorAggregator collects multiple errors
+// ErrorAggregator collects multiple errors.
+// It provides thread-safe collection of errors with context,
+// useful for batch operations and concurrent error handling.
 type ErrorAggregator interface {
 	// Add adds an error to the aggregator
 	Add(err error)
@@ -157,7 +179,11 @@ type ErrorAggregator interface {
 	ToSerializable() SerializableError
 }
 
-// Custom JSON marshaling for ErrorMetadata
+// MarshalJSON implements custom JSON marshaling for ErrorMetadata.
+// It adds a human-readable timestamp string alongside the time.Time field
+// for better compatibility with various JSON consumers.
+//
+// Returns the JSON representation or an error.
 func (em ErrorMetadata) MarshalJSON() ([]byte, error) {
 	type Alias ErrorMetadata
 	return json.Marshal(&struct {

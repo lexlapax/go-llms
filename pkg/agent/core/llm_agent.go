@@ -17,14 +17,19 @@ import (
 	"github.com/lexlapax/go-llms/pkg/util/llmutil"
 )
 
-// LLMDeps defines the dependencies for LLM agents
+// LLMDeps defines the dependencies for LLM agents.
+// It encapsulates the required external services including the LLM provider,
+// logger for observability, and optional tracer for distributed tracing.
 type LLMDeps struct {
 	Provider ldomain.Provider
 	Logger   *slog.Logger
 	Tracer   any // trace.Tracer - keeping as interface to avoid OpenTelemetry dependency
 }
 
-// LLMAgent implements BaseAgent for LLM-powered agents
+// LLMAgent implements BaseAgent for LLM-powered agents.
+// It provides full integration with language models, tool execution, state management,
+// guardrails, transforms, and comprehensive observability through hooks and events.
+// The agent supports hierarchical organization with sub-agents and handoffs.
 type LLMAgent struct {
 	*BaseAgentImpl
 	mu sync.RWMutex
@@ -58,7 +63,10 @@ type LLMAgent struct {
 	eventStream domain.FunctionalEventStream
 }
 
-// NewLLMAgent creates a new LLM agent
+// NewLLMAgent creates a new LLM agent with the specified dependencies.
+// The agent is initialized with empty tool and hook collections. Use the fluent
+// API methods (WithTool, WithHook, etc.) to configure the agent after creation.
+// The agent automatically manages sub-agent handoffs when sub-agents are added.
 func NewLLMAgent(name, description string, deps LLMDeps) *LLMAgent {
 	baseAgent := NewBaseAgent(name, description, domain.AgentTypeLLM)
 
@@ -77,7 +85,10 @@ func NewLLMAgent(name, description string, deps LLMDeps) *LLMAgent {
 	return agent
 }
 
-// NewAgent creates a simple LLM agent with minimal configuration (excellent DX)
+// NewAgent creates a simple LLM agent with minimal configuration.
+// This is a convenience function that provides excellent developer experience
+// by requiring only a name and provider. Logger defaults to slog.Default().
+// Use NewLLMAgent for more control over dependencies.
 func NewAgent(name string, provider ldomain.Provider) *LLMAgent {
 	deps := LLMDeps{
 		Provider: provider,
@@ -88,7 +99,10 @@ func NewAgent(name string, provider ldomain.Provider) *LLMAgent {
 	return NewLLMAgent(name, "LLM Agent", deps)
 }
 
-// NewAgentWithLogger creates an LLM agent with custom logger
+// NewAgentWithLogger creates an LLM agent with custom logger.
+// This convenience function allows specifying a custom logger while keeping
+// other dependencies at their defaults. Useful for integrating with existing
+// logging infrastructure.
 func NewAgentWithLogger(name string, provider ldomain.Provider, logger *slog.Logger) *LLMAgent {
 	deps := LLMDeps{
 		Provider: provider,
@@ -99,7 +113,9 @@ func NewAgentWithLogger(name string, provider ldomain.Provider, logger *slog.Log
 	return NewLLMAgent(name, "LLM Agent", deps)
 }
 
-// NewAgentFromString creates an LLM agent from a provider/model string specification
+// NewAgentFromString creates an LLM agent from a provider/model string specification.
+// It parses the providerModel string to determine the LLM provider and model to use.
+//
 // Examples:
 //   - "openai/gpt-4" - specific provider and model
 //   - "gpt-4" - model with inferred provider
@@ -654,6 +670,25 @@ func (a *LLMAgent) getSystemContent() string {
 
 // formatToolDocumentation creates comprehensive documentation for a single tool
 func (a *LLMAgent) formatToolDocumentation(tool domain.Tool) string {
+	// formatToolDocumentation creates comprehensive documentation for a tool that helps
+	// LLMs understand how to use it effectively. The function generates:
+	// 1. Tool name and description
+	// 2. Detailed input/output schemas with type information
+	// 3. Usage examples with input/output pairs
+	// 4. Error handling guidance
+	// 5. Tags for categorization
+	//
+	// The documentation is formatted in Markdown for better readability by LLMs.
+	// Schema formatting includes:
+	// - Type information for all fields
+	// - Required field indicators
+	// - Enum constraints for restricted values
+	// - Nested object properties
+	//
+	// Examples are particularly important as they show:
+	// - Realistic usage scenarios
+	// - Expected input/output format
+	// - Edge cases and error conditions
 	var doc strings.Builder
 
 	// Tool name and description
@@ -1101,28 +1136,46 @@ func (a *LLMAgent) extractXMLToolCalls(content string) ([]string, []any, bool) {
 
 // Execute tool calls
 func (a *LLMAgent) executeToolCalls(runCtx *domain.RunContext[LLMDeps], toolNames []string, params []any) (string, error) {
+	// executeToolCalls executes multiple tool calls and aggregates their results.
+	// The function handles:
+	// 1. Tool lookup and validation
+	// 2. Context creation with state access
+	// 3. Event emission and hook notifications
+	// 4. Error aggregation without stopping execution
+	// 5. Result formatting for LLM consumption
+
 	if len(toolNames) == 0 {
 		return "", nil
 	}
 
+	// Use string builder for efficient result concatenation
 	var results strings.Builder
 	results.WriteString("Tool results:\n")
 
+	// Execute each tool call sequentially
+	// Parallel execution could be added but requires careful state management
 	for i, toolName := range toolNames {
+		// Get corresponding parameters (may be nil if not provided)
 		var toolParams any
 		if i < len(params) {
 			toolParams = params[i]
 		}
 
-		// Find the tool
+		// Tool lookup with helpful error message
 		tool, exists := a.GetTool(toolName)
 		if !exists {
+			// Provide available tools to help LLM correct itself
 			results.WriteString(fmt.Sprintf("Error: Tool '%s' not found. Available tools: %s\n",
 				toolName, strings.Join(a.ListTools(), ", ")))
-			continue
+			continue // Don't stop - try remaining tools
 		}
 
-		// Create ToolContext for this execution
+		// Create rich execution context for the tool
+		// This provides tools with access to:
+		// - Agent state (read-only via StateReader)
+		// - Parent context (for cancellation)
+		// - Agent reference (for handoffs)
+		// - Run metadata
 		toolContext := domain.NewToolContext(
 			runCtx.Context(),
 			domain.NewStateReader(runCtx.State),
@@ -1130,13 +1183,13 @@ func (a *LLMAgent) executeToolCalls(runCtx *domain.RunContext[LLMDeps], toolName
 			runCtx.RunID,
 		)
 
-		// Set up event emitter that integrates with agent's event system
+		// Wire up event emission for observability
 		if a.dispatcher != nil {
 			eventEmitter := domain.NewToolEventEmitter(a.dispatcher, toolName, a.ID(), a.Name())
 			toolContext = toolContext.WithEventEmitter(eventEmitter)
 		}
 
-		// Add retry count if this is a retry
+		// Pass retry information for tools that implement retry logic
 		if runCtx.Retry > 0 {
 			toolContext = toolContext.WithRetry(runCtx.Retry)
 		}
@@ -1155,17 +1208,22 @@ func (a *LLMAgent) executeToolCalls(runCtx *domain.RunContext[LLMDeps], toolName
 			continue
 		}
 
-		// Format result
+		// Format result for LLM consumption
+		// Handle different result types appropriately
 		var resultStr string
 		switch v := result.(type) {
 		case string:
+			// String results pass through as-is
 			resultStr = v
 		case nil:
+			// Nil indicates success with no output data
 			resultStr = "Tool executed successfully with no output"
 		default:
+			// Complex types: try JSON first for structure preservation
 			if jsonBytes, err := json.Marshal(result); err == nil {
 				resultStr = string(jsonBytes)
 			} else {
+				// Fallback to string representation
 				resultStr = fmt.Sprintf("%v", result)
 			}
 		}

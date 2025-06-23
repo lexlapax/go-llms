@@ -8,7 +8,9 @@ import (
 	"time"
 )
 
-// toolEventEmitter implements EventEmitter for tools
+// toolEventEmitter implements EventEmitter for tools.
+// It automatically populates tool and agent context information
+// for events emitted during tool execution.
 type toolEventEmitter struct {
 	dispatcher EventDispatcher
 	toolName   string
@@ -16,7 +18,9 @@ type toolEventEmitter struct {
 	agentName  string
 }
 
-// NewToolEventEmitter creates a new event emitter for tools
+// NewToolEventEmitter creates a new event emitter for tools.
+// The emitter is pre-configured with tool name and agent context
+// to automatically enrich all emitted events with proper metadata.
 func NewToolEventEmitter(dispatcher EventDispatcher, toolName string, agentID string, agentName string) EventEmitter {
 	return &toolEventEmitter{
 		dispatcher: dispatcher,
@@ -26,7 +30,8 @@ func NewToolEventEmitter(dispatcher EventDispatcher, toolName string, agentID st
 	}
 }
 
-// Emit sends an event
+// Emit sends an event through the dispatcher with tool context.
+// Automatically enriches the event with tool name and agent information.
 func (te *toolEventEmitter) Emit(eventType EventType, data interface{}) {
 	event := Event{
 		ID:        generateEventID(),

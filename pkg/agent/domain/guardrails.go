@@ -9,7 +9,8 @@ import (
 	"time"
 )
 
-// GuardrailType represents when the guardrail is applied
+// GuardrailType represents when the guardrail is applied.
+// Guardrails can validate inputs, outputs, or both depending on the type.
 type GuardrailType string
 
 const (
@@ -18,7 +19,9 @@ const (
 	GuardrailTypeBoth   GuardrailType = "both"
 )
 
-// Guardrail validates agent inputs/outputs
+// Guardrail validates agent inputs and/or outputs to ensure safety and compliance.
+// Guardrails can perform both synchronous and asynchronous validation
+// with configurable timeouts for complex validation scenarios.
 type Guardrail interface {
 	Name() string
 	Type() GuardrailType

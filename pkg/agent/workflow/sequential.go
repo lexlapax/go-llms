@@ -11,7 +11,10 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// SequentialAgent executes workflow steps in sequence
+// SequentialAgent executes workflow steps in sequence.
+// It runs each step one after another, passing the output state from
+// each step as input to the next. Supports error handling, retries,
+// and conditional execution based on error behavior.
 type SequentialAgent struct {
 	*BaseWorkflowAgent
 
@@ -20,7 +23,13 @@ type SequentialAgent struct {
 	maxRetries  int
 }
 
-// NewSequentialAgent creates a new sequential workflow agent
+// NewSequentialAgent creates a new sequential workflow agent.
+// By default, it stops on the first error and does not retry failed steps.
+//
+// Parameters:
+//   - name: The name of the sequential workflow
+//
+// Returns a new SequentialAgent instance.
 func NewSequentialAgent(name string) *SequentialAgent {
 	return &SequentialAgent{
 		BaseWorkflowAgent: NewBaseWorkflowAgent(
@@ -33,25 +42,51 @@ func NewSequentialAgent(name string) *SequentialAgent {
 	}
 }
 
-// WithStopOnError configures whether to stop on first error (default: true)
+// WithStopOnError configures whether to stop on first error.
+// When true (default), the workflow stops at the first failed step.
+// When false, the workflow continues with subsequent steps even if one fails.
+//
+// Parameters:
+//   - stop: If true, stop on first error
+//
+// Returns the SequentialAgent for method chaining.
 func (s *SequentialAgent) WithStopOnError(stop bool) *SequentialAgent {
 	s.stopOnError = stop
 	return s
 }
 
-// WithMaxRetries sets the maximum number of retries per step
+// WithMaxRetries sets the maximum number of retries per step.
+// Failed steps will be retried up to this many times before
+// being considered permanently failed.
+//
+// Parameters:
+//   - retries: Maximum retry attempts (0 = no retries)
+//
+// Returns the SequentialAgent for method chaining.
 func (s *SequentialAgent) WithMaxRetries(retries int) *SequentialAgent {
 	s.maxRetries = retries
 	return s
 }
 
-// WithHook adds a monitoring hook to the workflow agent
+// WithHook adds a monitoring hook to the workflow agent.
+// Hooks allow monitoring and customization of sequential execution.
+//
+// Parameters:
+//   - hook: The hook to add
+//
+// Returns the SequentialAgent for method chaining.
 func (s *SequentialAgent) WithHook(hook domain.Hook) *SequentialAgent {
 	s.BaseWorkflowAgent.WithHook(hook)
 	return s
 }
 
-// AddAgent adds an agent as a workflow step
+// AddAgent adds an agent as a workflow step.
+// This is a convenience method that wraps the agent in an AgentStep.
+//
+// Parameters:
+//   - agent: The agent to add to the sequence
+//
+// Returns the SequentialAgent for method chaining.
 func (s *SequentialAgent) AddAgent(agent domain.BaseAgent) *SequentialAgent {
 	step := &AgentStep{
 		name:  agent.Name(),
@@ -65,7 +100,16 @@ func (s *SequentialAgent) AddAgent(agent domain.BaseAgent) *SequentialAgent {
 	return s
 }
 
-// Run executes the sequential workflow
+// Run executes the sequential workflow.
+// It runs each step in order, passing the output of each step as input
+// to the next. Execution stops on error if configured to do so.
+// Steps may be retried based on the retry configuration.
+//
+// Parameters:
+//   - ctx: The execution context
+//   - input: The initial state
+//
+// Returns the final state after all steps or an error.
 func (s *SequentialAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
 	// Validate before running
 	if err := s.Validate(); err != nil {
@@ -203,7 +247,16 @@ func (s *SequentialAgent) Run(ctx context.Context, input *domain.State) (*domain
 	return finalState, nil
 }
 
-// RunAsync executes the workflow asynchronously
+// RunAsync executes the workflow asynchronously.
+// It returns a channel that emits events as the workflow progresses,
+// including step completions and the final result. The workflow
+// execution happens in a separate goroutine.
+//
+// Parameters:
+//   - ctx: The execution context
+//   - input: The initial state
+//
+// Returns an event channel and any validation error.
 func (s *SequentialAgent) RunAsync(ctx context.Context, input *domain.State) (<-chan domain.Event, error) {
 	// Validate before running
 	if err := s.Validate(); err != nil {

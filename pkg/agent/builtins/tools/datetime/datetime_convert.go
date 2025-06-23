@@ -283,7 +283,10 @@ func dateTimeConvertExecute(ctx *agentDomain.ToolContext, input DateTimeConvertI
 	return output, nil
 }
 
-// DateTimeConvert returns a tool that converts date/time between timezones and formats
+// DateTimeConvert returns a tool that converts date/time between timezones and formats.
+// It provides comprehensive timezone conversion, unix timestamp conversion, and timezone listing capabilities.
+// The tool supports IANA timezone identifiers, handles DST transitions automatically, and can convert
+// between various timestamp units (seconds, milliseconds, microseconds, nanoseconds).
 func DateTimeConvert() agentDomain.Tool {
 	// Define parameter schema
 	paramSchema := &schemaDomain.Schema{

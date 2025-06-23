@@ -11,7 +11,14 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
 )
 
-// GenerateToolDocumentation converts a ToolInfo from the discovery system to Documentation format
+// GenerateToolDocumentation converts a ToolInfo from the discovery system to Documentation format.
+// It transforms tool metadata, schemas, and examples into a standardized documentation structure
+// that can be rendered in various formats (OpenAPI, Markdown, JSON).
+//
+// Parameters:
+//   - toolInfo: The tool information from the discovery system
+//
+// Returns a Documentation struct or an error if conversion fails.
 func GenerateToolDocumentation(toolInfo tools.ToolInfo) (Documentation, error) {
 	doc := Documentation{
 		Name:            toolInfo.Name,
@@ -83,7 +90,16 @@ func GenerateToolDocumentation(toolInfo tools.ToolInfo) (Documentation, error) {
 	return doc, nil
 }
 
-// GenerateToolOpenAPI creates an OpenAPI specification specifically for tools
+// GenerateToolOpenAPI creates an OpenAPI specification specifically for tools.
+// It converts tool information from the discovery system into a complete OpenAPI 3.0
+// specification with paths, schemas, and examples.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - toolInfos: The tools to include in the specification
+//   - config: Generator configuration
+//
+// Returns an OpenAPI specification or an error.
 func GenerateToolOpenAPI(ctx context.Context, toolInfos []tools.ToolInfo, config GeneratorConfig) (*OpenAPISpec, error) {
 	// Convert tools to documentable items
 	documentables := make([]Documentable, len(toolInfos))
@@ -100,7 +116,16 @@ func GenerateToolOpenAPI(ctx context.Context, toolInfos []tools.ToolInfo, config
 	return generator.GenerateOpenAPI(ctx, documentables)
 }
 
-// GenerateToolMarkdown creates markdown documentation for tools
+// GenerateToolMarkdown creates markdown documentation for tools.
+// It converts tool information into human-readable markdown format
+// suitable for documentation sites and README files.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - toolInfos: The tools to document
+//   - config: Generator configuration
+//
+// Returns markdown-formatted documentation or an error.
 func GenerateToolMarkdown(ctx context.Context, toolInfos []tools.ToolInfo, config GeneratorConfig) (string, error) {
 	// Convert tools to documentable items
 	documentables := make([]Documentable, len(toolInfos))
@@ -117,7 +142,14 @@ func GenerateToolMarkdown(ctx context.Context, toolInfos []tools.ToolInfo, confi
 	return generator.GenerateMarkdown(ctx, documentables)
 }
 
-// ConvertToolInfoToOpenAPIOperation converts a single ToolInfo to an OpenAPI operation
+// ConvertToolInfoToOpenAPIOperation converts a single ToolInfo to an OpenAPI operation.
+// It creates a complete operation definition including request body, responses,
+// and examples based on the tool's schema and metadata.
+//
+// Parameters:
+//   - toolInfo: The tool information to convert
+//
+// Returns an OpenAPI Operation or an error.
 func ConvertToolInfoToOpenAPIOperation(toolInfo tools.ToolInfo) (*Operation, error) {
 	operation := &Operation{
 		Summary:     toolInfo.Description,
@@ -202,7 +234,14 @@ func ConvertToolInfoToOpenAPIOperation(toolInfo tools.ToolInfo) (*Operation, err
 	return operation, nil
 }
 
-// convertJSONRawMessageToSchema converts json.RawMessage to our Schema type
+// convertJSONRawMessageToSchema converts json.RawMessage to our Schema type.
+// It recursively parses JSON schema definitions and converts them to our
+// internal Schema representation, handling nested properties and arrays.
+//
+// Parameters:
+//   - raw: The JSON schema as raw message
+//
+// Returns a Schema struct or an error.
 func convertJSONRawMessageToSchema(raw json.RawMessage) (*Schema, error) {
 	var schemaMap map[string]interface{}
 	if err := json.Unmarshal(raw, &schemaMap); err != nil {
@@ -297,20 +336,37 @@ func convertJSONRawMessageToSchema(raw json.RawMessage) (*Schema, error) {
 	return schema, nil
 }
 
-// documentableWrapper wraps Documentation to implement Documentable interface
+// documentableWrapper wraps Documentation to implement Documentable interface.
+// This adapter allows Documentation structs to be used with generators
+// that expect Documentable items.
 type documentableWrapper struct {
 	doc Documentation
 }
 
+// GetDocumentation implements the Documentable interface.
+// It returns the wrapped Documentation struct.
+//
+// Returns the Documentation instance.
 func (w *documentableWrapper) GetDocumentation() Documentation {
 	return w.doc
 }
 
-// standardGenerator provides the standard implementation for generating documentation
+// standardGenerator provides the standard implementation for generating documentation.
+// It implements the Generator interface and provides OpenAPI, Markdown, and JSON
+// generation capabilities for tools.
 type standardGenerator struct {
 	config GeneratorConfig
 }
 
+// GenerateOpenAPI implements Generator interface for standardGenerator.
+// It creates an OpenAPI 3.0 specification from documentable items,
+// organizing them as tool execution endpoints.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - items: The documentable items to include
+//
+// Returns an OpenAPI specification or an error.
 func (g *standardGenerator) GenerateOpenAPI(ctx context.Context, items []Documentable) (*OpenAPISpec, error) {
 	spec := &OpenAPISpec{
 		OpenAPI: "3.0.0",
@@ -410,12 +466,28 @@ func (g *standardGenerator) GenerateOpenAPI(ctx context.Context, items []Documen
 	return spec, nil
 }
 
+// GenerateMarkdown implements Generator interface for standardGenerator.
+// It delegates to the MarkdownGenerator for actual markdown generation.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - items: The documentable items to include
+//
+// Returns markdown-formatted documentation or an error.
 func (g *standardGenerator) GenerateMarkdown(ctx context.Context, items []Documentable) (string, error) {
 	// Use the existing markdown generator
 	generator := NewMarkdownGenerator(g.config)
 	return generator.GenerateMarkdown(ctx, items)
 }
 
+// GenerateJSON implements Generator interface for standardGenerator.
+// It extracts Documentation from all items and serializes them to JSON.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - items: The documentable items to include
+//
+// Returns JSON bytes or an error.
 func (g *standardGenerator) GenerateJSON(ctx context.Context, items []Documentable) ([]byte, error) {
 	docs := make([]Documentation, len(items))
 	for i, item := range items {

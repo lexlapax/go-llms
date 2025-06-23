@@ -33,7 +33,7 @@ func GetCustomValidator(name string) (CustomValidator, bool) {
 	return nil, false
 }
 
-// Property extension for custom validators
+// ExtendedProperty extends schema properties with custom validation support
 type ExtendedProperty struct {
 	CustomValidator string `json:"customValidator,omitempty"`
 }

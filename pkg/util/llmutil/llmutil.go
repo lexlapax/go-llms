@@ -18,7 +18,9 @@ import (
 	"github.com/lexlapax/go-llms/pkg/structured/processor"
 )
 
-// ModelConfig represents a configuration for an LLM model
+// ModelConfig represents a configuration for an LLM model.
+// It contains provider identification, authentication, and optional settings
+// that can be used to create configured provider instances.
 type ModelConfig struct {
 	Provider  string                  // Provider identifier (e.g., "openai", "anthropic")
 	Model     string                  // Model name
@@ -29,7 +31,10 @@ type ModelConfig struct {
 	UseCase   string                  // Optional use case identifier (default, performance, reliability, streaming)
 }
 
-// WithProviderOptions creates provider-specific options for initialization
+// WithProviderOptions creates provider-specific options for initialization.
+// It combines options from environment variables, use case configurations,
+// and user-provided settings in priority order. Returns a slice of options
+// that can be passed to provider constructors.
 func WithProviderOptions(config ModelConfig) ([]domain.ProviderOption, error) {
 	var interfaceOptions []domain.ProviderOption
 
@@ -126,10 +131,11 @@ func CreateProvider(config ModelConfig) (domain.Provider, error) {
 	return llmProvider, nil
 }
 
-// ProviderFromEnv creates a provider using environment variables
+// ProviderFromEnv creates a provider using environment variables.
 // It looks for API keys, base URLs, models, and other provider-specific options
 // from environment variables and applies them when creating the provider.
 // It now also supports use case-specific option factories.
+// Returns the provider instance, provider name, model name, and any error.
 func ProviderFromEnv() (domain.Provider, string, string, error) {
 	// Check for API keys in environment variables
 	openAIKey := GetAPIKeyFromEnv("openai")

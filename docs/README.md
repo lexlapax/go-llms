@@ -200,6 +200,7 @@ Welcome to the comprehensive Go-LLMs documentation reference. This directory con
 - **[Project Status](../TODO.md)** - Current development status and roadmap
 - **[Completed Tasks](../TODO-DONE.md)** - Development history
 - **[CLAUDE.md](../CLAUDE.md)** - Project guidance for AI assistants
+- **[Documentation Style Guide](../CONTRIBUTING-DOCS.md)** - Standards for code documentation
 
 ### Visual Resources
 - **[Images Directory](images/)** - SVG diagrams and visual guides

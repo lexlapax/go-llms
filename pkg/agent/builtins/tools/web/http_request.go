@@ -200,14 +200,10 @@ func init() {
 	})
 }
 
-// HTTPRequest creates a tool for making HTTP requests
-// This is a built-in tool optimized for:
-// - Full HTTP method support (GET, POST, PUT, DELETE, PATCH, etc.)
-// - Multiple authentication methods
-// - Custom headers and query parameters
-// - Various body content types
-// - Redirect control
-// - Comprehensive response information
+// HTTPRequest creates a tool for making HTTP requests with full method and authentication support.
+// It provides comprehensive HTTP client functionality supporting all standard methods (GET, POST, PUT, DELETE, PATCH),
+// multiple authentication types (basic, bearer, API key), flexible request body handling with content type detection,
+// custom headers and query parameters, redirect control, and detailed response information including timing metrics.
 func HTTPRequest() domain.Tool {
 	builder := atools.NewToolBuilder("http_request", "Makes HTTP requests with full method and authentication support").
 		WithFunction(func(ctx *domain.ToolContext, params HTTPRequestParams) (*HTTPRequestResult, error) {
@@ -714,8 +710,9 @@ The tool will:
 	return builder.Build()
 }
 
-// MustGetHTTPRequest retrieves the registered HTTPRequest tool or panics
+// MustGetHTTPRequest retrieves the registered HTTPRequest tool or panics if not found.
 // This is a convenience function for users who want to ensure the tool exists
+// and prefer a panic over error handling for missing tools in their initialization code.
 func MustGetHTTPRequest() domain.Tool {
 	return tools.MustGetTool("http_request")
 }

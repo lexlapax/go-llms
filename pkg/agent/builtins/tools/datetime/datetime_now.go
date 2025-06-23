@@ -106,7 +106,10 @@ var dateTimeNowParamSchema = &schemaDomain.Schema{
 	},
 }
 
-// DateTimeNow returns a tool that gets the current date/time in various formats
+// DateTimeNow returns a tool that gets the current date/time in various formats and timezones.
+// It provides UTC and local time by default, supports any IANA timezone, includes optional components
+// (year, month, day, etc.), week information (ISO week numbers), and unix timestamps in multiple units.
+// The tool can format output using custom Go time layouts and integrates with state for default settings.
 func DateTimeNow() agentDomain.Tool {
 	// Create output schema
 	outputSchema := &schemaDomain.Schema{

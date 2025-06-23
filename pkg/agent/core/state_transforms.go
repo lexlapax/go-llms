@@ -15,7 +15,9 @@ import (
 
 // Built-in state transformation functions
 
-// FilterTransform removes keys matching pattern
+// FilterTransform creates a transform that removes keys matching a glob pattern.
+// The pattern follows filepath.Match syntax (e.g., "temp_*" removes all keys starting with "temp_").
+// Messages and artifacts are preserved in the transformed state.
 func FilterTransform(pattern string) StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		result := state.Clone()
@@ -28,7 +30,9 @@ func FilterTransform(pattern string) StateTransform {
 	}
 }
 
-// MapTransform applies function to all values
+// MapTransform creates a transform that applies a function to all state values.
+// The provided function is called for each key-value pair in the state.
+// Messages and artifacts are preserved unchanged.
 func MapTransform(fn func(interface{}) interface{}) StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		result := state.Clone()
@@ -39,7 +43,9 @@ func MapTransform(fn func(interface{}) interface{}) StateTransform {
 	}
 }
 
-// ValidateTransform ensures state matches schema
+// ValidateTransform creates a transform that validates the state against a schema.
+// If validation fails, the transform returns an error and the state is unchanged.
+// This is useful for ensuring state conforms to expected structure before processing.
 func ValidateTransform(validator sdomain.Validator, schema *sdomain.Schema) StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		// Use the SchemaValidator from domain
@@ -51,7 +57,9 @@ func ValidateTransform(validator sdomain.Validator, schema *sdomain.Schema) Stat
 	}
 }
 
-// PrefixKeysTransform adds prefix to all keys
+// PrefixKeysTransform creates a transform that adds a prefix to all state keys.
+// For example, with prefix "agent_", key "status" becomes "agent_status".
+// Messages and artifacts are preserved unchanged.
 func PrefixKeysTransform(prefix string) StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		result := domain.NewState()
@@ -70,7 +78,9 @@ func PrefixKeysTransform(prefix string) StateTransform {
 	}
 }
 
-// SelectKeysTransform keeps only specified keys
+// SelectKeysTransform creates a transform that keeps only specified keys.
+// All other keys are removed from the state. This is useful for filtering
+// state to only relevant data. Messages and artifacts are preserved.
 func SelectKeysTransform(keys ...string) StateTransform {
 	keySet := make(map[string]bool)
 	for _, k := range keys {
@@ -96,7 +106,9 @@ func SelectKeysTransform(keys ...string) StateTransform {
 	}
 }
 
-// RenameKeysTransform renames keys based on mapping
+// RenameKeysTransform creates a transform that renames keys based on a mapping.
+// Keys not in the mapping are left unchanged. If a target key already exists,
+// it will be overwritten. Messages and artifacts are preserved.
 func RenameKeysTransform(mapping map[string]string) StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		result := state.Clone()
@@ -113,7 +125,9 @@ func RenameKeysTransform(mapping map[string]string) StateTransform {
 	}
 }
 
-// MergeTransform merges another state into the current state
+// MergeTransform creates a transform that merges another state into the current state.
+// Values from the other state override values in the current state for matching keys.
+// Messages and artifacts from both states are combined.
 func MergeTransform(other *domain.State) StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		result := state.Clone()
@@ -122,7 +136,9 @@ func MergeTransform(other *domain.State) StateTransform {
 	}
 }
 
-// ClearMessagesTransform removes all messages
+// ClearMessagesTransform creates a transform that removes all messages from the state.
+// Values and artifacts are preserved. This is useful when message history
+// needs to be reset while maintaining other state data.
 func ClearMessagesTransform() StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		result := domain.NewState()
@@ -141,7 +157,9 @@ func ClearMessagesTransform() StateTransform {
 	}
 }
 
-// LimitMessagesTransform keeps only the last N messages
+// LimitMessagesTransform creates a transform that keeps only the last N messages.
+// This is useful for maintaining a sliding window of conversation history
+// to prevent unbounded growth. Values and artifacts are preserved.
 func LimitMessagesTransform(n int) StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		result := domain.NewState()
@@ -170,7 +188,9 @@ func LimitMessagesTransform(n int) StateTransform {
 	}
 }
 
-// TransformValues applies a transform to specific keys
+// TransformValues creates a transform that applies specific transformations to selected keys.
+// Each key in the map has its own transformation function. Keys not in the map
+// are left unchanged. Messages and artifacts are preserved.
 func TransformValues(keyTransforms map[string]func(interface{}) interface{}) StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		result := state.Clone()
@@ -185,7 +205,9 @@ func TransformValues(keyTransforms map[string]func(interface{}) interface{}) Sta
 	}
 }
 
-// ConditionalTransform applies a transform based on a condition
+// ConditionalTransform creates a transform that applies different transforms based on a condition.
+// If the condition returns true, thenTransform is applied; otherwise elseTransform is applied.
+// If either transform is nil, the state is returned unchanged for that branch.
 func ConditionalTransform(condition func(*domain.State) bool, thenTransform, elseTransform StateTransform) StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		if condition(state) {
@@ -201,7 +223,9 @@ func ConditionalTransform(condition func(*domain.State) bool, thenTransform, els
 	}
 }
 
-// ChainTransforms applies multiple transforms in sequence
+// ChainTransforms creates a transform that applies multiple transforms in sequence.
+// Each transform receives the output of the previous transform. If any transform
+// returns an error, the chain stops and returns that error.
 func ChainTransforms(transforms ...StateTransform) StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		current := state
@@ -216,7 +240,9 @@ func ChainTransforms(transforms ...StateTransform) StateTransform {
 	}
 }
 
-// FilterMessagesByRole keeps only messages with specific roles
+// FilterMessagesByRole creates a transform that keeps only messages with specific roles.
+// Messages with roles not in the provided list are removed. This is useful for
+// extracting only user messages or only assistant messages. Values and artifacts are preserved.
 func FilterMessagesByRole(roles ...string) StateTransform {
 	roleSet := make(map[string]bool)
 	for _, r := range roles {
@@ -247,7 +273,9 @@ func FilterMessagesByRole(roles ...string) StateTransform {
 	}
 }
 
-// NormalizeKeysTransform normalizes key names (e.g., lowercase, replace spaces)
+// NormalizeKeysTransform creates a transform that normalizes all key names.
+// Keys are converted to lowercase and spaces/dashes are replaced with underscores.
+// This ensures consistent key naming across different sources.
 func NormalizeKeysTransform() StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		result := domain.NewState()
@@ -275,7 +303,9 @@ func NormalizeKeysTransform() StateTransform {
 	}
 }
 
-// FlattenTransform flattens nested structures with dot notation
+// FlattenTransform creates a transform that flattens nested structures using a separator.
+// Nested maps become dot-notation keys (e.g., {"user": {"name": "John"}} becomes {"user.name": "John"}).
+// Arrays are flattened with index notation (e.g., {"items[0]": "value"}).
 func FlattenTransform(separator string) StateTransform {
 	return func(ctx context.Context, state *domain.State) (*domain.State, error) {
 		result := domain.NewState()
@@ -299,7 +329,9 @@ func FlattenTransform(separator string) StateTransform {
 	}
 }
 
-// flattenStateValue recursively flattens a value
+// flattenStateValue recursively flattens a value into the state.
+// It handles nested maps and arrays, creating flattened keys with the specified separator.
+// Base types are stored directly with their prefix as the key.
 func flattenStateValue(state *domain.State, prefix string, value interface{}, separator string) {
 	switch v := value.(type) {
 	case map[string]interface{}:

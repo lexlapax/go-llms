@@ -216,6 +216,7 @@ go run docs/user-guide/getting-started/quickstart.go
 - **[GitHub Issues](https://github.com/lexlapax/go-llms/issues)** - Bug reports and feature requests
 - **[Discussions](https://github.com/lexlapax/go-llms/discussions)** - Questions and community
 - **[Contributing Guide](CONTRIBUTING.md)** - Development and contribution guidelines
+- **[Documentation Style Guide](CONTRIBUTING-DOCS.md)** - Standards for code documentation
 - **[Changelog](CHANGELOG.md)** - Complete version history
 
 ## Status

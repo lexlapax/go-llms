@@ -360,7 +360,10 @@ func feedFetchExecute(ctx *domain.ToolContext, params FeedFetchParams) (*FeedFet
 	return result, nil
 }
 
-// FeedFetch creates a tool for fetching and parsing feeds
+// FeedFetch creates a tool that retrieves and parses web feeds in RSS, Atom, or JSON Feed formats with comprehensive authentication support.
+// The tool automatically detects feed formats, normalizes them into a unified structure, and handles conditional requests using ETags and If-Modified-Since headers.
+// It supports various authentication methods including API key, Bearer token, Basic auth, and OAuth2 for accessing protected feeds.
+// This is essential for news aggregation, podcast feed parsing, content monitoring, and any application that needs to consume syndicated content.
 func FeedFetch() domain.Tool {
 	// Define parameter schema
 	paramSchema := &sdomain.Schema{

@@ -125,7 +125,10 @@ func feedDiscoverExecute(ctx *domain.ToolContext, params FeedDiscoverParams) (*F
 	return result, nil
 }
 
-// FeedDiscover creates a new FeedDiscover tool
+// FeedDiscover creates a tool that automatically finds RSS, Atom, and JSON feed URLs from web pages using multiple discovery methods.
+// The tool searches HTML link tags for feed declarations, checks common feed paths like /feed and /rss, and supports feed auto-discovery standards.
+// It includes authentication support for protected sites and validates discovered feeds with HEAD requests to minimize bandwidth usage.
+// This is invaluable for finding all available feeds on blogs, discovering podcast feeds, and aggregating feeds from multiple sites.
 func FeedDiscover() domain.Tool {
 	// Define parameter schema
 	paramSchema := &sdomain.Schema{

@@ -7,7 +7,9 @@ import (
 	"time"
 )
 
-// RetryStrategy defines how retries should be handled
+// RetryStrategy defines how retries should be handled for failed operations.
+// It supports exponential backoff with configurable delays and retry limits.
+// Custom retry logic can be provided via the OnRetry callback.
 type RetryStrategy struct {
 	MaxAttempts     int                          `json:"max_attempts"`
 	InitialDelay    time.Duration                `json:"initial_delay"`
@@ -17,7 +19,8 @@ type RetryStrategy struct {
 	OnRetry         func(attempt int, err error) `json:"-"`
 }
 
-// DefaultRetryStrategy returns a default retry strategy
+// DefaultRetryStrategy returns a default retry strategy with sensible defaults.
+// Uses 3 attempts with exponential backoff starting at 1 second.
 func DefaultRetryStrategy() RetryStrategy {
 	return RetryStrategy{
 		MaxAttempts:  3,
@@ -27,7 +30,8 @@ func DefaultRetryStrategy() RetryStrategy {
 	}
 }
 
-// MergeStrategy defines how to merge multiple states
+// MergeStrategy defines how to merge multiple states from parallel agent executions.
+// Different strategies support different use cases like taking the last result or merging all.
 type MergeStrategy string
 
 const (
@@ -44,7 +48,8 @@ const (
 	MergeStrategyCustom MergeStrategy = "custom"
 )
 
-// ParallelConfig holds configuration specific to parallel agents
+// ParallelConfig holds configuration specific to parallel agent execution.
+// Controls concurrency limits, completion behavior, and state merging strategies.
 type ParallelConfig struct {
 	MaxConcurrency int           `json:"max_concurrency,omitempty"`
 	WaitForAll     bool          `json:"wait_for_all"`
@@ -52,7 +57,8 @@ type ParallelConfig struct {
 	FailFast       bool          `json:"fail_fast"`
 }
 
-// DefaultParallelConfig returns default parallel configuration
+// DefaultParallelConfig returns default configuration for parallel agents.
+// Waits for all agents to complete and merges all states by default.
 func DefaultParallelConfig() ParallelConfig {
 	return ParallelConfig{
 		MaxConcurrency: 0, // 0 means unlimited
@@ -62,14 +68,16 @@ func DefaultParallelConfig() ParallelConfig {
 	}
 }
 
-// SequentialConfig holds configuration specific to sequential agents
+// SequentialConfig holds configuration specific to sequential agent execution.
+// Controls error handling and state passing between sequential steps.
 type SequentialConfig struct {
 	StopOnError     bool `json:"stop_on_error"`
 	PassState       bool `json:"pass_state"`
 	ContinueOnError bool `json:"continue_on_error"`
 }
 
-// DefaultSequentialConfig returns default sequential configuration
+// DefaultSequentialConfig returns default configuration for sequential agents.
+// Stops on first error and passes state between steps by default.
 func DefaultSequentialConfig() SequentialConfig {
 	return SequentialConfig{
 		StopOnError:     true,
@@ -78,19 +86,22 @@ func DefaultSequentialConfig() SequentialConfig {
 	}
 }
 
-// ConditionalConfig holds configuration for conditional agents
+// ConditionalConfig holds configuration for conditional agent execution.
+// Supports branching logic with optional default branches.
 type ConditionalConfig struct {
 	DefaultBranch string `json:"default_branch,omitempty"`
 	Exhaustive    bool   `json:"exhaustive"`
 }
 
-// LoopConfig holds configuration for loop agents
+// LoopConfig holds configuration for loop agent execution.
+// Prevents infinite loops with iteration limits and timeouts.
 type LoopConfig struct {
 	MaxIterations int           `json:"max_iterations"`
 	Timeout       time.Duration `json:"timeout"`
 }
 
-// DefaultLoopConfig returns default loop configuration
+// DefaultLoopConfig returns default configuration for loop agents.
+// Limits to 100 iterations with a 5-minute timeout by default.
 func DefaultLoopConfig() LoopConfig {
 	return LoopConfig{
 		MaxIterations: 100,
@@ -98,7 +109,9 @@ func DefaultLoopConfig() LoopConfig {
 	}
 }
 
-// LLMConfig holds configuration specific to LLM agents
+// LLMConfig holds configuration specific to LLM agent interactions.
+// Includes model parameters, prompts, tools, and response formatting options.
+// Supports both streaming and cached responses for different use cases.
 type LLMConfig struct {
 	Model            string                 `json:"model,omitempty"`
 	Temperature      float64                `json:"temperature,omitempty"`
@@ -113,7 +126,8 @@ type LLMConfig struct {
 	CustomParameters map[string]interface{} `json:"custom_parameters,omitempty"`
 }
 
-// DefaultLLMConfig returns default LLM configuration
+// DefaultLLMConfig returns default configuration for LLM agents.
+// Uses moderate temperature (0.7) without streaming or caching by default.
 func DefaultLLMConfig() LLMConfig {
 	return LLMConfig{
 		Temperature:     0.7,
@@ -124,7 +138,8 @@ func DefaultLLMConfig() LLMConfig {
 	}
 }
 
-// LoggingConfig defines logging configuration
+// LoggingConfig defines logging configuration for agent execution.
+// Controls log levels, state inclusion, and sensitive data filtering.
 type LoggingConfig struct {
 	Level         string   `json:"level"` // "debug", "info", "warn", "error"
 	IncludeState  bool     `json:"include_state"`
@@ -133,7 +148,8 @@ type LoggingConfig struct {
 	MaxStateSize  int      `json:"max_state_size,omitempty"`
 }
 
-// DefaultLoggingConfig returns default logging configuration
+// DefaultLoggingConfig returns default logging configuration.
+// Uses info level with event logging and sensitive key filtering.
 func DefaultLoggingConfig() LoggingConfig {
 	return LoggingConfig{
 		Level:         "info",
@@ -144,7 +160,8 @@ func DefaultLoggingConfig() LoggingConfig {
 	}
 }
 
-// ObservabilityConfig defines observability configuration
+// ObservabilityConfig defines metrics and tracing configuration.
+// Supports custom labels and sampling for performance monitoring.
 type ObservabilityConfig struct {
 	MetricsEnabled bool              `json:"metrics_enabled"`
 	TracingEnabled bool              `json:"tracing_enabled"`
@@ -152,7 +169,8 @@ type ObservabilityConfig struct {
 	SampleRate     float64           `json:"sample_rate"`
 }
 
-// DefaultObservabilityConfig returns default observability configuration
+// DefaultObservabilityConfig returns default observability configuration.
+// Enables metrics with full sampling, tracing disabled by default.
 func DefaultObservabilityConfig() ObservabilityConfig {
 	return ObservabilityConfig{
 		MetricsEnabled: true,
@@ -161,7 +179,9 @@ func DefaultObservabilityConfig() ObservabilityConfig {
 	}
 }
 
-// SecurityConfig defines security-related configuration
+// SecurityConfig defines security constraints for agent execution.
+// Limits resource usage and controls tool access for safe operation.
+// Supports sandboxed execution for untrusted workloads.
 type SecurityConfig struct {
 	MaxStateSize     int64         `json:"max_state_size"`    // Maximum state size in bytes
 	MaxArtifactSize  int64         `json:"max_artifact_size"` // Maximum artifact size in bytes
@@ -171,7 +191,8 @@ type SecurityConfig struct {
 	SandboxExecution bool          `json:"sandbox_execution"`
 }
 
-// DefaultSecurityConfig returns default security configuration
+// DefaultSecurityConfig returns default security configuration.
+// Sets reasonable limits: 10MB states, 100MB artifacts, 30-minute execution.
 func DefaultSecurityConfig() SecurityConfig {
 	return SecurityConfig{
 		MaxStateSize:     10 * 1024 * 1024,  // 10MB
@@ -181,7 +202,8 @@ func DefaultSecurityConfig() SecurityConfig {
 	}
 }
 
-// CacheConfig defines caching configuration
+// CacheConfig defines caching configuration for agent responses.
+// Supports multiple cache strategies (LRU, LFU, TTL) with size limits.
 type CacheConfig struct {
 	Enabled       bool          `json:"enabled"`
 	TTL           time.Duration `json:"ttl"`
@@ -190,7 +212,8 @@ type CacheConfig struct {
 	CacheStrategy string        `json:"cache_strategy"` // "lru", "lfu", "ttl"
 }
 
-// DefaultCacheConfig returns default cache configuration
+// DefaultCacheConfig returns default cache configuration.
+// Caching disabled by default, uses LRU strategy when enabled.
 func DefaultCacheConfig() CacheConfig {
 	return CacheConfig{
 		Enabled:       false,
@@ -200,12 +223,14 @@ func DefaultCacheConfig() CacheConfig {
 	}
 }
 
-// ConfigBuilder provides a fluent interface for building agent configurations
+// ConfigBuilder provides a fluent interface for building agent configurations.
+// Supports method chaining for clean configuration construction.
 type ConfigBuilder struct {
 	config AgentConfig
 }
 
-// NewConfigBuilder creates a new configuration builder
+// NewConfigBuilder creates a new configuration builder with default values.
+// The builder starts with sensible defaults that can be customized.
 func NewConfigBuilder() *ConfigBuilder {
 	return &ConfigBuilder{
 		config: AgentConfig{
@@ -217,45 +242,55 @@ func NewConfigBuilder() *ConfigBuilder {
 	}
 }
 
-// WithTimeout sets the timeout
+// WithTimeout sets the execution timeout for the agent.
+// Returns the builder for method chaining.
 func (b *ConfigBuilder) WithTimeout(timeout time.Duration) *ConfigBuilder {
 	b.config.Timeout = timeout
 	return b
 }
 
-// WithRetries sets retry configuration
+// WithRetries sets the maximum retry attempts and delay between retries.
+// Returns the builder for method chaining.
 func (b *ConfigBuilder) WithRetries(maxRetries int, retryDelay time.Duration) *ConfigBuilder {
 	b.config.MaxRetries = maxRetries
 	b.config.RetryDelay = retryDelay
 	return b
 }
 
-// WithAsync enables async execution
+// WithAsync enables asynchronous execution with optional event streaming.
+// Returns the builder for method chaining.
 func (b *ConfigBuilder) WithAsync(streamEvents bool) *ConfigBuilder {
 	b.config.Async = true
 	b.config.StreamEvents = streamEvents
 	return b
 }
 
-// WithStateSharing configures state sharing
+// WithStateSharing configures how state is shared between agents.
+// Share enables state sharing, isolate creates separate state contexts.
+// Returns the builder for method chaining.
 func (b *ConfigBuilder) WithStateSharing(share bool, isolate bool) *ConfigBuilder {
 	b.config.ShareState = share
 	b.config.IsolateState = isolate
 	return b
 }
 
-// WithCustom adds custom configuration
+// WithCustom adds a custom configuration key-value pair.
+// Custom configurations are passed to specific agent implementations.
+// Returns the builder for method chaining.
 func (b *ConfigBuilder) WithCustom(key string, value interface{}) *ConfigBuilder {
 	b.config.Custom[key] = value
 	return b
 }
 
-// Build returns the built configuration
+// Build returns the completed agent configuration.
+// The configuration is ready to use with agent constructors.
 func (b *ConfigBuilder) Build() AgentConfig {
 	return b.config
 }
 
-// ValidateConfig validates an agent configuration
+// ValidateConfig validates an agent configuration for correctness.
+// Checks timeout, retry, and state sharing settings for conflicts.
+// Returns a ValidationError if the configuration is invalid.
 func ValidateConfig(config AgentConfig) error {
 	if config.Timeout < 0 {
 		return NewValidationError("timeout", config.Timeout, "timeout must be non-negative")

@@ -3,7 +3,9 @@
 
 package outputs
 
-// Type represents schema types for LLM outputs
+// Type represents schema types for LLM outputs.
+// It defines the basic data types that can be used in output schemas
+// for structured generation and validation.
 type Type string
 
 const (
@@ -23,7 +25,10 @@ const (
 	TypeNull Type = "null"
 )
 
-// OutputSchema is a standalone schema for LLM outputs
+// OutputSchema is a standalone schema for LLM outputs.
+// It provides a comprehensive structure for defining expected output formats,
+// including type constraints, validation rules, and nested object definitions.
+// This schema is used to validate and parse LLM responses into structured data.
 type OutputSchema struct {
 	// Type is the schema type
 	Type Type `json:"type"`

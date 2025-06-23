@@ -33,8 +33,11 @@ type GeminiProvider struct {
 	safetySettings []map[string]interface{}
 }
 
-// NewGeminiProvider creates a new Google Gemini provider
-// Default model is "gemini-2.0-flash-lite"
+// NewGeminiProvider creates a new Google Gemini provider instance.
+// The apiKey parameter is required for authentication. The model parameter
+// specifies which Gemini model to use (defaults to "gemini-2.0-flash-lite" if empty).
+// Additional options can be provided to customize behavior such as safety settings,
+// topK parameter, or HTTP client configuration.
 func NewGeminiProvider(apiKey, model string, options ...domain.ProviderOption) *GeminiProvider {
 	// Default to Gemini 2.0 Flash Lite if no model is specified
 	if model == "" {
@@ -423,7 +426,15 @@ func (p *GeminiProvider) Stream(ctx context.Context, prompt string, options ...d
 
 // StreamMessage streams responses from a list of messages
 func (p *GeminiProvider) StreamMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.ResponseStream, error) {
-	// Validate content types
+	// StreamMessage implements streaming responses from Gemini API using Server-Sent Events (SSE).
+	// The function performs the following steps:
+	// 1. Validates message content types (Gemini has specific multimodal requirements)
+	// 2. Converts messages to Gemini's expected format
+	// 3. Makes HTTP request with SSE parameters
+	// 4. Processes the SSE stream in a goroutine
+	// 5. Returns a channel for consuming tokens
+
+	// Validate content types - Gemini requires specific handling for images/audio
 	if err := p.validateContentTypesForGemini(messages); err != nil {
 		return nil, fmt.Errorf("gemini: failed to validate content types for streaming: %w", err)
 	}
@@ -496,29 +507,39 @@ func (p *GeminiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 	responseStream, tokenCh := domain.GetChannelPool().GetResponseStream()
 
 	// Start a goroutine to read the stream
+	// This goroutine handles:
+	// - Reading SSE events from the response body
+	// - Parsing JSON data from each event
+	// - Extracting text content and sending tokens
+	// - Handling stream termination and errors
+	// - Respecting context cancellation
 	go func() {
+		// Ensure resources are cleaned up when goroutine exits
 		defer func() { _ = resp.Body.Close() }()
 		defer close(tokenCh)
 
+		// Use buffered scanner for efficient line-by-line reading of SSE stream
 		scanner := bufio.NewScanner(resp.Body)
 		for scanner.Scan() {
-			// Check if context is canceled
+			// Check if context is canceled to allow early termination
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				// Continue
+				// Continue processing
 			}
 
+			// SSE format: each event line starts with "data: " followed by JSON
+			// Non-data lines (like "event:" or empty lines) are ignored
 			line := scanner.Text()
 			if !strings.HasPrefix(line, "data: ") {
 				continue
 			}
 
-			// Extract the data part
+			// Extract the JSON data after "data: " prefix
 			data := strings.TrimPrefix(line, "data: ")
 
-			// Skip empty data lines
+			// Skip empty data lines (can occur between events)
 			if data == "" {
 				continue
 			}
@@ -535,6 +556,10 @@ func (p *GeminiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 			}
 
 			// Parse the data as JSON
+			// Gemini's streaming response format:
+			// - candidates: array of response candidates (usually just one)
+			// - content.parts: array of content parts (text, images, etc.)
+			// - finishReason: indicates why generation stopped (e.g., "STOP", "MAX_TOKENS")
 			var streamResponse struct {
 				Candidates []struct {
 					Content struct {
@@ -546,39 +571,46 @@ func (p *GeminiProvider) StreamMessage(ctx context.Context, messages []domain.Me
 				} `json:"candidates"`
 			}
 
-			// Use optimized JSON unmarshaling
+			// Use optimized JSON unmarshaling to avoid allocations
+			// Continue on parse errors - malformed events shouldn't stop the stream
 			if err := json.UnmarshalFromString(data, &streamResponse); err != nil {
 				continue
 			}
 
-			// Check if we have candidates
+			// Check if we have candidates - Gemini may send empty candidate arrays
+			// during streaming for status updates
 			if len(streamResponse.Candidates) == 0 {
 				continue
 			}
 
 			// Extract text from response - combine all parts
+			// Gemini can split text across multiple parts in a single event
 			var text string
 			for _, part := range streamResponse.Candidates[0].Content.Parts {
 				text += part.Text
 			}
 
-			// Skip empty text
+			// Skip empty text chunks - these can occur at stream boundaries
 			if text == "" {
 				continue
 			}
 
 			// Check if this is the final message with a finish reason
+			// Common finish reasons: "STOP" (normal), "MAX_TOKENS" (limit reached),
+			// "SAFETY" (content filtered), "RECITATION" (copyright concern)
 			isFinished := streamResponse.Candidates[0].FinishReason != ""
 
-			// Send the token - use token pool to reduce allocations
+			// Send the token through the channel
+			// Use non-blocking send with context check to handle backpressure
 			select {
 			case <-ctx.Done():
+				// Context cancelled - stop processing
 				return
 			case tokenCh <- domain.GetTokenPool().NewToken(text, isFinished):
-				// Sent successfully
+				// Token sent successfully to consumer
 			}
 
-			// If this was the final message, we're done
+			// If this was the final message, exit the goroutine
 			if isFinished {
 				return
 			}

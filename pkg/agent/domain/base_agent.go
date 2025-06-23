@@ -10,7 +10,9 @@ import (
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// BaseAgent defines the core interface for all agents
+// BaseAgent defines the core interface that all agent types must implement.
+// It provides a common contract for agent identification, hierarchy management,
+// execution, lifecycle hooks, and configuration across all agent implementations.
 type BaseAgent interface {
 	// Identification
 	ID() string          // Unique identifier
@@ -51,7 +53,8 @@ type BaseAgent interface {
 	SetMetadata(key string, value interface{})
 }
 
-// AgentType represents the type of agent
+// AgentType represents the category of agent implementation.
+// Different types support different execution patterns and behaviors.
 type AgentType string
 
 const (
@@ -63,7 +66,9 @@ const (
 	AgentTypeCustom      AgentType = "custom"
 )
 
-// AgentConfig holds configuration for agents
+// AgentConfig holds common configuration options for all agent types.
+// It includes timeouts, retry policies, execution modes, and state management settings.
+// Agent-specific configurations can be stored in the Custom map.
 type AgentConfig struct {
 	// Common configuration
 	Timeout    time.Duration `json:"timeout,omitempty"`

@@ -70,6 +70,9 @@ type AgeInfo struct {
 }
 
 // DateTimeCalculate returns a tool that performs date/time arithmetic
+// This tool provides various date/time calculations including adding/subtracting
+// time periods, calculating durations between dates, age calculations,
+// business day calculations, and finding next/previous weekdays.
 func DateTimeCalculate() agentDomain.Tool {
 	// Create output schema
 	outputSchema := &schemaDomain.Schema{

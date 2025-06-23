@@ -49,7 +49,8 @@ type DynamicRegistry struct {
 	defaultModels map[string]string // Maps model names to provider types
 }
 
-// RegistryListener receives notifications about registry changes
+// RegistryListener defines callbacks for monitoring registry changes.
+// Implementations can react to provider registration, updates, and removal events.
 type RegistryListener interface {
 	// OnProviderRegistered is called when a provider is registered
 	OnProviderRegistered(name string, provider domain.Provider)
@@ -59,7 +60,9 @@ type RegistryListener interface {
 	OnProviderUpdated(name string, provider domain.Provider)
 }
 
-// NewDynamicRegistry creates a new dynamic registry
+// NewDynamicRegistry creates a new dynamic registry for managing LLM providers.
+// The registry starts empty and providers can be registered using RegisterProvider
+// or created dynamically using RegisterFactory.
 func NewDynamicRegistry() *DynamicRegistry {
 	return &DynamicRegistry{
 		providers:     make(map[string]*ProviderRegistration),
@@ -69,7 +72,9 @@ func NewDynamicRegistry() *DynamicRegistry {
 	}
 }
 
-// RegisterFactory registers a provider factory
+// RegisterFactory registers a provider factory with the specified type name.
+// The factory will be used to create provider instances from configuration.
+// Returns an error if the type is empty or factory is nil.
 func (r *DynamicRegistry) RegisterFactory(providerType string, factory ProviderFactory) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -85,7 +90,9 @@ func (r *DynamicRegistry) RegisterFactory(providerType string, factory ProviderF
 	return nil
 }
 
-// RegisterProvider registers a provider instance directly
+// RegisterProvider registers a provider instance with the given name.
+// The provider is immediately available for use. Metadata is optional but recommended
+// for capability discovery. Returns an error if name is empty or provider is nil.
 func (r *DynamicRegistry) RegisterProvider(name string, provider domain.Provider, metadata ProviderMetadata) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -114,7 +121,9 @@ func (r *DynamicRegistry) RegisterProvider(name string, provider domain.Provider
 	return nil
 }
 
-// CreateProviderFromTemplate creates a provider from a template and config
+// CreateProviderFromTemplate creates and registers a new provider using a factory.
+// The providerType must match a registered factory, and the config is validated
+// before provider creation. The created provider is registered under the given name.
 func (r *DynamicRegistry) CreateProviderFromTemplate(providerType string, name string, config map[string]interface{}) error {
 	r.mu.RLock()
 	factory, exists := r.factories[providerType]
@@ -163,7 +172,9 @@ func (r *DynamicRegistry) CreateProviderFromTemplate(providerType string, name s
 	return nil
 }
 
-// UnregisterProvider removes a provider from the registry
+// UnregisterProvider removes a provider from the registry.
+// Returns an error if the provider doesn't exist. Notifies all registered
+// listeners about the removal.
 func (r *DynamicRegistry) UnregisterProvider(name string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -182,7 +193,8 @@ func (r *DynamicRegistry) UnregisterProvider(name string) error {
 	return nil
 }
 
-// GetProvider retrieves a provider by name
+// GetProvider retrieves a provider by name.
+// Returns an error if the provider doesn't exist or is marked as inactive.
 func (r *DynamicRegistry) GetProvider(name string) (domain.Provider, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -199,7 +211,8 @@ func (r *DynamicRegistry) GetProvider(name string) (domain.Provider, error) {
 	return registration.Provider, nil
 }
 
-// GetMetadata retrieves provider metadata
+// GetMetadata retrieves provider metadata for the specified provider.
+// Returns an error if the provider doesn't exist or has no metadata associated.
 func (r *DynamicRegistry) GetMetadata(name string) (ProviderMetadata, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -216,7 +229,8 @@ func (r *DynamicRegistry) GetMetadata(name string) (ProviderMetadata, error) {
 	return registration.Metadata, nil
 }
 
-// ListProviders returns all registered provider names
+// ListProviders returns all registered provider names.
+// The returned slice contains names of both active and inactive providers.
 func (r *DynamicRegistry) ListProviders() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -228,7 +242,8 @@ func (r *DynamicRegistry) ListProviders() []string {
 	return names
 }
 
-// ListProvidersByCapability returns providers with a specific capability
+// ListProvidersByCapability returns providers that support a specific capability.
+// Only providers with metadata that includes the specified capability are returned.
 func (r *DynamicRegistry) ListProvidersByCapability(capability Capability) []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -242,7 +257,8 @@ func (r *DynamicRegistry) ListProvidersByCapability(capability Capability) []str
 	return names
 }
 
-// GetTemplate returns a provider template
+// GetTemplate returns the configuration template for a provider type.
+// The template includes schema, defaults, and examples for provider configuration.
 func (r *DynamicRegistry) GetTemplate(providerType string) (ProviderTemplate, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -255,7 +271,8 @@ func (r *DynamicRegistry) GetTemplate(providerType string) (ProviderTemplate, er
 	return factory.GetTemplate(), nil
 }
 
-// ListTemplates returns all available provider templates
+// ListTemplates returns all available provider templates from registered factories.
+// Templates provide configuration schemas and examples for each provider type.
 func (r *DynamicRegistry) ListTemplates() []ProviderTemplate {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -267,14 +284,16 @@ func (r *DynamicRegistry) ListTemplates() []ProviderTemplate {
 	return templates
 }
 
-// AddListener adds a registry listener
+// AddListener adds a registry listener to receive notifications about provider changes.
+// Listeners are notified when providers are registered, updated, or removed.
 func (r *DynamicRegistry) AddListener(listener RegistryListener) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.listeners = append(r.listeners, listener)
 }
 
-// RemoveListener removes a registry listener
+// RemoveListener removes a previously added registry listener.
+// The listener will no longer receive notifications about registry changes.
 func (r *DynamicRegistry) RemoveListener(listener RegistryListener) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -287,7 +306,9 @@ func (r *DynamicRegistry) RemoveListener(listener RegistryListener) {
 	}
 }
 
-// UpdateProvider updates a provider configuration and recreates it
+// UpdateProvider updates a provider configuration and recreates it using its factory.
+// This only works for providers created through factories. The new configuration
+// is validated before the provider is recreated. Listeners are notified of the update.
 func (r *DynamicRegistry) UpdateProvider(name string, config map[string]interface{}) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -333,23 +354,31 @@ func (r *DynamicRegistry) UpdateProvider(name string, config map[string]interfac
 
 // ModelRegistry implementation
 
-// RegisterModel implements domain.ModelRegistry
+// RegisterModel implements domain.ModelRegistry.
+// This method provides compatibility with the ModelRegistry interface
+// by delegating to RegisterProvider without metadata.
 func (r *DynamicRegistry) RegisterModel(name string, provider domain.Provider) error {
 	// For compatibility, register as a provider without metadata
 	return r.RegisterProvider(name, provider, nil)
 }
 
-// GetModel implements domain.ModelRegistry
+// GetModel implements domain.ModelRegistry.
+// This method provides compatibility with the ModelRegistry interface
+// by delegating to GetProvider.
 func (r *DynamicRegistry) GetModel(name string) (domain.Provider, error) {
 	return r.GetProvider(name)
 }
 
-// ListModels implements domain.ModelRegistry
+// ListModels implements domain.ModelRegistry.
+// This method provides compatibility with the ModelRegistry interface
+// by delegating to ListProviders.
 func (r *DynamicRegistry) ListModels() []string {
 	return r.ListProviders()
 }
 
-// ExportConfig exports the registry configuration
+// ExportConfig exports the registry configuration to a map.
+// The exported configuration includes all providers that were created
+// from templates with their configuration and active status.
 func (r *DynamicRegistry) ExportConfig() (map[string]interface{}, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -373,7 +402,9 @@ func (r *DynamicRegistry) ExportConfig() (map[string]interface{}, error) {
 	return config, nil
 }
 
-// ImportConfig imports a registry configuration
+// ImportConfig imports a registry configuration from a map.
+// The configuration should contain a "providers" key with provider
+// definitions. Invalid providers are skipped without failing the import.
 func (r *DynamicRegistry) ImportConfig(config map[string]interface{}) error {
 	providers, ok := config["providers"].(map[string]interface{})
 	if !ok {
@@ -400,10 +431,13 @@ func (r *DynamicRegistry) ImportConfig(config map[string]interface{}) error {
 	return nil
 }
 
-// Global registry instance
+// globalRegistry is the singleton instance used throughout the application.
+// It is initialized with an empty registry and can be populated using
+// RegisterDefaultFactories or custom factory registrations.
 var globalRegistry = NewDynamicRegistry()
 
-// GetGlobalRegistry returns the global registry instance
+// GetGlobalRegistry returns the singleton global provider registry.
+// This registry is used by default throughout the application for provider management.
 func GetGlobalRegistry() *DynamicRegistry {
 	return globalRegistry
 }

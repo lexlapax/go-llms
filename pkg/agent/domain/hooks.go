@@ -1,3 +1,6 @@
+// Package domain provides core types and interfaces for the agent framework.
+// This file defines hook interfaces for monitoring and intercepting agent
+// operations, enabling logging, metrics collection, and debugging of workflows.
 package domain
 
 // ABOUTME: Defines hook interfaces for monitoring and intercepting agent operations
@@ -9,7 +12,9 @@ import (
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
-// Hook provides callbacks for monitoring agent operations
+// Hook provides callbacks for monitoring agent operations.
+// Hooks enable logging, metrics collection, debugging, and other
+// cross-cutting concerns during agent execution and tool invocation.
 type Hook interface {
 	// BeforeGenerate is called before generating a response
 	BeforeGenerate(ctx context.Context, messages []domain.Message)

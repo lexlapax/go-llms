@@ -13,7 +13,8 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// EventStorage defines the interface for event persistence
+// EventStorage defines the interface for event persistence.
+// Implementations can provide various backends like memory, file, or database storage.
 type EventStorage interface {
 	// Store saves an event
 	Store(ctx context.Context, event domain.Event) error
@@ -34,7 +35,9 @@ type EventStorage interface {
 	Close() error
 }
 
-// EventQuery defines criteria for querying events
+// EventQuery defines criteria for querying events from storage.
+// It supports filtering by time range, agent information, event types,
+// and provides pagination and ordering options.
 type EventQuery struct {
 	// Time range
 	StartTime *time.Time
@@ -54,21 +57,27 @@ type EventQuery struct {
 	Descending bool
 }
 
-// MemoryStorage implements in-memory event storage
+// MemoryStorage implements in-memory event storage.
+// It provides fast access but data is lost on process termination.
+// Suitable for testing and temporary event storage.
 type MemoryStorage struct {
 	mu     sync.RWMutex
 	events []domain.Event
 	closed bool
 }
 
-// NewMemoryStorage creates a new in-memory event storage
+// NewMemoryStorage creates a new in-memory event storage.
+// The storage starts empty and grows as events are added.
+//
+// Returns a new MemoryStorage instance.
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
 		events: make([]domain.Event, 0),
 	}
 }
 
-// Store implements EventStorage
+// Store implements EventStorage interface.
+// It appends the event to the in-memory slice in a thread-safe manner.
 func (s *MemoryStorage) Store(ctx context.Context, event domain.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -81,7 +90,8 @@ func (s *MemoryStorage) Store(ctx context.Context, event domain.Event) error {
 	return nil
 }
 
-// StoreBatch implements EventStorage
+// StoreBatch implements EventStorage interface.
+// It efficiently stores multiple events in a single operation.
 func (s *MemoryStorage) StoreBatch(ctx context.Context, events []domain.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -94,7 +104,8 @@ func (s *MemoryStorage) StoreBatch(ctx context.Context, events []domain.Event) e
 	return nil
 }
 
-// Query implements EventStorage
+// Query implements EventStorage interface.
+// It filters events based on the query criteria and applies pagination.
 func (s *MemoryStorage) Query(ctx context.Context, query EventQuery) ([]domain.Event, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -125,7 +136,9 @@ func (s *MemoryStorage) Query(ctx context.Context, query EventQuery) ([]domain.E
 	return filtered[start:end], nil
 }
 
-// Stream implements EventStorage
+// Stream implements EventStorage interface.
+// It returns a channel that emits events matching the query criteria.
+// The channel is closed when all matching events have been sent.
 func (s *MemoryStorage) Stream(ctx context.Context, query EventQuery) (<-chan domain.Event, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -158,7 +171,8 @@ func (s *MemoryStorage) Stream(ctx context.Context, query EventQuery) (<-chan do
 	return ch, nil
 }
 
-// Count implements EventStorage
+// Count implements EventStorage interface.
+// It returns the number of events matching the query criteria.
 func (s *MemoryStorage) Count(ctx context.Context, query EventQuery) (int64, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -177,7 +191,8 @@ func (s *MemoryStorage) Count(ctx context.Context, query EventQuery) (int64, err
 	return count, nil
 }
 
-// Close implements EventStorage
+// Close implements EventStorage interface.
+// It marks the storage as closed and clears all stored events.
 func (s *MemoryStorage) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -187,7 +202,8 @@ func (s *MemoryStorage) Close() error {
 	return nil
 }
 
-// matchesQuery checks if an event matches the query criteria
+// matchesQuery checks if an event matches the query criteria.
+// It evaluates time range, agent filters, and event type filters.
 func (s *MemoryStorage) matchesQuery(event domain.Event, query EventQuery) bool {
 	// Check time range
 	if query.StartTime != nil && event.Timestamp.Before(*query.StartTime) {
@@ -222,7 +238,8 @@ func (s *MemoryStorage) matchesQuery(event domain.Event, query EventQuery) bool 
 	return true
 }
 
-// EventRecorder records events to storage
+// EventRecorder records events from an event bus to storage.
+// It subscribes to events and persists them for later retrieval or analysis.
 type EventRecorder struct {
 	storage EventStorage
 	bus     *EventBus
@@ -231,7 +248,13 @@ type EventRecorder struct {
 	cancel  context.CancelFunc
 }
 
-// NewEventRecorder creates a new event recorder
+// NewEventRecorder creates a new event recorder.
+//
+// Parameters:
+//   - storage: The storage backend to record events to
+//   - bus: The event bus to record events from
+//
+// Returns a new EventRecorder instance.
 func NewEventRecorder(storage EventStorage, bus *EventBus) *EventRecorder {
 	return &EventRecorder{
 		storage: storage,
@@ -239,7 +262,13 @@ func NewEventRecorder(storage EventStorage, bus *EventBus) *EventRecorder {
 	}
 }
 
-// Start begins recording events
+// Start begins recording events that match the specified filters.
+// Only one recording session can be active at a time.
+//
+// Parameters:
+//   - filters: Optional filters to apply to recorded events
+//
+// Returns an error if the recorder is already started.
 func (r *EventRecorder) Start(filters ...EventFilter) error {
 	if r.cancel != nil {
 		return fmt.Errorf("recorder already started")
@@ -258,7 +287,8 @@ func (r *EventRecorder) Start(filters ...EventFilter) error {
 	return nil
 }
 
-// Stop stops recording events
+// Stop stops recording events and unsubscribes from the event bus.
+// It waits for any pending events to be stored before returning.
 func (r *EventRecorder) Stop() {
 	if r.cancel != nil {
 		r.cancel()
@@ -273,13 +303,20 @@ func (r *EventRecorder) Stop() {
 	r.wg.Wait()
 }
 
-// EventReplayer replays stored events
+// EventReplayer replays stored events to an event bus.
+// It can replay events at different speeds and apply transformations.
 type EventReplayer struct {
 	storage EventStorage
 	bus     *EventBus
 }
 
-// NewEventReplayer creates a new event replayer
+// NewEventReplayer creates a new event replayer.
+//
+// Parameters:
+//   - storage: The storage to read events from
+//   - bus: The event bus to replay events to
+//
+// Returns a new EventReplayer instance.
 func NewEventReplayer(storage EventStorage, bus *EventBus) *EventReplayer {
 	return &EventReplayer{
 		storage: storage,
@@ -287,7 +324,8 @@ func NewEventReplayer(storage EventStorage, bus *EventBus) *EventReplayer {
 	}
 }
 
-// ReplayOptions configures event replay
+// ReplayOptions configures event replay behavior.
+// It controls replay speed, filtering, and event transformation.
 type ReplayOptions struct {
 	// Speed multiplier (1.0 = real-time, 2.0 = 2x speed, 0 = instant)
 	Speed float64
@@ -299,10 +337,19 @@ type ReplayOptions struct {
 	Transformer EventTransformer
 }
 
-// EventTransformer modifies events during replay
+// EventTransformer modifies events during replay.
+// It can be used to update timestamps, agent IDs, or other event properties.
 type EventTransformer func(event domain.Event) domain.Event
 
-// Replay replays events from storage
+// Replay replays events from storage according to the specified options.
+// Events are published to the bus with timing that simulates the original event flow.
+//
+// Parameters:
+//   - ctx: Context for cancellation
+//   - query: Query to select events to replay
+//   - opts: Options controlling replay behavior
+//
+// Returns an error if event retrieval fails or context is cancelled.
 func (r *EventReplayer) Replay(ctx context.Context, query EventQuery, opts ReplayOptions) error {
 	// Get events from storage
 	events, err := r.storage.Query(ctx, query)
@@ -355,14 +402,22 @@ func (r *EventReplayer) Replay(ctx context.Context, query EventQuery, opts Repla
 	return nil
 }
 
-// FileStorage implements file-based event storage
+// FileStorage implements file-based event storage.
+// It writes events as serialized lines to a file, suitable for append-only logs.
+// This implementation only supports writing; querying requires a separate reader.
 type FileStorage struct {
 	writer     io.WriteCloser
 	serializer EventSerializer
 	mu         sync.Mutex
 }
 
-// NewFileStorage creates a new file-based event storage
+// NewFileStorage creates a new file-based event storage.
+//
+// Parameters:
+//   - w: Writer for event data (typically a file)
+//   - serializer: Serializer for converting events to bytes
+//
+// Returns a new FileStorage instance.
 func NewFileStorage(w io.WriteCloser, serializer EventSerializer) *FileStorage {
 	return &FileStorage{
 		writer:     w,
@@ -370,7 +425,8 @@ func NewFileStorage(w io.WriteCloser, serializer EventSerializer) *FileStorage {
 	}
 }
 
-// Store implements EventStorage
+// Store implements EventStorage interface.
+// It serializes the event and writes it as a line to the file.
 func (s *FileStorage) Store(ctx context.Context, event domain.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -392,7 +448,8 @@ func (s *FileStorage) Store(ctx context.Context, event domain.Event) error {
 	return nil
 }
 
-// StoreBatch implements EventStorage
+// StoreBatch implements EventStorage interface.
+// It stores multiple events by calling Store for each event.
 func (s *FileStorage) StoreBatch(ctx context.Context, events []domain.Event) error {
 	for _, event := range events {
 		if err := s.Store(ctx, event); err != nil {
@@ -402,22 +459,26 @@ func (s *FileStorage) StoreBatch(ctx context.Context, events []domain.Event) err
 	return nil
 }
 
-// Query implements EventStorage (not supported for file storage)
+// Query implements EventStorage interface.
+// This operation is not supported for append-only file storage.
 func (s *FileStorage) Query(ctx context.Context, query EventQuery) ([]domain.Event, error) {
 	return nil, fmt.Errorf("query not supported for file storage")
 }
 
-// Stream implements EventStorage (not supported for file storage)
+// Stream implements EventStorage interface.
+// This operation is not supported for append-only file storage.
 func (s *FileStorage) Stream(ctx context.Context, query EventQuery) (<-chan domain.Event, error) {
 	return nil, fmt.Errorf("stream not supported for file storage")
 }
 
-// Count implements EventStorage (not supported for file storage)
+// Count implements EventStorage interface.
+// This operation is not supported for append-only file storage.
 func (s *FileStorage) Count(ctx context.Context, query EventQuery) (int64, error) {
 	return 0, fmt.Errorf("count not supported for file storage")
 }
 
-// Close implements EventStorage
+// Close implements EventStorage interface.
+// It closes the underlying writer, flushing any buffered data.
 func (s *FileStorage) Close() error {
 	return s.writer.Close()
 }

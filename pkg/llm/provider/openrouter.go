@@ -1,5 +1,9 @@
 package provider
 
+// File openrouter.go implements the OpenRouter provider by leveraging the OpenAI-compatible
+// API. OpenRouter provides unified access to 400+ language models from various providers
+// through a single interface, automatically handling fallbacks and cost optimization.
+
 // ABOUTME: OpenRouter provider implementation using OpenAI-compatible API
 // ABOUTME: Provides access to 400+ models through a unified interface
 

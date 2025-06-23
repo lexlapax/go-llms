@@ -77,7 +77,10 @@ func feedExtractExecute(ctx *domain.ToolContext, params FeedExtractParams) (*Fee
 	return result, nil
 }
 
-// FeedExtract creates a new FeedExtract tool
+// FeedExtract creates a tool that selectively extracts specific fields from feed items for structured data analysis and transformation.
+// The tool supports extraction of basic fields, nested fields using dot notation, and media enclosures, with optional field flattening.
+// It can include feed-level metadata in results and limit the number of items processed for performance optimization.
+// This is perfect for data transformation, creating simplified feed summaries, and preparing feed data for external systems.
 func FeedExtract() domain.Tool {
 	// Define parameter schema
 	paramSchema := &sdomain.Schema{

@@ -14,7 +14,8 @@ import (
 	"github.com/lexlapax/go-llms/pkg/util/llmutil/modelinfo/domain"
 )
 
-// Capability represents a provider capability
+// Capability represents a specific feature or functionality that an LLM provider supports.
+// Capabilities are used for runtime feature discovery and provider selection.
 type Capability string
 
 const (
@@ -34,7 +35,8 @@ const (
 	CapabilityStructuredOutput Capability = "structured_output"
 )
 
-// ModelInfo contains information about a specific model
+// ModelInfo describes a specific LLM model's characteristics and capabilities.
+// It includes pricing, context limits, supported features, and deprecation status.
 type ModelInfo struct {
 	ID              string                 `json:"id"`
 	Name            string                 `json:"name"`
@@ -49,14 +51,16 @@ type ModelInfo struct {
 	Metadata        map[string]interface{} `json:"metadata,omitempty"`
 }
 
-// PricingInfo contains pricing information for a model
+// PricingInfo represents the cost structure for using an LLM model.
+// Prices are specified per token count (e.g., per 1K or 1M tokens) in the given currency.
 type PricingInfo struct {
 	Currency  string  `json:"currency"`
 	PerTokens int     `json:"per_tokens"` // Price per N tokens (usually 1K or 1M)
 	Price     float64 `json:"price"`
 }
 
-// RateLimit defines rate limiting constraints
+// RateLimit specifies the usage limits imposed by an LLM provider.
+// Limits can be defined for requests and tokens over different time periods.
 type RateLimit struct {
 	RequestsPerMinute int `json:"requests_per_minute,omitempty"`
 	RequestsPerHour   int `json:"requests_per_hour,omitempty"`
@@ -66,7 +70,8 @@ type RateLimit struct {
 	TokensPerDay      int `json:"tokens_per_day,omitempty"`
 }
 
-// Constraints defines provider constraints and limits
+// Constraints describes operational limits and requirements for a provider.
+// This includes rate limits, concurrency restrictions, and regional availability.
 type Constraints struct {
 	MaxBatchSize    int                    `json:"max_batch_size,omitempty"`
 	MaxConcurrency  int                    `json:"max_concurrency,omitempty"`
@@ -78,7 +83,8 @@ type Constraints struct {
 	Metadata        map[string]interface{} `json:"metadata,omitempty"`
 }
 
-// ConfigField represents a configuration field
+// ConfigField describes a single configuration parameter for a provider.
+// It includes type information, validation rules, and default values.
 type ConfigField struct {
 	Name        string                 `json:"name"`
 	Type        string                 `json:"type"` // string, number, boolean, object, array
@@ -92,7 +98,8 @@ type ConfigField struct {
 	Properties  map[string]ConfigField `json:"properties,omitempty"` // For object types
 }
 
-// ConfigSchema represents the configuration schema for a provider
+// ConfigSchema defines the complete configuration structure for a provider.
+// It includes field definitions, validation rules, and usage examples.
 type ConfigSchema struct {
 	Version     string                 `json:"version"`
 	Description string                 `json:"description"`
@@ -100,14 +107,16 @@ type ConfigSchema struct {
 	Examples    []ConfigExample        `json:"examples,omitempty"`
 }
 
-// ConfigExample shows an example configuration
+// ConfigExample provides a concrete example of provider configuration.
+// Examples help users understand how to configure providers correctly.
 type ConfigExample struct {
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
 	Config      map[string]interface{} `json:"config"`
 }
 
-// ProviderMetadata defines the metadata interface for providers
+// ProviderMetadata defines the interface for accessing provider capabilities and configuration.
+// Implementations provide runtime information about models, features, and constraints.
 type ProviderMetadata interface {
 	// Name returns the provider name
 	Name() string
@@ -128,13 +137,15 @@ type ProviderMetadata interface {
 	GetConfigSchema() ConfigSchema
 }
 
-// MetadataProvider is implemented by providers that support metadata
+// MetadataProvider indicates that a provider can supply metadata about its capabilities.
+// Providers implementing this interface enable dynamic feature discovery.
 type MetadataProvider interface {
 	// GetMetadata returns the provider's metadata
 	GetMetadata() ProviderMetadata
 }
 
-// BaseProviderMetadata provides a basic implementation of ProviderMetadata
+// BaseProviderMetadata provides a reusable implementation of the ProviderMetadata interface.
+// It includes caching for model information and can be embedded in provider implementations.
 type BaseProviderMetadata struct {
 	ProviderName        string       `json:"name"`
 	ProviderDescription string       `json:"description"`
@@ -246,7 +257,8 @@ func (m *BaseProviderMetadata) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// HasCapability checks if the provider has a specific capability
+// HasCapability checks if a provider supports a specific capability.
+// It returns true if the capability is found in the provider's capability list.
 func HasCapability(metadata ProviderMetadata, capability Capability) bool {
 	for _, c := range metadata.GetCapabilities() {
 		if c == capability {
@@ -256,7 +268,8 @@ func HasCapability(metadata ProviderMetadata, capability Capability) bool {
 	return false
 }
 
-// FindModelByID finds a model by its ID
+// FindModelByID searches for a model with the given ID in the provider's model list.
+// It returns the model info, a boolean indicating if found, and any error that occurred.
 func FindModelByID(metadata ProviderMetadata, modelID string, ctx context.Context) (*ModelInfo, bool, error) {
 	models, err := metadata.GetModels(ctx)
 	if err != nil {
@@ -310,7 +323,8 @@ func convertDomainModelToModelInfo(dm domain.Model) ModelInfo {
 	}
 }
 
-// NewBaseProviderMetadata creates a new BaseProviderMetadata with model service
+// NewBaseProviderMetadata creates a new BaseProviderMetadata instance with model caching support.
+// The providerType parameter determines which models are fetched from the model service.
 func NewBaseProviderMetadata(
 	name, description, providerType string,
 	capabilities []Capability,

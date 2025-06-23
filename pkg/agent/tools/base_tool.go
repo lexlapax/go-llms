@@ -1,4 +1,6 @@
 // Package tools provides implementations of agent tools.
+// It includes base tool implementations, tool discovery, registry management,
+// and various utilities for tool creation and execution.
 package tools
 
 // ABOUTME: Provides base implementation for agent tools with reflection-based parameter handling
@@ -15,7 +17,20 @@ import (
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// Tool provides an optimized implementation of tools with reduced allocations
+// Tool provides an optimized implementation of the domain.Tool interface.
+// It uses reflection to automatically handle parameter conversion and validation,
+// supporting both simple functions and those that accept context parameters.
+// The implementation minimizes allocations through caching and pre-computation.
+//
+// Tool supports various function signatures:
+//   - func(params) result
+//   - func(ctx context.Context, params) result
+//   - func(ctx *domain.ToolContext, params) result
+//   - func(params) (result, error)
+//   - func(ctx context.Context, params) (result, error)
+//
+// The tool automatically handles type conversions for parameters and provides
+// comprehensive metadata for LLM guidance.
 type Tool struct {
 	name         string
 	description  string
@@ -52,12 +67,26 @@ type Tool struct {
 	argsPool sync.Pool
 }
 
-// NewTool creates a new tool from a function
+// NewTool creates a new tool with the given name, description, function, and parameter schema.
+// The function parameter can be any Go function. It will be called via reflection when the tool
+// is executed. The function can optionally accept a context.Context or *domain.ToolContext as
+// its first parameter. The paramSchema defines the expected structure of input parameters.
+//
 // This implementation includes optimizations for better performance:
-// - Pre-computes type information at creation time
-// - Uses object pooling to reduce GC pressure
-// - Implements fast paths for common type conversions
-// - Caches struct field information for improved parameter mapping
+//   - Pre-computes type information at creation time
+//   - Uses object pooling to reduce GC pressure
+//   - Implements fast paths for common type conversions
+//   - Caches struct field information for improved parameter mapping
+//
+// Parameters:
+//   - name: The tool's unique name
+//   - description: Human-readable description of what the tool does
+//   - fn: The Go function to execute (must be a function)
+//   - paramSchema: JSON Schema defining expected parameters
+//
+// Returns a Tool implementation of domain.Tool.
+//
+// Panics if fn is not a function.
 func NewTool(name, description string, fn interface{}, paramSchema *sdomain.Schema) domain.Tool {
 	fnValue := reflect.ValueOf(fn)
 	if fnValue.Kind() != reflect.Func {
@@ -113,12 +142,22 @@ func NewTool(name, description string, fn interface{}, paramSchema *sdomain.Sche
 	return tool
 }
 
-// ToolBuilder provides a fluent interface for building tools with comprehensive metadata
+// ToolBuilder provides a fluent interface for building tools with comprehensive metadata.
+// It allows step-by-step configuration of all tool properties including schemas,
+// examples, constraints, and behavioral hints. This is useful when creating tools
+// that need extensive metadata for LLM guidance.
 type ToolBuilder struct {
 	tool *Tool
 }
 
-// NewToolBuilder creates a new tool builder
+// NewToolBuilder creates a new tool builder with the specified name and description.
+// Use the builder's methods to configure additional properties before calling Build().
+//
+// Parameters:
+//   - name: The tool's unique name
+//   - description: Human-readable description of what the tool does
+//
+// Returns a new ToolBuilder instance.
 func NewToolBuilder(name, description string) *ToolBuilder {
 	return &ToolBuilder{
 		tool: &Tool{
@@ -133,7 +172,15 @@ func NewToolBuilder(name, description string) *ToolBuilder {
 	}
 }
 
-// WithFunction sets the tool function
+// WithFunction sets the tool function.
+// The function will be validated and its type information extracted.
+//
+// Parameters:
+//   - fn: The Go function to execute (must be a function)
+//
+// Returns the ToolBuilder for method chaining.
+//
+// Panics if fn is not a function.
 func (b *ToolBuilder) WithFunction(fn interface{}) *ToolBuilder {
 	fnValue := reflect.ValueOf(fn)
 	if fnValue.Kind() != reflect.Func {
@@ -161,61 +208,124 @@ func (b *ToolBuilder) WithFunction(fn interface{}) *ToolBuilder {
 	return b
 }
 
-// WithParameterSchema sets the parameter schema
+// WithParameterSchema sets the parameter schema.
+// This defines the expected structure and types of input parameters.
+//
+// Parameters:
+//   - schema: JSON Schema for parameters
+//
+// Returns the ToolBuilder for method chaining.
 func (b *ToolBuilder) WithParameterSchema(schema *sdomain.Schema) *ToolBuilder {
 	b.tool.paramSchema = schema
 	return b
 }
 
-// WithOutputSchema sets the output schema
+// WithOutputSchema sets the output schema.
+// This defines the structure and types of the tool's output.
+//
+// Parameters:
+//   - schema: JSON Schema for output
+//
+// Returns the ToolBuilder for method chaining.
 func (b *ToolBuilder) WithOutputSchema(schema *sdomain.Schema) *ToolBuilder {
 	b.tool.outputSchema = schema
 	return b
 }
 
-// WithUsageInstructions sets the usage instructions
+// WithUsageInstructions sets the usage instructions.
+// These provide detailed guidance on when and how to use the tool.
+//
+// Parameters:
+//   - instructions: Detailed usage instructions
+//
+// Returns the ToolBuilder for method chaining.
 func (b *ToolBuilder) WithUsageInstructions(instructions string) *ToolBuilder {
 	b.tool.usageInstructions = instructions
 	return b
 }
 
-// WithExamples sets the examples
+// WithExamples sets the examples.
+// Examples help LLMs understand proper tool usage.
+//
+// Parameters:
+//   - examples: Array of usage examples
+//
+// Returns the ToolBuilder for method chaining.
 func (b *ToolBuilder) WithExamples(examples []domain.ToolExample) *ToolBuilder {
 	b.tool.examples = examples
 	return b
 }
 
-// WithConstraints sets the constraints
+// WithConstraints sets the constraints.
+// Constraints describe limitations and requirements for the tool.
+//
+// Parameters:
+//   - constraints: Array of constraint descriptions
+//
+// Returns the ToolBuilder for method chaining.
 func (b *ToolBuilder) WithConstraints(constraints []string) *ToolBuilder {
 	b.tool.constraints = constraints
 	return b
 }
 
-// WithErrorGuidance sets the error guidance
+// WithErrorGuidance sets the error guidance.
+// This maps error types to helpful resolution guidance.
+//
+// Parameters:
+//   - guidance: Map of error type to guidance message
+//
+// Returns the ToolBuilder for method chaining.
 func (b *ToolBuilder) WithErrorGuidance(guidance map[string]string) *ToolBuilder {
 	b.tool.errorGuidance = guidance
 	return b
 }
 
-// WithCategory sets the category
+// WithCategory sets the category.
+// Categories help organize tools for discovery.
+//
+// Parameters:
+//   - category: The tool category (e.g., "file", "web", "data")
+//
+// Returns the ToolBuilder for method chaining.
 func (b *ToolBuilder) WithCategory(category string) *ToolBuilder {
 	b.tool.category = category
 	return b
 }
 
-// WithTags sets the tags
+// WithTags sets the tags.
+// Tags provide additional metadata for tool discovery and filtering.
+//
+// Parameters:
+//   - tags: Array of descriptive tags
+//
+// Returns the ToolBuilder for method chaining.
 func (b *ToolBuilder) WithTags(tags []string) *ToolBuilder {
 	b.tool.tags = tags
 	return b
 }
 
-// WithVersion sets the version
+// WithVersion sets the version.
+// Version tracking helps with compatibility management.
+//
+// Parameters:
+//   - version: The tool version (e.g., "1.0.0")
+//
+// Returns the ToolBuilder for method chaining.
 func (b *ToolBuilder) WithVersion(version string) *ToolBuilder {
 	b.tool.version = version
 	return b
 }
 
-// WithBehavior sets the behavioral metadata
+// WithBehavior sets the behavioral metadata.
+// This helps LLMs understand tool characteristics and requirements.
+//
+// Parameters:
+//   - deterministic: Whether the tool produces consistent results
+//   - destructive: Whether the tool modifies state
+//   - requiresConfirmation: Whether user confirmation is needed
+//   - latency: Expected execution time ("fast", "medium", "slow")
+//
+// Returns the ToolBuilder for method chaining.
 func (b *ToolBuilder) WithBehavior(deterministic, destructive, requiresConfirmation bool, latency string) *ToolBuilder {
 	b.tool.isDeterministic = deterministic
 	b.tool.isDestructive = destructive
@@ -224,7 +334,12 @@ func (b *ToolBuilder) WithBehavior(deterministic, destructive, requiresConfirmat
 	return b
 }
 
-// Build creates the final tool
+// Build creates the final tool.
+// This validates the configuration and initializes internal structures.
+//
+// Returns the configured Tool implementation.
+//
+// Panics if the tool function has not been set.
 func (b *ToolBuilder) Build() domain.Tool {
 	if b.tool.fn == nil {
 		panic("tool function is required")
@@ -241,22 +356,32 @@ func (b *ToolBuilder) Build() domain.Tool {
 	return b.tool
 }
 
-// Name returns the tool's name
+// Name returns the tool's name.
+// This is the unique identifier used to invoke the tool.
 func (t *Tool) Name() string {
 	return t.name
 }
 
-// Description provides information about the tool
+// Description provides information about the tool.
+// This helps LLMs understand the tool's purpose and capabilities.
 func (t *Tool) Description() string {
 	return t.description
 }
 
-// ParameterSchema returns the schema for the tool parameters
+// ParameterSchema returns the schema for the tool parameters.
+// This defines the expected structure and types of input parameters.
 func (t *Tool) ParameterSchema() *sdomain.Schema {
 	return t.paramSchema
 }
 
-// Execute runs the tool with parameters
+// Execute runs the tool with parameters.
+// It handles parameter conversion, context injection, and function invocation.
+//
+// Parameters:
+//   - ctx: The tool execution context
+//   - params: The input parameters (must match parameter schema)
+//
+// Returns the tool's result or an error.
 func (t *Tool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}, error) {
 	// Get an arguments slice from the pool
 	argsPtr := t.argsPool.Get().(*[]reflect.Value)
@@ -295,7 +420,16 @@ func (t *Tool) Execute(ctx *domain.ToolContext, params interface{}) (interface{}
 	return t.callFunction(args)
 }
 
-// prepareArguments converts the params to the appropriate argument types for the function
+// prepareArguments converts the params to the appropriate argument types for the function.
+// It handles various parameter formats including maps, slices, and direct values.
+//
+// Parameters:
+//   - ctx: Context for the operation
+//   - params: The input parameters to convert
+//   - args: Pre-allocated slice for function arguments
+//
+// Returns an error if parameter conversion fails.
+//
 // nolint:gocyclo // This function handles many parameter conversion cases
 func (t *Tool) prepareArguments(ctx context.Context, params interface{}, args []reflect.Value) error {
 	// If no more arguments needed besides context, we're done
@@ -387,8 +521,16 @@ func (t *Tool) prepareArguments(ctx context.Context, params interface{}, args []
 	return fmt.Errorf("unable to convert parameters to function argument types")
 }
 
-// optimizedConvertValue attempts to convert a value to the target type
-// This version is optimized to reduce allocations
+// optimizedConvertValue attempts to convert a value to the target type.
+// This version is optimized to reduce allocations and includes fast paths
+// for common conversions.
+//
+// Parameters:
+//   - value: The value to convert
+//   - targetType: The desired type
+//
+// Returns the converted value and true if successful, or zero value and false if not.
+//
 // nolint:gocyclo // This function handles many type conversion cases
 func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflect.Value, bool) {
 	// Special handling for interface{} type
@@ -547,7 +689,13 @@ func optimizedConvertValue(value reflect.Value, targetType reflect.Type) (reflec
 	return convertValue(value, targetType)
 }
 
-// isNumericType checks if the type is a numeric type
+// isNumericType checks if the type is a numeric type.
+// This includes all integer and floating-point types.
+//
+// Parameters:
+//   - t: The type to check
+//
+// Returns true if the type is numeric.
 func isNumericType(t reflect.Type) bool {
 	switch t.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
@@ -558,7 +706,16 @@ func isNumericType(t reflect.Type) bool {
 	return false
 }
 
-// convertValue attempts to convert a value to the target type (fallback method)
+// convertValue attempts to convert a value to the target type (fallback method).
+// This is used when optimizedConvertValue cannot handle the conversion.
+// It provides broader compatibility at the cost of performance.
+//
+// Parameters:
+//   - value: The value to convert
+//   - targetType: The desired type
+//
+// Returns the converted value and true if successful, or zero value and false if not.
+//
 // nolint:gocyclo // This function handles many type conversion cases
 func convertValue(value reflect.Value, targetType reflect.Type) (reflect.Value, bool) {
 	// If directly assignable, return as is
@@ -651,7 +808,13 @@ func convertValue(value reflect.Value, targetType reflect.Type) (reflect.Value, 
 	return reflect.Value{}, false
 }
 
-// callFunction calls the function with the provided arguments
+// callFunction calls the function with the provided arguments.
+// It handles functions with various return signatures.
+//
+// Parameters:
+//   - args: The prepared arguments for the function call
+//
+// Returns the function result and any error.
 func (t *Tool) callFunction(args []reflect.Value) (interface{}, error) {
 	// Call the function
 	results := t.fnValue.Call(args)
@@ -676,67 +839,80 @@ func (t *Tool) callFunction(args []reflect.Value) (interface{}, error) {
 	return result, err
 }
 
-// OutputSchema returns the schema for the tool output
+// OutputSchema returns the schema for the tool output.
+// This defines the structure and types of the tool's return value.
 func (t *Tool) OutputSchema() *sdomain.Schema {
 	return t.outputSchema
 }
 
-// UsageInstructions returns detailed instructions on when and how to use the tool
+// UsageInstructions returns detailed instructions on when and how to use the tool.
+// These help LLMs make better decisions about tool selection and usage.
 func (t *Tool) UsageInstructions() string {
 	return t.usageInstructions
 }
 
-// Examples returns concrete examples showing tool usage
+// Examples returns concrete examples showing tool usage.
+// Examples provide patterns that LLMs can learn from.
 func (t *Tool) Examples() []domain.ToolExample {
 	return t.examples
 }
 
-// Constraints returns limitations and constraints of the tool
+// Constraints returns limitations and constraints of the tool.
+// These help set proper expectations for tool capabilities.
 func (t *Tool) Constraints() []string {
 	return t.constraints
 }
 
-// ErrorGuidance returns a map of error types to helpful guidance
+// ErrorGuidance returns a map of error types to helpful guidance.
+// This helps users understand and resolve common errors.
 func (t *Tool) ErrorGuidance() map[string]string {
 	return t.errorGuidance
 }
 
-// Category returns the category for grouping
+// Category returns the category for grouping.
+// Categories help organize tools in registries and UIs.
 func (t *Tool) Category() string {
 	return t.category
 }
 
-// Tags returns tags for discovery and filtering
+// Tags returns tags for discovery and filtering.
+// Tags provide flexible metadata for tool organization.
 func (t *Tool) Tags() []string {
 	return t.tags
 }
 
-// Version returns the tool version for compatibility tracking
+// Version returns the tool version for compatibility tracking.
+// Version information helps manage tool evolution.
 func (t *Tool) Version() string {
 	return t.version
 }
 
-// IsDeterministic returns whether the same input always produces same output
+// IsDeterministic returns whether the same input always produces same output.
+// Deterministic tools are predictable and testable.
 func (t *Tool) IsDeterministic() bool {
 	return t.isDeterministic
 }
 
-// IsDestructive returns whether the tool modifies state or has side effects
+// IsDestructive returns whether the tool modifies state or has side effects.
+// Destructive tools require more careful usage.
 func (t *Tool) IsDestructive() bool {
 	return t.isDestructive
 }
 
-// RequiresConfirmation returns whether user confirmation is needed before execution
+// RequiresConfirmation returns whether user confirmation is needed before execution.
+// This provides a safety mechanism for sensitive operations.
 func (t *Tool) RequiresConfirmation() bool {
 	return t.requiresConfirmation
 }
 
-// EstimatedLatency returns the expected execution time
+// EstimatedLatency returns the expected execution time.
+// Valid values are "fast", "medium", or "slow".
 func (t *Tool) EstimatedLatency() string {
 	return t.estimatedLatency
 }
 
-// ToMCPDefinition exports the tool definition in MCP format
+// ToMCPDefinition exports the tool definition in MCP (Model Context Protocol) format.
+// This enables interoperability with MCP-compatible systems.
 func (t *Tool) ToMCPDefinition() domain.MCPToolDefinition {
 	annotations := make(map[string]interface{})
 

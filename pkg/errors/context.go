@@ -10,20 +10,32 @@ import (
 	"time"
 )
 
-// ErrorContextImpl implements ErrorContext interface
+// ErrorContextImpl implements ErrorContext interface.
+// It provides thread-safe storage and management of error context data,
+// supporting key-value pairs and common enrichment patterns.
 type ErrorContextImpl struct {
 	data map[string]interface{}
 	mu   sync.RWMutex
 }
 
-// NewErrorContext creates a new error context
+// NewErrorContext creates a new error context.
+// The context starts empty and can be enriched using the fluent API.
+//
+// Returns a new ErrorContext instance.
 func NewErrorContext() ErrorContext {
 	return &ErrorContextImpl{
 		data: make(map[string]interface{}),
 	}
 }
 
-// Add adds a key-value pair to the context
+// Add adds a key-value pair to the context.
+// Thread-safe operation that supports method chaining.
+//
+// Parameters:
+//   - key: The context key
+//   - value: The context value
+//
+// Returns self for method chaining.
 func (c *ErrorContextImpl) Add(key string, value interface{}) ErrorContext {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -31,7 +43,13 @@ func (c *ErrorContextImpl) Add(key string, value interface{}) ErrorContext {
 	return c
 }
 
-// AddAll adds multiple key-value pairs
+// AddAll adds multiple key-value pairs.
+// Thread-safe batch operation for adding multiple context values.
+//
+// Parameters:
+//   - values: Map of key-value pairs to add
+//
+// Returns self for method chaining.
 func (c *ErrorContextImpl) AddAll(values map[string]interface{}) ErrorContext {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -41,7 +59,13 @@ func (c *ErrorContextImpl) AddAll(values map[string]interface{}) ErrorContext {
 	return c
 }
 
-// Get retrieves a value by key
+// Get retrieves a value by key.
+// Thread-safe read operation.
+//
+// Parameters:
+//   - key: The context key to retrieve
+//
+// Returns the value and a boolean indicating if the key exists.
 func (c *ErrorContextImpl) Get(key string) (interface{}, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -49,7 +73,11 @@ func (c *ErrorContextImpl) Get(key string) (interface{}, bool) {
 	return val, ok
 }
 
-// GetAll returns all context values
+// GetAll returns all context values.
+// Returns a copy of the internal map to prevent external modifications.
+// Thread-safe operation.
+//
+// Returns a copy of all context key-value pairs.
 func (c *ErrorContextImpl) GetAll() map[string]interface{} {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -61,7 +89,10 @@ func (c *ErrorContextImpl) GetAll() map[string]interface{} {
 	return copy
 }
 
-// WithStackTrace adds stack trace to context
+// WithStackTrace adds stack trace to context.
+// Captures the current stack trace and stores it under "stack_trace" key.
+//
+// Returns self for method chaining.
 func (c *ErrorContextImpl) WithStackTrace() ErrorContext {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -69,7 +100,10 @@ func (c *ErrorContextImpl) WithStackTrace() ErrorContext {
 	return c
 }
 
-// WithTimestamp adds timestamp to context
+// WithTimestamp adds timestamp to context.
+// Stores the current time under "timestamp" key.
+//
+// Returns self for method chaining.
 func (c *ErrorContextImpl) WithTimestamp() ErrorContext {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -77,7 +111,10 @@ func (c *ErrorContextImpl) WithTimestamp() ErrorContext {
 	return c
 }
 
-// Clone creates a copy of the context
+// Clone creates a copy of the context.
+// The clone is independent and modifications won't affect the original.
+//
+// Returns a new ErrorContext with copied data.
 func (c *ErrorContextImpl) Clone() ErrorContext {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -90,13 +127,21 @@ func (c *ErrorContextImpl) Clone() ErrorContext {
 	return newContext
 }
 
-// ContextualError wraps an error with context
+// ContextualError wraps an error with context.
+// It implements the error interface and provides methods
+// to enrich errors with contextual information.
 type ContextualError struct {
 	err     error
 	context ErrorContext
 }
 
-// NewContextualError creates a new contextual error
+// NewContextualError creates a new contextual error.
+// The error is automatically enriched with a timestamp.
+//
+// Parameters:
+//   - err: The error to wrap with context
+//
+// Returns a new ContextualError instance.
 func NewContextualError(err error) *ContextualError {
 	return &ContextualError{
 		err:     err,
@@ -104,34 +149,61 @@ func NewContextualError(err error) *ContextualError {
 	}
 }
 
-// Error implements error interface
+// Error implements error interface.
+// Returns the error message from the wrapped error.
+//
+// Returns the error message string.
 func (e *ContextualError) Error() string {
 	return e.err.Error()
 }
 
-// Unwrap returns the wrapped error
+// Unwrap returns the wrapped error.
+// Supports Go 1.13+ error unwrapping.
+//
+// Returns the wrapped error.
 func (e *ContextualError) Unwrap() error {
 	return e.err
 }
 
-// Context returns the error context
+// Context returns the error context.
+//
+// Returns the ErrorContext associated with this error.
 func (e *ContextualError) Context() ErrorContext {
 	return e.context
 }
 
-// WithContext adds context to the error
+// WithContext adds context to the error.
+// Fluent method for adding contextual information.
+//
+// Parameters:
+//   - key: The context key
+//   - value: The context value
+//
+// Returns self for method chaining.
 func (e *ContextualError) WithContext(key string, value interface{}) *ContextualError {
 	e.context.Add(key, value)
 	return e
 }
 
-// WithContextMap adds multiple context values
+// WithContextMap adds multiple context values.
+// Batch operation for adding multiple context entries.
+//
+// Parameters:
+//   - values: Map of key-value pairs to add
+//
+// Returns self for method chaining.
 func (e *ContextualError) WithContextMap(values map[string]interface{}) *ContextualError {
 	e.context.AddAll(values)
 	return e
 }
 
-// ProvideContext implements ContextProvider
+// ProvideContext implements ContextProvider.
+// Merges this error's context into the provided context.
+//
+// Parameters:
+//   - ctx: The context to merge into
+//
+// Returns the enriched context.
 func (e *ContextualError) ProvideContext(ctx ErrorContext) ErrorContext {
 	// Merge existing context with provided context
 	for k, v := range e.context.GetAll() {
@@ -140,7 +212,9 @@ func (e *ContextualError) ProvideContext(ctx ErrorContext) ErrorContext {
 	return ctx
 }
 
-// ErrorBuilder provides a fluent interface for building errors
+// ErrorBuilder provides a fluent interface for building errors.
+// It supports setting various error properties including message,
+// cause, code, type, context, and recovery strategies.
 type ErrorBuilder struct {
 	message   string
 	cause     error
@@ -152,7 +226,12 @@ type ErrorBuilder struct {
 	recovery  RecoveryStrategy
 }
 
-// NewErrorBuilder creates a new error builder
+// NewErrorBuilder creates a new error builder.
+//
+// Parameters:
+//   - message: The error message
+//
+// Returns a new ErrorBuilder instance.
 func NewErrorBuilder(message string) *ErrorBuilder {
 	return &ErrorBuilder{
 		message: message,
@@ -160,31 +239,62 @@ func NewErrorBuilder(message string) *ErrorBuilder {
 	}
 }
 
-// WithCause sets the cause error
+// WithCause sets the cause error.
+// Used for error chaining to track the root cause.
+//
+// Parameters:
+//   - err: The cause error
+//
+// Returns self for method chaining.
 func (b *ErrorBuilder) WithCause(err error) *ErrorBuilder {
 	b.cause = err
 	return b
 }
 
-// WithCode sets the error code
+// WithCode sets the error code.
+// Error codes can be used for programmatic error handling.
+//
+// Parameters:
+//   - code: The error code
+//
+// Returns self for method chaining.
 func (b *ErrorBuilder) WithCode(code string) *ErrorBuilder {
 	b.code = code
 	return b
 }
 
-// WithType sets the error type
+// WithType sets the error type.
+// Types categorize errors (e.g., "ValidationError", "NetworkError").
+//
+// Parameters:
+//   - errorType: The error type
+//
+// Returns self for method chaining.
 func (b *ErrorBuilder) WithType(errorType string) *ErrorBuilder {
 	b.errorType = errorType
 	return b
 }
 
-// WithContext adds context
+// WithContext adds context.
+// Adds a single key-value pair to the error context.
+//
+// Parameters:
+//   - key: The context key
+//   - value: The context value
+//
+// Returns self for method chaining.
 func (b *ErrorBuilder) WithContext(key string, value interface{}) *ErrorBuilder {
 	b.context[key] = value
 	return b
 }
 
-// WithContextMap adds multiple context values
+// WithContextMap adds multiple context values.
+// Batch operation for adding multiple context entries.
+//
+// Parameters:
+//   - values: Map of key-value pairs to add
+//
+// Returns self for method chaining.
 func (b *ErrorBuilder) WithContextMap(values map[string]interface{}) *ErrorBuilder {
 	for k, v := range values {
 		b.context[k] = v
@@ -192,25 +302,47 @@ func (b *ErrorBuilder) WithContextMap(values map[string]interface{}) *ErrorBuild
 	return b
 }
 
-// WithRetryable sets retryable flag
+// WithRetryable sets retryable flag.
+// Indicates whether the operation that caused this error can be retried.
+//
+// Parameters:
+//   - retryable: Whether the error is retryable
+//
+// Returns self for method chaining.
 func (b *ErrorBuilder) WithRetryable(retryable bool) *ErrorBuilder {
 	b.retryable = retryable
 	return b
 }
 
-// WithFatal sets fatal flag
+// WithFatal sets fatal flag.
+// Fatal errors indicate unrecoverable conditions.
+//
+// Parameters:
+//   - fatal: Whether the error is fatal
+//
+// Returns self for method chaining.
 func (b *ErrorBuilder) WithFatal(fatal bool) *ErrorBuilder {
 	b.fatal = fatal
 	return b
 }
 
-// WithRecovery sets recovery strategy
+// WithRecovery sets recovery strategy.
+// Defines how the system should attempt to recover from this error.
+//
+// Parameters:
+//   - strategy: The recovery strategy
+//
+// Returns self for method chaining.
 func (b *ErrorBuilder) WithRecovery(strategy RecoveryStrategy) *ErrorBuilder {
 	b.recovery = strategy
 	return b
 }
 
-// Build creates the error
+// Build creates the error.
+// Constructs a BaseError with all configured properties
+// and captures the current stack trace.
+//
+// Returns a new BaseError instance.
 func (b *ErrorBuilder) Build() *BaseError {
 	err := &BaseError{
 		Type:      b.errorType,
@@ -236,7 +368,15 @@ func (b *ErrorBuilder) Build() *BaseError {
 	return err
 }
 
-// EnrichError adds context to any error
+// EnrichError adds context to any error.
+// If the error is already a BaseError, context is added directly.
+// Otherwise, the error is wrapped in a BaseError first.
+//
+// Parameters:
+//   - err: The error to enrich
+//   - context: Context to add
+//
+// Returns the enriched error or nil if err is nil.
 func EnrichError(err error, context map[string]interface{}) error {
 	if err == nil {
 		return nil
@@ -251,7 +391,14 @@ func EnrichError(err error, context map[string]interface{}) error {
 	return Wrap(err, err.Error()).WithContextMap(context)
 }
 
-// EnrichErrorWithOperation adds operation context
+// EnrichErrorWithOperation adds operation context.
+// Convenience function for adding operation name and timestamp.
+//
+// Parameters:
+//   - err: The error to enrich
+//   - operation: The operation name
+//
+// Returns the enriched error.
 func EnrichErrorWithOperation(err error, operation string) error {
 	return EnrichError(err, map[string]interface{}{
 		"operation": operation,
@@ -259,7 +406,16 @@ func EnrichErrorWithOperation(err error, operation string) error {
 	})
 }
 
-// EnrichErrorWithRequest adds request context
+// EnrichErrorWithRequest adds request context.
+// Convenience function for adding HTTP request information.
+//
+// Parameters:
+//   - err: The error to enrich
+//   - method: HTTP method
+//   - url: Request URL
+//   - statusCode: HTTP status code
+//
+// Returns the enriched error.
 func EnrichErrorWithRequest(err error, method, url string, statusCode int) error {
 	return EnrichError(err, map[string]interface{}{
 		"request_method": method,
@@ -269,7 +425,15 @@ func EnrichErrorWithRequest(err error, method, url string, statusCode int) error
 	})
 }
 
-// EnrichErrorWithResource adds resource context
+// EnrichErrorWithResource adds resource context.
+// Convenience function for adding resource identification.
+//
+// Parameters:
+//   - err: The error to enrich
+//   - resourceType: Type of resource
+//   - resourceID: Resource identifier
+//
+// Returns the enriched error.
 func EnrichErrorWithResource(err error, resourceType, resourceID string) error {
 	return EnrichError(err, map[string]interface{}{
 		"resource_type": resourceType,
@@ -278,7 +442,9 @@ func EnrichErrorWithResource(err error, resourceType, resourceID string) error {
 	})
 }
 
-// RuntimeContext captures runtime information
+// RuntimeContext captures runtime information.
+// Contains Go runtime details including version, architecture,
+// CPU count, goroutine count, and memory statistics.
 type RuntimeContext struct {
 	GoVersion    string                 `json:"go_version"`
 	GOOS         string                 `json:"goos"`
@@ -288,7 +454,11 @@ type RuntimeContext struct {
 	MemStats     map[string]interface{} `json:"mem_stats,omitempty"`
 }
 
-// CaptureRuntimeContext captures current runtime information
+// CaptureRuntimeContext captures current runtime information.
+// Gathers runtime statistics including memory usage, goroutine count,
+// and system information.
+//
+// Returns a RuntimeContext with current runtime information.
 func CaptureRuntimeContext() RuntimeContext {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
@@ -308,7 +478,14 @@ func CaptureRuntimeContext() RuntimeContext {
 	}
 }
 
-// EnrichErrorWithRuntime adds runtime context
+// EnrichErrorWithRuntime adds runtime context.
+// Captures and adds current runtime information to the error.
+// Useful for debugging performance and resource issues.
+//
+// Parameters:
+//   - err: The error to enrich
+//
+// Returns the enriched error.
 func EnrichErrorWithRuntime(err error) error {
 	ctx := CaptureRuntimeContext()
 	return EnrichError(err, map[string]interface{}{

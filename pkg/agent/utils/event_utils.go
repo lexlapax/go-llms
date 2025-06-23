@@ -12,14 +12,22 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// EventRecorder records events for later analysis
+// EventRecorder records events for later analysis.
+// It provides a thread-safe circular buffer for event storage,
+// automatically removing old events when capacity is reached.
 type EventRecorder struct {
 	mu      sync.RWMutex
 	events  []domain.Event
 	maxSize int
 }
 
-// NewEventRecorder creates a new event recorder
+// NewEventRecorder creates a new event recorder with the specified capacity.
+// If maxSize is <= 0, it defaults to 1000 events.
+//
+// Parameters:
+//   - maxSize: Maximum number of events to store
+//
+// Returns a new EventRecorder instance.
 func NewEventRecorder(maxSize int) *EventRecorder {
 	if maxSize <= 0 {
 		maxSize = 1000
@@ -30,7 +38,14 @@ func NewEventRecorder(maxSize int) *EventRecorder {
 	}
 }
 
-// HandleEvent implements domain.EventHandler
+// HandleEvent implements domain.EventHandler interface.
+// It stores the event in the circular buffer, removing the oldest
+// event if at capacity.
+//
+// Parameters:
+//   - event: The event to record
+//
+// Returns nil (always succeeds).
 func (r *EventRecorder) HandleEvent(event domain.Event) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -44,7 +59,10 @@ func (r *EventRecorder) HandleEvent(event domain.Event) error {
 	return nil
 }
 
-// GetEvents returns a copy of recorded events
+// GetEvents returns a copy of recorded events.
+// The returned slice is a copy to prevent external modifications.
+//
+// Returns all recorded events in chronological order.
 func (r *EventRecorder) GetEvents() []domain.Event {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -54,7 +72,13 @@ func (r *EventRecorder) GetEvents() []domain.Event {
 	return events
 }
 
-// GetEventsByType returns events of a specific type
+// GetEventsByType returns events of a specific type.
+// This is useful for analyzing specific event categories.
+//
+// Parameters:
+//   - eventType: The event type to filter by
+//
+// Returns filtered events of the specified type.
 func (r *EventRecorder) GetEventsByType(eventType domain.EventType) []domain.Event {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -68,7 +92,13 @@ func (r *EventRecorder) GetEventsByType(eventType domain.EventType) []domain.Eve
 	return filtered
 }
 
-// GetEventsByAgent returns events for a specific agent
+// GetEventsByAgent returns events for a specific agent.
+// This helps analyze the behavior of individual agents.
+//
+// Parameters:
+//   - agentID: The agent ID to filter by
+//
+// Returns events from the specified agent.
 func (r *EventRecorder) GetEventsByAgent(agentID string) []domain.Event {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -82,26 +112,38 @@ func (r *EventRecorder) GetEventsByAgent(agentID string) []domain.Event {
 	return filtered
 }
 
-// Clear removes all recorded events
+// Clear removes all recorded events.
+// This resets the recorder to an empty state.
 func (r *EventRecorder) Clear() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.events = r.events[:0]
 }
 
-// EventAnalyzer analyzes recorded events
+// EventAnalyzer analyzes recorded events to extract insights.
+// It provides various analysis methods for understanding event patterns,
+// agent behavior, and system performance.
 type EventAnalyzer struct {
 	events []domain.Event
 }
 
-// NewEventAnalyzer creates a new event analyzer
+// NewEventAnalyzer creates a new event analyzer for the given events.
+//
+// Parameters:
+//   - events: The events to analyze
+//
+// Returns a new EventAnalyzer instance.
 func NewEventAnalyzer(events []domain.Event) *EventAnalyzer {
 	return &EventAnalyzer{
 		events: events,
 	}
 }
 
-// GetAgentMetrics returns metrics for each agent
+// GetAgentMetrics returns metrics for each agent.
+// It calculates event counts, error rates, and execution times
+// for each agent found in the events.
+//
+// Returns a map of agent ID to metrics.
 func (a *EventAnalyzer) GetAgentMetrics() map[string]*AgentMetrics {
 	metrics := make(map[string]*AgentMetrics)
 
@@ -137,7 +179,11 @@ func (a *EventAnalyzer) GetAgentMetrics() map[string]*AgentMetrics {
 	return metrics
 }
 
-// GetEventTimeline returns events organized by time
+// GetEventTimeline returns events organized by time.
+// Events are grouped by second for easier visualization
+// and analysis of temporal patterns.
+//
+// Returns timeline entries sorted by timestamp.
 func (a *EventAnalyzer) GetEventTimeline() []TimelineEntry {
 	if len(a.events) == 0 {
 		return nil
@@ -165,7 +211,11 @@ func (a *EventAnalyzer) GetEventTimeline() []TimelineEntry {
 	return entries
 }
 
-// GetErrorSummary returns a summary of errors
+// GetErrorSummary returns a summary of errors.
+// It aggregates error information by type, agent, and message
+// to help identify common failure patterns.
+//
+// Returns an ErrorSummary with detailed error statistics.
 func (a *EventAnalyzer) GetErrorSummary() *ErrorSummary {
 	summary := &ErrorSummary{
 		ErrorsByType:  make(map[domain.EventType]int),
@@ -189,7 +239,9 @@ func (a *EventAnalyzer) GetErrorSummary() *ErrorSummary {
 	return summary
 }
 
-// AgentMetrics contains metrics for a single agent
+// AgentMetrics contains metrics for a single agent.
+// It tracks event counts, errors, and execution timing
+// to measure agent performance and reliability.
 type AgentMetrics struct {
 	AgentID     string
 	AgentName   string
@@ -200,13 +252,17 @@ type AgentMetrics struct {
 	Duration    time.Duration
 }
 
-// TimelineEntry represents events at a point in time
+// TimelineEntry represents events at a point in time.
+// It groups events that occurred within the same time window
+// for timeline visualization.
 type TimelineEntry struct {
 	Timestamp time.Time
 	Events    []domain.Event
 }
 
-// ErrorSummary contains error statistics
+// ErrorSummary contains error statistics.
+// It provides multiple views of error data to help
+// identify and diagnose system issues.
 type ErrorSummary struct {
 	TotalErrors   int
 	ErrorsByType  map[domain.EventType]int
@@ -214,21 +270,33 @@ type ErrorSummary struct {
 	ErrorMessages map[string]int
 }
 
-// EventFormatter formats events for display
+// EventFormatter formats events for display.
+// It provides customizable formatting options for
+// human-readable event presentation.
 type EventFormatter struct {
 	IncludeData     bool
 	IncludeMetadata bool
 	TimeFormat      string
 }
 
-// NewEventFormatter creates a new event formatter
+// NewEventFormatter creates a new event formatter with default settings.
+// The default time format is "15:04:05.000" (HH:MM:SS.mmm).
+//
+// Returns a new EventFormatter instance.
 func NewEventFormatter() *EventFormatter {
 	return &EventFormatter{
 		TimeFormat: "15:04:05.000",
 	}
 }
 
-// Format formats a single event
+// Format formats a single event to a human-readable string.
+// The output includes timestamp, type, agent info, and optionally
+// data and metadata based on formatter settings.
+//
+// Parameters:
+//   - event: The event to format
+//
+// Returns the formatted event string.
 func (f *EventFormatter) Format(event domain.Event) string {
 	timestamp := event.Timestamp.Format(f.TimeFormat)
 	base := fmt.Sprintf("[%s] %s - %s (%s)", timestamp, event.Type, event.AgentName, event.AgentID[:8])
@@ -250,7 +318,13 @@ func (f *EventFormatter) Format(event domain.Event) string {
 	return base
 }
 
-// FormatMultiple formats multiple events
+// FormatMultiple formats multiple events.
+// Each event is formatted on a separate line.
+//
+// Parameters:
+//   - events: The events to format
+//
+// Returns the formatted events as a multi-line string.
 func (f *EventFormatter) FormatMultiple(events []domain.Event) string {
 	var result string
 	for i, event := range events {
@@ -262,7 +336,9 @@ func (f *EventFormatter) FormatMultiple(events []domain.Event) string {
 	return result
 }
 
-// EventMatcher provides complex event matching
+// EventMatcher provides complex event matching capabilities.
+// It supports multiple criteria including type, agent, time range,
+// and custom data matching functions.
 type EventMatcher struct {
 	Type       *domain.EventType
 	AgentID    *string
@@ -273,7 +349,13 @@ type EventMatcher struct {
 	DataMatch  func(interface{}) bool
 }
 
-// Matches checks if an event matches the criteria
+// Matches checks if an event matches the criteria.
+// All non-nil criteria must match for the event to be selected.
+//
+// Parameters:
+//   - event: The event to check
+//
+// Returns true if the event matches all criteria.
 func (m *EventMatcher) Matches(event domain.Event) bool {
 	if m.Type != nil && event.Type != *m.Type {
 		return false
@@ -306,7 +388,15 @@ func (m *EventMatcher) Matches(event domain.Event) bool {
 	return true
 }
 
-// FilterEvents filters events using a matcher
+// FilterEvents filters events using a matcher.
+// This is a convenience function for applying EventMatcher criteria
+// to a slice of events.
+//
+// Parameters:
+//   - events: The events to filter
+//   - matcher: The matching criteria
+//
+// Returns events that match all criteria.
 func FilterEvents(events []domain.Event, matcher *EventMatcher) []domain.Event {
 	var filtered []domain.Event
 	for _, event := range events {
@@ -317,17 +407,26 @@ func FilterEvents(events []domain.Event, matcher *EventMatcher) []domain.Event {
 	return filtered
 }
 
-// EventAggregator aggregates events by different dimensions
+// EventAggregator aggregates events by different dimensions.
+// It provides methods to group events for analysis and reporting.
 type EventAggregator struct {
 	events []domain.Event
 }
 
-// NewEventAggregator creates a new event aggregator
+// NewEventAggregator creates a new event aggregator.
+//
+// Parameters:
+//   - events: The events to aggregate
+//
+// Returns a new EventAggregator instance.
 func NewEventAggregator(events []domain.Event) *EventAggregator {
 	return &EventAggregator{events: events}
 }
 
-// ByType groups events by type
+// ByType groups events by type.
+// This helps analyze the distribution of event types.
+//
+// Returns a map of event type to events.
 func (a *EventAggregator) ByType() map[domain.EventType][]domain.Event {
 	grouped := make(map[domain.EventType][]domain.Event)
 	for _, event := range a.events {
@@ -336,7 +435,10 @@ func (a *EventAggregator) ByType() map[domain.EventType][]domain.Event {
 	return grouped
 }
 
-// ByAgent groups events by agent
+// ByAgent groups events by agent.
+// This helps analyze individual agent behavior.
+//
+// Returns a map of agent ID to events.
 func (a *EventAggregator) ByAgent() map[string][]domain.Event {
 	grouped := make(map[string][]domain.Event)
 	for _, event := range a.events {
@@ -345,7 +447,14 @@ func (a *EventAggregator) ByAgent() map[string][]domain.Event {
 	return grouped
 }
 
-// ByTimeWindow groups events by time window
+// ByTimeWindow groups events by time window.
+// Events are sorted by time and grouped into fixed-size windows
+// for temporal analysis.
+//
+// Parameters:
+//   - windowSize: The duration of each time window
+//
+// Returns time windows with their events.
 func (a *EventAggregator) ByTimeWindow(windowSize time.Duration) []TimeWindow {
 	if len(a.events) == 0 {
 		return nil
@@ -381,14 +490,17 @@ func (a *EventAggregator) ByTimeWindow(windowSize time.Duration) []TimeWindow {
 	return windows
 }
 
-// TimeWindow represents a time window of events
+// TimeWindow represents a time window of events.
+// It defines a time range and contains all events
+// that occurred within that range.
 type TimeWindow struct {
 	Start  time.Time
 	End    time.Time
 	Events []domain.Event
 }
 
-// Helper functions for sorting (simple bubble sort for now)
+// sortTimeline sorts timeline entries by timestamp in ascending order.
+// Uses bubble sort for simplicity (suitable for small datasets).
 func sortTimeline(entries []TimelineEntry) {
 	for i := 0; i < len(entries); i++ {
 		for j := i + 1; j < len(entries); j++ {
@@ -399,6 +511,8 @@ func sortTimeline(entries []TimelineEntry) {
 	}
 }
 
+// sortEventsByTime sorts events by timestamp in ascending order.
+// Uses bubble sort for simplicity (suitable for small datasets).
 func sortEventsByTime(events []domain.Event) {
 	for i := 0; i < len(events); i++ {
 		for j := i + 1; j < len(events); j++ {

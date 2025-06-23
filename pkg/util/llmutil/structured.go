@@ -14,7 +14,9 @@ import (
 	"github.com/lexlapax/go-llms/pkg/structured/processor"
 )
 
-// StructuredResponse is a convenient wrapper for structured output operations
+// StructuredResponse is a convenient wrapper for structured output operations.
+// It contains the typed result, validation schema, raw LLM response, and performance metrics.
+// The generic type T represents the expected structure of the extracted data.
 type StructuredResponse[T any] struct {
 	Data    T                    // The typed result
 	Schema  *schemaDomain.Schema // The schema used for validation
@@ -22,7 +24,8 @@ type StructuredResponse[T any] struct {
 	Metrics Metrics              // Performance metrics
 }
 
-// Metrics captures performance metrics for structured generation
+// Metrics captures performance metrics for structured generation.
+// It includes token counts and latency measurements for monitoring and optimization.
 type Metrics struct {
 	PromptTokens     int
 	CompletionTokens int
@@ -30,7 +33,10 @@ type Metrics struct {
 	LatencyMs        int
 }
 
-// GenerateTyped generates a typed response from an LLM
+// GenerateTyped generates a typed response from an LLM using reflection.
+// It automatically generates a JSON schema from the type parameter T,
+// enhances the prompt with schema instructions, and validates the response.
+// Returns a StructuredResponse containing the parsed data and metadata.
 func GenerateTyped[T any](
 	ctx context.Context,
 	provider domain.Provider,

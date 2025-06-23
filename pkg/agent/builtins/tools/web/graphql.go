@@ -48,7 +48,10 @@ type GraphQLError struct {
 	Extensions map[string]interface{} `json:"extensions,omitempty"`
 }
 
-// NewGraphQLClient creates a new GraphQL client
+// NewGraphQLClient creates a new GraphQL client for executing queries, mutations, and introspection.
+// It handles GraphQL operations with automatic query parsing, schema validation when available,
+// comprehensive error handling, and support for variables and operation names while integrating
+// seamlessly with the api_client tool for LLM-friendly GraphQL interactions.
 func NewGraphQLClient(endpoint string, httpClient *http.Client, headers map[string]string) *GraphQLClient {
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 30 * time.Second}
@@ -61,7 +64,10 @@ func NewGraphQLClient(endpoint string, httpClient *http.Client, headers map[stri
 	}
 }
 
-// Execute performs a GraphQL query or mutation
+// Execute performs a GraphQL query or mutation with full support for variables and operation names.
+// It parses and validates the query against the schema if available, constructs the proper request format,
+// handles authentication through headers, and returns structured responses with separate data and error fields
+// for comprehensive error handling in GraphQL's unique error model.
 func (c *GraphQLClient) Execute(ctx context.Context, query string, variables map[string]interface{}, operationName string) (*GraphQLResponse, error) {
 	// Parse the query
 	doc, err := parser.ParseQuery(&ast.Source{Input: query})
@@ -124,7 +130,10 @@ func (c *GraphQLClient) Execute(ctx context.Context, query string, variables map
 	return &gqlResp, nil
 }
 
-// Introspect performs a GraphQL introspection query
+// Introspect performs a GraphQL introspection query to discover the API schema.
+// It executes a comprehensive introspection query that retrieves all types, fields, arguments,
+// and their relationships, enabling dynamic schema discovery for GraphQL endpoints and
+// supporting the api_client tool's GraphQL discovery mode for LLM-friendly exploration.
 func (c *GraphQLClient) Introspect(ctx context.Context) (*ast.Schema, error) {
 	introspectionQuery := `
 		query IntrospectionQuery {
@@ -273,7 +282,10 @@ func formatGraphQLErrors(errors []GraphQLError) string {
 	return strings.Join(messages, "; ")
 }
 
-// GenerateLLMGuidance generates helpful guidance for GraphQL errors
+// GenerateLLMGuidance generates helpful guidance for GraphQL errors to assist LLMs in error resolution.
+// It analyzes error messages to provide context-specific suggestions for common GraphQL issues like
+// field existence, variable type mismatches, syntax errors, and authentication problems,
+// making it easier for LLMs to understand and correct GraphQL query issues.
 func GenerateLLMGuidance(err error, schema *ast.Schema) string {
 	errMsg := err.Error()
 

@@ -1,6 +1,8 @@
 // ABOUTME: Enhanced mock provider implementations with pattern-based responses and call tracking
 // ABOUTME: Provides deterministic responses, failure simulation, and comprehensive test support
-
+// Package mocks provides mock implementations of LLM providers for testing purposes.
+// It includes pattern-based response matching, call tracking, and configurable behaviors
+// to facilitate comprehensive testing of LLM-dependent code.
 package mocks
 
 import (
@@ -16,23 +18,36 @@ import (
 
 // Response represents a mock response configuration
 type Response struct {
-	Content  string
-	Error    error
-	Delay    time.Duration
+	// Content is the response text to return
+	Content string
+	// Error is the error to return (if any)
+	Error error
+	// Delay simulates response latency
+	Delay time.Duration
+	// Metadata contains additional response information
 	Metadata map[string]interface{}
 }
 
 // ProviderCall represents a recorded provider call
 type ProviderCall struct {
-	Method    string
-	Prompt    string
-	Messages  []ldomain.Message
-	Schema    *sdomain.Schema
-	Options   []ldomain.Option
-	Response  string
-	Error     error
+	// Method is the name of the method called
+	Method string
+	// Prompt is the text prompt (for non-message calls)
+	Prompt string
+	// Messages contains the message history (for message-based calls)
+	Messages []ldomain.Message
+	// Schema is the output schema (for structured calls)
+	Schema *sdomain.Schema
+	// Options contains the call options
+	Options []ldomain.Option
+	// Response is the returned response content
+	Response string
+	// Error is the returned error (if any)
+	Error error
+	// Timestamp is when the call was made
 	Timestamp time.Time
-	Duration  time.Duration
+	// Duration is how long the call took
+	Duration time.Duration
 }
 
 // MockProvider is an enhanced mock provider with pattern-based responses and call tracking
@@ -415,7 +430,7 @@ func NewTestMockProvider() *TestMockProvider {
 	return tmp
 }
 
-// CustomMockProvider maintains backward compatibility
+// CustomMockProvider maintains backward compatibility with legacy test code
 type CustomMockProvider struct {
 	*MockProvider
 	GenerateMessageFunc    func(ctx context.Context, messages []ldomain.Message, options ...ldomain.Option) (ldomain.Response, error)
@@ -445,9 +460,10 @@ func NewCustomMockProvider() *CustomMockProvider {
 	return cmp
 }
 
-// MockStructuredProvider is a specialized mock for structured data
+// MockStructuredProvider is a specialized mock for structured data testing
 type MockStructuredProvider struct {
 	*MockProvider
+	// Data is the structured data to return
 	Data interface{}
 }
 

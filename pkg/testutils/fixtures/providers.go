@@ -590,6 +590,7 @@ func BasicMockProviderWithContent(content string) *mocks.MockProvider {
 
 // Custom error types for realistic error simulation
 
+// RateLimitError represents an error when API rate limits are exceeded.
 type RateLimitError struct {
 	Message    string
 	RetryAfter time.Duration
@@ -599,6 +600,7 @@ func (e *RateLimitError) Error() string {
 	return e.Message
 }
 
+// AuthenticationError represents an error when authentication fails.
 type AuthenticationError struct {
 	Message string
 }
@@ -607,6 +609,7 @@ func (e *AuthenticationError) Error() string {
 	return e.Message
 }
 
+// NetworkError represents a network-related error during API communication.
 type NetworkError struct {
 	Message string
 	Timeout bool

@@ -450,7 +450,10 @@ func fileSearchMain(ctx *domain.ToolContext, params FileSearchParams) (*FileSear
 	return result, nil
 }
 
-// FileSearch creates a tool for searching patterns in file contents
+// FileSearch creates a tool for searching patterns in file contents with grep-like functionality.
+// It supports both plain text and regular expression patterns, case-sensitive/insensitive matching, and context lines.
+// The tool can search single files or recursively traverse directories with file pattern filtering and binary file detection.
+// Results include exact match positions and optional surrounding context for better understanding of matches.
 func FileSearch() domain.Tool {
 	builder := atools.NewToolBuilder("file_search", "Searches for patterns in file contents").
 		WithFunction(fileSearchMain).

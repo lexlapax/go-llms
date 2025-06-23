@@ -14,7 +14,8 @@ import (
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// ScriptEngine represents a scripting engine type
+// ScriptEngine represents a scripting engine type.
+// It identifies the language or runtime used to execute script-based tools.
 type ScriptEngine string
 
 const (
@@ -25,7 +26,9 @@ const (
 	ScriptEnginePython     ScriptEngine = "python"
 )
 
-// ScriptToolDefinition defines a tool implemented in a scripting language
+// ScriptToolDefinition defines a tool implemented in a scripting language.
+// It contains all necessary information to create and execute a script-based tool,
+// including the script code, schemas, and metadata.
 type ScriptToolDefinition struct {
 	Name            string               `json:"name"`
 	Description     string               `json:"description"`
@@ -42,7 +45,8 @@ type ScriptToolDefinition struct {
 	Context         map[string]any       `json:"context,omitempty"` // Additional context for script execution
 }
 
-// ScriptHandler defines the interface for executing scripts in different languages
+// ScriptHandler defines the interface for executing scripts in different languages.
+// Implementations provide language-specific script execution and validation.
 type ScriptHandler interface {
 	// Execute runs the script with given context, state, and parameters
 	Execute(ctx context.Context, script string, toolCtx *domain.ToolContext, params any) (any, error)
@@ -57,20 +61,31 @@ type ScriptHandler interface {
 	SupportsFeature(feature string) bool
 }
 
-// ScriptToolFactory creates tools from script definitions
+// ScriptToolFactory creates tools from script definitions.
+// It manages script handlers for different engines and provides
+// a unified interface for creating script-based tools.
 type ScriptToolFactory struct {
 	handlers map[ScriptEngine]ScriptHandler
 	mu       sync.RWMutex
 }
 
-// NewScriptToolFactory creates a new script tool factory
+// NewScriptToolFactory creates a new script tool factory.
+// The factory starts with no handlers; they must be registered separately.
+//
+// Returns a new ScriptToolFactory instance.
 func NewScriptToolFactory() *ScriptToolFactory {
 	return &ScriptToolFactory{
 		handlers: make(map[ScriptEngine]ScriptHandler),
 	}
 }
 
-// RegisterScriptHandler registers a handler for a specific scripting engine
+// RegisterScriptHandler registers a handler for a specific scripting engine.
+// Only one handler per engine type is allowed.
+//
+// Parameters:
+//   - handler: The script handler to register
+//
+// Returns an error if handler is nil or engine already has a handler.
 func (f *ScriptToolFactory) RegisterScriptHandler(handler ScriptHandler) error {
 	if handler == nil {
 		return fmt.Errorf("handler cannot be nil")
@@ -88,7 +103,12 @@ func (f *ScriptToolFactory) RegisterScriptHandler(handler ScriptHandler) error {
 	return nil
 }
 
-// GetHandler returns the handler for a specific engine
+// GetHandler returns the handler for a specific engine.
+//
+// Parameters:
+//   - engine: The script engine type
+//
+// Returns the handler and true if found, or nil and false if not.
 func (f *ScriptToolFactory) GetHandler(engine ScriptEngine) (ScriptHandler, bool) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -97,7 +117,14 @@ func (f *ScriptToolFactory) GetHandler(engine ScriptEngine) (ScriptHandler, bool
 	return handler, exists
 }
 
-// CreateTool creates a domain.Tool from a script definition
+// CreateTool creates a domain.Tool from a script definition.
+// It validates the script and creates a tool instance that executes
+// the script using the appropriate handler.
+//
+// Parameters:
+//   - def: The script tool definition
+//
+// Returns the created tool or an error if creation fails.
 func (f *ScriptToolFactory) CreateTool(def ScriptToolDefinition) (domain.Tool, error) {
 	f.mu.RLock()
 	handler, exists := f.handlers[def.Engine]
@@ -121,14 +148,23 @@ func (f *ScriptToolFactory) CreateTool(def ScriptToolDefinition) (domain.Tool, e
 	return tool, nil
 }
 
-// CreateToolFactory creates a ToolFactory function from a script definition
+// CreateToolFactory creates a ToolFactory function from a script definition.
+// This enables lazy tool creation for the discovery system.
+//
+// Parameters:
+//   - def: The script tool definition
+//
+// Returns a ToolFactory that creates the script tool on demand.
 func (f *ScriptToolFactory) CreateToolFactory(def ScriptToolDefinition) ToolFactory {
 	return func() (domain.Tool, error) {
 		return f.CreateTool(def)
 	}
 }
 
-// SupportedEngines returns all supported script engines
+// SupportedEngines returns all supported script engines.
+// These are the engines that have registered handlers.
+//
+// Returns a slice of supported engine types.
 func (f *ScriptToolFactory) SupportedEngines() []ScriptEngine {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -140,7 +176,8 @@ func (f *ScriptToolFactory) SupportedEngines() []ScriptEngine {
 	return engines
 }
 
-// scriptTool implements domain.Tool for script-based tools
+// scriptTool implements domain.Tool for script-based tools.
+// It delegates execution to the appropriate script handler.
 type scriptTool struct {
 	definition ScriptToolDefinition
 	handler    ScriptHandler
@@ -275,7 +312,10 @@ var (
 	scriptFactoryOnce   sync.Once
 )
 
-// GetScriptFactory returns the global script tool factory instance
+// GetScriptFactory returns the global script tool factory instance.
+// It uses a singleton pattern to ensure consistent handler registration.
+//
+// Returns the global ScriptToolFactory.
 func GetScriptFactory() *ScriptToolFactory {
 	scriptFactoryOnce.Do(func() {
 		globalScriptFactory = NewScriptToolFactory()
@@ -283,17 +323,35 @@ func GetScriptFactory() *ScriptToolFactory {
 	return globalScriptFactory
 }
 
-// RegisterScriptHandler registers a script handler globally (REQUIRED FOR DOWNSTREAM)
+// RegisterScriptHandler registers a script handler globally.
+// This is required for downstream scripting engine integration.
+//
+// Parameters:
+//   - handler: The script handler to register
+//
+// Returns an error if registration fails.
 func RegisterScriptHandler(handler ScriptHandler) error {
 	return GetScriptFactory().RegisterScriptHandler(handler)
 }
 
-// CreateScriptTool creates a tool from a script definition using the global factory
+// CreateScriptTool creates a tool from a script definition using the global factory.
+// This is a convenience function for creating script tools.
+//
+// Parameters:
+//   - def: The script tool definition
+//
+// Returns the created tool or an error.
 func CreateScriptTool(def ScriptToolDefinition) (domain.Tool, error) {
 	return GetScriptFactory().CreateTool(def)
 }
 
-// RegisterScriptToolWithDiscovery creates and registers a script tool with the discovery system
+// RegisterScriptToolWithDiscovery creates and registers a script tool with the discovery system.
+// This enables script tools to be discovered and created dynamically.
+//
+// Parameters:
+//   - def: The script tool definition
+//
+// Returns an error if registration fails.
 func RegisterScriptToolWithDiscovery(def ScriptToolDefinition) error {
 	// Create tool factory
 	factory := GetScriptFactory().CreateToolFactory(def)

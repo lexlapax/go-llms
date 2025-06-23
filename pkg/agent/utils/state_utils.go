@@ -12,8 +12,20 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// ExtractValue extracts a value from state using a path
-// Path format: "key" or "key.nested.value" or "key[0].nested"
+// ExtractValue extracts a value from state using a path.
+// The path supports dot notation for nested access and array indexing.
+//
+// Path format examples:
+//   - "key" - simple key access
+//   - "key.nested.value" - nested object access
+//   - "key[0].nested" - array index with nested access
+//   - "items[2].name" - access name field of third array item
+//
+// Parameters:
+//   - state: The state to extract from
+//   - path: The extraction path
+//
+// Returns the extracted value or an error if the path is invalid.
 func ExtractValue(state *domain.State, path string) (interface{}, error) {
 	if state == nil {
 		return nil, fmt.Errorf("state is nil")
@@ -56,7 +68,15 @@ func ExtractValue(state *domain.State, path string) (interface{}, error) {
 	return current, nil
 }
 
-// SetValue sets a value in state using a path
+// SetValue sets a value in state using a path.
+// It creates intermediate structures as needed to support the path.
+//
+// Parameters:
+//   - state: The state to modify
+//   - path: The path where to set the value
+//   - value: The value to set
+//
+// Returns an error if the path is invalid or cannot be created.
 func SetValue(state *domain.State, path string, value interface{}) error {
 	if state == nil {
 		return fmt.Errorf("state is nil")
@@ -103,7 +123,14 @@ func SetValue(state *domain.State, path string, value interface{}) error {
 	return nil
 }
 
-// CompareStates compares two states and returns differences
+// CompareStates compares two states and returns differences.
+// It identifies added, removed, and modified values between states.
+//
+// Parameters:
+//   - state1: The first state (baseline)
+//   - state2: The second state (comparison)
+//
+// Returns a StateDiff containing all differences.
 func CompareStates(state1, state2 *domain.State) StateDiff {
 	diff := StateDiff{
 		Added:    make(map[string]interface{}),
@@ -151,25 +178,35 @@ func CompareStates(state1, state2 *domain.State) StateDiff {
 	return diff
 }
 
-// StateDiff represents differences between two states
+// StateDiff represents differences between two states.
+// It categorizes changes into added, removed, and modified values.
 type StateDiff struct {
 	Added    map[string]interface{}
 	Removed  map[string]interface{}
 	Modified map[string]ValueChange
 }
 
-// ValueChange represents a changed value
+// ValueChange represents a changed value between states.
+// It captures both the old and new values for comparison.
 type ValueChange struct {
 	Old interface{}
 	New interface{}
 }
 
-// IsEmpty returns true if there are no differences
+// IsEmpty returns true if there are no differences.
+// This is useful for checking if two states are identical.
 func (d StateDiff) IsEmpty() bool {
 	return len(d.Added) == 0 && len(d.Removed) == 0 && len(d.Modified) == 0
 }
 
-// ValidateState validates state against common rules
+// ValidateState validates state against common rules.
+// It checks for circular references and size limits to ensure
+// the state is safe to process and store.
+//
+// Parameters:
+//   - state: The state to validate
+//
+// Returns an error if validation fails.
 func ValidateState(state *domain.State) error {
 	if state == nil {
 		return fmt.Errorf("state is nil")
@@ -192,7 +229,14 @@ func ValidateState(state *domain.State) error {
 	return nil
 }
 
-// CopyValues creates a deep copy of values
+// CopyValues creates a deep copy of values.
+// It uses JSON marshaling for reliable deep copying,
+// with a fallback to shallow copy if marshaling fails.
+//
+// Parameters:
+//   - values: The map to copy
+//
+// Returns a deep copy of the values.
 func CopyValues(values map[string]interface{}) map[string]interface{} {
 	if values == nil {
 		return nil
@@ -221,7 +265,14 @@ func CopyValues(values map[string]interface{}) map[string]interface{} {
 	return result
 }
 
-// FilterState creates a new state with only specified keys
+// FilterState creates a new state with only specified keys.
+// Artifacts and messages are preserved in the filtered state.
+//
+// Parameters:
+//   - state: The state to filter
+//   - keys: The keys to include in the filtered state
+//
+// Returns a new state containing only the specified keys.
 func FilterState(state *domain.State, keys []string) *domain.State {
 	if state == nil || len(keys) == 0 {
 		return domain.NewState()
@@ -248,7 +299,15 @@ func FilterState(state *domain.State, keys []string) *domain.State {
 	return filtered
 }
 
-// TransformState applies a transformation function to all values
+// TransformState applies a transformation function to all values.
+// This is useful for data conversion, sanitization, or enrichment.
+// Artifacts and messages are preserved in the transformed state.
+//
+// Parameters:
+//   - state: The state to transform
+//   - transform: Function to apply to each key-value pair
+//
+// Returns a new transformed state or an error if transformation fails.
 func TransformState(state *domain.State, transform func(key string, value interface{}) (interface{}, error)) (*domain.State, error) {
 	if state == nil {
 		return nil, fmt.Errorf("state is nil")
@@ -276,14 +335,16 @@ func TransformState(state *domain.State, transform func(key string, value interf
 	return transformed, nil
 }
 
-// Helper types and functions
-
+// pathPart represents a single component of a path.
+// It can be either a key name or an array index.
 type pathPart struct {
 	key     string
 	isIndex bool
 	index   int
 }
 
+// parsePath parses a path string into path components.
+// It handles dot notation and array indexing.
 func parsePath(path string) []pathPart {
 	var parts []pathPart
 	current := ""
@@ -326,6 +387,8 @@ func parsePath(path string) []pathPart {
 	return parts
 }
 
+// getPathKeys converts path parts back to string representations.
+// Array indices are formatted as "[n]".
 func getPathKeys(parts []pathPart) []string {
 	keys := make([]string, len(parts))
 	for i, p := range parts {
@@ -338,6 +401,8 @@ func getPathKeys(parts []pathPart) []string {
 	return keys
 }
 
+// ensureStructure creates nested structures as needed to support a path.
+// It creates maps for object paths and arrays for index paths.
 func ensureStructure(data map[string]interface{}, parts []pathPart) interface{} {
 	if len(parts) == 0 {
 		return data
@@ -376,6 +441,8 @@ func ensureStructure(data map[string]interface{}, parts []pathPart) interface{} 
 	return current
 }
 
+// deepEqual performs deep equality comparison of two values.
+// It uses JSON comparison for complex types with reflection as fallback.
 func deepEqual(a, b interface{}) bool {
 	// Use JSON comparison for simplicity
 	aJSON, err1 := json.Marshal(a)
@@ -388,6 +455,8 @@ func deepEqual(a, b interface{}) bool {
 	return string(aJSON) == string(bJSON)
 }
 
+// checkCircularReferences detects circular references in data structures.
+// It tracks visited objects to identify cycles.
 func checkCircularReferences(value interface{}, visited map[interface{}]bool) error {
 	switch v := value.(type) {
 	case map[string]interface{}:
@@ -416,6 +485,8 @@ func checkCircularReferences(value interface{}, visited map[interface{}]bool) er
 	return nil
 }
 
+// estimateSize estimates the size of a value in bytes.
+// It uses JSON encoding as a size approximation.
 func estimateSize(value interface{}) int64 {
 	// Simple size estimation using JSON
 	data, err := json.Marshal(value)

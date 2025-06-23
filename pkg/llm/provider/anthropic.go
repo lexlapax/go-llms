@@ -1,5 +1,10 @@
 package provider
 
+// File anthropic.go implements the Provider interface for Anthropic's Claude models.
+// It supports the Messages API with both text and multimodal content, streaming
+// responses, system prompts, and structured output generation. The implementation
+// includes optimized message caching and efficient JSON handling.
+
 // ABOUTME: Anthropic Claude provider implementation for messages API
 // ABOUTME: Supports text/multimodal messages, streaming, and system prompts
 
@@ -34,7 +39,11 @@ type AnthropicProvider struct {
 	messageCache *MessageCache
 }
 
-// NewAnthropicProvider creates a new Anthropic provider
+// NewAnthropicProvider creates a new Anthropic provider instance.
+// The apiKey parameter is required for authentication. The model parameter
+// specifies which Claude model to use (e.g., "claude-3-opus-20240229").
+// Additional options can be provided to customize behavior such as system prompts,
+// metadata, or HTTP client configuration.
 func NewAnthropicProvider(apiKey, model string, options ...domain.ProviderOption) *AnthropicProvider {
 	provider := &AnthropicProvider{
 		apiKey:       apiKey,
@@ -355,7 +364,15 @@ func (p *AnthropicProvider) Stream(ctx context.Context, prompt string, options .
 
 // StreamMessage streams responses from a list of messages
 func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain.Message, options ...domain.Option) (domain.ResponseStream, error) {
-	// Validate content types
+	// StreamMessage implements streaming responses from Anthropic's Messages API using Server-Sent Events.
+	// The implementation handles:
+	// 1. Message validation and format conversion
+	// 2. System message extraction (Anthropic requires separate system parameter)
+	// 3. SSE stream parsing with multiple event types
+	// 4. Token accumulation and forwarding
+	// 5. Graceful error handling and resource cleanup
+
+	// Validate content types - Anthropic has specific multimodal requirements
 	if err := p.validateContentTypesForAnthropic(messages); err != nil {
 		return nil, fmt.Errorf("anthropic: failed to validate content types for streaming: %w", err)
 	}
@@ -412,20 +429,27 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 	responseStream, tokenCh := domain.GetChannelPool().GetResponseStream()
 
 	// Start a goroutine to read the stream
+	// Anthropic's SSE format includes multiple event types:
+	// - message_start: Initial metadata
+	// - content_block_start: Beginning of content generation
+	// - content_block_delta: Incremental text chunks
+	// - content_block_stop: End of content block
+	// - message_delta: Usage statistics
+	// - message_stop: Final event
 	go func() {
 		defer func() { _ = resp.Body.Close() }()
 		defer close(tokenCh)
-		// Return the channel to the pool when done
-		// Note: Put will avoid putting closed channels back
+		// Channel pool note: closed channels won't be returned to pool
 
+		// Use buffered scanner for efficient SSE parsing
 		scanner := bufio.NewScanner(resp.Body)
 		for scanner.Scan() {
-			// Check if context is canceled
+			// Check context cancellation for early exit
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				// Continue
+				// Continue processing
 			}
 
 			line := scanner.Text()
@@ -441,7 +465,8 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 				continue
 			}
 
-			// Determine event type
+			// First, parse just the event type to determine how to handle the data
+			// This two-step parsing avoids unnecessary allocations for unhandled events
 			var event struct {
 				Type string `json:"type"`
 			}
@@ -450,27 +475,35 @@ func (p *AnthropicProvider) StreamMessage(ctx context.Context, messages []domain
 				continue
 			}
 
-			// Process based on event type
+			// Process based on event type - Anthropic sends events in this order:
+			// 1. message_start (initial metadata)
+			// 2. content_block_start (beginning of text)
+			// 3. content_block_delta (text chunks) - main content
+			// 4. content_block_stop (end of text block)
+			// 5. message_delta (usage stats)
+			// 6. message_stop (final event)
 			switch event.Type {
 			case "content_block_delta":
+				// This is the main event type carrying actual text content
 				var deltaEvent struct {
 					Delta struct {
 						Type string `json:"type"`
 						Text string `json:"text"`
 					} `json:"delta"`
 				}
-				// Use optimized JSON unmarshaling from string
+				// Parse the full event to extract text
 				if err := json.UnmarshalFromString(data, &deltaEvent); err != nil {
 					continue
 				}
 
+				// Only process text deltas with actual content
 				if deltaEvent.Delta.Type == "text_delta" && deltaEvent.Delta.Text != "" {
-					// Send the token - use token pool to reduce allocations
+					// Send token through channel with backpressure handling
 					select {
 					case <-ctx.Done():
 						return
 					case tokenCh <- domain.GetTokenPool().NewToken(deltaEvent.Delta.Text, false):
-						// Sent successfully
+						// Token sent to consumer
 					}
 				}
 			case "message_delta":

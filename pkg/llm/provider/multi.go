@@ -31,7 +31,8 @@ var (
 	ErrProviderTimeout = domain.NewProviderError("multi", "all", 0, "provider operation timed out (context.DeadlineExceeded)", domain.ErrTimeout)
 )
 
-// SelectionStrategy defines how to select results when multiple providers return valid responses
+// SelectionStrategy defines how to select results when multiple providers return valid responses.
+// Different strategies optimize for speed, reliability, or accuracy through consensus.
 type SelectionStrategy int
 
 const (
@@ -43,7 +44,9 @@ const (
 	StrategyConsensus
 )
 
-// ProviderWeight defines the weight of a provider in a multi-provider setup
+// ProviderWeight defines the weight of a provider in a multi-provider setup.
+// Weights are used for consensus strategies and provider prioritization.
+// Higher weights give providers more influence in the final result.
 type ProviderWeight struct {
 	Provider domain.Provider
 	Weight   float64 // 0.0 to 1.0, default 1.0
@@ -62,7 +65,9 @@ type fallbackResult struct {
 }
 
 // MultiProvider implements domain.Provider interface and distributes operations
-// across multiple underlying providers with fallback and selection strategies
+// across multiple underlying providers with fallback and selection strategies.
+// It supports concurrent requests, automatic failover, and various result selection
+// strategies including fastest-first, primary-fallback, and consensus voting.
 type MultiProvider struct {
 	providers       []ProviderWeight
 	selectionStrat  SelectionStrategy
@@ -71,7 +76,10 @@ type MultiProvider struct {
 	consensusConfig consensusConfig // Configuration for consensus algorithms
 }
 
-// NewMultiProvider creates a new provider that distributes operations across multiple providers
+// NewMultiProvider creates a new provider that distributes operations across multiple providers.
+// The providers slice defines the available providers with optional weights.
+// The strategy parameter determines how results are selected when multiple providers succeed.
+// Default timeout is 30 seconds, configurable via WithTimeout option.
 func NewMultiProvider(providers []ProviderWeight, strategy SelectionStrategy) *MultiProvider {
 	// Default timeout of 30 seconds
 	return &MultiProvider{
@@ -186,6 +194,22 @@ func (mp *MultiProvider) GenerateWithSchema(ctx context.Context, prompt string, 
 // Note: Unlike the other methods, Stream doesn't try all providers concurrently as this would require
 // complex token aggregation logic. Instead, it follows the selected strategy more directly.
 func (mp *MultiProvider) Stream(ctx context.Context, prompt string, options ...domain.Option) (domain.ResponseStream, error) {
+	// Stream implements streaming for multi-provider configurations using a
+	// fallback strategy. The function:
+	// 1. Validates provider availability
+	// 2. Applies timeout configuration from context or defaults
+	// 3. Selects a provider based on the configured strategy (primary/fastest)
+	// 4. Obtains a response channel from the pool for efficiency
+	// 5. Attempts streaming from the selected provider first
+	// 6. Falls back to other providers sequentially on failure
+	// 7. Aggregates errors from all failed providers for debugging
+	// 8. Returns error details via the stream if all providers fail
+	//
+	// Design decisions:
+	// - Uses goroutine for async streaming to avoid blocking the caller
+	// - Channel pooling reduces GC pressure from repeated allocations
+	// - Sequential fallback (not concurrent) to avoid complex token merging
+	// - Detailed error reporting helps diagnose multi-provider failures
 	if len(mp.providers) == 0 {
 		return nil, ErrNoProviders
 	}
@@ -603,6 +627,23 @@ func (mp *MultiProvider) selectTextResult(results []fallbackResult) (string, err
 
 // selectMessageResult selects a response result based on the configured strategy
 func (mp *MultiProvider) selectMessageResult(results []fallbackResult) (domain.Response, error) {
+	// selectMessageResult implements the core logic for choosing the best response
+	// from multiple provider results. The function:
+	// 1. Validates that we have at least one result
+	// 2. Prioritizes context-related errors (timeout/cancellation) for clarity
+	// 3. Applies the configured selection strategy:
+	//    - StrategyFastest: Returns first successful response by time
+	//    - StrategyPrimary: Prefers primary provider, falls back on failure
+	//    - StrategyConsensus: Uses consensus algorithms for best response
+	// 4. Handles failure gracefully with detailed error aggregation
+	//
+	// Error handling hierarchy:
+	// - Context errors (timeout/cancel) take precedence
+	// - Strategy-specific selection follows
+	// - All-provider failure returns aggregated error details
+	//
+	// The consensus strategy converts responses to text for similarity comparison,
+	// then reconstructs a Response object from the consensus text.
 	if len(results) == 0 {
 		return domain.Response{}, ErrNoSuccessfulCalls
 	}

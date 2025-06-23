@@ -1,5 +1,10 @@
 package provider
 
+// File openai.go implements the Provider interface for OpenAI's chat completion API.
+// It supports both text and multimodal messages, streaming responses, structured output
+// generation with schemas, and various configuration options including organization ID,
+// logit bias, and custom base URLs for API compatibility layers.
+
 // ABOUTME: OpenAI provider implementation for chat completions API
 // ABOUTME: Supports text/multimodal messages, streaming, and structured output
 
@@ -34,7 +39,11 @@ type OpenAIProvider struct {
 	messageCache *MessageCache
 }
 
-// NewOpenAIProvider creates a new OpenAI provider
+// NewOpenAIProvider creates a new OpenAI provider instance.
+// The apiKey parameter is required for authentication. The model parameter
+// specifies which OpenAI model to use (e.g., "gpt-4", "gpt-3.5-turbo").
+// Additional options can be provided to customize behavior such as organization ID,
+// base URL for API compatibility layers, or HTTP client configuration.
 func NewOpenAIProvider(apiKey, model string, options ...domain.ProviderOption) *OpenAIProvider {
 	provider := &OpenAIProvider{
 		apiKey:       apiKey,

@@ -10,7 +10,9 @@ import (
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
-// ParseProviderModelString parses a provider/model string specification
+// ParseProviderModelString parses a provider/model specification string into separate provider and model components.
+// It supports multiple formats and can infer missing information from known patterns.
+//
 // Formats supported:
 //   - "provider/model" (e.g., "openai/gpt-4")
 //   - "model" (e.g., "gpt-4" - provider inferred)
@@ -80,8 +82,10 @@ func ParseProviderModelWithOptions(spec string) (provider, model, useCase string
 	return provider, model, useCase, nil
 }
 
-// NewProviderFromString creates a provider from a string specification
-// Automatically handles API key lookup from environment
+// NewProviderFromString creates a provider from a string specification.
+// It parses provider/model strings, handles aliases, infers missing information,
+// and automatically retrieves API keys from environment variables.
+// Supports formats like "openai/gpt-4", "gpt-4", "claude", "openai/gpt-4:streaming".
 func NewProviderFromString(spec string) (domain.Provider, error) {
 	// Parse the specification with options
 	provider, model, useCase, err := ParseProviderModelWithOptions(spec)

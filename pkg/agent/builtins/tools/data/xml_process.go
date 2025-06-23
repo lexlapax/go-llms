@@ -69,6 +69,9 @@ var xmlProcessParamSchema = &sdomain.Schema{
 }
 
 // XMLProcess creates a tool for processing XML data
+// This tool provides XML manipulation capabilities including parsing,
+// querying with simplified XPath expressions, and converting to JSON.
+// It handles attributes and nested elements.
 func XMLProcess() domain.Tool {
 	// Create output schema for XMLProcessOutput
 	outputSchema := &sdomain.Schema{

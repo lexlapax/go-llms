@@ -14,7 +14,10 @@ import (
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// BaseAgentImpl provides common functionality for all agents
+// BaseAgentImpl provides common functionality for all agents.
+// It implements the domain.BaseAgent interface and handles identity management,
+// hierarchical relationships, event dispatching, and state management.
+// This type should be embedded in concrete agent implementations.
 type BaseAgentImpl struct {
 	mu sync.RWMutex
 
@@ -49,7 +52,10 @@ type BaseAgentImpl struct {
 	initialized bool
 }
 
-// NewBaseAgent creates a new base agent implementation
+// NewBaseAgent creates a new base agent implementation with the given properties.
+// It generates a unique ID, initializes default configuration with 30s timeout,
+// 3 retries, and enables state inheritance by default. The returned agent
+// can be embedded in concrete agent types or used directly for simple agents.
 func NewBaseAgent(name, description string, agentType domain.AgentType) *BaseAgentImpl {
 	return &BaseAgentImpl{
 		id:          uuid.New().String(),

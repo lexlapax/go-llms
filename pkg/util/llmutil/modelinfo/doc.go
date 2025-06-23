@@ -1,3 +1,5 @@
+// ABOUTME: Model information package providing LLM inventory and capability discovery.
+// ABOUTME: Aggregates model data from providers with caching and service abstractions.
 // Package modelinfo provides structures and functions to fetch, aggregate,
 // and cache information about available Large Language Models (LLMs)
 // from various providers.

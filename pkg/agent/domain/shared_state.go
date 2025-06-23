@@ -7,7 +7,9 @@ import (
 	"sync"
 )
 
-// SharedStateContext provides a state context that shares data with a parent state
+// SharedStateContext provides a state context that shares data with a parent state.
+// It allows child agents to inherit values from parent state while maintaining
+// their own local modifications and overrides for hierarchical agent workflows.
 type SharedStateContext struct {
 	mu sync.RWMutex
 
@@ -23,7 +25,9 @@ type SharedStateContext struct {
 	inheritMetadata  bool // Whether to inherit parent metadata
 }
 
-// NewSharedStateContext creates a new shared state context
+// NewSharedStateContext creates a new shared state context with parent state.
+// By default inherits messages, artifacts, and metadata from the parent.
+// Local state is initialized empty and can override parent values.
 func NewSharedStateContext(parent StateReader) *SharedStateContext {
 	return &SharedStateContext{
 		parent:           parent,
@@ -34,7 +38,9 @@ func NewSharedStateContext(parent StateReader) *SharedStateContext {
 	}
 }
 
-// WithInheritanceConfig configures what to inherit from parent
+// WithInheritanceConfig configures which parent state components to inherit.
+// Allows fine-grained control over messages, artifacts, and metadata inheritance.
+// Returns the context for method chaining.
 func (ssc *SharedStateContext) WithInheritanceConfig(messages, artifacts, metadata bool) *SharedStateContext {
 	ssc.mu.Lock()
 	defer ssc.mu.Unlock()
@@ -45,7 +51,9 @@ func (ssc *SharedStateContext) WithInheritanceConfig(messages, artifacts, metada
 	return ssc
 }
 
-// Get retrieves a value, checking local state first, then parent
+// Get retrieves a value using hierarchical lookup.
+// Checks local state first for overrides, then falls back to parent state.
+// This implements the inheritance and override semantics.
 func (ssc *SharedStateContext) Get(key string) (interface{}, bool) {
 	ssc.mu.RLock()
 	defer ssc.mu.RUnlock()

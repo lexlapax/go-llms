@@ -206,12 +206,14 @@ type SecurityScheme struct {
 type SecurityRequirement map[string][]string
 
 // Supporting types (simplified for brevity)
+// TagObject describes tags for API documentation and grouping.
 type TagObject struct {
 	Name         string        `json:"name" yaml:"name"`
 	Description  string        `json:"description,omitempty" yaml:"description,omitempty"`
 	ExternalDocs *ExternalDocs `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
 }
 
+// Example represents an example of a schema, parameter, or response.
 type Example struct {
 	Summary       string      `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description   string      `json:"description,omitempty" yaml:"description,omitempty"`
@@ -219,6 +221,7 @@ type Example struct {
 	ExternalValue string      `json:"externalValue,omitempty" yaml:"externalValue,omitempty"`
 }
 
+// Header represents a header parameter in an HTTP response.
 type Header struct {
 	Description     string             `json:"description,omitempty" yaml:"description,omitempty"`
 	Required        bool               `json:"required,omitempty" yaml:"required,omitempty"`
@@ -232,6 +235,7 @@ type Header struct {
 	Examples        map[string]Example `json:"examples,omitempty" yaml:"examples,omitempty"`
 }
 
+// Link represents a design-time link for a response.
 type Link struct {
 	OperationRef string                 `json:"operationRef,omitempty" yaml:"operationRef,omitempty"`
 	OperationID  string                 `json:"operationId,omitempty" yaml:"operationId,omitempty"`
@@ -241,8 +245,10 @@ type Link struct {
 	Server       *ServerObject          `json:"server,omitempty" yaml:"server,omitempty"`
 }
 
+// Callback represents a map of possible out-of band callbacks related to the parent operation.
 type Callback map[string]PathItem
 
+// Encoding represents encoding information for a single schema property.
 type Encoding struct {
 	ContentType   string            `json:"contentType,omitempty" yaml:"contentType,omitempty"`
 	Headers       map[string]Header `json:"headers,omitempty" yaml:"headers,omitempty"`
@@ -251,11 +257,13 @@ type Encoding struct {
 	AllowReserved bool              `json:"allowReserved,omitempty" yaml:"allowReserved,omitempty"`
 }
 
+// Discriminator represents a discriminator object for polymorphism support.
 type Discriminator struct {
 	PropertyName string            `json:"propertyName" yaml:"propertyName"`
 	Mapping      map[string]string `json:"mapping,omitempty" yaml:"mapping,omitempty"`
 }
 
+// XML represents metadata about the XML representation of a schema.
 type XML struct {
 	Name      string `json:"name,omitempty" yaml:"name,omitempty"`
 	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
@@ -264,11 +272,13 @@ type XML struct {
 	Wrapped   bool   `json:"wrapped,omitempty" yaml:"wrapped,omitempty"`
 }
 
+// ExternalDocs represents a reference to external documentation.
 type ExternalDocs struct {
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	URL         string `json:"url" yaml:"url"`
 }
 
+// OAuthFlows represents OAuth flow configuration objects.
 type OAuthFlows struct {
 	Implicit          *OAuthFlow `json:"implicit,omitempty" yaml:"implicit,omitempty"`
 	Password          *OAuthFlow `json:"password,omitempty" yaml:"password,omitempty"`
@@ -276,6 +286,7 @@ type OAuthFlows struct {
 	AuthorizationCode *OAuthFlow `json:"authorizationCode,omitempty" yaml:"authorizationCode,omitempty"`
 }
 
+// OAuthFlow represents configuration details for a supported OAuth flow.
 type OAuthFlow struct {
 	AuthorizationURL string            `json:"authorizationUrl,omitempty" yaml:"authorizationUrl,omitempty"`
 	TokenURL         string            `json:"tokenUrl,omitempty" yaml:"tokenUrl,omitempty"`
@@ -289,7 +300,10 @@ type OpenAPIParser struct {
 	timeout time.Duration
 }
 
-// NewOpenAPIParser creates a new OpenAPI spec parser
+// NewOpenAPIParser creates a new OpenAPI specification parser for API discovery and validation.
+// It handles OpenAPI 3.0/3.1 specifications in both JSON and YAML formats, providing
+// automatic endpoint discovery, operation enumeration, parameter validation, and
+// LLM-friendly metadata extraction for seamless API exploration and integration.
 func NewOpenAPIParser() *OpenAPIParser {
 	return &OpenAPIParser{
 		client: &http.Client{
@@ -299,7 +313,10 @@ func NewOpenAPIParser() *OpenAPIParser {
 	}
 }
 
-// FetchSpec fetches an OpenAPI specification from a URL with caching
+// FetchSpec fetches an OpenAPI specification from a URL with automatic caching.
+// It retrieves OpenAPI/Swagger specifications via HTTP, validates the content,
+// parses JSON or YAML formats, and caches the results for improved performance
+// while creating operation discovery instances for efficient API exploration.
 func (p *OpenAPIParser) FetchSpec(specURL string) (*OpenAPISpec, error) {
 	// Check cache first
 	cache := GetOpenAPICache()
@@ -337,7 +354,10 @@ func (p *OpenAPIParser) FetchSpec(specURL string) (*OpenAPISpec, error) {
 	return spec, nil
 }
 
-// ParseSpec parses an OpenAPI specification from raw bytes
+// ParseSpec parses an OpenAPI specification from raw bytes in JSON or YAML format.
+// It automatically detects the format, validates required fields and version compatibility,
+// and returns a structured representation of the API specification suitable for
+// operation discovery, validation, and LLM-friendly API exploration.
 func (p *OpenAPIParser) ParseSpec(data []byte, source string) (*OpenAPISpec, error) {
 	var spec OpenAPISpec
 
@@ -461,7 +481,10 @@ type OperationDiscovery struct {
 	operations []EnhancedOperationInfo // Cache enumerated operations
 }
 
-// NewOperationDiscovery creates a new operation discovery instance
+// NewOperationDiscovery creates a new operation discovery instance for advanced API exploration.
+// It provides comprehensive operation enumeration, parameter extraction, schema validation,
+// efficient operation lookup via indexing, and LLM-specific guidance generation
+// to facilitate intelligent API interaction and automated request construction.
 func NewOperationDiscovery(spec *OpenAPISpec) *OperationDiscovery {
 	// Create validator without coercion to ensure proper constraint validation
 	// Note: Coercion can interfere with constraint validation for numbers/integers
@@ -474,7 +497,10 @@ func NewOperationDiscovery(spec *OpenAPISpec) *OperationDiscovery {
 	}
 }
 
-// EnumerateOperations returns all operations with comprehensive metadata
+// EnumerateOperations returns all operations with comprehensive metadata for LLM consumption.
+// It extracts and enhances operation information including parameters, request/response schemas,
+// authentication requirements, and generates LLM-specific guidance, caching results
+// for efficient repeated access while building operation indexes for fast lookups.
 func (od *OperationDiscovery) EnumerateOperations() []EnhancedOperationInfo {
 	// Return cached operations if already enumerated
 	if od.operations != nil {
@@ -1633,7 +1659,10 @@ type ValidationGuidance struct {
 	DocumentationURL  string            `json:"documentation_url,omitempty"`
 }
 
-// ValidateRequest performs comprehensive request validation with detailed reporting
+// ValidateRequest performs comprehensive request validation with detailed reporting for API operations.
+// It validates parameters and request bodies against OpenAPI schemas, provides detailed error messages
+// with field-level guidance, generates actionable suggestions for fixing validation errors,
+// and supports flexible validation options for different use cases and error tolerance levels.
 func (od *OperationDiscovery) ValidateRequest(operationID string, parameters map[string]interface{}, requestBody interface{}, options *ValidationOptions) (*ValidationReport, error) {
 	// Find the operation
 	op := od.FindOperationByID(operationID)

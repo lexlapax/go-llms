@@ -332,19 +332,10 @@ func init() {
 	})
 }
 
-// WebSearch creates a tool for performing web searches
-// This is a built-in tool optimized for:
-// - Multiple search engine support (DuckDuckGo, Brave, Tavily, Serpapi, Serper.dev)
-// - Automatic engine selection based on available API keys
-// - Context-aware cancellation
-// - Safe search filtering
-// - Result limit control
-//
-// Environment variables:
-// - BRAVE_API_KEY: Brave Search API key
-// - TAVILY_API_KEY: Tavily Search API key
-// - SERPAPI_API_KEY: Serpapi Search API key (Google search results)
-// - SERPERDEV_API_KEY: Serper.dev Search API key (Google search results)
+// WebSearch creates a tool for performing web searches using various search engines with automatic API key detection.
+// It supports multiple search providers (DuckDuckGo, Brave, Tavily, Serpapi, Serper.dev), automatically selects
+// the best available engine based on API keys, provides safe search filtering and result limit control,
+// and includes authentication support for custom search endpoints with comprehensive error handling.
 func WebSearch() domain.Tool {
 	builder := atools.NewToolBuilder("web_search", "Performs web searches using various search engines with automatic API key detection").
 		WithFunction(func(ctx *domain.ToolContext, params WebSearchParams) (*WebSearchResults, error) {
@@ -1240,8 +1231,9 @@ func searchSerperDev(ctx *domain.ToolContext, client *http.Client, query string,
 	return results, nil
 }
 
-// MustGetWebSearch retrieves the registered WebSearch tool or panics
+// MustGetWebSearch retrieves the registered WebSearch tool or panics if not found.
 // This is a convenience function for users who want to ensure the tool exists
+// and prefer a panic over error handling for missing tools in their initialization code.
 func MustGetWebSearch() domain.Tool {
 	return tools.MustGetTool("web_search")
 }

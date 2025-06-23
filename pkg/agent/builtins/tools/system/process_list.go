@@ -259,12 +259,10 @@ func processList(ctx *domain.ToolContext, params ProcessListParams) (*ProcessLis
 	return result, nil
 }
 
-// ProcessList creates a tool for listing running processes
-// This is a built-in tool optimized for:
-// - Cross-platform process enumeration
-// - Process filtering and sorting
-// - Resource usage monitoring
-// - System diagnostics
+// ProcessList creates a tool for listing and analyzing running system processes across different platforms
+// (Unix/Linux/macOS/Windows) with support for filtering by name, sorting by various metrics (PID, CPU, memory),
+// and retrieving detailed process information including resource usage. The tool provides consistent output
+// across platforms while handling platform-specific limitations gracefully.
 func ProcessList() domain.Tool {
 	builder := atools.NewToolBuilder("process_list", "Lists running processes with filtering and sorting").
 		WithFunction(processList).

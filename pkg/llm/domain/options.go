@@ -3,10 +3,13 @@ package domain
 // ABOUTME: Common LLM generation options for controlling output behavior
 // ABOUTME: Includes settings for temperature, tokens, response format, and tools
 
-// Option configures LLM provider behavior
+// Option represents a functional option for configuring LLM provider behavior.
+// Options are applied in order to customize generation parameters.
 type Option func(*ProviderOptions)
 
-// ProviderOptions stores configuration for LLM providers
+// ProviderOptions contains configuration parameters for LLM generation requests.
+// These options control various aspects of text generation including randomness,
+// length limits, and sampling behavior.
 type ProviderOptions struct {
 	Temperature      float64
 	MaxTokens        int

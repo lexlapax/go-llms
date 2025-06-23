@@ -10,7 +10,9 @@ import (
 	"time"
 )
 
-// BaseRecoveryStrategy provides common functionality for recovery strategies
+// BaseRecoveryStrategy provides common functionality for recovery strategies.
+// It serves as a foundation for implementing specific recovery patterns
+// with configurable retry attempts and delay parameters.
 type BaseRecoveryStrategy struct {
 	name        string
 	maxAttempts int
@@ -18,24 +20,40 @@ type BaseRecoveryStrategy struct {
 	maxDelay    time.Duration
 }
 
-// Name returns the strategy name
+// Name returns the strategy name.
+// Implements RecoveryStrategy.Name.
+//
+// Returns the strategy identifier.
 func (s *BaseRecoveryStrategy) Name() string {
 	return s.name
 }
 
-// MaxAttempts returns the maximum number of attempts
+// MaxAttempts returns the maximum number of attempts.
+// Implements RecoveryStrategy.MaxAttempts.
+//
+// Returns the configured maximum retry attempts.
 func (s *BaseRecoveryStrategy) MaxAttempts() int {
 	return s.maxAttempts
 }
 
-// ExponentialBackoffStrategy implements exponential backoff with jitter
+// ExponentialBackoffStrategy implements exponential backoff with jitter.
+// It increases delay exponentially between retries with optional
+// randomization to prevent thundering herd problems.
 type ExponentialBackoffStrategy struct {
 	BaseRecoveryStrategy
 	factor float64
 	jitter bool
 }
 
-// NewExponentialBackoffStrategy creates a new exponential backoff strategy
+// NewExponentialBackoffStrategy creates a new exponential backoff strategy.
+// The delay grows exponentially (delay * 2^attempt) up to maxDelay.
+//
+// Parameters:
+//   - maxAttempts: Maximum number of retry attempts
+//   - baseDelay: Initial delay duration
+//   - maxDelay: Maximum delay duration cap
+//
+// Returns a configured ExponentialBackoffStrategy.
 func NewExponentialBackoffStrategy(maxAttempts int, baseDelay, maxDelay time.Duration) *ExponentialBackoffStrategy {
 	return &ExponentialBackoffStrategy{
 		BaseRecoveryStrategy: BaseRecoveryStrategy{
@@ -49,19 +67,41 @@ func NewExponentialBackoffStrategy(maxAttempts int, baseDelay, maxDelay time.Dur
 	}
 }
 
-// CanRecover checks if the error is recoverable
+// CanRecover checks if the error is recoverable.
+// Uses IsRetryableError to determine if retry is appropriate.
+// Implements RecoveryStrategy.CanRecover.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error is retryable.
 func (s *ExponentialBackoffStrategy) CanRecover(err error) bool {
 	// Check if error is marked as retryable
 	return IsRetryableError(err)
 }
 
-// Recover attempts recovery (returns error as retry is handled externally)
+// Recover attempts recovery (returns error as retry is handled externally).
+// This strategy doesn't perform actual recovery but signals retry requirement.
+// Implements RecoveryStrategy.Recover.
+//
+// Parameters:
+//   - err: The error to recover from
+//   - context: Additional context information
+//
+// Returns a wrapped error indicating retry is needed.
 func (s *ExponentialBackoffStrategy) Recover(err error, context map[string]interface{}) error {
 	// This strategy doesn't perform recovery, just determines if retry is possible
 	return fmt.Errorf("retry required: %w", err)
 }
 
-// BackoffDuration calculates the backoff duration for an attempt
+// BackoffDuration calculates the backoff duration for an attempt.
+// Uses exponential growth with optional jitter (±20% randomization).
+// Implements RecoveryStrategy.BackoffDuration.
+//
+// Parameters:
+//   - attempt: The attempt number (1-based)
+//
+// Returns the calculated backoff duration.
 func (s *ExponentialBackoffStrategy) BackoffDuration(attempt int) time.Duration {
 	if attempt <= 0 {
 		return 0
@@ -86,13 +126,22 @@ func (s *ExponentialBackoffStrategy) BackoffDuration(attempt int) time.Duration 
 	return time.Duration(delay)
 }
 
-// LinearBackoffStrategy implements linear backoff
+// LinearBackoffStrategy implements linear backoff.
+// It increases delay linearly between retries, providing
+// predictable and uniform retry intervals.
 type LinearBackoffStrategy struct {
 	BaseRecoveryStrategy
 	increment time.Duration
 }
 
-// NewLinearBackoffStrategy creates a new linear backoff strategy
+// NewLinearBackoffStrategy creates a new linear backoff strategy.
+// The delay grows linearly (increment * attempt).
+//
+// Parameters:
+//   - maxAttempts: Maximum number of retry attempts
+//   - increment: Delay increment per attempt
+//
+// Returns a configured LinearBackoffStrategy.
 func NewLinearBackoffStrategy(maxAttempts int, increment time.Duration) *LinearBackoffStrategy {
 	return &LinearBackoffStrategy{
 		BaseRecoveryStrategy: BaseRecoveryStrategy{
@@ -105,17 +154,37 @@ func NewLinearBackoffStrategy(maxAttempts int, increment time.Duration) *LinearB
 	}
 }
 
-// CanRecover checks if the error is recoverable
+// CanRecover checks if the error is recoverable.
+// Implements RecoveryStrategy.CanRecover.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error is retryable.
 func (s *LinearBackoffStrategy) CanRecover(err error) bool {
 	return IsRetryableError(err)
 }
 
-// Recover attempts recovery
+// Recover attempts recovery.
+// Implements RecoveryStrategy.Recover.
+//
+// Parameters:
+//   - err: The error to recover from
+//   - context: Additional context information
+//
+// Returns a wrapped error indicating retry is needed.
 func (s *LinearBackoffStrategy) Recover(err error, context map[string]interface{}) error {
 	return fmt.Errorf("retry required: %w", err)
 }
 
-// BackoffDuration calculates the backoff duration
+// BackoffDuration calculates the backoff duration.
+// Uses linear growth (increment * attempt).
+// Implements RecoveryStrategy.BackoffDuration.
+//
+// Parameters:
+//   - attempt: The attempt number (1-based)
+//
+// Returns the calculated backoff duration.
 func (s *LinearBackoffStrategy) BackoffDuration(attempt int) time.Duration {
 	if attempt <= 0 {
 		return 0
@@ -123,12 +192,17 @@ func (s *LinearBackoffStrategy) BackoffDuration(attempt int) time.Duration {
 	return s.increment * time.Duration(attempt)
 }
 
-// NoRetryStrategy never retries
+// NoRetryStrategy never retries.
+// This strategy immediately fails without any retry attempts,
+// useful for non-recoverable errors or when retries are disabled.
 type NoRetryStrategy struct {
 	BaseRecoveryStrategy
 }
 
-// NewNoRetryStrategy creates a strategy that never retries
+// NewNoRetryStrategy creates a strategy that never retries.
+// Useful for fatal errors or when retry logic should be disabled.
+//
+// Returns a configured NoRetryStrategy.
 func NewNoRetryStrategy() *NoRetryStrategy {
 	return &NoRetryStrategy{
 		BaseRecoveryStrategy: BaseRecoveryStrategy{
@@ -138,28 +212,55 @@ func NewNoRetryStrategy() *NoRetryStrategy {
 	}
 }
 
-// CanRecover always returns false
+// CanRecover always returns false.
+// Implements RecoveryStrategy.CanRecover.
+//
+// Parameters:
+//   - err: The error to check (ignored)
+//
+// Always returns false.
 func (s *NoRetryStrategy) CanRecover(err error) bool {
 	return false
 }
 
-// Recover returns the error unchanged
+// Recover returns the error unchanged.
+// Implements RecoveryStrategy.Recover.
+//
+// Parameters:
+//   - err: The error to return
+//   - context: Additional context (ignored)
+//
+// Returns the original error.
 func (s *NoRetryStrategy) Recover(err error, context map[string]interface{}) error {
 	return err
 }
 
-// BackoffDuration always returns 0
+// BackoffDuration always returns 0.
+// Implements RecoveryStrategy.BackoffDuration.
+//
+// Parameters:
+//   - attempt: The attempt number (ignored)
+//
+// Always returns zero duration.
 func (s *NoRetryStrategy) BackoffDuration(attempt int) time.Duration {
 	return 0
 }
 
-// FallbackStrategy attempts to use a fallback value or function
+// FallbackStrategy attempts to use a fallback value or function.
+// It provides an alternative path when the primary operation fails,
+// implementing the fallback pattern for graceful degradation.
 type FallbackStrategy struct {
 	BaseRecoveryStrategy
 	fallbackFunc func(error, map[string]interface{}) error
 }
 
-// NewFallbackStrategy creates a strategy that uses a fallback
+// NewFallbackStrategy creates a strategy that uses a fallback.
+// The fallback function is called when the primary operation fails.
+//
+// Parameters:
+//   - fallbackFunc: Function to call for fallback behavior
+//
+// Returns a configured FallbackStrategy.
 func NewFallbackStrategy(fallbackFunc func(error, map[string]interface{}) error) *FallbackStrategy {
 	return &FallbackStrategy{
 		BaseRecoveryStrategy: BaseRecoveryStrategy{
@@ -170,12 +271,26 @@ func NewFallbackStrategy(fallbackFunc func(error, map[string]interface{}) error)
 	}
 }
 
-// CanRecover checks if fallback is available
+// CanRecover checks if fallback is available.
+// Implements RecoveryStrategy.CanRecover.
+//
+// Parameters:
+//   - err: The error to check (ignored)
+//
+// Returns true if a fallback function is configured.
 func (s *FallbackStrategy) CanRecover(err error) bool {
 	return s.fallbackFunc != nil
 }
 
-// Recover attempts to use the fallback
+// Recover attempts to use the fallback.
+// Calls the configured fallback function or returns the original error.
+// Implements RecoveryStrategy.Recover.
+//
+// Parameters:
+//   - err: The error that triggered fallback
+//   - context: Additional context for the fallback
+//
+// Returns the result of the fallback or the original error.
 func (s *FallbackStrategy) Recover(err error, context map[string]interface{}) error {
 	if s.fallbackFunc == nil {
 		return err
@@ -183,12 +298,21 @@ func (s *FallbackStrategy) Recover(err error, context map[string]interface{}) er
 	return s.fallbackFunc(err, context)
 }
 
-// BackoffDuration returns 0 (immediate fallback)
+// BackoffDuration returns 0 (immediate fallback).
+// Fallback strategies execute immediately without delay.
+// Implements RecoveryStrategy.BackoffDuration.
+//
+// Parameters:
+//   - attempt: The attempt number (ignored)
+//
+// Always returns zero duration.
 func (s *FallbackStrategy) BackoffDuration(attempt int) time.Duration {
 	return 0
 }
 
-// CircuitBreakerStrategy implements circuit breaker pattern
+// CircuitBreakerStrategy implements circuit breaker pattern.
+// It prevents cascading failures by temporarily blocking requests
+// after a threshold of failures, allowing the system to recover.
 type CircuitBreakerStrategy struct {
 	BaseRecoveryStrategy
 	failureThreshold int
@@ -198,7 +322,14 @@ type CircuitBreakerStrategy struct {
 	lastFailureTime  time.Time
 }
 
-// NewCircuitBreakerStrategy creates a circuit breaker strategy
+// NewCircuitBreakerStrategy creates a circuit breaker strategy.
+// The circuit opens after failureThreshold failures and resets after resetTimeout.
+//
+// Parameters:
+//   - failureThreshold: Number of failures before opening circuit
+//   - resetTimeout: Duration before attempting to close circuit
+//
+// Returns a configured CircuitBreakerStrategy.
 func NewCircuitBreakerStrategy(failureThreshold int, resetTimeout time.Duration) *CircuitBreakerStrategy {
 	return &CircuitBreakerStrategy{
 		BaseRecoveryStrategy: BaseRecoveryStrategy{
@@ -211,7 +342,14 @@ func NewCircuitBreakerStrategy(failureThreshold int, resetTimeout time.Duration)
 	}
 }
 
-// CanRecover checks circuit breaker state
+// CanRecover checks circuit breaker state.
+// Returns true if circuit is closed or half-open.
+// Implements RecoveryStrategy.CanRecover.
+//
+// Parameters:
+//   - err: The error to check (used for state transitions)
+//
+// Returns true if recovery attempt is allowed.
 func (s *CircuitBreakerStrategy) CanRecover(err error) bool {
 	now := time.Now()
 
@@ -230,7 +368,15 @@ func (s *CircuitBreakerStrategy) CanRecover(err error) bool {
 	}
 }
 
-// Recover updates circuit breaker state
+// Recover updates circuit breaker state.
+// Tracks failures and manages state transitions between closed, open, and half-open.
+// Implements RecoveryStrategy.Recover.
+//
+// Parameters:
+//   - err: The error (nil indicates success)
+//   - context: Additional context information
+//
+// Returns wrapped error or nil on success.
 func (s *CircuitBreakerStrategy) Recover(err error, context map[string]interface{}) error {
 	if err != nil {
 		s.failures++
@@ -248,7 +394,14 @@ func (s *CircuitBreakerStrategy) Recover(err error, context map[string]interface
 	return nil
 }
 
-// BackoffDuration returns 0 or reset timeout
+// BackoffDuration returns 0 or reset timeout.
+// Returns remaining time before circuit can transition to half-open.
+// Implements RecoveryStrategy.BackoffDuration.
+//
+// Parameters:
+//   - attempt: The attempt number (ignored)
+//
+// Returns duration to wait or zero if ready.
 func (s *CircuitBreakerStrategy) BackoffDuration(attempt int) time.Duration {
 	if s.state == "open" {
 		remaining := s.resetTimeout - time.Since(s.lastFailureTime)
@@ -259,13 +412,21 @@ func (s *CircuitBreakerStrategy) BackoffDuration(attempt int) time.Duration {
 	return 0
 }
 
-// CompositeStrategy combines multiple strategies
+// CompositeStrategy combines multiple strategies.
+// It tries strategies in order until one succeeds or all fail,
+// enabling complex recovery patterns through composition.
 type CompositeStrategy struct {
 	strategies []RecoveryStrategy
 	current    int
 }
 
-// NewCompositeStrategy creates a strategy that tries multiple strategies in order
+// NewCompositeStrategy creates a strategy that tries multiple strategies in order.
+// Strategies are attempted sequentially until one succeeds.
+//
+// Parameters:
+//   - strategies: Variable number of strategies to compose
+//
+// Returns a configured CompositeStrategy.
 func NewCompositeStrategy(strategies ...RecoveryStrategy) *CompositeStrategy {
 	return &CompositeStrategy{
 		strategies: strategies,
@@ -273,12 +434,22 @@ func NewCompositeStrategy(strategies ...RecoveryStrategy) *CompositeStrategy {
 	}
 }
 
-// Name returns the composite strategy name
+// Name returns the composite strategy name.
+// Implements RecoveryStrategy.Name.
+//
+// Returns "composite".
 func (s *CompositeStrategy) Name() string {
 	return "composite"
 }
 
-// CanRecover checks if any strategy can recover
+// CanRecover checks if any strategy can recover.
+// Returns true if at least one composed strategy can recover.
+// Implements RecoveryStrategy.CanRecover.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if any strategy can handle the error.
 func (s *CompositeStrategy) CanRecover(err error) bool {
 	for _, strategy := range s.strategies {
 		if strategy.CanRecover(err) {
@@ -288,7 +459,15 @@ func (s *CompositeStrategy) CanRecover(err error) bool {
 	return false
 }
 
-// Recover attempts recovery with current strategy
+// Recover attempts recovery with current strategy.
+// Tries strategies in order, advancing to the next on failure.
+// Implements RecoveryStrategy.Recover.
+//
+// Parameters:
+//   - err: The error to recover from
+//   - context: Additional context information
+//
+// Returns error from the current strategy or exhaustion error.
 func (s *CompositeStrategy) Recover(err error, context map[string]interface{}) error {
 	if s.current >= len(s.strategies) {
 		return fmt.Errorf("all strategies exhausted: %w", err)
@@ -310,7 +489,10 @@ func (s *CompositeStrategy) Recover(err error, context map[string]interface{}) e
 	return result
 }
 
-// MaxAttempts returns sum of all strategy attempts
+// MaxAttempts returns sum of all strategy attempts.
+// Implements RecoveryStrategy.MaxAttempts.
+//
+// Returns total attempts across all composed strategies.
 func (s *CompositeStrategy) MaxAttempts() int {
 	total := 0
 	for _, strategy := range s.strategies {
@@ -319,7 +501,13 @@ func (s *CompositeStrategy) MaxAttempts() int {
 	return total
 }
 
-// BackoffDuration delegates to current strategy
+// BackoffDuration delegates to current strategy.
+// Implements RecoveryStrategy.BackoffDuration.
+//
+// Parameters:
+//   - attempt: The attempt number
+//
+// Returns duration from the current strategy or zero.
 func (s *CompositeStrategy) BackoffDuration(attempt int) time.Duration {
 	if s.current >= len(s.strategies) {
 		return 0
@@ -327,7 +515,8 @@ func (s *CompositeStrategy) BackoffDuration(attempt int) time.Duration {
 	return s.strategies[s.current].BackoffDuration(attempt)
 }
 
-// RecoveryRegistry manages recovery strategies
+// recoveryRegistry manages recovery strategies.
+// Internal registry for storing and retrieving named strategies.
 type recoveryRegistry struct {
 	strategies map[string]RecoveryStrategy
 }
@@ -336,18 +525,35 @@ var defaultRegistry = &recoveryRegistry{
 	strategies: make(map[string]RecoveryStrategy),
 }
 
-// RegisterRecoveryStrategy registers a recovery strategy
+// RegisterRecoveryStrategy registers a recovery strategy.
+// Strategies can be retrieved by name for reuse across the application.
+//
+// Parameters:
+//   - name: The strategy identifier
+//   - strategy: The strategy implementation
 func RegisterRecoveryStrategy(name string, strategy RecoveryStrategy) {
 	defaultRegistry.strategies[name] = strategy
 }
 
-// GetRecoveryStrategy retrieves a recovery strategy by name
+// GetRecoveryStrategy retrieves a recovery strategy by name.
+//
+// Parameters:
+//   - name: The strategy identifier
+//
+// Returns the strategy and a boolean indicating if it was found.
 func GetRecoveryStrategy(name string) (RecoveryStrategy, bool) {
 	strategy, ok := defaultRegistry.strategies[name]
 	return strategy, ok
 }
 
-// DefaultRecoveryStrategies returns commonly used strategies
+// DefaultRecoveryStrategies returns commonly used strategies.
+// Provides pre-configured strategies for common recovery patterns:
+// - "exponential": Exponential backoff with jitter
+// - "linear": Linear backoff
+// - "no_retry": No retry strategy
+// - "circuit": Circuit breaker pattern
+//
+// Returns a map of strategy names to implementations.
 func DefaultRecoveryStrategies() map[string]RecoveryStrategy {
 	return map[string]RecoveryStrategy{
 		"exponential": NewExponentialBackoffStrategy(5, 100*time.Millisecond, 30*time.Second),
@@ -357,7 +563,8 @@ func DefaultRecoveryStrategies() map[string]RecoveryStrategy {
 	}
 }
 
-// init registers default strategies
+// init registers default strategies.
+// Automatically registers common recovery strategies on package initialization.
 func init() {
 	for name, strategy := range DefaultRecoveryStrategies() {
 		RegisterRecoveryStrategy(name, strategy)

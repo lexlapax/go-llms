@@ -8,7 +8,9 @@ import (
 	"time"
 )
 
-// ToolContext provides rich execution context for tools
+// ToolContext provides rich execution context for tools during execution.
+// It combines Go context with agent state access, event emission capabilities,
+// and metadata about the current execution for comprehensive tool support.
 type ToolContext struct {
 	// Standard Go context for cancellation and deadlines
 	Context context.Context

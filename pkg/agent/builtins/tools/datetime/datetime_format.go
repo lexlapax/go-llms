@@ -209,7 +209,10 @@ func dateTimeFormatExecute(ctx *agentDomain.ToolContext, input DateTimeFormatInp
 	return output, nil
 }
 
-// DateTimeFormat returns a tool that formats date/time strings
+// DateTimeFormat returns a tool that formats date/time strings in various representations.
+// It supports standard formats (RFC3339, RFC1123, etc.), custom Go time layouts, relative time formatting,
+// and basic localization for Spanish, French, and German. The tool can output multiple formats
+// simultaneously and provides human-readable relative time descriptions like "3 days ago" or "tomorrow".
 func DateTimeFormat() agentDomain.Tool {
 	// Define parameter schema
 	paramSchema := &schemaDomain.Schema{

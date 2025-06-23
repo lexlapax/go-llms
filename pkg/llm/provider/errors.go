@@ -1,5 +1,10 @@
 package provider
 
+// File errors.go provides provider-specific error mapping and handling utilities.
+// It standardizes error reporting across different LLM providers by mapping their
+// unique error messages and codes to a common set of error types. This enables
+// consistent error handling regardless of which provider is being used.
+
 // ABOUTME: Provider-specific error types and handling utilities
 // ABOUTME: Standardizes error reporting across different LLM providers
 
@@ -247,7 +252,10 @@ func mapVertexAIErrorToStandard(statusCode int, errorMsg string, operation strin
 }
 
 // ParseJSONError attempts to extract error information from a JSON error response
-// This is a utility function to abstract error parsing logic for different providers
+// ParseJSONError parses JSON error responses from various LLM providers.
+// It extracts error messages from the response body and maps them to standard error types
+// based on the provider. This enables consistent error handling across different providers.
+// The function handles OpenAI, Anthropic, Ollama, OpenRouter, and Vertex AI error formats.
 func ParseJSONError(body []byte, statusCode int, provider, operation string) error {
 	if len(body) == 0 {
 		// If no body, create a generic error based on status code
@@ -304,7 +312,10 @@ func ParseJSONError(body []byte, statusCode int, provider, operation string) err
 	)
 }
 
-// MultiProviderError represents an error from multiple providers
+// MultiProviderError represents an error that occurred across multiple providers.
+// It is typically used by multi-provider implementations when operations fail
+// on all configured providers. The error includes individual provider errors
+// and methods to analyze the failure patterns.
 type MultiProviderError struct {
 	// ProviderErrors contains the errors from each provider
 	ProviderErrors map[string]error
@@ -348,7 +359,9 @@ func (e *MultiProviderError) Is(target error) bool {
 	return false
 }
 
-// NewMultiProviderError creates a new MultiProviderError
+// NewMultiProviderError creates a new MultiProviderError instance.
+// The providerErrors map contains errors keyed by provider name.
+// The message parameter provides a high-level description of the failure.
 func NewMultiProviderError(providerErrors map[string]error, message string) *MultiProviderError {
 	return &MultiProviderError{
 		ProviderErrors: providerErrors,

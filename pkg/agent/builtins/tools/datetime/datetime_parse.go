@@ -258,7 +258,10 @@ func dateTimeParseExecute(ctx *agentDomain.ToolContext, input DateTimeParseInput
 	return output, nil
 }
 
-// DateTimeParse returns a tool that parses date/time strings
+// DateTimeParse returns a tool that parses and validates date/time strings in various formats.
+// It features automatic format detection for 30+ common formats, custom format support using Go time layouts,
+// relative date parsing ("tomorrow", "next Monday", "in 3 days"), and unix timestamp recognition.
+// The tool provides validation feedback and can parse dates in specific timezones.
 func DateTimeParse() agentDomain.Tool {
 	// Define parameter schema
 	paramSchema := &schemaDomain.Schema{

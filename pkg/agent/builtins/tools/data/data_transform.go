@@ -98,6 +98,9 @@ var dataTransformParamSchema = &sdomain.Schema{
 }
 
 // DataTransform creates a tool for performing data transformations
+// This tool provides functional programming operations on JSON arrays including:
+// filter, map, reduce, sort, group_by, unique, and reverse operations.
+// It supports nested field access and various transformation types.
 func DataTransform() domain.Tool {
 	// Create output schema for DataTransformOutput
 	outputSchema := &sdomain.Schema{

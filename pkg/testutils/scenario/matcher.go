@@ -1,6 +1,8 @@
 // ABOUTME: Matcher interface and implementations for test assertions
 // ABOUTME: Provides flexible value matching for scenario-based testing
-
+// Package scenario provides a framework for building and executing complex test scenarios.
+// It includes a comprehensive set of matchers for flexible test assertions and
+// scenario builders for constructing multi-step test cases.
 package scenario
 
 import (
@@ -19,7 +21,7 @@ type Matcher interface {
 	Description() string
 }
 
-// MatcherFunc is a function type that implements Matcher
+// MatcherFunc is a function type that implements Matcher interface
 type MatcherFunc func(value interface{}) (bool, string)
 
 // Match implements Matcher interface

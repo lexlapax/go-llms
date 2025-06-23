@@ -3,12 +3,16 @@
 
 package domain
 
-// stateReaderImpl wraps State to provide read-only access
+// stateReaderImpl wraps State to provide read-only access.
+// This implementation ensures tools cannot modify agent state
+// while providing full read access to values, artifacts, and metadata.
 type stateReaderImpl struct {
 	state *State
 }
 
-// NewStateReader creates a new StateReader from a State
+// NewStateReader creates a new StateReader from a State.
+// Returns a read-only wrapper that implements the StateReader interface
+// for safe state access in tool execution contexts.
 func NewStateReader(state *State) StateReader {
 	return &stateReaderImpl{state: state}
 }

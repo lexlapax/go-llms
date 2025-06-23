@@ -398,14 +398,10 @@ func executeCommand(ctx *domain.ToolContext, params ExecuteCommandParams) (*Exec
 	return result, nil
 }
 
-// ExecuteCommand creates a tool for executing system commands
-// This is a built-in tool optimized for:
-// - Security with safe mode and command restrictions
-// - Environment variable control
-// - Working directory management
-// - Timeout handling
-// - Separate stdout/stderr capture
-// - Input via stdin
+// ExecuteCommand creates a tool for executing system commands with comprehensive security controls
+// including safe mode (enabled by default) that blocks dangerous commands and patterns, customizable
+// timeouts, environment variable injection, and working directory management. The tool captures stdout
+// and stderr separately, supports stdin input, and provides detailed execution results with timing information.
 func ExecuteCommand() domain.Tool {
 	builder := atools.NewToolBuilder("execute_command", "Executes system commands with enhanced control and security").
 		WithFunction(executeCommand).

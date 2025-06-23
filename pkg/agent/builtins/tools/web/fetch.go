@@ -216,13 +216,10 @@ func buildAuthConfig(params WebFetchParams) *auth.AuthConfig {
 	}
 }
 
-// WebFetch creates a tool for fetching web content
-// This is a built-in tool optimized for:
-// - Context-aware cancellation
-// - Customizable timeouts
-// - Header capture
-// - Proper resource cleanup
-// - Authentication support
+// WebFetch creates a tool for fetching content from web URLs with authentication support.
+// It provides HTTP GET functionality with customizable timeouts, multiple authentication methods
+// (bearer, basic, API key, OAuth2, custom headers), automatic content decoding, header extraction,
+// and proper resource cleanup while supporting context-aware cancellation and state-based configuration.
 func WebFetch() domain.Tool {
 	builder := atools.NewToolBuilder("web_fetch", "Fetches content from a URL with customizable timeout").
 		WithFunction(func(ctx *domain.ToolContext, params WebFetchParams) (*WebFetchResult, error) {
@@ -562,8 +559,9 @@ Authentication can be auto-detected from state or provided via parameters.`).
 	return builder.Build()
 }
 
-// MustGetWebFetch retrieves the registered WebFetch tool or panics
+// MustGetWebFetch retrieves the registered WebFetch tool or panics if not found.
 // This is a convenience function for users who want to ensure the tool exists
+// and prefer a panic over error handling for missing tools in their initialization code.
 func MustGetWebFetch() domain.Tool {
 	return tools.MustGetTool("web_fetch")
 }

@@ -11,7 +11,10 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// LoopAgent executes workflow steps in a loop until a condition is met
+// LoopAgent executes workflow steps in a loop until a condition is met.
+// It provides various loop patterns including while loops, until loops, count loops,
+// and forever loops. The agent supports iteration limits, time constraints, result
+// collection, and state passing between iterations.
 type LoopAgent struct {
 	*BaseWorkflowAgent
 
@@ -96,7 +99,8 @@ func (l *LoopAgent) getIterationResultsCopy() []interface{} {
 	return results
 }
 
-// LoopType represents different types of loop behavior
+// LoopType represents different types of loop behavior.
+// It defines the various loop patterns available for workflow execution.
 type LoopType string
 
 const (
@@ -110,7 +114,14 @@ const (
 	LoopTypeForever LoopType = "forever"
 )
 
-// NewLoopAgent creates a new loop workflow agent
+// NewLoopAgent creates a new loop workflow agent.
+// By default, the agent has unlimited iterations and duration, collects results,
+// breaks on error, and passes state through iterations.
+//
+// Parameters:
+//   - name: The name of the loop workflow
+//
+// Returns a new LoopAgent instance.
 func NewLoopAgent(name string) *LoopAgent {
 	return &LoopAgent{
 		BaseWorkflowAgent: NewBaseWorkflowAgent(
@@ -127,13 +138,25 @@ func NewLoopAgent(name string) *LoopAgent {
 	}
 }
 
-// SetLoopBody sets the step to execute in each iteration
+// SetLoopBody sets the step to execute in each iteration.
+// This is the core logic that will be repeated during the loop.
+//
+// Parameters:
+//   - step: The workflow step to execute in each iteration
+//
+// Returns the LoopAgent for method chaining.
 func (l *LoopAgent) SetLoopBody(step WorkflowStep) *LoopAgent {
 	l.loopBody = step
 	return l
 }
 
-// SetLoopAgent sets an agent as the loop body
+// SetLoopAgent sets an agent as the loop body.
+// This is a convenience method that wraps the agent in an AgentStep.
+//
+// Parameters:
+//   - agent: The agent to execute in each iteration
+//
+// Returns the LoopAgent for method chaining.
 func (l *LoopAgent) SetLoopAgent(agent domain.BaseAgent) *LoopAgent {
 	step := &AgentStep{
 		name:  fmt.Sprintf("loop-%s", agent.Name()),
@@ -143,82 +166,170 @@ func (l *LoopAgent) SetLoopAgent(agent domain.BaseAgent) *LoopAgent {
 	return l
 }
 
-// WithWhileCondition sets a condition that continues the loop while true
+// WithWhileCondition sets a condition that continues the loop while true.
+// The loop will execute as long as this condition returns true.
+//
+// Parameters:
+//   - condition: Function that evaluates the state and iteration count
+//
+// Returns the LoopAgent for method chaining.
 func (l *LoopAgent) WithWhileCondition(condition func(state *domain.State, iteration int) bool) *LoopAgent {
 	l.continueCondition = condition
 	return l
 }
 
-// WithUntilCondition sets a condition that breaks the loop when true
+// WithUntilCondition sets a condition that breaks the loop when true.
+// The loop will execute until this condition returns true.
+//
+// Parameters:
+//   - condition: Function that evaluates the state and iteration count
+//
+// Returns the LoopAgent for method chaining.
 func (l *LoopAgent) WithUntilCondition(condition func(state *domain.State, iteration int) bool) *LoopAgent {
 	l.breakCondition = condition
 	return l
 }
 
-// WithMaxIterations sets the maximum number of iterations
+// WithMaxIterations sets the maximum number of iterations.
+// The loop will terminate after executing this many times.
+//
+// Parameters:
+//   - max: Maximum iteration count (0 = unlimited)
+//
+// Returns the LoopAgent for method chaining.
 func (l *LoopAgent) WithMaxIterations(max int) *LoopAgent {
 	l.maxIterations = max
 	return l
 }
 
-// WithMaxDuration sets the maximum total duration for the loop
+// WithMaxDuration sets the maximum total duration for the loop.
+// The loop will terminate after running for this duration.
+//
+// Parameters:
+//   - duration: Maximum duration (0 = unlimited)
+//
+// Returns the LoopAgent for method chaining.
 func (l *LoopAgent) WithMaxDuration(duration time.Duration) *LoopAgent {
 	l.maxDuration = duration
 	return l
 }
 
-// WithCollectResults configures whether to collect results from each iteration
+// WithCollectResults configures whether to collect results from each iteration.
+// When enabled, results are stored and available via GetIterationResults().
+//
+// Parameters:
+//   - collect: If true, collects results from each iteration
+//
+// Returns the LoopAgent for method chaining.
 func (l *LoopAgent) WithCollectResults(collect bool) *LoopAgent {
 	l.collectResults = collect
 	return l
 }
 
-// WithBreakOnError configures whether to break on first error
+// WithBreakOnError configures whether to break on first error.
+// When enabled, the loop terminates immediately on any error.
+//
+// Parameters:
+//   - breakOnErr: If true, breaks loop on first error
+//
+// Returns the LoopAgent for method chaining.
 func (l *LoopAgent) WithBreakOnError(breakOnErr bool) *LoopAgent {
 	l.breakOnError = breakOnErr
 	return l
 }
 
-// WithPassStateThrough configures whether to pass state between iterations
+// WithPassStateThrough configures whether to pass state between iterations.
+// When enabled, each iteration receives the output state from the previous iteration.
+// When disabled, each iteration starts with the original input state.
+//
+// Parameters:
+//   - passThrough: If true, passes state from one iteration to the next
+//
+// Returns the LoopAgent for method chaining.
 func (l *LoopAgent) WithPassStateThrough(passThrough bool) *LoopAgent {
 	l.passStateThrough = passThrough
 	return l
 }
 
-// WithIterationDelay sets a delay between iterations
+// WithIterationDelay sets a delay between iterations.
+// This can be useful for rate limiting or avoiding resource exhaustion.
+//
+// Parameters:
+//   - delay: Duration to wait between iterations
+//
+// Returns the LoopAgent for method chaining.
 func (l *LoopAgent) WithIterationDelay(delay time.Duration) *LoopAgent {
 	l.iterationDelay = delay
 	return l
 }
 
-// WithHook adds a monitoring hook to the workflow agent
+// WithHook adds a monitoring hook to the workflow agent.
+// Hooks allow monitoring and customization of loop execution.
+//
+// Parameters:
+//   - hook: The hook to add
+//
+// Returns the LoopAgent for method chaining.
 func (l *LoopAgent) WithHook(hook domain.Hook) *LoopAgent {
 	l.BaseWorkflowAgent.WithHook(hook)
 	return l
 }
 
-// WhileLoop creates a loop that continues while the condition is true
+// WhileLoop creates a loop that continues while the condition is true.
+// This is a convenience function for creating a while-style loop.
+//
+// Parameters:
+//   - name: The name of the loop
+//   - condition: Function that returns true to continue looping
+//   - step: The workflow step to execute in each iteration
+//
+// Returns a configured LoopAgent.
 func WhileLoop(name string, condition func(state *domain.State, iteration int) bool, step WorkflowStep) *LoopAgent {
 	return NewLoopAgent(name).
 		SetLoopBody(step).
 		WithWhileCondition(condition)
 }
 
-// UntilLoop creates a loop that continues until the condition is true
+// UntilLoop creates a loop that continues until the condition is true.
+// This is a convenience function for creating an until-style loop.
+//
+// Parameters:
+//   - name: The name of the loop
+//   - condition: Function that returns true to stop looping
+//   - step: The workflow step to execute in each iteration
+//
+// Returns a configured LoopAgent.
 func UntilLoop(name string, condition func(state *domain.State, iteration int) bool, step WorkflowStep) *LoopAgent {
 	return NewLoopAgent(name).
 		SetLoopBody(step).
 		WithUntilCondition(condition)
 }
 
-// CountLoop creates a loop that executes a specific number of times
+// CountLoop creates a loop that executes a specific number of times.
+// This is a convenience function for creating a count-based loop.
+//
+// Parameters:
+//   - name: The name of the loop
+//   - count: Number of iterations to execute
+//   - step: The workflow step to execute in each iteration
+//
+// Returns a configured LoopAgent.
 func CountLoop(name string, count int, step WorkflowStep) *LoopAgent {
 	return NewLoopAgent(name).
 		SetLoopBody(step).
 		WithMaxIterations(count)
 }
 
-// Run executes the loop workflow
+// Run executes the loop workflow.
+// It repeatedly executes the loop body until a termination condition is met.
+// The loop can be terminated by: max iterations, max duration, while condition
+// becoming false, until condition becoming true, or an error (if break on error).
+//
+// Parameters:
+//   - ctx: The execution context
+//   - input: The initial state
+//
+// Returns the final state after loop completion or an error.
 func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
 	// Validate before running
 	if err := l.Validate(); err != nil {
@@ -438,17 +549,26 @@ func (l *LoopAgent) Run(ctx context.Context, input *domain.State) (*domain.State
 	return finalState, nil
 }
 
-// GetIterationResults returns the results from all iterations
+// GetIterationResults returns the results from all iterations.
+// Only available when WithCollectResults(true) is set.
+//
+// Returns a slice containing results from each iteration.
 func (l *LoopAgent) GetIterationResults() []interface{} {
 	return l.getIterationResultsCopy()
 }
 
-// GetCurrentIteration returns the current iteration number
+// GetCurrentIteration returns the current iteration number.
+// The iteration counter starts at 0 and increments after each iteration.
+//
+// Returns the current iteration count.
 func (l *LoopAgent) GetCurrentIteration() int {
 	return l.getCurrentIteration()
 }
 
-// GetTotalDuration returns the total duration of the loop
+// GetTotalDuration returns the total duration of the loop.
+// This measures the time from when Run() was called to the current moment.
+//
+// Returns the elapsed duration or 0 if not started.
 func (l *LoopAgent) GetTotalDuration() time.Duration {
 	startTime := l.getStartTime()
 	if startTime.IsZero() {
@@ -457,7 +577,10 @@ func (l *LoopAgent) GetTotalDuration() time.Duration {
 	return time.Since(startTime)
 }
 
-// Validate validates the loop workflow configuration
+// Validate validates the loop workflow configuration.
+// It ensures the loop has a body and at least one termination condition.
+//
+// Returns an error if validation fails.
 func (l *LoopAgent) Validate() error {
 	// Validate base agent but skip the step validation since we use loop body
 	if err := l.BaseAgentImpl.Validate(); err != nil {
@@ -490,14 +613,19 @@ func (l *LoopAgent) Validate() error {
 	return nil
 }
 
-// Reset resets the loop state for reuse
+// Reset resets the loop state for reuse.
+// This clears the iteration counter, start time, and results,
+// allowing the same loop agent to be executed again.
 func (l *LoopAgent) Reset() {
 	l.setCurrentIteration(0)
 	l.setStartTime(time.Time{})
 	l.resetIterationResults()
 }
 
-// GetLoopBody returns the loop body step
+// GetLoopBody returns the loop body step.
+// This is the workflow step that is executed in each iteration.
+//
+// Returns the configured loop body or nil.
 func (l *LoopAgent) GetLoopBody() WorkflowStep {
 	return l.loopBody
 }

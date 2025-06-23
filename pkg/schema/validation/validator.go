@@ -1,3 +1,7 @@
+// Package validation provides JSON schema validation with performance optimizations.
+// It supports type validation, constraints checking, format validation, and optional
+// type coercion. The validator includes object pooling and regex caching for improved
+// performance and supports custom validators and conditional schema validation.
 package validation
 
 // ABOUTME: Core JSON schema validator with type validation and constraints
@@ -593,22 +597,36 @@ func equalValues(a, b interface{}) bool {
 
 // validateStringFormat validates a string against a specific format
 func (v *Validator) validateStringFormat(format string, str string, displayPath string, errors []string) []string {
+	// This function validates string values against JSON Schema format constraints.
+	// It operates in two modes based on the enableCoercion flag:
+	// 1. Coercion mode: Uses type coercion functions that attempt to parse/convert values
+	// 2. Strict mode: Uses regex patterns for exact format matching
+
 	if v.enableCoercion {
+		// COERCION MODE: More lenient validation that attempts to parse values
+		// This mode is useful when dealing with data from various sources that might
+		// have slightly different formats (e.g., dates with/without timezone)
+
 		// Use coercion utilities for format validation
 		switch format {
 		case "email":
+			// Email validation using coercion - accepts various email formats
 			if _, ok := CoerceToEmail(str); !ok {
 				errors = append(errors, fmt.Sprintf("%s must be a valid email address", displayPath))
 			}
 		case "date", "date-time":
+			// Date/time validation - CoerceToDate handles multiple date formats:
+			// ISO8601, RFC3339, and common variations
 			if _, ok := CoerceToDate(str); !ok {
 				errors = append(errors, fmt.Sprintf("%s must be a valid ISO8601 date-time", displayPath))
 			}
 		case "uri", "url":
+			// URL validation - accepts various URI schemes (http, https, ftp, etc.)
 			if _, ok := CoerceToURL(str); !ok {
 				errors = append(errors, fmt.Sprintf("%s must be a valid URI", displayPath))
 			}
 		case "uuid":
+			// UUID validation - accepts with or without hyphens, case-insensitive
 			if _, ok := CoerceToUUID(str); !ok {
 				errors = append(errors, fmt.Sprintf("%s must be a valid UUID", displayPath))
 			}
@@ -644,14 +662,24 @@ func (v *Validator) validateStringFormat(format string, str string, displayPath 
 			// No error for unsupported formats when coercion is enabled
 		}
 	} else {
+		// STRICT MODE: Uses regex patterns for exact format matching
+		// This mode enforces strict compliance with format specifications
+		// All regex patterns are cached for performance optimization
+
 		// Use strict regex patterns for format validation
 		switch format {
 		case "email":
+			// Email pattern: local-part@domain
+			// Allows alphanumeric, dots, underscores, percent, plus, hyphen in local part
+			// Domain must have at least one dot and valid TLD
 			emailPattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 			var re *regexp.Regexp
+
+			// Check regex cache first to avoid recompilation
 			if cached, found := RegexCache.Load(emailPattern); found {
 				re = cached.(*regexp.Regexp)
 			} else {
+				// Compile and cache the regex for future use
 				var err error
 				re, err = regexp.Compile(emailPattern)
 				if err != nil {
@@ -736,7 +764,9 @@ func (v *Validator) validateStringFormat(format string, str string, displayPath 
 				errors = append(errors, fmt.Sprintf("%s must be a valid hostname", displayPath))
 			}
 		case "ipv4":
-			// IPv4 validation
+			// IPv4 validation in two steps:
+			// 1. Pattern matching for basic structure (4 groups of digits)
+			// 2. Numeric validation to ensure each octet is 0-255
 			ipv4Pattern := `^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$`
 			var re *regexp.Regexp
 			if cached, found := RegexCache.Load(ipv4Pattern); found {
@@ -755,7 +785,8 @@ func (v *Validator) validateStringFormat(format string, str string, displayPath 
 				return errors
 			}
 
-			// Validate each octet
+			// Step 2: Validate each octet is within valid range (0-255)
+			// This catches cases like 256.1.1.1 which pass regex but are invalid
 			parts := strings.Split(str, ".")
 			for _, part := range parts {
 				if num, err := strconv.Atoi(part); err != nil || num < 0 || num > 255 {

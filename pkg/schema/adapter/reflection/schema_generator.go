@@ -1,3 +1,7 @@
+// Package reflection provides automatic JSON schema generation from Go types.
+// It uses reflection to analyze struct fields and their tags to generate
+// corresponding JSON schemas with validation constraints, supporting common
+// validation tags and automatic type mapping.
 package reflection
 
 // ABOUTME: Reflection-based JSON schema generator from Go types

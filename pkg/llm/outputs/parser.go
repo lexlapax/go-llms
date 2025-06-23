@@ -10,7 +10,10 @@ import (
 	"sync"
 )
 
-// Parser defines the interface for parsing LLM outputs
+// Parser defines the interface for parsing LLM outputs.
+// Implementations handle specific formats (JSON, XML, YAML) and provide
+// recovery mechanisms for malformed outputs, schema-guided parsing,
+// and format detection capabilities.
 type Parser interface {
 	// Name returns the parser name (e.g., "json", "xml", "yaml")
 	Name() string
@@ -28,7 +31,10 @@ type Parser interface {
 	CanParse(output string) bool
 }
 
-// RecoveryOptions configures the recovery behavior
+// RecoveryOptions configures the recovery behavior.
+// These options control how parsers attempt to recover from
+// malformed or partially correct LLM outputs, enabling more
+// robust parsing in real-world scenarios.
 type RecoveryOptions struct {
 	// ExtractFromMarkdown attempts to extract content from markdown code blocks
 	ExtractFromMarkdown bool
@@ -46,7 +52,11 @@ type RecoveryOptions struct {
 	Schema *OutputSchema
 }
 
-// DefaultRecoveryOptions returns the default recovery options
+// DefaultRecoveryOptions returns the default recovery options.
+// Provides sensible defaults for recovery behavior including
+// markdown extraction and common issue fixes.
+//
+// Returns a configured RecoveryOptions instance.
 func DefaultRecoveryOptions() *RecoveryOptions {
 	return &RecoveryOptions{
 		ExtractFromMarkdown: true,

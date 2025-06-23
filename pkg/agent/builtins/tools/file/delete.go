@@ -400,7 +400,10 @@ func fileDeleteMain(ctx *domain.ToolContext, params FileDeleteParams) (*FileDele
 	return result, nil
 }
 
-// FileDelete creates a tool for safely deleting files and directories
+// FileDelete creates a tool for safely deleting files and directories with multiple safety mechanisms.
+// It supports confirmation requirements, recursive directory deletion, and protection of critical system paths.
+// The tool provides detailed events and progress tracking, making it suitable for both interactive and automated use.
+// Safety features include path restrictions, confirmation strings, and protection against accidental deletion of important files.
 func FileDelete() domain.Tool {
 	builder := atools.NewToolBuilder("file_delete", "Safely deletes files and directories with confirmation options").
 		WithFunction(fileDeleteMain).

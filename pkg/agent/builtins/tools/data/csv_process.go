@@ -95,6 +95,9 @@ var csvProcessParamSchema = &sdomain.Schema{
 }
 
 // CSVProcess creates a tool for processing CSV data
+// This tool provides comprehensive CSV manipulation capabilities including:
+// parsing, filtering, transforming, and converting to JSON format.
+// It supports custom delimiters and handles both header and headerless CSV files.
 func CSVProcess() domain.Tool {
 	// Create output schema for CSVProcessOutput
 	outputSchema := &sdomain.Schema{

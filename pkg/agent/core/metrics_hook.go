@@ -11,7 +11,9 @@ import (
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
-// LLMMetricsHook implements Hook for collecting LLM-specific metrics
+// LLMMetricsHook implements Hook for collecting LLM-specific metrics.
+// It tracks request counts, token usage, execution times, and tool invocation
+// statistics. Thread-safe for concurrent use by multiple agents.
 type LLMMetricsHook struct {
 	mu            sync.RWMutex
 	requests      int
@@ -25,7 +27,9 @@ type LLMMetricsHook struct {
 	startTimes sync.Map
 }
 
-// NewLLMMetricsHook creates a new LLM metrics hook
+// NewLLMMetricsHook creates a new LLM metrics hook.
+// The hook starts with empty metrics that accumulate as the agent operates.
+// Use the GetMetrics method to retrieve current statistics.
 func NewLLMMetricsHook() *LLMMetricsHook {
 	return &LLMMetricsHook{
 		generateTimes: make([]time.Duration, 0),
@@ -33,7 +37,9 @@ func NewLLMMetricsHook() *LLMMetricsHook {
 	}
 }
 
-// BeforeGenerate is called before generating a response
+// BeforeGenerate is called before generating a response.
+// It increments request count, estimates token usage, and records the start time
+// for measuring generation duration.
 func (h *LLMMetricsHook) BeforeGenerate(ctx context.Context, messages []domain.Message) {
 	h.mu.Lock()
 	h.requests++

@@ -1,3 +1,5 @@
+// ABOUTME: Package initialization ensuring tool discovery system is loaded on import.
+// ABOUTME: Forces metadata initialization even in test contexts for external packages.
 package tools
 
 // This file ensures that the generated metadata is always loaded

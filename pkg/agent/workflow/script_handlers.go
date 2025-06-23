@@ -12,15 +12,30 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// MockJavaScriptHandler is a mock JavaScript handler for testing
+// MockJavaScriptHandler is a mock JavaScript handler for testing.
+// It provides a simplified JavaScript-like behavior for workflow testing
+// without requiring a full JavaScript engine.
 type MockJavaScriptHandler struct{}
 
-// NewMockJavaScriptHandler creates a new mock JavaScript handler
+// NewMockJavaScriptHandler creates a new mock JavaScript handler.
+// This handler simulates JavaScript execution for testing purposes.
+//
+// Returns a new MockJavaScriptHandler instance.
 func NewMockJavaScriptHandler() *MockJavaScriptHandler {
 	return &MockJavaScriptHandler{}
 }
 
-// Execute implements ScriptHandler
+// Execute implements ScriptHandler.
+// It simulates JavaScript execution by pattern matching on the script content.
+// Supports basic patterns like "return 'success'" and "transform" operations.
+//
+// Parameters:
+//   - ctx: The execution context
+//   - state: The current workflow state
+//   - script: The JavaScript code to execute
+//   - env: Environment variables available to the script
+//
+// Returns the new workflow state or an error.
 func (h *MockJavaScriptHandler) Execute(ctx context.Context, state *WorkflowState, script string, env map[string]interface{}) (*WorkflowState, error) {
 	// This is a mock implementation
 	// In a real implementation, you would use a JavaScript engine like goja or otto
@@ -68,12 +83,20 @@ func (h *MockJavaScriptHandler) Execute(ctx context.Context, state *WorkflowStat
 	return newWorkflowState, nil
 }
 
-// Language implements ScriptHandler
+// Language implements ScriptHandler.
+// Returns "javascript" as the supported language identifier.
 func (h *MockJavaScriptHandler) Language() string {
 	return "javascript"
 }
 
-// Validate implements ScriptHandler
+// Validate implements ScriptHandler.
+// Performs basic validation to ensure the script is not empty.
+// In a real implementation, this would parse and validate JavaScript syntax.
+//
+// Parameters:
+//   - script: The JavaScript code to validate
+//
+// Returns an error if validation fails.
 func (h *MockJavaScriptHandler) Validate(script string) error {
 	// Basic validation
 	if script == "" {
@@ -83,15 +106,30 @@ func (h *MockJavaScriptHandler) Validate(script string) error {
 	return nil
 }
 
-// ExpressionHandler handles simple expression evaluation
+// ExpressionHandler handles simple expression evaluation.
+// It provides basic expression evaluation capabilities for workflow scripts,
+// supporting simple assignments and string operations.
 type ExpressionHandler struct{}
 
-// NewExpressionHandler creates a new expression handler
+// NewExpressionHandler creates a new expression handler.
+// This handler evaluates simple expressions like assignments.
+//
+// Returns a new ExpressionHandler instance.
 func NewExpressionHandler() *ExpressionHandler {
 	return &ExpressionHandler{}
 }
 
-// Execute implements ScriptHandler
+// Execute implements ScriptHandler.
+// It evaluates simple expressions, supporting basic assignments with
+// string literals and JSON values.
+//
+// Parameters:
+//   - ctx: The execution context
+//   - state: The current workflow state
+//   - script: The expression to evaluate
+//   - env: Environment variables available to the expression
+//
+// Returns the new workflow state or an error.
 func (h *ExpressionHandler) Execute(ctx context.Context, state *WorkflowState, script string, env map[string]interface{}) (*WorkflowState, error) {
 	// This is a simplified expression evaluator
 	// In a real implementation, you might use expr or cel-go
@@ -150,12 +188,19 @@ func (h *ExpressionHandler) Execute(ctx context.Context, state *WorkflowState, s
 	return newWorkflowState, nil
 }
 
-// Language implements ScriptHandler
+// Language implements ScriptHandler.
+// Returns "expr" as the supported language identifier.
 func (h *ExpressionHandler) Language() string {
 	return "expr"
 }
 
-// Validate implements ScriptHandler
+// Validate implements ScriptHandler.
+// Ensures the expression is not empty.
+//
+// Parameters:
+//   - script: The expression to validate
+//
+// Returns an error if validation fails.
 func (h *ExpressionHandler) Validate(script string) error {
 	if script == "" {
 		return fmt.Errorf("expression cannot be empty")
@@ -163,15 +208,30 @@ func (h *ExpressionHandler) Validate(script string) error {
 	return nil
 }
 
-// JSONTransformHandler handles JSON transformations
+// JSONTransformHandler handles JSON transformations.
+// It applies JSON-based transformations to workflow state,
+// supporting template-like variable substitution with {{variable}} syntax.
 type JSONTransformHandler struct{}
 
-// NewJSONTransformHandler creates a new JSON transform handler
+// NewJSONTransformHandler creates a new JSON transform handler.
+// This handler transforms state using JSON-based definitions.
+//
+// Returns a new JSONTransformHandler instance.
 func NewJSONTransformHandler() *JSONTransformHandler {
 	return &JSONTransformHandler{}
 }
 
-// Execute implements ScriptHandler
+// Execute implements ScriptHandler.
+// It applies JSON transformations to create a new state. Supports template
+// variable substitution using {{variable}} syntax to reference state values.
+//
+// Parameters:
+//   - ctx: The execution context
+//   - state: The current workflow state
+//   - script: JSON transformation definition
+//   - env: Environment variables available for substitution
+//
+// Returns the transformed workflow state or an error.
 func (h *JSONTransformHandler) Execute(ctx context.Context, state *WorkflowState, script string, env map[string]interface{}) (*WorkflowState, error) {
 	// Parse the transformation script as JSON
 	var transform map[string]interface{}
@@ -218,18 +278,29 @@ func (h *JSONTransformHandler) Execute(ctx context.Context, state *WorkflowState
 	return newWorkflowState, nil
 }
 
-// Language implements ScriptHandler
+// Language implements ScriptHandler.
+// Returns "json-transform" as the supported language identifier.
 func (h *JSONTransformHandler) Language() string {
 	return "json-transform"
 }
 
-// Validate implements ScriptHandler
+// Validate implements ScriptHandler.
+// Validates that the script is valid JSON format.
+//
+// Parameters:
+//   - script: The JSON transformation to validate
+//
+// Returns an error if the JSON is invalid.
 func (h *JSONTransformHandler) Validate(script string) error {
 	var test map[string]interface{}
 	return json.Unmarshal([]byte(script), &test)
 }
 
-// RegisterDefaultHandlers registers the default/mock handlers
+// RegisterDefaultHandlers registers the default/mock handlers.
+// This includes JavaScript (mock), expression, and JSON transform handlers.
+// These handlers are primarily for testing and demonstration purposes.
+//
+// Returns an error if any handler registration fails.
 func RegisterDefaultHandlers() error {
 	handlers := map[string]ScriptHandler{
 		"javascript":     NewMockJavaScriptHandler(),

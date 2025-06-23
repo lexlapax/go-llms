@@ -11,7 +11,9 @@ import (
 	"time"
 )
 
-// BaseError is the standard implementation of SerializableError
+// BaseError is the standard implementation of SerializableError.
+// It provides comprehensive error handling with JSON serialization,
+// context tracking, stack traces, and recovery strategies.
 type BaseError struct {
 	Type      string                 `json:"type"`
 	Message   string                 `json:"message"`
@@ -26,7 +28,13 @@ type BaseError struct {
 	Recovery  RecoveryStrategy       `json:"-"` // Recovery strategy, not serialized
 }
 
-// NewError creates a new BaseError
+// NewError creates a new BaseError.
+// Automatically captures stack trace and sets timestamp.
+//
+// Parameters:
+//   - message: The error message
+//
+// Returns a new BaseError instance.
 func NewError(message string) *BaseError {
 	return &BaseError{
 		Type:      "BaseError",
@@ -37,7 +45,14 @@ func NewError(message string) *BaseError {
 	}
 }
 
-// NewErrorWithCode creates a new BaseError with an error code
+// NewErrorWithCode creates a new BaseError with an error code.
+// The code is used both as the error code and type identifier.
+//
+// Parameters:
+//   - code: The error code and type
+//   - message: The error message
+//
+// Returns a new BaseError instance with code.
 func NewErrorWithCode(code, message string) *BaseError {
 	err := NewError(message)
 	err.Code = code
@@ -45,7 +60,15 @@ func NewErrorWithCode(code, message string) *BaseError {
 	return err
 }
 
-// Wrap wraps an existing error
+// Wrap wraps an existing error.
+// Creates a new BaseError that wraps the original error,
+// preserving its properties if it's already a BaseError.
+//
+// Parameters:
+//   - err: The error to wrap
+//   - message: The wrapper message
+//
+// Returns a new BaseError wrapping the original or nil if err is nil.
 func Wrap(err error, message string) *BaseError {
 	if err == nil {
 		return nil
@@ -77,7 +100,10 @@ func Wrap(err error, message string) *BaseError {
 	return baseErr
 }
 
-// Error implements the error interface
+// Error implements the error interface.
+// Returns the error message, optionally including the cause.
+//
+// Returns the formatted error message.
 func (e *BaseError) Error() string {
 	if e.Cause != nil {
 		return fmt.Sprintf("%s: %s", e.Message, e.Cause.Error())
@@ -85,12 +111,18 @@ func (e *BaseError) Error() string {
 	return e.Message
 }
 
-// ToJSON implements SerializableError
+// ToJSON implements SerializableError.
+// Serializes the error to indented JSON format.
+//
+// Returns JSON bytes or an error.
 func (e *BaseError) ToJSON() ([]byte, error) {
 	return json.MarshalIndent(e, "", "  ")
 }
 
-// GetContext implements SerializableError
+// GetContext implements SerializableError.
+// Returns the error context, initializing it if needed.
+//
+// Returns the context map.
 func (e *BaseError) GetContext() map[string]interface{} {
 	if e.Context == nil {
 		e.Context = make(map[string]interface{})
@@ -98,12 +130,21 @@ func (e *BaseError) GetContext() map[string]interface{} {
 	return e.Context
 }
 
-// GetRecoveryStrategy implements SerializableError
+// GetRecoveryStrategy implements SerializableError.
+//
+// Returns the recovery strategy or nil if none is set.
 func (e *BaseError) GetRecoveryStrategy() RecoveryStrategy {
 	return e.Recovery
 }
 
-// WithContext adds context to the error
+// WithContext adds context to the error.
+// Fluent method for building error context.
+//
+// Parameters:
+//   - key: The context key
+//   - value: The context value
+//
+// Returns self for method chaining.
 func (e *BaseError) WithContext(key string, value interface{}) *BaseError {
 	if e.Context == nil {
 		e.Context = make(map[string]interface{})
@@ -112,7 +153,13 @@ func (e *BaseError) WithContext(key string, value interface{}) *BaseError {
 	return e
 }
 
-// WithContextMap adds multiple context values
+// WithContextMap adds multiple context values.
+// Batch operation for adding context data.
+//
+// Parameters:
+//   - context: Map of key-value pairs to add
+//
+// Returns self for method chaining.
 func (e *BaseError) WithContextMap(context map[string]interface{}) *BaseError {
 	if e.Context == nil {
 		e.Context = make(map[string]interface{})
@@ -123,37 +170,70 @@ func (e *BaseError) WithContextMap(context map[string]interface{}) *BaseError {
 	return e
 }
 
-// WithCode sets the error code
+// WithCode sets the error code.
+// Error codes enable programmatic error handling.
+//
+// Parameters:
+//   - code: The error code
+//
+// Returns self for method chaining.
 func (e *BaseError) WithCode(code string) *BaseError {
 	e.Code = code
 	return e
 }
 
-// WithType sets the error type
+// WithType sets the error type.
+// Types categorize errors for handling and serialization.
+//
+// Parameters:
+//   - errorType: The error type
+//
+// Returns self for method chaining.
 func (e *BaseError) WithType(errorType string) *BaseError {
 	e.Type = errorType
 	return e
 }
 
-// SetRetryable marks the error as retryable
+// SetRetryable marks the error as retryable.
+// Indicates whether the operation can be retried.
+//
+// Parameters:
+//   - retryable: Whether the error is retryable
+//
+// Returns self for method chaining.
 func (e *BaseError) SetRetryable(retryable bool) *BaseError {
 	e.Retryable = retryable
 	return e
 }
 
-// SetFatal marks the error as fatal
+// SetFatal marks the error as fatal.
+// Fatal errors indicate unrecoverable conditions.
+//
+// Parameters:
+//   - fatal: Whether the error is fatal
+//
+// Returns self for method chaining.
 func (e *BaseError) SetFatal(fatal bool) *BaseError {
 	e.Fatal = fatal
 	return e
 }
 
-// WithRecovery sets the recovery strategy
+// WithRecovery sets the recovery strategy.
+// Defines how to attempt recovery from this error.
+//
+// Parameters:
+//   - strategy: The recovery strategy
+//
+// Returns self for method chaining.
 func (e *BaseError) WithRecovery(strategy RecoveryStrategy) *BaseError {
 	e.Recovery = strategy
 	return e
 }
 
-// WithStackTrace ensures stack trace is captured
+// WithStackTrace ensures stack trace is captured.
+// Captures the stack trace if not already present.
+//
+// Returns self for method chaining.
 func (e *BaseError) WithStackTrace() *BaseError {
 	if len(e.Stack) == 0 {
 		e.Stack = captureStackTrace(2)
@@ -161,12 +241,22 @@ func (e *BaseError) WithStackTrace() *BaseError {
 	return e
 }
 
-// Unwrap returns the wrapped error
+// Unwrap returns the wrapped error.
+// Supports Go 1.13+ error unwrapping.
+//
+// Returns the wrapped error or nil.
 func (e *BaseError) Unwrap() error {
 	return e.Cause
 }
 
-// Is implements error matching
+// Is implements error matching.
+// Checks if this error matches the target error by code,
+// type/message combination, or wrapped error identity.
+//
+// Parameters:
+//   - target: The error to match against
+//
+// Returns true if errors match.
 func (e *BaseError) Is(target error) bool {
 	if target == nil {
 		return false
@@ -190,7 +280,10 @@ func (e *BaseError) Is(target error) bool {
 	return false
 }
 
-// MarshalJSON customizes JSON serialization
+// MarshalJSON customizes JSON serialization.
+// Adds human-readable timestamp and recovery strategy name.
+//
+// Returns JSON bytes or an error.
 func (e *BaseError) MarshalJSON() ([]byte, error) {
 	type Alias BaseError
 	return json.Marshal(&struct {
@@ -204,7 +297,13 @@ func (e *BaseError) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// UnmarshalJSON customizes JSON deserialization
+// UnmarshalJSON customizes JSON deserialization.
+// Parses timestamp string and recreates cause error from text.
+//
+// Parameters:
+//   - data: The JSON data to unmarshal
+//
+// Returns an error if unmarshaling fails.
 func (e *BaseError) UnmarshalJSON(data []byte) error {
 	type Alias BaseError
 	aux := &struct {
@@ -233,7 +332,10 @@ func (e *BaseError) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// getRecoveryName returns the recovery strategy name if available
+// getRecoveryName returns the recovery strategy name if available.
+// Used for JSON serialization.
+//
+// Returns the strategy name or empty string.
 func (e *BaseError) getRecoveryName() string {
 	if e.Recovery != nil {
 		return e.Recovery.Name()
@@ -241,7 +343,13 @@ func (e *BaseError) getRecoveryName() string {
 	return ""
 }
 
-// captureStackTrace captures the current stack trace
+// captureStackTrace captures the current stack trace.
+// Captures up to 20 stack frames, skipping runtime frames.
+//
+// Parameters:
+//   - skip: Number of frames to skip from the top
+//
+// Returns slice of StackFrame structs.
 func captureStackTrace(skip int) []StackFrame {
 	var frames []StackFrame
 
@@ -286,7 +394,13 @@ func captureStackTrace(skip int) []StackFrame {
 	return frames
 }
 
-// ErrorFromJSON deserializes a BaseError from JSON
+// ErrorFromJSON deserializes a BaseError from JSON.
+// Reconstructs a BaseError from its JSON representation.
+//
+// Parameters:
+//   - data: The JSON data
+//
+// Returns the deserialized BaseError or an error.
 func ErrorFromJSON(data []byte) (*BaseError, error) {
 	var err BaseError
 	if jsonErr := json.Unmarshal(data, &err); jsonErr != nil {
@@ -295,7 +409,13 @@ func ErrorFromJSON(data []byte) (*BaseError, error) {
 	return &err, nil
 }
 
-// IsRetryableError checks if an error is retryable
+// IsRetryableError checks if an error is retryable.
+// Checks BaseError.Retryable flag, including wrapped errors.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error is retryable.
 func IsRetryableError(err error) bool {
 	if err == nil {
 		return false
@@ -314,7 +434,13 @@ func IsRetryableError(err error) bool {
 	return false
 }
 
-// IsFatalError checks if an error is fatal
+// IsFatalError checks if an error is fatal.
+// Checks BaseError.Fatal flag, including wrapped errors.
+//
+// Parameters:
+//   - err: The error to check
+//
+// Returns true if the error is fatal.
 func IsFatalError(err error) bool {
 	if err == nil {
 		return false
@@ -333,7 +459,14 @@ func IsFatalError(err error) bool {
 	return false
 }
 
-// GetErrorContext extracts context from an error
+// GetErrorContext extracts context from an error.
+// Works with SerializableError and BaseError types,
+// including wrapped errors.
+//
+// Parameters:
+//   - err: The error to extract context from
+//
+// Returns the context map or nil if no context available.
 func GetErrorContext(err error) map[string]interface{} {
 	if err == nil {
 		return nil
@@ -356,7 +489,14 @@ func GetErrorContext(err error) map[string]interface{} {
 	return nil
 }
 
-// As is a wrapper around errors.As for convenience
+// As is a wrapper around errors.As for convenience.
+// Provides type assertion for BaseError with unwrapping support.
+//
+// Parameters:
+//   - err: The error to check
+//   - target: Pointer to the target type
+//
+// Returns true if the error matches the target type.
 func As(err error, target interface{}) bool {
 	if err == nil {
 		return false

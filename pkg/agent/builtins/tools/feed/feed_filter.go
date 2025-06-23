@@ -80,7 +80,10 @@ func feedFilterExecute(ctx *domain.ToolContext, params FeedFilterParams) (*FeedF
 	return result, nil
 }
 
-// FeedFilter creates a new FeedFilter tool
+// FeedFilter creates a tool that filters feed items based on multiple criteria including keywords, date ranges, authors, and categories.
+// The tool supports flexible matching modes (ANY or ALL criteria), case-insensitive partial matching, and sophisticated date filtering.
+// It can search across title, description, and content fields, with options to limit the number of results returned.
+// This is ideal for content curation, creating topic-specific feeds, finding recent updates, and building personalized content streams.
 func FeedFilter() domain.Tool {
 	// Define parameter schema
 	paramSchema := &sdomain.Schema{

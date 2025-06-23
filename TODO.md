@@ -168,7 +168,102 @@
 
 ## v0.3.5: Scripting Engine Integration Support ✅ COMPLETED (June 15, 2025)
 
-## v0.3.6: [Reserved for future features]
+## v0.3.6: Documentation Improvements & Downstream Requests
+### 0.3.6.1: Basic Documentation Tasks ✅ COMPLETED (January 23, 2025)
+
+### 0.3.6.6: Missing doc.go Files and Documentation Fixes ✅ COMPLETED (December 21, 2025)
+
+### 0.3.6.2: Man Page Generation System (Priority: High)
+- [ ] Implement structured man page data model
+  - [ ] Create `pkg/util/docs/manpage/manpage.go` with core types
+  - [ ] Define ManPage struct with standard sections (Name, Synopsis, Description, Options, etc.)
+  - [ ] Support man page sections 1-8
+- [ ] Add troff format generation
+  - [ ] Create `pkg/util/docs/manpage/troff.go` for troff output
+  - [ ] Implement proper troff macros and formatting
+  - [ ] Support bold, italic, and other formatting
+- [ ] Command metadata extraction
+  - [ ] Create `pkg/util/docs/manpage/command_extractor.go`
+  - [ ] Extract from Kong-based CLI structures
+  - [ ] Support sub-command documentation
+- [ ] Format conversions
+  - [ ] Create `pkg/util/docs/manpage/formatter.go`
+  - [ ] Support HTML output
+  - [ ] Support plain text output
+  - [ ] Support Markdown output
+- [ ] Integration and examples
+  - [ ] Add examples and cross-references support
+  - [ ] Create example usage in `cmd/examples/`
+  - [ ] Write comprehensive tests
+  - [ ] Document usage in user guide
+
+### 0.3.6.3: Script Documentation Extensions (Priority: High)
+- [ ] Extend Documentable interface for scripts
+  - [ ] Create `pkg/docs/script_documentable.go`
+  - [ ] Add ScriptDocumentable interface extending Documentable
+  - [ ] Support script language, source, parameters, and examples
+- [ ] Language-specific documentation extraction
+  - [ ] Create `pkg/docs/script_extractor.go`
+  - [ ] Support Lua documentation extraction
+  - [ ] Support JavaScript documentation extraction
+  - [ ] Support Tengo documentation extraction
+  - [ ] Create `pkg/docs/language_analyzer.go` for language detection
+- [ ] Script parameter and schema support
+  - [ ] Extract input/output parameters from scripts
+  - [ ] Support JSON schema for script parameters
+  - [ ] Validate parameter documentation completeness
+- [ ] Script example validation
+  - [ ] Create `pkg/docs/example_validator.go`
+  - [ ] Validate script examples can execute
+  - [ ] Check example inputs/outputs match schema
+- [ ] Integration with existing docs system
+  - [ ] Ensure scripts can use all existing doc generators
+  - [ ] Support OpenAPI, Markdown, JSON export for scripts
+  - [ ] Write tests and examples
+
+### 0.3.6.4: Enhanced Documentation Integration (Priority: Medium)
+- [ ] Create unified documentation pipeline
+  - [ ] Design comprehensive documentation interfaces
+  - [ ] Support tools (existing), scripts, CLI commands, APIs
+  - [ ] Create consistent documentation format across all types
+- [ ] Cross-reference support
+  - [ ] Enable documentation to reference between tools/scripts/commands
+  - [ ] Build documentation index for searching
+  - [ ] Support hyperlinks in generated docs
+- [ ] Export format unification
+  - [ ] Ensure all documentation types can export to same formats
+  - [ ] Create unified configuration for documentation generation
+  - [ ] Support batch documentation generation
+- [ ] Migration support for downstream projects
+  - [ ] Create migration guide for go-llmspell
+  - [ ] Ensure backward compatibility
+  - [ ] Provide examples of bridge implementations
+
+### 0.3.6.5: Documentation Utilities Refactor
+- [ ] Consolidate existing doc utilities
+  - [ ] Move godoc utilities to `pkg/util/docs/godoc/`
+  - [ ] Integrate manpage utilities from 0.3.6.1
+  - [ ] Create shared documentation interfaces
+- [ ] Create documentation registry
+  - [ ] Central registry for all documentable items
+  - [ ] Support dynamic registration
+  - [ ] Enable documentation discovery
+
+### 0.3.6.6: Package Documentation Review
+- [ ] Review doc.go files for missing ABOUTME comments
+  - [x] pkg/testutils/doc.go - Has ABOUTME ✅
+  - [ ] pkg/util/llmutil/modelinfo/cache/doc.go - Missing ABOUTME
+  - [x] pkg/util/llmutil/modelinfo/doc.go - Has ABOUTME ✅
+  - [ ] pkg/util/llmutil/modelinfo/domain/doc.go - Missing ABOUTME
+  - [x] pkg/util/llmutil/modelinfo/fetchers/doc.go - Has ABOUTME ✅
+  - [ ] pkg/util/llmutil/modelinfo/service/doc.go - Missing ABOUTME
+- [ ] Create doc.go files for packages missing them (31 packages)
+  - [ ] Agent packages: core, domain, events, utils, workflow
+  - [ ] Built-in tools: data, datetime, feed, file, math, system, web
+  - [ ] Schema packages: adapter/reflection, generator, repository, validation
+  - [ ] Other packages: errors, docs, internal/debug, llm/outputs, structured/processor
+  - [ ] Utility packages: auth, json, llmutil, metrics, profiling, types
+
 
 ## v0.3.7: [Reserved for future features]
 

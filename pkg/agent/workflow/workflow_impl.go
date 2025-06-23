@@ -13,7 +13,10 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// BaseWorkflowAgent provides common functionality for all workflow agents
+// BaseWorkflowAgent provides common functionality for all workflow agents.
+// It extends BaseAgentImpl with workflow-specific features including step
+// management, status tracking, error handling, and hooks. This type serves
+// as the foundation for all concrete workflow implementations.
 type BaseWorkflowAgent struct {
 	*core.BaseAgentImpl
 
@@ -25,7 +28,15 @@ type BaseWorkflowAgent struct {
 	mu           sync.RWMutex
 }
 
-// NewBaseWorkflowAgent creates a new base workflow agent
+// NewBaseWorkflowAgent creates a new base workflow agent.
+// It initializes the workflow with empty steps and pending status.
+//
+// Parameters:
+//   - name: The workflow name
+//   - description: The workflow description
+//   - agentType: The specific type of workflow agent
+//
+// Returns a new BaseWorkflowAgent instance.
 func NewBaseWorkflowAgent(name, description string, agentType domain.AgentType) *BaseWorkflowAgent {
 	return &BaseWorkflowAgent{
 		BaseAgentImpl: core.NewBaseAgent(name, description, agentType),
@@ -39,7 +50,14 @@ func NewBaseWorkflowAgent(name, description string, agentType domain.AgentType) 
 	}
 }
 
-// WithHook adds a monitoring hook to the workflow agent
+// WithHook adds a monitoring hook to the workflow agent.
+// Hooks are notified before and after workflow execution.
+// Nil hooks are ignored.
+//
+// Parameters:
+//   - hook: The hook to add
+//
+// Returns the BaseWorkflowAgent for method chaining.
 func (w *BaseWorkflowAgent) WithHook(hook domain.Hook) *BaseWorkflowAgent {
 	if hook == nil {
 		return w
@@ -51,7 +69,13 @@ func (w *BaseWorkflowAgent) WithHook(hook domain.Hook) *BaseWorkflowAgent {
 	return w
 }
 
-// AddStep adds a step to the workflow
+// AddStep adds a step to the workflow.
+// Steps must have unique names within the workflow.
+//
+// Parameters:
+//   - step: The workflow step to add
+//
+// Returns an error if the step is nil or has a duplicate name.
 func (w *BaseWorkflowAgent) AddStep(step WorkflowStep) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -71,7 +95,10 @@ func (w *BaseWorkflowAgent) AddStep(step WorkflowStep) error {
 	return nil
 }
 
-// Steps returns all workflow steps
+// Steps returns all workflow steps.
+// Returns a copy to prevent external modifications.
+//
+// Returns a slice of all workflow steps.
 func (w *BaseWorkflowAgent) Steps() []WorkflowStep {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
@@ -81,21 +108,33 @@ func (w *BaseWorkflowAgent) Steps() []WorkflowStep {
 	return steps
 }
 
-// SetErrorHandler sets the error handler for the workflow
+// SetErrorHandler sets the error handler for the workflow.
+// The error handler determines how the workflow responds to step failures.
+//
+// Parameters:
+//   - handler: The error handler to use
 func (w *BaseWorkflowAgent) SetErrorHandler(handler ErrorHandler) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.errorHandler = handler
 }
 
-// WorkflowDefinition returns the workflow definition
+// WorkflowDefinition returns the workflow definition.
+// Returns nil if no definition has been set.
+//
+// Returns the current workflow definition.
 func (w *BaseWorkflowAgent) WorkflowDefinition() *WorkflowDefinition {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 	return w.workflowDef
 }
 
-// SetWorkflowDefinition sets the workflow definition
+// SetWorkflowDefinition sets the workflow definition.
+//
+// Parameters:
+//   - def: The workflow definition to set
+//
+// Returns an error if the definition is nil.
 func (w *BaseWorkflowAgent) SetWorkflowDefinition(def *WorkflowDefinition) error {
 	if def == nil {
 		return fmt.Errorf("workflow definition cannot be nil")
@@ -107,7 +146,10 @@ func (w *BaseWorkflowAgent) SetWorkflowDefinition(def *WorkflowDefinition) error
 	return nil
 }
 
-// Status returns the current workflow status
+// Status returns the current workflow status.
+// Returns a copy to prevent external modifications.
+//
+// Returns the current workflow execution status.
 func (w *BaseWorkflowAgent) Status() *WorkflowStatus {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
@@ -193,7 +235,11 @@ func (w *BaseWorkflowAgent) emitWorkflowEvent(eventType domain.EventType, data i
 	w.EmitEvent(eventType, data)
 }
 
-// Validate validates the workflow configuration
+// Validate validates the workflow configuration.
+// It ensures the workflow has at least one step and all steps
+// are valid with non-empty names.
+//
+// Returns an error if validation fails.
 func (w *BaseWorkflowAgent) Validate() error {
 	if err := w.BaseAgentImpl.Validate(); err != nil {
 		return err
@@ -219,7 +265,11 @@ func (w *BaseWorkflowAgent) Validate() error {
 	return nil
 }
 
-// Clone creates a copy of the workflow agent
+// Clone creates a copy of the workflow agent.
+// The clone has the same configuration but reset status.
+// Steps and handlers are shared (not deep copied).
+//
+// Returns a new BaseWorkflowAgent instance.
 func (w *BaseWorkflowAgent) Clone() *BaseWorkflowAgent {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
@@ -240,12 +290,25 @@ func (w *BaseWorkflowAgent) Clone() *BaseWorkflowAgent {
 	return clone
 }
 
-// OnEvent registers an event handler using the BaseAgentImpl functionality
+// OnEvent registers an event handler using the BaseAgentImpl functionality.
+// This allows monitoring workflow events during execution.
+//
+// Parameters:
+//   - handler: The event handler function
+//
+// Returns a subscription ID that can be used to unsubscribe.
 func (w *BaseWorkflowAgent) OnEvent(handler func(event *domain.Event)) string {
 	return w.BaseAgentImpl.OnEvent(handler)
 }
 
-// BeforeRun overrides BaseAgentImpl to call hooks before workflow execution
+// BeforeRun overrides BaseAgentImpl to call hooks before workflow execution.
+// It first calls the parent implementation, then notifies all registered hooks.
+//
+// Parameters:
+//   - ctx: The execution context
+//   - state: The initial state
+//
+// Returns an error if the parent BeforeRun fails.
 func (w *BaseWorkflowAgent) BeforeRun(ctx context.Context, state *domain.State) error {
 	// Call parent implementation first
 	if err := w.BaseAgentImpl.BeforeRun(ctx, state); err != nil {
@@ -257,7 +320,16 @@ func (w *BaseWorkflowAgent) BeforeRun(ctx context.Context, state *domain.State) 
 	return nil
 }
 
-// AfterRun overrides BaseAgentImpl to call hooks after workflow execution
+// AfterRun overrides BaseAgentImpl to call hooks after workflow execution.
+// It first notifies all registered hooks, then calls the parent implementation.
+//
+// Parameters:
+//   - ctx: The execution context
+//   - state: The initial state
+//   - result: The result state (may be nil on error)
+//   - err: Any error that occurred during execution
+//
+// Returns an error from the parent AfterRun.
 func (w *BaseWorkflowAgent) AfterRun(ctx context.Context, state *domain.State, result *domain.State, err error) error {
 	// Notify hooks first
 	w.notifyHooksAfterRun(ctx, state, result, err)

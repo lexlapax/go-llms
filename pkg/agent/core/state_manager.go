@@ -13,7 +13,9 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// StateManager manages state lifecycle and transformations
+// StateManager manages state lifecycle and transformations for agents.
+// It provides thread-safe storage for state snapshots, applies transformations,
+// validates state according to rules, and supports state merging strategies.
 type StateManager struct {
 	mu         sync.RWMutex
 	states     map[string]*domain.State
@@ -21,16 +23,25 @@ type StateManager struct {
 	validators map[string]StateValidator
 }
 
-// StateTransform defines a state transformation function
+// StateTransform defines a state transformation function.
+// Transformations are applied to modify state before or after agent execution.
+// Common uses include filtering sensitive data, enriching with metadata, or
+// converting between formats.
 type StateTransform func(ctx context.Context, input *domain.State) (*domain.State, error)
 
-// StateValidator validates state according to rules
+// StateValidator validates state according to rules.
+// Validators ensure state meets requirements before processing.
+// Return an error if validation fails.
 type StateValidator func(state *domain.State) error
 
-// MergeFunc defines a custom merge function
+// MergeFunc defines a custom merge function for combining multiple states.
+// Used when merging states from parent/child agents or multiple sources.
+// The function should handle conflicts and produce a coherent merged state.
 type MergeFunc func(states []*domain.State) (*domain.State, error)
 
-// NewStateManager creates a new state manager
+// NewStateManager creates a new state manager instance.
+// It initializes empty collections and registers built-in transforms
+// for common state operations like filtering and enrichment.
 func NewStateManager() *StateManager {
 	sm := &StateManager{
 		states:     make(map[string]*domain.State),
@@ -44,7 +55,9 @@ func NewStateManager() *StateManager {
 	return sm
 }
 
-// SaveState stores a state snapshot
+// SaveState stores a state snapshot in the manager.
+// The state is cloned to prevent external modifications.
+// Thread-safe for concurrent access.
 func (sm *StateManager) SaveState(state *domain.State) error {
 	if state == nil {
 		return fmt.Errorf("state cannot be nil")
@@ -57,7 +70,9 @@ func (sm *StateManager) SaveState(state *domain.State) error {
 	return nil
 }
 
-// LoadState retrieves a state snapshot
+// LoadState retrieves a state snapshot by ID.
+// Returns a clone of the stored state to prevent modifications.
+// Returns an error if the state doesn't exist.
 func (sm *StateManager) LoadState(id string) (*domain.State, error) {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
@@ -70,7 +85,9 @@ func (sm *StateManager) LoadState(id string) (*domain.State, error) {
 	return state.Clone(), nil
 }
 
-// DeleteState removes a state snapshot
+// DeleteState removes a state snapshot from storage.
+// Returns an error if the state doesn't exist.
+// Thread-safe for concurrent access.
 func (sm *StateManager) DeleteState(id string) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()

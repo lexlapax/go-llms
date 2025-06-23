@@ -12,7 +12,9 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// ToolAgent wraps a Tool to expose it as a BaseAgent
+// ToolAgent wraps a Tool to expose it as a BaseAgent.
+// This enables tools to be used in agent-based contexts, providing
+// the inverse functionality of AgentTool.
 type ToolAgent struct {
 	*core.BaseAgentImpl
 	tool            domain.Tool
@@ -22,13 +24,22 @@ type ToolAgent struct {
 	eventDispatcher domain.EventDispatcher // Added for event support
 }
 
-// ParamMapper extracts tool parameters from agent State
+// ParamMapper extracts tool parameters from agent State.
+// It bridges the gap between state-based agent inputs and parameter-based tool inputs.
 type ParamMapper func(ctx context.Context, state *domain.State) (interface{}, error)
 
-// StateUpdater updates the State with tool execution results
+// StateUpdater updates the State with tool execution results.
+// It handles both successful results and errors, updating the state accordingly.
 type StateUpdater func(ctx context.Context, state *domain.State, result interface{}, err error) (*domain.State, error)
 
-// NewToolAgent creates a new ToolAgent wrapper
+// NewToolAgent creates a new ToolAgent wrapper with default mappers.
+// The default param mapper extracts from "params" or "input" keys,
+// and the default state updater sets "result" and "success" keys.
+//
+// Parameters:
+//   - tool: The tool to wrap as an agent
+//
+// Returns a new ToolAgent instance.
 func NewToolAgent(tool domain.Tool) *ToolAgent {
 	ta := &ToolAgent{
 		BaseAgentImpl: core.NewBaseAgent(
@@ -47,7 +58,15 @@ func NewToolAgent(tool domain.Tool) *ToolAgent {
 	return ta
 }
 
-// Run executes the tool agent
+// Run executes the tool agent.
+// It extracts parameters from state, executes the tool, and updates
+// the state with results. Lifecycle hooks are called before and after execution.
+//
+// Parameters:
+//   - ctx: The execution context
+//   - input: The input state
+//
+// Returns the updated state or an error.
 func (ta *ToolAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
 	// Call lifecycle hooks from BaseAgentImpl
 	if err := ta.BeforeRun(ctx, input); err != nil {
@@ -68,25 +87,44 @@ func (ta *ToolAgent) Run(ctx context.Context, input *domain.State) (*domain.Stat
 	return result, err
 }
 
-// WithParamMapper sets a custom parameter mapper
+// WithParamMapper sets a custom parameter mapper.
+// This allows customization of how state is converted to tool parameters.
+//
+// Parameters:
+//   - mapper: The custom parameter mapper function
+//
+// Returns the ToolAgent for method chaining.
 func (ta *ToolAgent) WithParamMapper(mapper ParamMapper) *ToolAgent {
 	ta.paramMapper = mapper
 	return ta
 }
 
-// WithStateUpdater sets a custom state updater
+// WithStateUpdater sets a custom state updater.
+// This allows customization of how tool results are stored in state.
+//
+// Parameters:
+//   - updater: The custom state updater function
+//
+// Returns the ToolAgent for method chaining.
 func (ta *ToolAgent) WithStateUpdater(updater StateUpdater) *ToolAgent {
 	ta.stateUpdater = updater
 	return ta
 }
 
-// WithEventDispatcher sets the event dispatcher
+// WithEventDispatcher sets the event dispatcher.
+// This enables the tool to emit events during execution.
+//
+// Parameters:
+//   - dispatcher: The event dispatcher to use
+//
+// Returns the ToolAgent for method chaining.
 func (ta *ToolAgent) WithEventDispatcher(dispatcher domain.EventDispatcher) *ToolAgent {
 	ta.eventDispatcher = dispatcher
 	return ta
 }
 
-// execute is the internal execution function
+// execute is the internal execution function.
+// It handles parameter extraction, tool execution, and state updates.
 func (ta *ToolAgent) execute(ctx context.Context, state *domain.State) (*domain.State, error) {
 	// Extract parameters from State
 	params, err := ta.paramMapper(ctx, state)
@@ -132,7 +170,15 @@ func (ta *ToolAgent) execute(ctx context.Context, state *domain.State) (*domain.
 	return newState, nil
 }
 
-// DefaultParamMapper extracts parameters from State
+// DefaultParamMapper extracts parameters from State.
+// It checks for "params" and "input" keys in order, falling back
+// to the entire state values if neither exists.
+//
+// Parameters:
+//   - ctx: The execution context
+//   - state: The state to extract from
+//
+// Returns the extracted parameters or an error.
 func DefaultParamMapper(ctx context.Context, state *domain.State) (interface{}, error) {
 	// Check for explicit params key
 	if params, exists := state.Get("params"); exists {
@@ -148,7 +194,17 @@ func DefaultParamMapper(ctx context.Context, state *domain.State) (interface{}, 
 	return state.Values(), nil
 }
 
-// DefaultStateUpdater updates state with tool results
+// DefaultStateUpdater updates state with tool results.
+// It sets "result" and "success" keys, and for map results,
+// also adds prefixed keys for each map entry.
+//
+// Parameters:
+//   - ctx: The execution context
+//   - state: The state to update
+//   - result: The tool execution result
+//   - err: Any error from tool execution
+//
+// Returns the updated state.
 func DefaultStateUpdater(ctx context.Context, state *domain.State, result interface{}, err error) (*domain.State, error) {
 	if err != nil {
 		state.Set("error", err.Error())
@@ -170,7 +226,13 @@ func DefaultStateUpdater(ctx context.Context, state *domain.State, result interf
 	return state, nil
 }
 
-// CreateParamMapper creates a parameter mapper with field extraction
+// CreateParamMapper creates a parameter mapper with field extraction.
+// The mapper extracts specific fields from state based on the provided mappings.
+//
+// Parameters:
+//   - fieldMappings: Map of state keys to parameter keys
+//
+// Returns a ParamMapper function.
 func CreateParamMapper(fieldMappings map[string]string) ParamMapper {
 	return func(ctx context.Context, state *domain.State) (interface{}, error) {
 		params := make(map[string]interface{})
@@ -189,7 +251,13 @@ func CreateParamMapper(fieldMappings map[string]string) ParamMapper {
 	}
 }
 
-// CreateSingleParamMapper creates a mapper for tools expecting a single parameter
+// CreateSingleParamMapper creates a mapper for tools expecting a single parameter.
+// It extracts a single value from the specified state key.
+//
+// Parameters:
+//   - stateKey: The state key to extract
+//
+// Returns a ParamMapper function.
 func CreateSingleParamMapper(stateKey string) ParamMapper {
 	return func(ctx context.Context, state *domain.State) (interface{}, error) {
 		if value, exists := state.Get(stateKey); exists {
@@ -199,7 +267,13 @@ func CreateSingleParamMapper(stateKey string) ParamMapper {
 	}
 }
 
-// CreateStateUpdaterWithPrefix creates an updater that prefixes result keys
+// CreateStateUpdaterWithPrefix creates an updater that prefixes result keys.
+// This helps avoid key conflicts when multiple tools update the same state.
+//
+// Parameters:
+//   - prefix: The prefix to add to all result keys
+//
+// Returns a StateUpdater function.
 func CreateStateUpdaterWithPrefix(prefix string) StateUpdater {
 	return func(ctx context.Context, state *domain.State, result interface{}, err error) (*domain.State, error) {
 		if err != nil {
@@ -222,7 +296,8 @@ func CreateStateUpdaterWithPrefix(prefix string) StateUpdater {
 	}
 }
 
-// toolEventEmitter provides event emission for tools wrapped as agents
+// toolEventEmitter provides event emission for tools wrapped as agents.
+// It implements domain.ToolEventEmitter to bridge tool events with the agent event system.
 type toolEventEmitter struct {
 	dispatcher domain.EventDispatcher
 	agentID    string

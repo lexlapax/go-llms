@@ -178,7 +178,10 @@ func dateTimeInfoExecute(ctx *agentDomain.ToolContext, input DateTimeInfoInput) 
 	return output, nil
 }
 
-// DateTimeInfo returns a tool that gets information about a specific date
+// DateTimeInfo returns a tool that provides comprehensive information about a specific date.
+// It extracts day/week/month/year components, calculates ISO week numbers, determines leap years,
+// and provides period boundaries (start/end of week, month, quarter, year). The tool supports
+// customizable week start days and timezone-aware date analysis.
 func DateTimeInfo() agentDomain.Tool {
 	// First define the parameter schema
 	paramSchema := &schemaDomain.Schema{

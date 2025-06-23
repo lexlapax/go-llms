@@ -11,7 +11,10 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// ConditionalAgent executes different workflow branches based on conditions
+// ConditionalAgent executes different workflow branches based on conditions.
+// It provides if/else logic for workflows, allowing dynamic execution paths
+// based on state evaluation. Multiple branches can be configured with priorities,
+// and a default branch can be specified for when no conditions match.
 type ConditionalAgent struct {
 	*BaseWorkflowAgent
 
@@ -26,7 +29,9 @@ type ConditionalAgent struct {
 	allowMultipleMatches  bool // If true, allows multiple branches to execute
 }
 
-// ConditionalBranch represents a condition and its associated workflow step
+// ConditionalBranch represents a condition and its associated workflow step.
+// Each branch has a condition function that evaluates the current state
+// and a step to execute if the condition is true.
 type ConditionalBranch struct {
 	// Name of the branch for identification
 	Name string
@@ -41,7 +46,13 @@ type ConditionalBranch struct {
 	Priority int
 }
 
-// NewConditionalAgent creates a new conditional workflow agent
+// NewConditionalAgent creates a new conditional workflow agent.
+// By default, it evaluates conditions in order and executes only the first match.
+//
+// Parameters:
+//   - name: The name of the conditional workflow
+//
+// Returns a new ConditionalAgent instance.
 func NewConditionalAgent(name string) *ConditionalAgent {
 	return &ConditionalAgent{
 		BaseWorkflowAgent: NewBaseWorkflowAgent(
@@ -55,7 +66,15 @@ func NewConditionalAgent(name string) *ConditionalAgent {
 	}
 }
 
-// AddBranch adds a conditional branch
+// AddBranch adds a conditional branch to the workflow.
+// Branches are evaluated in the order they are added unless priorities are set.
+//
+// Parameters:
+//   - name: Unique name for the branch
+//   - condition: Function that evaluates the state and returns true if branch should execute
+//   - step: The workflow step to execute if condition is true
+//
+// Returns the ConditionalAgent for method chaining.
 func (c *ConditionalAgent) AddBranch(name string, condition func(state *domain.State) bool, step WorkflowStep) *ConditionalAgent {
 	branch := ConditionalBranch{
 		Name:      name,
@@ -67,7 +86,16 @@ func (c *ConditionalAgent) AddBranch(name string, condition func(state *domain.S
 	return c
 }
 
-// AddBranchWithPriority adds a conditional branch with priority
+// AddBranchWithPriority adds a conditional branch with priority.
+// Higher priority branches are evaluated first.
+//
+// Parameters:
+//   - name: Unique name for the branch
+//   - condition: Function that evaluates the state and returns true if branch should execute
+//   - step: The workflow step to execute if condition is true
+//   - priority: Branch priority (higher numbers execute first)
+//
+// Returns the ConditionalAgent for method chaining.
 func (c *ConditionalAgent) AddBranchWithPriority(name string, condition func(state *domain.State) bool, step WorkflowStep, priority int) *ConditionalAgent {
 	branch := ConditionalBranch{
 		Name:      name,
@@ -79,7 +107,15 @@ func (c *ConditionalAgent) AddBranchWithPriority(name string, condition func(sta
 	return c
 }
 
-// AddAgent adds an agent as a conditional branch
+// AddAgent adds an agent as a conditional branch.
+// This is a convenience method that wraps the agent in an AgentStep.
+//
+// Parameters:
+//   - name: Unique name for the branch
+//   - condition: Function that evaluates the state and returns true if agent should execute
+//   - agent: The agent to execute if condition is true
+//
+// Returns the ConditionalAgent for method chaining.
 func (c *ConditionalAgent) AddAgent(name string, condition func(state *domain.State) bool, agent domain.BaseAgent) *ConditionalAgent {
 	step := &AgentStep{
 		name:  fmt.Sprintf("%s-%s", name, agent.Name()),
@@ -88,13 +124,25 @@ func (c *ConditionalAgent) AddAgent(name string, condition func(state *domain.St
 	return c.AddBranch(name, condition, step)
 }
 
-// SetDefaultBranch sets the default branch (executed when no conditions match)
+// SetDefaultBranch sets the default branch (executed when no conditions match).
+// Only one default branch can be set; setting a new one replaces the previous.
+//
+// Parameters:
+//   - step: The workflow step to execute when no conditions match
+//
+// Returns the ConditionalAgent for method chaining.
 func (c *ConditionalAgent) SetDefaultBranch(step WorkflowStep) *ConditionalAgent {
 	c.defaultBranch = step
 	return c
 }
 
-// SetDefaultAgent sets an agent as the default branch
+// SetDefaultAgent sets an agent as the default branch.
+// This is a convenience method that wraps the agent in an AgentStep.
+//
+// Parameters:
+//   - agent: The agent to execute when no conditions match
+//
+// Returns the ConditionalAgent for method chaining.
 func (c *ConditionalAgent) SetDefaultAgent(agent domain.BaseAgent) *ConditionalAgent {
 	step := &AgentStep{
 		name:  fmt.Sprintf("default-%s", agent.Name()),
@@ -104,25 +152,51 @@ func (c *ConditionalAgent) SetDefaultAgent(agent domain.BaseAgent) *ConditionalA
 	return c
 }
 
-// WithEvaluateAllConditions configures whether to evaluate all conditions
+// WithEvaluateAllConditions configures whether to evaluate all conditions.
+// By default, evaluation stops after the first match unless this is enabled.
+//
+// Parameters:
+//   - evaluate: If true, all conditions are evaluated regardless of matches
+//
+// Returns the ConditionalAgent for method chaining.
 func (c *ConditionalAgent) WithEvaluateAllConditions(evaluate bool) *ConditionalAgent {
 	c.evaluateAllConditions = evaluate
 	return c
 }
 
-// WithAllowMultipleMatches configures whether multiple branches can execute
+// WithAllowMultipleMatches configures whether multiple branches can execute.
+// By default, only the first matching branch executes.
+//
+// Parameters:
+//   - allow: If true, all matching branches will execute
+//
+// Returns the ConditionalAgent for method chaining.
 func (c *ConditionalAgent) WithAllowMultipleMatches(allow bool) *ConditionalAgent {
 	c.allowMultipleMatches = allow
 	return c
 }
 
-// WithHook adds a monitoring hook to the workflow agent
+// WithHook adds a monitoring hook to the workflow agent.
+// Hooks allow monitoring and customization of workflow execution.
+//
+// Parameters:
+//   - hook: The hook to add
+//
+// Returns the ConditionalAgent for method chaining.
 func (c *ConditionalAgent) WithHook(hook domain.Hook) *ConditionalAgent {
 	c.BaseWorkflowAgent.WithHook(hook)
 	return c
 }
 
-// Run executes the conditional workflow
+// Run executes the conditional workflow.
+// It evaluates conditions in priority order and executes matching branches.
+// The workflow fails if any executed branch fails (unless error handling is configured).
+//
+// Parameters:
+//   - ctx: The execution context
+//   - input: The initial state
+//
+// Returns the final state after executing matching branches or an error.
 func (c *ConditionalAgent) Run(ctx context.Context, input *domain.State) (*domain.State, error) {
 	// Validate before running
 	if err := c.Validate(); err != nil {
@@ -334,7 +408,11 @@ func (c *ConditionalAgent) Run(ctx context.Context, input *domain.State) (*domai
 	return finalState, nil
 }
 
-// Validate validates the conditional workflow configuration
+// Validate validates the conditional workflow configuration.
+// It ensures at least one branch or default branch exists and validates
+// all branch configurations.
+//
+// Returns an error if validation fails.
 func (c *ConditionalAgent) Validate() error {
 	// Validate base agent but skip the step validation since we use branches
 	if err := c.BaseAgentImpl.Validate(); err != nil {
@@ -371,14 +449,20 @@ func (c *ConditionalAgent) Validate() error {
 	return nil
 }
 
-// GetBranches returns all conditional branches
+// GetBranches returns all conditional branches.
+// The returned slice is a copy to prevent external modifications.
+//
+// Returns a copy of all configured branches.
 func (c *ConditionalAgent) GetBranches() []ConditionalBranch {
 	branches := make([]ConditionalBranch, len(c.branches))
 	copy(branches, c.branches)
 	return branches
 }
 
-// GetDefaultBranch returns the default branch
+// GetDefaultBranch returns the default branch.
+// Returns nil if no default branch is configured.
+//
+// Returns the default workflow step or nil.
 func (c *ConditionalAgent) GetDefaultBranch() WorkflowStep {
 	return c.defaultBranch
 }

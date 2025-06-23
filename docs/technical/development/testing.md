@@ -566,7 +566,7 @@ jobs:
 
 ## Next Steps
 
-- Review [Contributing Guide](contributing.md) for development workflow
-- See [API Design](api-design.md) for interface guidelines
+- Review [Contributing Guide](../../../CONTRIBUTING.md) for development workflow
+- See [Documentation Style Guide](../../../CONTRIBUTING-DOCS.md) for documentation standards
 - Check test examples in `/tests` directory
 - Explore mock implementations in `/pkg/testutils/mocks`

@@ -10,19 +10,34 @@ import (
 	"strings"
 )
 
-// OpenAPIGenerator generates OpenAPI 3.0 specifications
+// OpenAPIGenerator generates OpenAPI 3.0 specifications.
+// It converts Documentable items into OpenAPI specifications with
+// paths, schemas, and examples suitable for API documentation.
 type OpenAPIGenerator struct {
 	config GeneratorConfig
 }
 
-// NewOpenAPIGenerator creates a new OpenAPI generator
+// NewOpenAPIGenerator creates a new OpenAPI generator.
+//
+// Parameters:
+//   - config: Configuration for the generator including title, version, and base URL
+//
+// Returns a configured OpenAPIGenerator instance.
 func NewOpenAPIGenerator(config GeneratorConfig) *OpenAPIGenerator {
 	return &OpenAPIGenerator{
 		config: config,
 	}
 }
 
-// GenerateOpenAPI generates an OpenAPI specification from documentable items
+// GenerateOpenAPI generates an OpenAPI specification from documentable items.
+// It creates a complete OpenAPI 3.0.3 specification with paths, schemas,
+// tags, and components based on the provided items.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - items: The documentable items to include
+//
+// Returns an OpenAPI specification or an error.
 func (g *OpenAPIGenerator) GenerateOpenAPI(ctx context.Context, items []Documentable) (*OpenAPISpec, error) {
 	spec := &OpenAPISpec{
 		OpenAPI: "3.0.3",
@@ -73,12 +88,27 @@ func (g *OpenAPIGenerator) GenerateOpenAPI(ctx context.Context, items []Document
 	return spec, nil
 }
 
-// GenerateMarkdown is not implemented by OpenAPIGenerator
+// GenerateMarkdown is not implemented by OpenAPIGenerator.
+// This method exists to satisfy the Generator interface but returns an error
+// as OpenAPI generation doesn't produce markdown.
+//
+// Parameters:
+//   - ctx: The context (unused)
+//   - items: The items to document (unused)
+//
+// Returns an error indicating markdown generation is not supported.
 func (g *OpenAPIGenerator) GenerateMarkdown(ctx context.Context, items []Documentable) (string, error) {
 	return "", fmt.Errorf("markdown generation not supported by OpenAPIGenerator")
 }
 
-// GenerateJSON generates JSON representation of the OpenAPI spec
+// GenerateJSON generates JSON representation of the OpenAPI spec.
+// It first generates the OpenAPI specification, then serializes it to JSON.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - items: The documentable items to include
+//
+// Returns JSON bytes of the OpenAPI spec or an error.
 func (g *OpenAPIGenerator) GenerateJSON(ctx context.Context, items []Documentable) ([]byte, error) {
 	spec, err := g.GenerateOpenAPI(ctx, items)
 	if err != nil {
@@ -88,13 +118,27 @@ func (g *OpenAPIGenerator) GenerateJSON(ctx context.Context, items []Documentabl
 	return json.MarshalIndent(spec, "", "  ")
 }
 
-// GenerateOpenAPIForTool generates OpenAPI documentation for a single tool
+// GenerateOpenAPIForTool generates OpenAPI documentation for a single tool.
+// This is a convenience function for generating documentation for individual tools.
+//
+// Parameters:
+//   - tool: The tool to document
+//   - config: Generator configuration
+//
+// Returns an OpenAPI specification for the tool or an error.
 func GenerateOpenAPIForTool(tool Documentable, config GeneratorConfig) (*OpenAPISpec, error) {
 	generator := NewOpenAPIGenerator(config)
 	return generator.GenerateOpenAPI(context.Background(), []Documentable{tool})
 }
 
-// groupItems groups documentable items by category
+// groupItems groups documentable items by category.
+// It supports grouping by category, type, or using a default group.
+// This enables organized presentation in the OpenAPI specification.
+//
+// Parameters:
+//   - items: The documentable items to group
+//
+// Returns a map of group names to items.
 func (g *OpenAPIGenerator) groupItems(items []Documentable) map[string][]Documentable {
 	groups := make(map[string][]Documentable)
 
@@ -122,7 +166,16 @@ func (g *OpenAPIGenerator) groupItems(items []Documentable) map[string][]Documen
 	return groups
 }
 
-// addItemToSpec adds a documentable item to the OpenAPI spec
+// addItemToSpec adds a documentable item to the OpenAPI spec.
+// It creates paths, operations, schemas, and examples for the item,
+// organizing them within the appropriate sections of the specification.
+//
+// Parameters:
+//   - spec: The OpenAPI specification to add to
+//   - item: The documentable item to add
+//   - category: The category for tagging
+//
+// Returns an error if the item cannot be added.
 func (g *OpenAPIGenerator) addItemToSpec(spec *OpenAPISpec, item Documentable, category string) error {
 	doc := item.GetDocumentation()
 
@@ -226,7 +279,14 @@ func (g *OpenAPIGenerator) addItemToSpec(spec *OpenAPISpec, item Documentable, c
 	return nil
 }
 
-// ConvertSchemaToOpenAPI converts our Schema type to OpenAPI schema format
+// ConvertSchemaToOpenAPI converts our Schema type to OpenAPI schema format.
+// It recursively transforms the Schema structure into a map suitable for
+// JSON serialization in OpenAPI specifications.
+//
+// Parameters:
+//   - schema: The schema to convert
+//
+// Returns a map representing the OpenAPI schema.
 func ConvertSchemaToOpenAPI(schema *Schema) map[string]interface{} {
 	result := make(map[string]interface{})
 

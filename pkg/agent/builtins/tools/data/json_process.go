@@ -69,6 +69,9 @@ var jsonProcessParamSchema = &sdomain.Schema{
 }
 
 // JSONProcess creates a tool for processing JSON data
+// This tool provides JSON manipulation capabilities including parsing,
+// querying with JSONPath expressions, and various transformations
+// like flattening, prettifying, and extracting keys/values.
 func JSONProcess() domain.Tool {
 
 	// Create output schema for JSONProcessOutput

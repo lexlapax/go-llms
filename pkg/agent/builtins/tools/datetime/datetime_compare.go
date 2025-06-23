@@ -246,6 +246,9 @@ func dateTimeCompareExecute(ctx *agentDomain.ToolContext, input DateTimeCompareI
 }
 
 // DateTimeCompare returns a tool that compares dates and times
+// This tool provides various comparison operations including before/after checks,
+// same period comparisons, range checking, sorting, and finding extreme dates.
+// It supports timezone-aware comparisons and detailed time difference calculations.
 func DateTimeCompare() agentDomain.Tool {
 	// Define parameter schema
 	paramSchema := &schemaDomain.Schema{

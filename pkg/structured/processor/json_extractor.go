@@ -37,11 +37,19 @@ func ExtractJSON(s string) string {
 // extractJSONImpl implements the actual JSON extraction logic
 // This was extracted from ExtractJSON to allow for profiling
 func extractJSONImpl(s string) string {
-	// Check for markdown code blocks first (common in LLM responses)
+	// extractJSONImpl extracts the first valid JSON object or array from a string.
+	// It handles multiple extraction strategies in order of likelihood:
+	// 1. Markdown code blocks (```json ... ```)
+	// 2. Bracket matching for objects {}
+	// 3. Bracket matching for arrays []
+	// The function properly handles nested structures and escaped quotes.
+
+	// Strategy 1: Check for markdown code blocks first (common in LLM responses)
+	// Many LLMs wrap JSON in markdown code blocks for formatting
 	if strings.Contains(s, "```") {
 		if matches := markdownCodeRegex.FindStringSubmatch(s); len(matches) > 1 {
 			potentialJSON := strings.TrimSpace(matches[1])
-			// Verify it starts and ends correctly and is valid JSON
+			// Verify it starts and ends correctly before expensive validation
 			if (strings.HasPrefix(potentialJSON, "{") && strings.HasSuffix(potentialJSON, "}")) ||
 				(strings.HasPrefix(potentialJSON, "[") && strings.HasSuffix(potentialJSON, "]")) {
 				if json.Valid([]byte(potentialJSON)) {
@@ -51,22 +59,25 @@ func extractJSONImpl(s string) string {
 		}
 	}
 
-	// Fast path: Try to find complete JSON objects in the string
-	// This handles the case of multiple JSON objects in the same string
+	// Strategy 2: Find JSON objects using bracket matching
+	// This handles raw JSON mixed with text (e.g., "The result is {\"key\": \"value\"}")
 	for i := 0; i < len(s); i++ {
 		if s[i] == '{' {
-			// Try to find matching closing brace
+			// Track nesting level and string context
 			level := 0
 			inString := false
 			escaped := false
 
+			// Scan forward to find matching closing brace
 			for j := i; j < len(s); j++ {
 				if !escaped {
 					switch s[j] {
 					case '\\':
+						// Next character is escaped
 						escaped = true
 						continue
 					case '"':
+						// Toggle string context (ignore brackets in strings)
 						inString = !inString
 					case '{':
 						if !inString {
@@ -76,12 +87,12 @@ func extractJSONImpl(s string) string {
 						if !inString {
 							level--
 							if level == 0 {
-								// Found matching closing brace - check if it's valid JSON
+								// Found matching brace - validate the JSON
 								candidate := s[i : j+1]
 								if json.Valid([]byte(candidate)) {
 									return candidate
 								}
-								// Invalid JSON, continue searching
+								// Invalid JSON, continue searching from next position
 								break
 							}
 						}
@@ -92,14 +103,16 @@ func extractJSONImpl(s string) string {
 		}
 	}
 
-	// Fast path: Try to find complete JSON arrays in the string
+	// Strategy 3: Find JSON arrays using bracket matching
+	// Same logic as objects but for array structures
 	for i := 0; i < len(s); i++ {
 		if s[i] == '[' {
-			// Try to find matching closing bracket
+			// Track nesting level and string context
 			level := 0
 			inString := false
 			escaped := false
 
+			// Scan forward to find matching closing bracket
 			for j := i; j < len(s); j++ {
 				if !escaped {
 					switch s[j] {

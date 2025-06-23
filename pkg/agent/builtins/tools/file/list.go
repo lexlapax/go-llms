@@ -501,7 +501,10 @@ func fileListMain(ctx *domain.ToolContext, params FileListParams) (*FileListResu
 	}, nil
 }
 
-// FileList creates a tool for listing files and directories
+// FileList creates a tool for listing files and directories with extensive filtering and sorting options.
+// It supports recursive directory traversal, pattern matching, size/date filtering, and custom sorting.
+// The tool efficiently handles large directory structures with progress reporting and context cancellation support.
+// Results can be limited and filtered based on multiple criteria including file patterns, size ranges, and modification times.
 func FileList() domain.Tool {
 	builder := atools.NewToolBuilder("file_list", "Lists files and directories with filtering options").
 		WithFunction(fileListMain).

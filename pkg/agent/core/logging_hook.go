@@ -13,13 +13,16 @@ import (
 	ldomain "github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
-// LoggingHook implements Hook for logging
+// LoggingHook implements Hook for logging agent operations.
+// It provides configurable logging levels to control the amount of detail
+// logged during agent execution, from basic operation tracking to full debug output.
 type LoggingHook struct {
 	logger *slog.Logger
 	level  LogLevel
 }
 
-// LogLevel represents the level of logging detail
+// LogLevel represents the level of logging detail for agent operations.
+// Higher levels include all information from lower levels.
 type LogLevel int
 
 const (
@@ -31,7 +34,9 @@ const (
 	LogLevelDebug
 )
 
-// NewLoggingHook creates a new logging hook
+// NewLoggingHook creates a new logging hook with the specified logger and level.
+// If logger is nil, uses slog.Default(). The level controls how much detail
+// is logged during agent operations.
 func NewLoggingHook(logger *slog.Logger, level LogLevel) *LoggingHook {
 	if logger == nil {
 		logger = slog.Default()
@@ -42,7 +47,8 @@ func NewLoggingHook(logger *slog.Logger, level LogLevel) *LoggingHook {
 	}
 }
 
-// BeforeGenerate is called before generating a response
+// BeforeGenerate is called before generating a response.
+// Logs the operation start and message details based on the configured log level.
 func (h *LoggingHook) BeforeGenerate(ctx context.Context, messages []ldomain.Message) {
 	h.logger.Info("Generating response", "emoji", "🤔")
 

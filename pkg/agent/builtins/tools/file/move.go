@@ -358,7 +358,10 @@ func fileMoveMain(ctx *domain.ToolContext, params FileMoveParams) (*FileMoveResu
 	return result, nil
 }
 
-// FileMove creates a tool for moving or renaming files and directories
+// FileMove creates a tool for moving or renaming files and directories with atomic operations and cross-device support.
+// It handles both simple renames within the same directory and complex moves across different filesystems.
+// The tool provides safety features like overwrite protection, parent directory creation, and attribute preservation.
+// Cross-device moves are automatically detected and handled using a copy-then-delete approach for files.
 func FileMove() domain.Tool {
 	builder := atools.NewToolBuilder("file_move", "Moves or renames files and directories").
 		WithFunction(fileMoveMain).

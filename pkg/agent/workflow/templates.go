@@ -8,7 +8,9 @@ import (
 	"sync"
 )
 
-// WorkflowTemplate represents a reusable workflow pattern
+// WorkflowTemplate represents a reusable workflow pattern.
+// Templates provide pre-built workflows that can be customized with
+// variables, making it easy to create common workflow patterns.
 type WorkflowTemplate struct {
 	ID          string
 	Name        string
@@ -20,7 +22,9 @@ type WorkflowTemplate struct {
 	Examples    []TemplateExample
 }
 
-// TemplateVariable defines a customizable variable in a template
+// TemplateVariable defines a customizable variable in a template.
+// Variables allow templates to be parameterized and reused with
+// different configurations.
 type TemplateVariable struct {
 	Name        string
 	Description string
@@ -30,7 +34,9 @@ type TemplateVariable struct {
 	Validation  string // Simple validation expression
 }
 
-// TemplateExample shows how to use the template
+// TemplateExample shows how to use the template.
+// Examples provide concrete usage scenarios with specific
+// variable values to help users understand the template.
 type TemplateExample struct {
 	Name        string
 	Description string
@@ -48,7 +54,13 @@ var globalTemplateRegistry = &templateRegistry{
 	templates: make(map[string]*WorkflowTemplate),
 }
 
-// RegisterTemplate registers a workflow template
+// RegisterTemplate registers a workflow template.
+// Templates must have unique IDs and valid definitions.
+//
+// Parameters:
+//   - template: The workflow template to register
+//
+// Returns an error if the template is invalid or ID is empty.
 func RegisterTemplate(template *WorkflowTemplate) error {
 	globalTemplateRegistry.mu.Lock()
 	defer globalTemplateRegistry.mu.Unlock()
@@ -64,7 +76,12 @@ func RegisterTemplate(template *WorkflowTemplate) error {
 	return nil
 }
 
-// GetTemplate retrieves a template by ID
+// GetTemplate retrieves a template by ID.
+//
+// Parameters:
+//   - id: The template ID to look up
+//
+// Returns the template or an error if not found.
 func GetTemplate(id string) (*WorkflowTemplate, error) {
 	globalTemplateRegistry.mu.RLock()
 	defer globalTemplateRegistry.mu.RUnlock()
@@ -76,7 +93,10 @@ func GetTemplate(id string) (*WorkflowTemplate, error) {
 	return template, nil
 }
 
-// ListTemplates returns all registered templates
+// ListTemplates returns all registered templates.
+// The returned slice contains templates in no particular order.
+//
+// Returns a slice of all registered workflow templates.
 func ListTemplates() []*WorkflowTemplate {
 	globalTemplateRegistry.mu.RLock()
 	defer globalTemplateRegistry.mu.RUnlock()
@@ -88,7 +108,13 @@ func ListTemplates() []*WorkflowTemplate {
 	return templates
 }
 
-// ListTemplatesByCategory returns templates in a specific category
+// ListTemplatesByCategory returns templates in a specific category.
+// Categories help organize templates by their use case or domain.
+//
+// Parameters:
+//   - category: The category to filter by
+//
+// Returns templates matching the specified category.
 func ListTemplatesByCategory(category string) []*WorkflowTemplate {
 	globalTemplateRegistry.mu.RLock()
 	defer globalTemplateRegistry.mu.RUnlock()
@@ -102,7 +128,13 @@ func ListTemplatesByCategory(category string) []*WorkflowTemplate {
 	return templates
 }
 
-// SearchTemplates searches templates by tags
+// SearchTemplates searches templates by tags.
+// Returns templates that have any of the specified tags.
+//
+// Parameters:
+//   - tags: Tags to search for
+//
+// Returns templates matching any of the provided tags.
 func SearchTemplates(tags []string) []*WorkflowTemplate {
 	globalTemplateRegistry.mu.RLock()
 	defer globalTemplateRegistry.mu.RUnlock()
@@ -130,7 +162,15 @@ func hasAnyTag(templateTags, searchTags []string) bool {
 	return false
 }
 
-// ApplyTemplate creates a workflow from a template with variables
+// ApplyTemplate creates a workflow from a template with variables.
+// It validates required variables and applies defaults where needed.
+// Variable substitution is performed on the workflow definition.
+//
+// Parameters:
+//   - templateID: The ID of the template to apply
+//   - variables: Variable values to substitute
+//
+// Returns a workflow definition with variables applied or an error.
 func ApplyTemplate(templateID string, variables map[string]interface{}) (*WorkflowDefinition, error) {
 	template, err := GetTemplate(templateID)
 	if err != nil {
@@ -166,7 +206,11 @@ func ApplyTemplate(templateID string, variables map[string]interface{}) (*Workfl
 	return def, nil
 }
 
-// CreateDataProcessingTemplate creates a template for data processing workflows
+// CreateDataProcessingTemplate creates a template for data processing workflows.
+// This template provides a standard pattern for ETL (Extract, Transform, Load)
+// operations with validation, transformation, and storage steps.
+//
+// Returns a configured data processing workflow template.
 func CreateDataProcessingTemplate() *WorkflowTemplate {
 	// This is a simple example template
 	// Build steps with error handling
@@ -239,7 +283,11 @@ func CreateDataProcessingTemplate() *WorkflowTemplate {
 	}
 }
 
-// CreateAPIIntegrationTemplate creates a template for API integration workflows
+// CreateAPIIntegrationTemplate creates a template for API integration workflows.
+// This template provides a pattern for fetching data from external APIs
+// and processing the responses.
+//
+// Returns a configured API integration workflow template.
 func CreateAPIIntegrationTemplate() *WorkflowTemplate {
 	return &WorkflowTemplate{
 		ID:          "api-integration",
@@ -270,7 +318,11 @@ func CreateAPIIntegrationTemplate() *WorkflowTemplate {
 	}
 }
 
-// RegisterDefaultTemplates registers the built-in templates
+// RegisterDefaultTemplates registers the built-in templates.
+// This includes data processing and API integration templates.
+// Additional templates can be registered separately.
+//
+// Returns an error if any template registration fails.
 func RegisterDefaultTemplates() error {
 	templates := []*WorkflowTemplate{
 		CreateDataProcessingTemplate(),

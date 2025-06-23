@@ -1,3 +1,7 @@
+// Package generator provides JSON schema generation from Go types.
+// It supports both reflection-based and tag-based schema generation,
+// allowing for flexible and customizable schema creation from struct
+// tags with support for validation rules and multiple tag formats.
 package generator
 
 // ABOUTME: Tag-based schema generator that prioritizes struct tags
@@ -12,7 +16,9 @@ import (
 	"github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// TagSchemaGenerator generates schemas primarily from struct tags
+// TagSchemaGenerator generates schemas primarily from struct tags.
+// It supports multiple tag formats (schema, json, validate, binding) with
+// configurable priority ordering and custom validation rule extraction.
 type TagSchemaGenerator struct {
 	// Tag priority order
 	tagPriority []string
@@ -24,19 +30,28 @@ type TagSchemaGenerator struct {
 	validationExtractor ValidationExtractor
 }
 
-// TagParser parses a specific tag and updates the property
+// TagParser parses a specific tag and updates the property.
+// Custom parsers can be registered to handle domain-specific tag formats.
 type TagParser func(tagValue string, prop *domain.Property) error
 
-// ValidationExtractor extracts validation rules from tags
+// ValidationExtractor extracts validation rules from tags.
+// Implementations analyze struct tags to identify validation constraints
+// that should be applied to the generated schema property.
 type ValidationExtractor func(tags reflect.StructTag) []ValidationRule
 
-// ValidationRule represents an extracted validation rule
+// ValidationRule represents an extracted validation rule.
+// It captures the rule type and associated value for applying
+// constraints to schema properties during generation.
 type ValidationRule struct {
 	Type  string
 	Value interface{}
 }
 
-// NewTagSchemaGenerator creates a new tag-based generator
+// NewTagSchemaGenerator creates a new tag-based generator.
+// Initializes with default tag parsers and validation extractors
+// for common tag formats (schema, json, validate, binding).
+//
+// Returns a configured TagSchemaGenerator instance.
 func NewTagSchemaGenerator() *TagSchemaGenerator {
 	g := &TagSchemaGenerator{
 		tagPriority: []string{"schema", "json", "validate", "binding"},
@@ -52,22 +67,45 @@ func NewTagSchemaGenerator() *TagSchemaGenerator {
 	return g
 }
 
-// SetTagPriority sets the order in which tags are processed
+// SetTagPriority sets the order in which tags are processed.
+// Tags are processed in the specified order, with earlier tags
+// taking precedence over later ones for conflicting properties.
+//
+// Parameters:
+//   - tags: Ordered list of tag names to process
 func (g *TagSchemaGenerator) SetTagPriority(tags []string) {
 	g.tagPriority = tags
 }
 
-// RegisterTagParser registers a custom tag parser
+// RegisterTagParser registers a custom tag parser.
+// Allows extending the generator with support for domain-specific
+// tag formats and validation rules.
+//
+// Parameters:
+//   - tag: The tag name to handle
+//   - parser: The function to parse the tag value
 func (g *TagSchemaGenerator) RegisterTagParser(tag string, parser TagParser) {
 	g.tagParsers[tag] = parser
 }
 
-// SetValidationExtractor sets a custom validation extractor
+// SetValidationExtractor sets a custom validation extractor.
+// Replaces the default validation rule extraction logic with
+// a custom implementation for specialized validation formats.
+//
+// Parameters:
+//   - extractor: The custom validation extraction function
 func (g *TagSchemaGenerator) SetValidationExtractor(extractor ValidationExtractor) {
 	g.validationExtractor = extractor
 }
 
-// GenerateSchema generates a JSON schema from a Go type using tags
+// GenerateSchema generates a JSON schema from a Go type using tags.
+// Analyzes struct tags to create comprehensive JSON schema definitions
+// with validation constraints, type information, and metadata.
+//
+// Parameters:
+//   - obj: The Go type to generate a schema for (must be a struct)
+//
+// Returns the generated schema or an error.
 func (g *TagSchemaGenerator) GenerateSchema(obj interface{}) (*domain.Schema, error) {
 	t := reflect.TypeOf(obj)
 	if t == nil {
@@ -130,7 +168,12 @@ func (g *TagSchemaGenerator) GenerateSchema(obj interface{}) (*domain.Schema, er
 	return schema, nil
 }
 
-// extractSchemaMetadata extracts schema-level metadata from type and tags
+// extractSchemaMetadata extracts schema-level metadata from type and tags.
+// Sets the schema title and description based on the Go type information.
+//
+// Parameters:
+//   - t: The reflect.Type to extract metadata from
+//   - schema: The schema to populate with metadata
 func (g *TagSchemaGenerator) extractSchemaMetadata(t reflect.Type, schema *domain.Schema) {
 	// Use type name as default title
 	schema.Title = t.Name()
@@ -142,7 +185,14 @@ func (g *TagSchemaGenerator) extractSchemaMetadata(t reflect.Type, schema *domai
 	}
 }
 
-// getFieldName extracts the field name from tags
+// getFieldName extracts the field name from tags.
+// Processes tags in priority order to determine the JSON property name,
+// respecting exclusion markers like "-" in json tags.
+//
+// Parameters:
+//   - field: The struct field to process
+//
+// Returns the property name and whether the field should be included.
 func (g *TagSchemaGenerator) getFieldName(field reflect.StructField) (string, bool) {
 	// Check tags in priority order
 	for _, tagName := range g.tagPriority {
@@ -172,7 +222,14 @@ func (g *TagSchemaGenerator) getFieldName(field reflect.StructField) (string, bo
 	return field.Name, true
 }
 
-// isFieldRequired checks if a field is required based on tags
+// isFieldRequired checks if a field is required based on tags.
+// Analyzes various tag formats to determine if a field should be
+// marked as required in the generated schema.
+//
+// Parameters:
+//   - field: The struct field to check
+//
+// Returns true if the field is required.
 func (g *TagSchemaGenerator) isFieldRequired(field reflect.StructField) bool {
 	// Check each tag type
 	for _, tagName := range g.tagPriority {
@@ -202,7 +259,14 @@ func (g *TagSchemaGenerator) isFieldRequired(field reflect.StructField) bool {
 	return false
 }
 
-// generatePropertyFromTags creates a property by parsing all relevant tags
+// generatePropertyFromTags creates a property by parsing all relevant tags.
+// Combines type inference from Go types with tag-based customization
+// to produce comprehensive property definitions.
+//
+// Parameters:
+//   - field: The struct field to generate a property for
+//
+// Returns the generated property or an error.
 func (g *TagSchemaGenerator) generatePropertyFromTags(field reflect.StructField) (domain.Property, error) {
 	prop := domain.Property{}
 
@@ -251,7 +315,13 @@ func (g *TagSchemaGenerator) generatePropertyFromTags(field reflect.StructField)
 	return prop, nil
 }
 
-// inferBasicType infers the basic JSON schema type from Go type
+// inferBasicType infers the basic JSON schema type from Go type.
+// Maps Go types to JSON schema types with appropriate defaults
+// for complex types like slices, maps, and structs.
+//
+// Parameters:
+//   - t: The Go type to analyze
+//   - prop: The property to update with type information
 func (g *TagSchemaGenerator) inferBasicType(t reflect.Type, prop *domain.Property) {
 	// Handle pointers
 	if t.Kind() == reflect.Ptr {
@@ -281,7 +351,9 @@ func (g *TagSchemaGenerator) inferBasicType(t reflect.Type, prop *domain.Propert
 	}
 }
 
-// registerDefaultParsers registers the default tag parsers
+// registerDefaultParsers registers the default tag parsers.
+// Sets up parsers for common tag formats including schema, validate,
+// json, format, and pattern tags with appropriate value extraction.
 func (g *TagSchemaGenerator) registerDefaultParsers() {
 	// Schema tag parser
 	g.tagParsers["schema"] = func(tagValue string, prop *domain.Property) error {
@@ -398,7 +470,14 @@ func (g *TagSchemaGenerator) registerDefaultParsers() {
 	}
 }
 
-// defaultValidationExtractor extracts validation rules from common tags
+// defaultValidationExtractor extracts validation rules from common tags.
+// Processes validate and binding tags to identify validation constraints
+// that should be applied to the generated schema property.
+//
+// Parameters:
+//   - tags: The struct tags to analyze
+//
+// Returns a list of validation rules extracted from the tags.
 func (g *TagSchemaGenerator) defaultValidationExtractor(tags reflect.StructTag) []ValidationRule {
 	var rules []ValidationRule
 
@@ -437,7 +516,13 @@ func (g *TagSchemaGenerator) defaultValidationExtractor(tags reflect.StructTag) 
 	return rules
 }
 
-// applyValidationRules applies extracted validation rules to the property
+// applyValidationRules applies extracted validation rules to the property.
+// Converts validation rules into appropriate schema constraints such as
+// minimum/maximum values, length constraints, and format specifications.
+//
+// Parameters:
+//   - prop: The property to apply rules to
+//   - rules: The validation rules to apply
 func (g *TagSchemaGenerator) applyValidationRules(prop *domain.Property, rules []ValidationRule) {
 	for _, rule := range rules {
 		switch rule.Type {
@@ -472,7 +557,13 @@ func (g *TagSchemaGenerator) applyValidationRules(prop *domain.Property, rules [
 	}
 }
 
-// extractDescription extracts description from various tags
+// extractDescription extracts description from various tags.
+// Checks multiple tag names (description, desc, doc, comment) and
+// schema tag parameters to find descriptive text for the property.
+//
+// Parameters:
+//   - tags: The struct tags to search
+//   - prop: The property to update with description
 func (g *TagSchemaGenerator) extractDescription(tags reflect.StructTag, prop *domain.Property) {
 	// Check tags in order of preference
 	descTags := []string{"description", "desc", "doc", "comment"}

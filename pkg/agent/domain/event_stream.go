@@ -9,7 +9,9 @@ import (
 	"time"
 )
 
-// FunctionalEventStream provides functional operations on event streams
+// FunctionalEventStream provides functional operations on event streams.
+// It supports reactive programming patterns for processing agent events
+// with operations like filter, map, reduce, and stream control methods.
 type FunctionalEventStream interface {
 	// Core operations
 	Filter(predicate EventPredicate) FunctionalEventStream
@@ -27,13 +29,16 @@ type FunctionalEventStream interface {
 	First() (Event, error)
 }
 
-// EventPredicate filters events
+// EventPredicate filters events based on custom criteria.
+// Returns true if the event should be included in the stream.
 type EventPredicate func(Event) bool
 
-// EventTransform transforms events
+// EventTransform transforms events by modifying their content.
+// Used with Map operations to change event data or metadata.
 type EventTransform func(Event) Event
 
-// EventReducer reduces events to a single value
+// EventReducer reduces events to a single accumulated value.
+// The accumulator is passed through each invocation with the next event.
 type EventReducer func(interface{}, Event) interface{}
 
 // Common predicates
@@ -132,7 +137,8 @@ var (
 	}
 )
 
-// eventStream is the default implementation
+// eventStream is the default implementation of FunctionalEventStream.
+// It wraps a channel source and provides context-aware stream operations.
 type eventStream struct {
 	source  <-chan Event
 	ctx     context.Context
@@ -141,7 +147,8 @@ type eventStream struct {
 	once    sync.Once
 }
 
-// Close cancels the stream's context (only called once)
+// Close cancels the stream's context to stop all operations.
+// Uses sync.Once to ensure cancellation happens only once.
 func (s *eventStream) Close() {
 	s.once.Do(func() {
 		if s.cancel != nil {
@@ -150,7 +157,9 @@ func (s *eventStream) Close() {
 	})
 }
 
-// NewFunctionalEventStream creates a new functional event stream from a channel
+// NewFunctionalEventStream creates a new functional event stream from a channel.
+// The stream operations are context-aware and will stop when context is cancelled.
+// The source channel should be closed when no more events will be sent.
 func NewFunctionalEventStream(ctx context.Context, source <-chan Event) FunctionalEventStream {
 	streamCtx, cancel := context.WithCancel(ctx)
 	return &eventStream{
@@ -160,7 +169,8 @@ func NewFunctionalEventStream(ctx context.Context, source <-chan Event) Function
 	}
 }
 
-// Filter returns a new stream with filtered events
+// Filter returns a new stream containing only events that match the predicate.
+// Events that don't match are discarded from the resulting stream.
 func (s *eventStream) Filter(predicate EventPredicate) FunctionalEventStream {
 	filtered := make(chan Event)
 	newCtx, cancel := context.WithCancel(s.ctx)
@@ -194,7 +204,8 @@ func (s *eventStream) Filter(predicate EventPredicate) FunctionalEventStream {
 	}
 }
 
-// Map returns a new stream with transformed events
+// Map returns a new stream with events transformed by the given function.
+// Each event is passed through the transform function before emission.
 func (s *eventStream) Map(transform EventTransform) FunctionalEventStream {
 	mapped := make(chan Event)
 	newCtx, cancel := context.WithCancel(s.ctx)
@@ -227,7 +238,9 @@ func (s *eventStream) Map(transform EventTransform) FunctionalEventStream {
 	}
 }
 
-// Reduce accumulates events into a single value
+// Reduce accumulates all events into a single value using the reducer function.
+// The initial value is used as the starting accumulator value.
+// This is a terminal operation that consumes the entire stream.
 func (s *eventStream) Reduce(reducer EventReducer, initial interface{}) interface{} {
 	result := initial
 
@@ -244,7 +257,8 @@ func (s *eventStream) Reduce(reducer EventReducer, initial interface{}) interfac
 	}
 }
 
-// Take returns a stream that emits at most n events
+// Take returns a stream that emits at most n events then completes.
+// Useful for limiting the number of events processed from a stream.
 func (s *eventStream) Take(n int) FunctionalEventStream {
 	taken := make(chan Event)
 	newCtx, cancel := context.WithCancel(s.ctx)
@@ -282,7 +296,9 @@ func (s *eventStream) Take(n int) FunctionalEventStream {
 	}
 }
 
-// TakeUntil returns a stream that emits until predicate is true
+// TakeUntil returns a stream that emits events until the predicate matches.
+// The matching event is included as the last event in the stream.
+// The stream completes after emitting the matching event.
 func (s *eventStream) TakeUntil(predicate EventPredicate) FunctionalEventStream {
 	taken := make(chan Event)
 	newCtx, cancel := context.WithCancel(s.ctx)
@@ -325,7 +341,8 @@ func (s *eventStream) TakeUntil(predicate EventPredicate) FunctionalEventStream 
 	}
 }
 
-// Timeout returns a stream that times out after duration
+// Timeout returns a stream that automatically completes after the specified duration.
+// If the timeout is reached, operations will return ErrExecutionTimeout.
 func (s *eventStream) Timeout(duration time.Duration) FunctionalEventStream {
 	newCtx, cancel := context.WithTimeout(s.ctx, duration)
 	return &eventStream{
@@ -336,7 +353,9 @@ func (s *eventStream) Timeout(duration time.Duration) FunctionalEventStream {
 	}
 }
 
-// ForEach applies handler to each event
+// ForEach applies the handler function to each event in the stream.
+// This is a terminal operation that consumes all events.
+// Returns an error if the handler fails or the stream times out.
 func (s *eventStream) ForEach(handler EventHandler) error {
 	for {
 		select {
@@ -356,7 +375,9 @@ func (s *eventStream) ForEach(handler EventHandler) error {
 	}
 }
 
-// Collect gathers all events into a slice
+// Collect gathers all events from the stream into a slice.
+// This is a terminal operation that consumes the entire stream.
+// Returns all collected events or an error if the stream times out.
 func (s *eventStream) Collect() ([]Event, error) {
 	var events []Event
 
@@ -376,7 +397,9 @@ func (s *eventStream) Collect() ([]Event, error) {
 	}
 }
 
-// First returns the first event
+// First returns the first event from the stream.
+// This is a terminal operation that consumes only one event.
+// Returns ErrEventDispatch if no events are available.
 func (s *eventStream) First() (Event, error) {
 	select {
 	case event, ok := <-s.source:
@@ -394,7 +417,9 @@ func (s *eventStream) First() (Event, error) {
 
 // Helper functions for creating event streams
 
-// EventsFromSlice creates a stream from a slice of events
+// EventsFromSlice creates a functional event stream from a slice of events.
+// The events are immediately buffered into a channel and the stream is ready.
+// Useful for testing or working with pre-collected events.
 func EventsFromSlice(ctx context.Context, events []Event) FunctionalEventStream {
 	ch := make(chan Event, len(events))
 	for _, e := range events {
@@ -404,7 +429,9 @@ func EventsFromSlice(ctx context.Context, events []Event) FunctionalEventStream 
 	return NewFunctionalEventStream(ctx, ch)
 }
 
-// MergeFunctionalEventStreams merges multiple functional streams into one
+// MergeFunctionalEventStreams merges multiple functional streams into a single stream.
+// Events from all input streams are combined in the order they arrive.
+// The merged stream completes when all input streams have completed.
 func MergeFunctionalEventStreams(ctx context.Context, streams ...FunctionalEventStream) FunctionalEventStream {
 	merged := make(chan Event)
 	var wg sync.WaitGroup

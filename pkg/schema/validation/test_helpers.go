@@ -1,3 +1,8 @@
+// ABOUTME: Test helper utilities for schema validation tests.
+// ABOUTME: Provides pointer creation functions to simplify test setup.
+
+// Package validation provides JSON schema validation with performance optimizations.
+// This file contains test helper functions for creating pointer values.
 package validation
 
 // Common test helpers to avoid redeclaration issues

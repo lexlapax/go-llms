@@ -150,7 +150,10 @@ func init() {
 	})
 }
 
-// WriteFile creates a tool for writing files with enhanced capabilities
+// WriteFile creates a tool for writing files with enhanced capabilities including atomic operations and backup support.
+// It provides safe file writing with options for atomic writes (write to temp, then rename), append mode, and automatic backups.
+// The tool supports creating parent directories, custom file permissions, and path access control via state configuration.
+// Atomic operations ensure data integrity by preventing partial writes in case of failures.
 func WriteFile() domain.Tool {
 	builder := atools.NewToolBuilder("file_write", "Writes content to files with atomic operations, append mode, and backup support").
 		WithFunction(writeFileMain).

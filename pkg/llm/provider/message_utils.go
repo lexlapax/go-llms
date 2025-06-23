@@ -1,5 +1,10 @@
 package provider
 
+// File message_utils.go provides utility functions for efficient message conversion
+// and caching across different LLM providers. It includes optimized message hashing,
+// caching mechanisms to avoid repeated conversions, and helper functions for building
+// request bodies with minimal allocations.
+
 // ABOUTME: Utility functions for message conversion and validation
 // ABOUTME: Handles provider-specific message format transformations
 
@@ -10,21 +15,25 @@ import (
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
-// MessageCache provides caching for converted messages to avoid repeated conversions
+// MessageCache provides caching for converted messages to avoid repeated conversions.
+// It uses a thread-safe map to store provider-specific message representations
+// keyed by a hash of the original messages.
 type MessageCache struct {
 	lock  sync.RWMutex
 	cache map[uint64]interface{}
 }
 
-// NewMessageCache creates a new message cache with a default capacity
+// NewMessageCache creates a new message cache with a default capacity.
+// The cache is initialized with space for 10 conversations but will grow as needed.
 func NewMessageCache() *MessageCache {
 	return &MessageCache{
 		cache: make(map[uint64]interface{}, 10), // Default capacity of 10 conversations
 	}
 }
 
-// Get retrieves a cached message conversion for the given key
-// Returns the cached value and a boolean indicating if it was found
+// Get retrieves a cached message conversion for the given key.
+// Returns the cached value and a boolean indicating if it was found.
+// Thread-safe for concurrent access.
 func (c *MessageCache) Get(key uint64) (interface{}, bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
@@ -33,7 +42,9 @@ func (c *MessageCache) Get(key uint64) (interface{}, bool) {
 	return value, ok
 }
 
-// Set stores a message conversion in the cache
+// Set stores a message conversion in the cache.
+// The value should be a provider-specific message representation.
+// Thread-safe for concurrent access.
 func (c *MessageCache) Set(key uint64, value interface{}) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -41,7 +52,8 @@ func (c *MessageCache) Set(key uint64, value interface{}) {
 	c.cache[key] = value
 }
 
-// Clear empties the cache
+// Clear empties the cache, removing all stored conversions.
+// This is useful when memory needs to be reclaimed or cache invalidation is required.
 func (c *MessageCache) Clear() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -57,8 +69,10 @@ func (c *MessageCache) Clear() {
 	}
 }
 
-// GenerateMessagesKey creates a hash key for a message array
-// This is used for cache lookups to avoid repeated message conversions
+// GenerateMessagesKey creates a hash key for a message array.
+// This is used for cache lookups to avoid repeated message conversions.
+// The hash includes message roles, content types, and a sample of content data
+// to ensure uniqueness while avoiding excessive memory usage for large media.
 func GenerateMessagesKey(messages []domain.Message) uint64 {
 	hasher := fnv.New64()
 

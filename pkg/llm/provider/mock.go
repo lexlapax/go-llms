@@ -1,5 +1,10 @@
 package provider
 
+// File mock.go implements a mock Provider interface for testing without making actual API calls.
+// It provides configurable responses, simulated streaming, and schema-based mock data generation.
+// This implementation is being deprecated in favor of the new testing infrastructure in
+// pkg/testutils/fixtures/ which provides more specialized mock providers for different use cases.
+
 // ABOUTME: Mock provider implementation for testing without API calls
 // ABOUTME: Provides configurable responses and simulated behaviors
 //

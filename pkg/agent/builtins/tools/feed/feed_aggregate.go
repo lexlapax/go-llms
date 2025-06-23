@@ -81,7 +81,10 @@ func feedAggregateExecute(ctx *domain.ToolContext, params FeedAggregateParams) (
 	return result, nil
 }
 
-// FeedAggregate creates a new FeedAggregate tool
+// FeedAggregate creates a tool that combines multiple feeds into a single unified feed with advanced sorting and deduplication capabilities.
+// The tool supports merging feed metadata, removing duplicate items based on URL or content hash, and sorting by date or title.
+// It can limit the number of items in the aggregated feed and preserve feed structure consistency across different formats.
+// This is particularly useful for multi-source news aggregation, creating unified podcast feeds, and building curated content feeds.
 func FeedAggregate() domain.Tool {
 	// Define parameter schema
 	paramSchema := &sdomain.Schema{

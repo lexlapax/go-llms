@@ -11,8 +11,16 @@ import (
 	schemaDomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// sequentialGenerateForPrimary runs Generate sequentially for the primary provider strategy
-// This is a fixed implementation that avoids race conditions in the concurrent version
+// sequentialGenerateForPrimary runs Generate sequentially for the primary provider strategy.
+// This implementation tries the primary provider first, then falls back to other providers
+// in order if the primary fails. This avoids race conditions present in concurrent versions.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - prompt: The text prompt
+//   - options: Generation options
+//
+// Returns the generated text or an error if all providers fail.
 func (mp *MultiProvider) sequentialGenerateForPrimary(ctx context.Context, prompt string, options []domain.Option) (string, error) {
 	// If we're not using StrategyPrimary, fall back to concurrent implementation
 	if mp.selectionStrat != StrategyPrimary {
@@ -58,7 +66,16 @@ func (mp *MultiProvider) sequentialGenerateForPrimary(ctx context.Context, promp
 	return "", ErrNoSuccessfulCalls
 }
 
-// sequentialGenerateMessageForPrimary runs GenerateMessage sequentially for the primary provider strategy
+// sequentialGenerateMessageForPrimary runs GenerateMessage sequentially for the primary provider strategy.
+// Similar to sequentialGenerateForPrimary but works with message-based conversations.
+// Tries the primary provider first, then falls back to other providers in order.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - messages: The conversation messages
+//   - options: Generation options
+//
+// Returns the response or an error if all providers fail.
 func (mp *MultiProvider) sequentialGenerateMessageForPrimary(ctx context.Context, messages []domain.Message, options []domain.Option) (domain.Response, error) {
 	// If we're not using StrategyPrimary, fall back to concurrent implementation
 	if mp.selectionStrat != StrategyPrimary {
@@ -104,7 +121,17 @@ func (mp *MultiProvider) sequentialGenerateMessageForPrimary(ctx context.Context
 	return domain.Response{}, ErrNoSuccessfulCalls
 }
 
-// sequentialGenerateWithSchemaForPrimary runs GenerateWithSchema sequentially for the primary provider strategy
+// sequentialGenerateWithSchemaForPrimary runs GenerateWithSchema sequentially for the primary provider strategy.
+// Handles structured output generation with schema validation, trying the primary provider
+// first then falling back to other providers in order if the primary fails.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - prompt: The text prompt
+//   - schema: The schema for structured output
+//   - options: Generation options
+//
+// Returns the structured result or an error if all providers fail.
 func (mp *MultiProvider) sequentialGenerateWithSchemaForPrimary(ctx context.Context, prompt string, schema *schemaDomain.Schema, options []domain.Option) (interface{}, error) {
 	// If we're not using StrategyPrimary, fall back to concurrent implementation
 	if mp.selectionStrat != StrategyPrimary {

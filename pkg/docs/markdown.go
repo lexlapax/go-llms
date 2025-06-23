@@ -14,24 +14,48 @@ import (
 	"golang.org/x/text/language"
 )
 
-// MarkdownGenerator generates Markdown documentation
+// MarkdownGenerator generates Markdown documentation.
+// It converts Documentable items into human-readable markdown format
+// suitable for documentation sites, README files, and other text-based
+// documentation needs.
 type MarkdownGenerator struct {
 	config GeneratorConfig
 }
 
-// NewMarkdownGenerator creates a new Markdown generator
+// NewMarkdownGenerator creates a new Markdown generator.
+//
+// Parameters:
+//   - config: Configuration for the generator including title, version, and formatting options
+//
+// Returns a configured MarkdownGenerator instance.
 func NewMarkdownGenerator(config GeneratorConfig) *MarkdownGenerator {
 	return &MarkdownGenerator{
 		config: config,
 	}
 }
 
-// GenerateOpenAPI is not implemented by MarkdownGenerator
+// GenerateOpenAPI is not implemented by MarkdownGenerator.
+// This method exists to satisfy the Generator interface but returns an error
+// as markdown generation doesn't produce OpenAPI specifications.
+//
+// Parameters:
+//   - ctx: The context (unused)
+//   - items: The items to document (unused)
+//
+// Returns an error indicating OpenAPI generation is not supported.
 func (g *MarkdownGenerator) GenerateOpenAPI(ctx context.Context, items []Documentable) (*OpenAPISpec, error) {
 	return nil, fmt.Errorf("OpenAPI generation not supported by MarkdownGenerator")
 }
 
-// GenerateMarkdown generates Markdown documentation from documentable items
+// GenerateMarkdown generates Markdown documentation from documentable items.
+// It creates a comprehensive markdown document with table of contents,
+// grouped sections, metadata tables, schemas, and examples.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - items: The documentable items to include
+//
+// Returns formatted markdown string or an error.
 func (g *MarkdownGenerator) GenerateMarkdown(ctx context.Context, items []Documentable) (string, error) {
 	var builder strings.Builder
 
@@ -77,7 +101,15 @@ func (g *MarkdownGenerator) GenerateMarkdown(ctx context.Context, items []Docume
 	return builder.String(), nil
 }
 
-// GenerateJSON generates JSON representation of the documentation
+// GenerateJSON generates JSON representation of the documentation.
+// It creates a structured JSON document containing all documentation items
+// along with generator metadata.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - items: The documentable items to include
+//
+// Returns JSON bytes or an error.
 func (g *MarkdownGenerator) GenerateJSON(ctx context.Context, items []Documentable) ([]byte, error) {
 	docs := make([]Documentation, 0, len(items))
 	for _, item := range items {
@@ -95,7 +127,14 @@ func (g *MarkdownGenerator) GenerateJSON(ctx context.Context, items []Documentab
 	return json.MarshalIndent(result, "", "  ")
 }
 
-// groupItems groups documentable items by category
+// groupItems groups documentable items by category.
+// It supports grouping by category, type, or a default grouping.
+// Items within each group are sorted alphabetically by name.
+//
+// Parameters:
+//   - items: The documentable items to group
+//
+// Returns a map of group names to sorted items.
 func (g *MarkdownGenerator) groupItems(items []Documentable) map[string][]Documentable {
 	groups := make(map[string][]Documentable)
 
@@ -130,7 +169,16 @@ func (g *MarkdownGenerator) groupItems(items []Documentable) map[string][]Docume
 	return groups
 }
 
-// addGroupToMarkdown adds a group of items to the markdown
+// addGroupToMarkdown adds a group of items to the markdown.
+// It creates a section header for the group and adds all items
+// within that group to the documentation.
+//
+// Parameters:
+//   - builder: The string builder for output
+//   - groupName: The name of the group
+//   - items: The items in this group
+//
+// Returns an error if any item fails to render.
 func (g *MarkdownGenerator) addGroupToMarkdown(builder *strings.Builder, groupName string, items []Documentable) error {
 	if groupName != "default" && groupName != "" {
 		fmt.Fprintf(builder, "## %s\n\n", groupName)
@@ -145,7 +193,15 @@ func (g *MarkdownGenerator) addGroupToMarkdown(builder *strings.Builder, groupNa
 	return nil
 }
 
-// addItemToMarkdown adds a single documentable item to the markdown
+// addItemToMarkdown adds a single documentable item to the markdown.
+// It renders the item with title, descriptions, metadata, schemas,
+// and examples based on the generator configuration.
+//
+// Parameters:
+//   - builder: The string builder for output
+//   - item: The documentable item to render
+//
+// Returns an error if rendering fails.
 func (g *MarkdownGenerator) addItemToMarkdown(builder *strings.Builder, item Documentable) error {
 	doc := item.GetDocumentation()
 
@@ -189,7 +245,13 @@ func (g *MarkdownGenerator) addItemToMarkdown(builder *strings.Builder, item Doc
 	return nil
 }
 
-// addMetadataTable adds a metadata table for the item
+// addMetadataTable adds a metadata table for the item.
+// It creates a markdown table containing category, tags, version,
+// and any custom metadata fields.
+//
+// Parameters:
+//   - builder: The string builder for output
+//   - doc: The documentation containing metadata
 func (g *MarkdownGenerator) addMetadataTable(builder *strings.Builder, doc Documentation) {
 	var hasMetadata bool
 	var rows []string
@@ -230,7 +292,13 @@ func (g *MarkdownGenerator) addMetadataTable(builder *strings.Builder, doc Docum
 	}
 }
 
-// addSchemaSection adds schema information
+// addSchemaSection adds schema information.
+// It renders both single schemas and named schema collections
+// in a hierarchical markdown format.
+//
+// Parameters:
+//   - builder: The string builder for output
+//   - doc: The documentation containing schemas
 func (g *MarkdownGenerator) addSchemaSection(builder *strings.Builder, doc Documentation) {
 	if doc.Schema != nil {
 		builder.WriteString("#### Schema\n\n")
@@ -248,7 +316,14 @@ func (g *MarkdownGenerator) addSchemaSection(builder *strings.Builder, doc Docum
 	}
 }
 
-// addSchemaMarkdown adds schema information in markdown format
+// addSchemaMarkdown adds schema information in markdown format.
+// It recursively renders schema properties with proper indentation
+// to show the hierarchical structure.
+//
+// Parameters:
+//   - builder: The string builder for output
+//   - schema: The schema to render
+//   - indent: The current indentation level
 func (g *MarkdownGenerator) addSchemaMarkdown(builder *strings.Builder, schema *Schema, indent int) {
 	indentStr := strings.Repeat("  ", indent)
 
@@ -290,7 +365,13 @@ func (g *MarkdownGenerator) addSchemaMarkdown(builder *strings.Builder, schema *
 	}
 }
 
-// addExamplesSection adds examples section
+// addExamplesSection adds examples section.
+// It renders each example with name, description, and code/input/output
+// in a clear, readable format with syntax highlighting hints.
+//
+// Parameters:
+//   - builder: The string builder for output
+//   - examples: The examples to render
 func (g *MarkdownGenerator) addExamplesSection(builder *strings.Builder, examples []Example) {
 	builder.WriteString("#### Examples\n\n")
 

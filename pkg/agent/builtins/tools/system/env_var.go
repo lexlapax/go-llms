@@ -252,12 +252,10 @@ func getEnvironmentVariable(ctx *domain.ToolContext, params GetEnvironmentVariab
 	return result, nil
 }
 
-// GetEnvironmentVariable creates a tool for safely reading environment variables
-// This is a built-in tool optimized for:
-// - Safe access to environment configuration
-// - Pattern-based variable discovery
-// - Security through sensitive variable masking
-// - Filtered results for specific use cases
+// GetEnvironmentVariable creates a tool for safely reading environment variables with built-in security
+// features including automatic masking of sensitive values (API keys, secrets, tokens) and pattern-based
+// filtering. The tool supports retrieving specific variables by name, searching with wildcards (*PATH, GO*),
+// and provides options to exclude values or unmask sensitive data when explicitly needed.
 func GetEnvironmentVariable() domain.Tool {
 	builder := atools.NewToolBuilder("get_environment_variable", "Retrieves environment variables safely").
 		WithFunction(getEnvironmentVariable).

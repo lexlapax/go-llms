@@ -153,12 +153,10 @@ func parseOperand(value interface{}) (float64, error) {
 	}
 }
 
-// Calculator creates a tool for performing mathematical calculations
-// This is a built-in tool optimized for:
-// - Wide range of mathematical operations
-// - Error handling for edge cases (division by zero, domain errors)
-// - Support for both unary and binary operations
-// - Mathematical constants
+// Calculator creates a tool for performing mathematical calculations including basic arithmetic,
+// trigonometry, logarithms, and advanced operations like factorial and GCD/LCM.
+// The tool supports mathematical constants (pi, e, phi) and handles edge cases like division by zero
+// and domain errors gracefully, returning structured error messages in the result.
 func Calculator() domain.Tool {
 	// Create a wrapper function that handles parameter preprocessing
 	wrappedFn := func(ctx *domain.ToolContext, params map[string]interface{}) (*CalculatorResult, error) {

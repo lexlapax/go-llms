@@ -16,7 +16,9 @@ func init() {
 	domain.SetGlobalAgentRegistry(globalRegistry)
 }
 
-// AgentRegistry manages registered agents
+// AgentRegistry manages registered agents for discovery and coordination.
+// It maintains indexes by ID and type, tracks parent-child relationships,
+// and provides thread-safe access to agent instances.
 type AgentRegistry struct {
 	mu     sync.RWMutex
 	agents map[string]domain.BaseAgent
@@ -26,15 +28,18 @@ type AgentRegistry struct {
 	children map[string][]string
 }
 
-// globalRegistry is the default global registry
+// globalRegistry is the singleton instance used throughout the application.
+// It enables agents to discover and interact with each other.
 var globalRegistry = NewAgentRegistry()
 
-// GetGlobalRegistry returns the global agent registry
+// GetGlobalRegistry returns the global agent registry instance.
+// This registry is shared across the application for agent discovery.
 func GetGlobalRegistry() *AgentRegistry {
 	return globalRegistry
 }
 
-// NewAgentRegistry creates a new agent registry
+// NewAgentRegistry creates a new agent registry instance.
+// The registry starts empty and agents can be registered using the Register method.
 func NewAgentRegistry() *AgentRegistry {
 	return &AgentRegistry{
 		agents:       make(map[string]domain.BaseAgent),
@@ -43,7 +48,9 @@ func NewAgentRegistry() *AgentRegistry {
 	}
 }
 
-// Register registers an agent with the registry
+// Register registers an agent with the registry.
+// The agent must have a unique ID. If an agent with the same ID already exists,
+// it will be replaced. The registry maintains indexes by type for efficient lookups.
 func (r *AgentRegistry) Register(agent domain.BaseAgent) error {
 	if agent == nil {
 		return fmt.Errorf("agent cannot be nil")
@@ -79,7 +86,9 @@ func (r *AgentRegistry) Register(agent domain.BaseAgent) error {
 	return nil
 }
 
-// Unregister removes an agent from the registry
+// Unregister removes an agent from the registry.
+// It also removes all child agents recursively and updates parent-child relationships.
+// Returns an error if the agent is not found.
 func (r *AgentRegistry) Unregister(agentID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -127,7 +136,8 @@ func (r *AgentRegistry) Unregister(agentID string) error {
 	return nil
 }
 
-// unregisterInternal removes an agent without lock (must be called with lock held)
+// unregisterInternal removes an agent without lock (must be called with lock held).
+// This is used internally for recursive removal of child agents.
 func (r *AgentRegistry) unregisterInternal(agentID string) {
 	agent, exists := r.agents[agentID]
 	if !exists {
@@ -155,7 +165,8 @@ func (r *AgentRegistry) unregisterInternal(agentID string) {
 	}
 }
 
-// Get retrieves an agent by ID
+// Get retrieves an agent by ID.
+// Returns domain.ErrAgentNotFound if the agent doesn't exist.
 func (r *AgentRegistry) Get(agentID string) (domain.BaseAgent, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -168,7 +179,9 @@ func (r *AgentRegistry) Get(agentID string) (domain.BaseAgent, error) {
 	return agent, nil
 }
 
-// GetByName retrieves an agent by name
+// GetByName retrieves an agent by name.
+// Returns domain.ErrAgentNotFound if no agent with the given name exists.
+// Note: Agent names are not guaranteed to be unique.
 func (r *AgentRegistry) GetByName(name string) (domain.BaseAgent, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -182,7 +195,8 @@ func (r *AgentRegistry) GetByName(name string) (domain.BaseAgent, error) {
 	return nil, domain.ErrAgentNotFound
 }
 
-// GetByType retrieves all agents of a specific type
+// GetByType retrieves all agents of a specific type.
+// Returns an empty slice if no agents of the given type are registered.
 func (r *AgentRegistry) GetByType(agentType domain.AgentType) []domain.BaseAgent {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -200,7 +214,8 @@ func (r *AgentRegistry) GetByType(agentType domain.AgentType) []domain.BaseAgent
 	return agents
 }
 
-// List returns all registered agents
+// List returns all registered agents.
+// The returned slice is a copy and can be safely modified.
 func (r *AgentRegistry) List() []domain.BaseAgent {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -213,7 +228,8 @@ func (r *AgentRegistry) List() []domain.BaseAgent {
 	return agents
 }
 
-// ListIDs returns all registered agent IDs
+// ListIDs returns all registered agent IDs.
+// The returned slice contains unique agent identifiers.
 func (r *AgentRegistry) ListIDs() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -226,7 +242,9 @@ func (r *AgentRegistry) ListIDs() []string {
 	return ids
 }
 
-// GetChildren returns the direct children of an agent
+// GetChildren returns the direct children of an agent.
+// Only returns immediate children, not descendants. Returns an empty slice
+// if the agent has no children or doesn't exist.
 func (r *AgentRegistry) GetChildren(agentID string) []domain.BaseAgent {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -246,7 +264,8 @@ func (r *AgentRegistry) GetChildren(agentID string) []domain.BaseAgent {
 	return children
 }
 
-// GetParent returns the parent of an agent
+// GetParent returns the parent of an agent.
+// Returns domain.ErrAgentNotFound if the agent doesn't exist or has no parent.
 func (r *AgentRegistry) GetParent(agentID string) (domain.BaseAgent, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -264,7 +283,9 @@ func (r *AgentRegistry) GetParent(agentID string) (domain.BaseAgent, error) {
 	return parent, nil
 }
 
-// FindByMetadata finds agents with matching metadata
+// FindByMetadata finds agents with matching metadata.
+// Returns all agents where the specified metadata key has the given value.
+// Returns an empty slice if no matching agents are found.
 func (r *AgentRegistry) FindByMetadata(key string, value interface{}) []domain.BaseAgent {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

@@ -11,7 +11,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// SerializableWorkflowDefinition is a bridge-friendly representation of WorkflowDefinition
+// SerializableWorkflowDefinition is a bridge-friendly representation of WorkflowDefinition.
+// It provides a structure that can be easily serialized to JSON or YAML for
+// persistence, transmission, or integration with other systems.
 type SerializableWorkflowDefinition struct {
 	Name           string                 `json:"name" yaml:"name"`
 	Description    string                 `json:"description" yaml:"description"`
@@ -24,7 +26,9 @@ type SerializableWorkflowDefinition struct {
 	UpdatedAt      time.Time              `json:"updated_at" yaml:"updated_at"`
 }
 
-// SerializableStep represents a workflow step in serializable format
+// SerializableStep represents a workflow step in serializable format.
+// It captures the essential information needed to reconstruct a workflow step
+// from its serialized representation.
 type SerializableStep struct {
 	Name        string                 `json:"name" yaml:"name"`
 	Type        string                 `json:"type" yaml:"type"` // "agent", "script", "conditional", "loop", "parallel"
@@ -34,7 +38,9 @@ type SerializableStep struct {
 	Metadata    map[string]interface{} `json:"metadata,omitempty" yaml:"metadata,omitempty"`
 }
 
-// ScriptConfig holds script-specific configuration
+// ScriptConfig holds script-specific configuration.
+// It contains all the information needed to execute a script step,
+// including the language, source code, environment, and timeout.
 type ScriptConfig struct {
 	Language    string                 `json:"language" yaml:"language"`
 	Source      string                 `json:"source" yaml:"source"`
@@ -42,7 +48,9 @@ type ScriptConfig struct {
 	Timeout     string                 `json:"timeout,omitempty" yaml:"timeout,omitempty"`
 }
 
-// WorkflowSerializer handles workflow serialization
+// WorkflowSerializer handles workflow serialization.
+// Implementations provide conversion between WorkflowDefinition
+// and various serialization formats.
 type WorkflowSerializer interface {
 	// Serialize converts a workflow definition to bytes
 	Serialize(def *WorkflowDefinition) ([]byte, error)
@@ -52,17 +60,24 @@ type WorkflowSerializer interface {
 	Format() string
 }
 
-// JSONWorkflowSerializer serializes workflows to JSON
+// JSONWorkflowSerializer serializes workflows to JSON.
+// It supports both compact and pretty-printed output formats.
 type JSONWorkflowSerializer struct {
 	pretty bool
 }
 
-// NewJSONWorkflowSerializer creates a new JSON serializer
+// NewJSONWorkflowSerializer creates a new JSON serializer.
+//
+// Parameters:
+//   - pretty: If true, output is indented for readability
+//
+// Returns a new JSONWorkflowSerializer instance.
 func NewJSONWorkflowSerializer(pretty bool) *JSONWorkflowSerializer {
 	return &JSONWorkflowSerializer{pretty: pretty}
 }
 
-// Serialize implements WorkflowSerializer
+// Serialize implements WorkflowSerializer.
+// It converts a WorkflowDefinition to JSON bytes.
 func (s *JSONWorkflowSerializer) Serialize(def *WorkflowDefinition) ([]byte, error) {
 	serializable, err := ToSerializable(def)
 	if err != nil {
@@ -75,7 +90,8 @@ func (s *JSONWorkflowSerializer) Serialize(def *WorkflowDefinition) ([]byte, err
 	return json.Marshal(serializable)
 }
 
-// Deserialize implements WorkflowSerializer
+// Deserialize implements WorkflowSerializer.
+// It creates a WorkflowDefinition from JSON bytes.
 func (s *JSONWorkflowSerializer) Deserialize(data []byte) (*WorkflowDefinition, error) {
 	var serializable SerializableWorkflowDefinition
 	if err := json.Unmarshal(data, &serializable); err != nil {
@@ -85,20 +101,26 @@ func (s *JSONWorkflowSerializer) Deserialize(data []byte) (*WorkflowDefinition, 
 	return FromSerializable(&serializable)
 }
 
-// Format implements WorkflowSerializer
+// Format implements WorkflowSerializer.
+// Returns "json" as the format identifier.
 func (s *JSONWorkflowSerializer) Format() string {
 	return "json"
 }
 
-// YAMLWorkflowSerializer serializes workflows to YAML
+// YAMLWorkflowSerializer serializes workflows to YAML.
+// It provides human-readable workflow definitions suitable for
+// configuration files and manual editing.
 type YAMLWorkflowSerializer struct{}
 
-// NewYAMLWorkflowSerializer creates a new YAML serializer
+// NewYAMLWorkflowSerializer creates a new YAML serializer.
+//
+// Returns a new YAMLWorkflowSerializer instance.
 func NewYAMLWorkflowSerializer() *YAMLWorkflowSerializer {
 	return &YAMLWorkflowSerializer{}
 }
 
-// Serialize implements WorkflowSerializer
+// Serialize implements WorkflowSerializer.
+// It converts a WorkflowDefinition to YAML bytes.
 func (s *YAMLWorkflowSerializer) Serialize(def *WorkflowDefinition) ([]byte, error) {
 	serializable, err := ToSerializable(def)
 	if err != nil {
@@ -108,7 +130,8 @@ func (s *YAMLWorkflowSerializer) Serialize(def *WorkflowDefinition) ([]byte, err
 	return yaml.Marshal(serializable)
 }
 
-// Deserialize implements WorkflowSerializer
+// Deserialize implements WorkflowSerializer.
+// It creates a WorkflowDefinition from YAML bytes.
 func (s *YAMLWorkflowSerializer) Deserialize(data []byte) (*WorkflowDefinition, error) {
 	var serializable SerializableWorkflowDefinition
 	if err := yaml.Unmarshal(data, &serializable); err != nil {
@@ -118,12 +141,20 @@ func (s *YAMLWorkflowSerializer) Deserialize(data []byte) (*WorkflowDefinition, 
 	return FromSerializable(&serializable)
 }
 
-// Format implements WorkflowSerializer
+// Format implements WorkflowSerializer.
+// Returns "yaml" as the format identifier.
 func (s *YAMLWorkflowSerializer) Format() string {
 	return "yaml"
 }
 
-// ToSerializable converts a WorkflowDefinition to its serializable form
+// ToSerializable converts a WorkflowDefinition to its serializable form.
+// This prepares the workflow for serialization by extracting all necessary
+// information into a format-agnostic structure.
+//
+// Parameters:
+//   - def: The workflow definition to convert
+//
+// Returns the serializable representation or an error.
 func ToSerializable(def *WorkflowDefinition) (*SerializableWorkflowDefinition, error) {
 	if def == nil {
 		return nil, fmt.Errorf("workflow definition cannot be nil")
@@ -153,7 +184,13 @@ func ToSerializable(def *WorkflowDefinition) (*SerializableWorkflowDefinition, e
 	return serializable, nil
 }
 
-// FromSerializable creates a WorkflowDefinition from its serializable form
+// FromSerializable creates a WorkflowDefinition from its serializable form.
+// This reconstructs a workflow from its serialized representation.
+//
+// Parameters:
+//   - serializable: The serializable workflow definition
+//
+// Returns the reconstructed WorkflowDefinition or an error.
 func FromSerializable(serializable *SerializableWorkflowDefinition) (*WorkflowDefinition, error) {
 	if serializable == nil {
 		return nil, fmt.Errorf("serializable definition cannot be nil")
@@ -249,19 +286,40 @@ func deserializeStep(serStep SerializableStep) (WorkflowStep, error) {
 	}
 }
 
-// SerializeWorkflow is a convenience function to serialize a workflow
+// SerializeWorkflow is a convenience function to serialize a workflow.
+// It automatically selects the appropriate serializer based on the format.
+//
+// Parameters:
+//   - def: The workflow definition to serialize
+//   - format: The desired format ("json", "yaml", "json-pretty")
+//
+// Returns the serialized bytes or an error.
 func SerializeWorkflow(def *WorkflowDefinition, format string) ([]byte, error) {
 	serializer := GetWorkflowSerializer(format)
 	return serializer.Serialize(def)
 }
 
-// DeserializeWorkflow is a convenience function to deserialize a workflow
+// DeserializeWorkflow is a convenience function to deserialize a workflow.
+// It automatically selects the appropriate deserializer based on the format.
+//
+// Parameters:
+//   - data: The serialized workflow data
+//   - format: The format of the data ("json", "yaml")
+//
+// Returns the deserialized WorkflowDefinition or an error.
 func DeserializeWorkflow(data []byte, format string) (*WorkflowDefinition, error) {
 	serializer := GetWorkflowSerializer(format)
 	return serializer.Deserialize(data)
 }
 
-// GetWorkflowSerializer returns a serializer for the specified format
+// GetWorkflowSerializer returns a serializer for the specified format.
+// Supported formats: "json", "yaml", "yml", "json-pretty".
+// Defaults to JSON if format is not recognized.
+//
+// Parameters:
+//   - format: The desired serialization format
+//
+// Returns an appropriate WorkflowSerializer implementation.
 func GetWorkflowSerializer(format string) WorkflowSerializer {
 	switch format {
 	case "yaml", "yml":
@@ -273,7 +331,14 @@ func GetWorkflowSerializer(format string) WorkflowSerializer {
 	}
 }
 
-// DeserializeDefinition creates a workflow from a map (for bridge layer)
+// DeserializeDefinition creates a workflow from a map (for bridge layer).
+// This is useful when receiving workflow definitions from external systems
+// that provide data as a map rather than serialized bytes.
+//
+// Parameters:
+//   - data: The workflow definition as a map
+//
+// Returns the deserialized WorkflowDefinition or an error.
 func DeserializeDefinition(data map[string]interface{}) (*WorkflowDefinition, error) {
 	// Convert map to JSON first
 	jsonData, err := json.Marshal(data)

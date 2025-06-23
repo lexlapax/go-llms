@@ -356,7 +356,10 @@ func readFile(ctx *domain.ToolContext, params ReadFileParams) (*ReadFileResult, 
 	return result, nil
 }
 
-// ReadFile creates a tool for reading files with enhanced capabilities
+// ReadFile creates a tool for reading files with enhanced capabilities including streaming support and encoding detection.
+// It automatically detects binary vs text files, supports reading specific line ranges for large files, and provides file metadata.
+// The tool includes configurable size limits, path access control, and progress tracking for optimal performance.
+// Content is streamed efficiently to handle large files without excessive memory usage.
 func ReadFile() domain.Tool {
 	builder := atools.NewToolBuilder("file_read", "Reads file contents with support for large files, line ranges, and metadata").
 		WithFunction(readFile).

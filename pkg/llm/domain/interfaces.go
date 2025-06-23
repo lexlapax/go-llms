@@ -9,7 +9,10 @@ import (
 	"github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// Provider defines the contract for LLM providers
+// Provider defines the contract that all LLM providers must implement.
+// It provides methods for text generation, chat conversations, structured output,
+// and streaming responses. Implementations handle provider-specific API details
+// while exposing this unified interface.
 type Provider interface {
 	// Generate produces text from a prompt
 	Generate(ctx context.Context, prompt string, options ...Option) (string, error)
@@ -27,7 +30,9 @@ type Provider interface {
 	StreamMessage(ctx context.Context, messages []Message, options ...Option) (ResponseStream, error)
 }
 
-// ModelRegistry manages available LLM models
+// ModelRegistry provides a registry for managing and discovering LLM models.
+// It allows registration of model providers and retrieval by name, enabling
+// dynamic model selection at runtime.
 type ModelRegistry interface {
 	// RegisterModel adds a model to the registry
 	RegisterModel(name string, provider Provider) error

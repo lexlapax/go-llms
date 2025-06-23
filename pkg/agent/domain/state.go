@@ -11,7 +11,9 @@ import (
 	"github.com/google/uuid"
 )
 
-// State represents the execution state passed between agents
+// State represents the execution state passed between agents.
+// It provides thread-safe storage for values, artifacts, and message history
+// with automatic versioning and lineage tracking for debugging.
 type State struct {
 	mu       sync.RWMutex
 	id       string
@@ -31,7 +33,9 @@ type State struct {
 	version  int
 }
 
-// NewState creates a new state instance
+// NewState creates a new state instance with unique ID.
+// Initializes empty collections for values, artifacts, and messages
+// with automatic timestamp tracking and version 1.
 func NewState() *State {
 	return &State{
 		id:        uuid.New().String(),

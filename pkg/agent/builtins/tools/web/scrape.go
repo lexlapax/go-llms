@@ -309,13 +309,10 @@ func init() {
 	})
 }
 
-// WebScrape creates a tool for scraping web content
-// This is a built-in tool optimized for:
-// - HTML parsing without external dependencies
-// - Text extraction and cleaning
-// - Link discovery and classification
-// - Metadata extraction
-// - Simplified CSS-like selector support
+// WebScrape creates a tool for extracting structured data from HTML pages with authentication support.
+// It provides HTML parsing without external dependencies, automatic text extraction and cleaning,
+// link discovery with type classification (internal/external/anchor), metadata extraction from meta tags,
+// simplified CSS-like selector support for specific elements, and multiple authentication methods.
 func WebScrape() domain.Tool {
 	builder := atools.NewToolBuilder("web_scrape", "Extracts structured data from HTML pages").
 		WithFunction(func(ctx *domain.ToolContext, params WebScrapeParams) (*WebScrapeResult, error) {
@@ -945,8 +942,9 @@ func parseAttributes(attrString string) map[string]string {
 	return attrs
 }
 
-// MustGetWebScrape retrieves the registered WebScrape tool or panics
+// MustGetWebScrape retrieves the registered WebScrape tool or panics if not found.
 // This is a convenience function for users who want to ensure the tool exists
+// and prefer a panic over error handling for missing tools in their initialization code.
 func MustGetWebScrape() domain.Tool {
 	return tools.MustGetTool("web_scrape")
 }

@@ -13,7 +13,9 @@ import (
 )
 
 // parameterTypeCache caches reflection type information to reduce allocations
-// during repeated tool executions with the same parameter types
+// during repeated tool executions with the same parameter types.
+// It significantly improves performance for tools that are called frequently
+// with similar parameter structures.
 type parameterTypeCache struct {
 	// structFieldCache maps struct types to field information to avoid repeated reflection lookups
 	structFieldCache sync.Map // map[reflect.Type][]fieldInfo
@@ -22,13 +24,15 @@ type parameterTypeCache struct {
 	parameterConversionCache sync.Map // map[typePair]bool
 }
 
-// typePair is a key for the conversion cache
+// typePair is a key for the conversion cache.
+// It represents a source-to-target type conversion pair.
 type typePair struct {
 	source reflect.Type
 	target reflect.Type
 }
 
-// fieldInfo caches information about a struct field
+// fieldInfo caches information about a struct field.
+// This avoids repeated reflection calls to extract field metadata.
 type fieldInfo struct {
 	index      int
 	name       string
@@ -38,10 +42,18 @@ type fieldInfo struct {
 	isExported bool
 }
 
-// globalParamCache is a shared instance of the parameter cache
+// globalParamCache is a shared instance of the parameter cache.
+// It's used across all tool instances to maximize cache effectiveness.
 var globalParamCache = &parameterTypeCache{}
 
-// getStructFields returns cached field information for a struct type
+// getStructFields returns cached field information for a struct type.
+// It extracts field metadata including names, JSON tags, and types,
+// caching the results for future lookups.
+//
+// Parameters:
+//   - structType: The struct type to analyze
+//
+// Returns a slice of fieldInfo or nil if not a struct.
 func (c *parameterTypeCache) getStructFields(structType reflect.Type) []fieldInfo {
 	if structType.Kind() != reflect.Struct {
 		return nil
@@ -91,7 +103,17 @@ func (c *parameterTypeCache) getStructFields(structType reflect.Type) []fieldInf
 	return fields
 }
 
-// canConvert checks if a type can be converted to another type
+// canConvert checks if a type can be converted to another type.
+// It caches the results to avoid repeated type compatibility checks.
+// This function handles common conversions like numeric types, strings,
+// slices, and maps.
+//
+// Parameters:
+//   - sourceType: The source type
+//   - targetType: The target type
+//
+// Returns true if conversion is possible.
+//
 // nolint:gocyclo // This function handles many type conversion checks
 func (c *parameterTypeCache) canConvert(sourceType, targetType reflect.Type) bool {
 	// Direct assignability is fastest

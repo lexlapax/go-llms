@@ -1,3 +1,7 @@
+// Package repository provides implementations for persistent schema storage.
+// This package includes file-based and memory-based implementations of the
+// SchemaRepository interface, supporting versioning, migration, and import/export
+// capabilities for JSON schemas.
 package repository
 
 // ABOUTME: File-based implementation of SchemaRepository with directory structure

@@ -1,4 +1,7 @@
-// Package docs provides documentation generation capabilities for go-llms components
+// Package docs provides documentation generation capabilities for go-llms components.
+// It supports generating documentation in multiple formats including OpenAPI, Markdown,
+// and JSON. The package provides interfaces and types that are bridge-friendly for
+// integration with other systems.
 package docs
 
 // ABOUTME: Defines core interfaces for documentation generation including Generator and Documentable
@@ -9,7 +12,9 @@ import (
 	"encoding/json"
 )
 
-// Generator defines the interface for documentation generators
+// Generator defines the interface for documentation generators.
+// Implementations can generate documentation in various formats from
+// a collection of Documentable items.
 type Generator interface {
 	// GenerateOpenAPI generates OpenAPI 3.0 specification
 	GenerateOpenAPI(ctx context.Context, items []Documentable) (*OpenAPISpec, error)
@@ -21,13 +26,17 @@ type Generator interface {
 	GenerateJSON(ctx context.Context, items []Documentable) ([]byte, error)
 }
 
-// Documentable represents an item that can be documented
+// Documentable represents an item that can be documented.
+// Any component that implements this interface can have its
+// documentation automatically generated.
 type Documentable interface {
 	// GetDocumentation returns the documentation for this item
 	GetDocumentation() Documentation
 }
 
-// Documentation contains all documentation details for an item
+// Documentation contains all documentation details for an item.
+// It provides comprehensive information including descriptions,
+// examples, schemas, and metadata for documentation generation.
 type Documentation struct {
 	// Basic information
 	Name        string `json:"name"`        // Name of the component
@@ -52,7 +61,10 @@ type Documentation struct {
 	Metadata map[string]interface{} `json:"metadata,omitempty"` // Additional metadata
 }
 
-// Example represents a usage example
+// Example represents a usage example.
+// Examples demonstrate how to use a component with concrete inputs,
+// expected outputs, and code snippets. They are essential for
+// helping users understand practical usage patterns.
 type Example struct {
 	Name        string      `json:"name"`                  // Example name
 	Description string      `json:"description,omitempty"` // What this example shows
@@ -62,7 +74,11 @@ type Example struct {
 	Language    string      `json:"language,omitempty"`    // Code language
 }
 
-// Schema represents a JSON schema (bridge-friendly)
+// Schema represents a JSON schema (bridge-friendly).
+// It provides a subset of JSON Schema Draft 7 for describing
+// data structures, validation rules, and type constraints.
+// This type is designed to be easily serializable and compatible
+// with various documentation formats.
 type Schema struct {
 	Type        string                 `json:"type,omitempty"`
 	Title       string                 `json:"title,omitempty"`
@@ -81,13 +97,24 @@ type Schema struct {
 	Additional  map[string]interface{} `json:"additionalProperties,omitempty"`
 }
 
-// MarshalJSON ensures Schema is JSON serializable
+// MarshalJSON ensures Schema is JSON serializable.
+// This custom marshaler handles the Schema type's serialization
+// to JSON format, preserving all schema properties correctly.
+//
+// Returns the JSON representation or an error if marshaling fails.
 func (s *Schema) MarshalJSON() ([]byte, error) {
 	type Alias Schema
 	return json.Marshal((*Alias)(s))
 }
 
-// UnmarshalJSON ensures Schema can be deserialized from JSON
+// UnmarshalJSON ensures Schema can be deserialized from JSON.
+// This custom unmarshaler handles the Schema type's deserialization
+// from JSON format, properly reconstructing all schema properties.
+//
+// Parameters:
+//   - data: The JSON data to unmarshal
+//
+// Returns an error if unmarshaling fails.
 func (s *Schema) UnmarshalJSON(data []byte) error {
 	type Alias Schema
 	return json.Unmarshal(data, (*Alias)(s))

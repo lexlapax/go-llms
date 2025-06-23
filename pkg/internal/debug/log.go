@@ -18,8 +18,9 @@ var (
 	// logger is the debug logger instance
 	logger = log.New(os.Stderr, "[DEBUG] ", log.Ldate|log.Ltime|log.Lshortfile)
 
-	// EnabledComponents tracks which components have debug logging enabled
-	// Can be set via GO_LLMS_DEBUG environment variable
+	// EnabledComponents tracks which components have debug logging enabled.
+	// Can be set via GO_LLMS_DEBUG environment variable.
+	// Format: GO_LLMS_DEBUG=all or GO_LLMS_DEBUG=param_cache,schema,agent
 	EnabledComponents = make(map[string]bool)
 )
 

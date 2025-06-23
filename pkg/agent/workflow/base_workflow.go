@@ -17,7 +17,9 @@ import (
 
 // Note: WorkflowState is defined in types.go as a concrete struct
 
-// WorkflowAgent extends BaseAgent with workflow orchestration capabilities
+// WorkflowAgent extends BaseAgent with workflow orchestration capabilities.
+// It provides advanced features for executing complex multi-step workflows,
+// managing agent coordination, and handling workflow lifecycle operations.
 type WorkflowAgent interface {
 	domain.BaseAgent
 

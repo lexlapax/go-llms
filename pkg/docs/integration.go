@@ -12,13 +12,21 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/tools"
 )
 
-// ToolDocumentationIntegrator provides high-level integration between discovery and documentation
+// ToolDocumentationIntegrator provides high-level integration between discovery and documentation.
+// It bridges the tool discovery system with the documentation generation capabilities,
+// enabling batch operations, filtering, and format conversion for tool documentation.
 type ToolDocumentationIntegrator struct {
 	discovery tools.ToolDiscovery
 	config    GeneratorConfig
 }
 
-// NewToolDocumentationIntegrator creates a new integrator with the discovery system
+// NewToolDocumentationIntegrator creates a new integrator with the discovery system.
+//
+// Parameters:
+//   - discovery: The tool discovery interface for accessing tool information
+//   - config: Generator configuration for controlling output format
+//
+// Returns a configured ToolDocumentationIntegrator instance.
 func NewToolDocumentationIntegrator(discovery tools.ToolDiscovery, config GeneratorConfig) *ToolDocumentationIntegrator {
 	return &ToolDocumentationIntegrator{
 		discovery: discovery,
@@ -26,7 +34,14 @@ func NewToolDocumentationIntegrator(discovery tools.ToolDiscovery, config Genera
 	}
 }
 
-// GenerateDocsForAllTools generates documentation for all tools in the discovery system
+// GenerateDocsForAllTools generates documentation for all tools in the discovery system.
+// It iterates through all discovered tools and creates comprehensive documentation
+// for each one, including descriptions, schemas, and examples.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//
+// Returns a slice of Documentation structs or an error.
 func (i *ToolDocumentationIntegrator) GenerateDocsForAllTools(ctx context.Context) ([]Documentation, error) {
 	toolInfos := i.discovery.ListTools()
 	docs := make([]Documentation, len(toolInfos))
@@ -42,19 +57,40 @@ func (i *ToolDocumentationIntegrator) GenerateDocsForAllTools(ctx context.Contex
 	return docs, nil
 }
 
-// GenerateOpenAPIForAllTools creates an OpenAPI specification for all discovered tools
+// GenerateOpenAPIForAllTools creates an OpenAPI specification for all discovered tools.
+// The specification includes endpoints, schemas, and examples for all tools in the
+// discovery system, formatted according to OpenAPI 3.0 standards.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//
+// Returns an OpenAPI specification or an error.
 func (i *ToolDocumentationIntegrator) GenerateOpenAPIForAllTools(ctx context.Context) (*OpenAPISpec, error) {
 	toolInfos := i.discovery.ListTools()
 	return GenerateToolOpenAPI(ctx, toolInfos, i.config)
 }
 
-// GenerateMarkdownForAllTools creates markdown documentation for all discovered tools
+// GenerateMarkdownForAllTools creates markdown documentation for all discovered tools.
+// The output is formatted markdown suitable for documentation sites, README files,
+// or other human-readable documentation needs.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//
+// Returns markdown-formatted documentation or an error.
 func (i *ToolDocumentationIntegrator) GenerateMarkdownForAllTools(ctx context.Context) (string, error) {
 	toolInfos := i.discovery.ListTools()
 	return GenerateToolMarkdown(ctx, toolInfos, i.config)
 }
 
-// GenerateDocsForCategory generates documentation for tools in a specific category
+// GenerateDocsForCategory generates documentation for tools in a specific category.
+// This allows filtering tools by their category for targeted documentation generation.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - category: The category to filter by
+//
+// Returns documentation for tools in the specified category or an error.
 func (i *ToolDocumentationIntegrator) GenerateDocsForCategory(ctx context.Context, category string) ([]Documentation, error) {
 	toolInfos := i.discovery.ListByCategory(category)
 	docs := make([]Documentation, len(toolInfos))
@@ -70,7 +106,15 @@ func (i *ToolDocumentationIntegrator) GenerateDocsForCategory(ctx context.Contex
 	return docs, nil
 }
 
-// GenerateDocsForSearchQuery generates documentation for tools matching a search query
+// GenerateDocsForSearchQuery generates documentation for tools matching a search query.
+// It uses the discovery system's search functionality to find matching tools and
+// generates documentation for each match.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - query: The search query string
+//
+// Returns documentation for matching tools or an error.
 func (i *ToolDocumentationIntegrator) GenerateDocsForSearchQuery(ctx context.Context, query string) ([]Documentation, error) {
 	toolInfos := i.discovery.SearchTools(query)
 	docs := make([]Documentation, len(toolInfos))
@@ -86,7 +130,14 @@ func (i *ToolDocumentationIntegrator) GenerateDocsForSearchQuery(ctx context.Con
 	return docs, nil
 }
 
-// GenerateOpenAPIForCategory creates OpenAPI spec for tools in a specific category
+// GenerateOpenAPIForCategory creates OpenAPI spec for tools in a specific category.
+// The specification title is automatically updated to reflect the category filter.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - category: The category to filter by
+//
+// Returns an OpenAPI specification for the category or an error.
 func (i *ToolDocumentationIntegrator) GenerateOpenAPIForCategory(ctx context.Context, category string) (*OpenAPISpec, error) {
 	toolInfos := i.discovery.ListByCategory(category)
 
@@ -97,7 +148,15 @@ func (i *ToolDocumentationIntegrator) GenerateOpenAPIForCategory(ctx context.Con
 	return GenerateToolOpenAPI(ctx, toolInfos, categoryConfig)
 }
 
-// IntegrateWithToolHelp enhances the existing GetToolHelp with documentation formatting
+// IntegrateWithToolHelp enhances the existing GetToolHelp with documentation formatting.
+// It retrieves basic help information and augments it with structured documentation,
+// schemas, and examples in a human-readable format.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - toolName: The name of the tool to get help for
+//
+// Returns enhanced help text or an error.
 func (i *ToolDocumentationIntegrator) IntegrateWithToolHelp(ctx context.Context, toolName string) (string, error) {
 	// Get the basic help from discovery
 	basicHelp, err := i.discovery.GetToolHelp(toolName)
@@ -202,7 +261,9 @@ func (i *ToolDocumentationIntegrator) IntegrateWithToolHelp(ctx context.Context,
 	return help.String(), nil
 }
 
-// BatchGenerationOptions provides options for batch generation operations
+// BatchGenerationOptions provides options for batch generation operations.
+// It allows fine-grained control over which tools to include and how
+// to format the output when generating documentation in bulk.
 type BatchGenerationOptions struct {
 	// Categories to include (empty means all)
 	Categories []string
@@ -223,7 +284,15 @@ type BatchGenerationOptions struct {
 	OutputFormat string
 }
 
-// BatchGenerate performs batch generation with advanced filtering options
+// BatchGenerate performs batch generation with advanced filtering options.
+// It supports filtering by categories and tags, grouping by category, and
+// generating output in multiple formats (OpenAPI, Markdown, JSON).
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - options: Configuration options for batch generation
+//
+// Returns the generated documentation in the requested format or an error.
 func (i *ToolDocumentationIntegrator) BatchGenerate(ctx context.Context, options BatchGenerationOptions) (interface{}, error) {
 	// Get all tools
 	allTools := i.discovery.ListTools()
@@ -297,7 +366,11 @@ func (i *ToolDocumentationIntegrator) BatchGenerate(ctx context.Context, options
 	}
 }
 
-// GetToolCategories returns all unique categories from discovered tools
+// GetToolCategories returns all unique categories from discovered tools.
+// This is useful for understanding the available categories and building
+// category-based navigation or filtering interfaces.
+//
+// Returns a slice of unique category names.
 func (i *ToolDocumentationIntegrator) GetToolCategories() []string {
 	toolInfos := i.discovery.ListTools()
 	categorySet := make(map[string]bool)
@@ -316,7 +389,11 @@ func (i *ToolDocumentationIntegrator) GetToolCategories() []string {
 	return categories
 }
 
-// GetToolTags returns all unique tags from discovered tools
+// GetToolTags returns all unique tags from discovered tools.
+// Tags can be used for cross-category grouping and advanced filtering
+// of tools in documentation generation.
+//
+// Returns a slice of unique tag names.
 func (i *ToolDocumentationIntegrator) GetToolTags() []string {
 	toolInfos := i.discovery.ListTools()
 	tagSet := make(map[string]bool)
@@ -339,21 +416,45 @@ func (i *ToolDocumentationIntegrator) GetToolTags() []string {
 
 // Convenience functions for common operations
 
-// GenerateToolsOpenAPI is a convenience function to generate OpenAPI spec for all tools
+// GenerateToolsOpenAPI is a convenience function to generate OpenAPI spec for all tools.
+// It creates a new discovery instance and integrator internally, suitable for
+// one-off documentation generation tasks.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - config: Generator configuration
+//
+// Returns an OpenAPI specification or an error.
 func GenerateToolsOpenAPI(ctx context.Context, config GeneratorConfig) (*OpenAPISpec, error) {
 	discovery := tools.NewDiscovery()
 	integrator := NewToolDocumentationIntegrator(discovery, config)
 	return integrator.GenerateOpenAPIForAllTools(ctx)
 }
 
-// GenerateToolsMarkdown is a convenience function to generate markdown for all tools
+// GenerateToolsMarkdown is a convenience function to generate markdown for all tools.
+// It creates a new discovery instance and integrator internally, suitable for
+// one-off documentation generation tasks.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - config: Generator configuration
+//
+// Returns markdown documentation or an error.
 func GenerateToolsMarkdown(ctx context.Context, config GeneratorConfig) (string, error) {
 	discovery := tools.NewDiscovery()
 	integrator := NewToolDocumentationIntegrator(discovery, config)
 	return integrator.GenerateMarkdownForAllTools(ctx)
 }
 
-// GenerateToolsJSON is a convenience function to generate JSON docs for all tools
+// GenerateToolsJSON is a convenience function to generate JSON docs for all tools.
+// It creates a new discovery instance and integrator internally, suitable for
+// one-off documentation generation tasks.
+//
+// Parameters:
+//   - ctx: The context for the operation
+//   - config: Generator configuration
+//
+// Returns JSON documentation structs or an error.
 func GenerateToolsJSON(ctx context.Context, config GeneratorConfig) ([]Documentation, error) {
 	discovery := tools.NewDiscovery()
 	integrator := NewToolDocumentationIntegrator(discovery, config)
@@ -362,7 +463,14 @@ func GenerateToolsJSON(ctx context.Context, config GeneratorConfig) ([]Documenta
 
 // Helper functions
 
-// formatSchemaAsMarkdown formats a schema as markdown text
+// formatSchemaAsMarkdown formats a schema as markdown text.
+// It converts a Schema struct into human-readable markdown format
+// with proper formatting for types, properties, and constraints.
+//
+// Parameters:
+//   - schema: The schema to format
+//
+// Returns formatted markdown text.
 func formatSchemaAsMarkdown(schema *Schema) string {
 	var builder strings.Builder
 
@@ -392,7 +500,13 @@ func formatSchemaAsMarkdown(schema *Schema) string {
 	return builder.String()
 }
 
-// prettyJSON formats an interface as pretty-printed JSON
+// prettyJSON formats an interface as pretty-printed JSON.
+// It adds proper indentation and line breaks for readability.
+//
+// Parameters:
+//   - v: The value to format as JSON
+//
+// Returns pretty-printed JSON string or an error.
 func prettyJSON(v interface{}) (string, error) {
 	bytes, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {

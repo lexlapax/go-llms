@@ -11,7 +11,8 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// WorkflowStateType represents the state of a workflow
+// WorkflowStateType represents the state of a workflow.
+// It tracks the lifecycle of workflow execution from pending to completion.
 type WorkflowStateType string
 
 const (
@@ -29,7 +30,8 @@ const (
 	WorkflowStateCanceled WorkflowStateType = "canceled"
 )
 
-// StepStateType represents the state of a workflow step
+// StepStateType represents the state of a workflow step.
+// It tracks individual step execution within a workflow.
 type StepStateType string
 
 const (
@@ -45,7 +47,8 @@ const (
 	StepStateSkipped StepStateType = "skipped"
 )
 
-// ErrorAction defines what to do when an error occurs
+// ErrorAction defines what to do when an error occurs.
+// It determines the workflow's response to step failures.
 type ErrorAction string
 
 const (
@@ -59,7 +62,9 @@ const (
 	ErrorActionContinue ErrorAction = "continue"
 )
 
-// WorkflowStep interface for workflow steps
+// WorkflowStep interface for workflow steps.
+// Implementations define discrete units of work that can be
+// executed as part of a workflow.
 type WorkflowStep interface {
 	// Name returns the step name
 	Name() string
@@ -69,13 +74,16 @@ type WorkflowStep interface {
 	Validate() error
 }
 
-// WorkflowState wraps domain.State with workflow metadata
+// WorkflowState wraps domain.State with workflow metadata.
+// It extends the base state with workflow-specific information
+// needed during execution.
 type WorkflowState struct {
 	*domain.State
 	Metadata map[string]interface{}
 }
 
-// StepStatus tracks the status of a workflow step
+// StepStatus tracks the status of a workflow step.
+// It records execution details including timing, errors, and retry attempts.
 type StepStatus struct {
 	State     StepStateType
 	StartTime time.Time
@@ -84,25 +92,33 @@ type StepStatus struct {
 	Retries   int
 }
 
-// ErrorHandler interface for handling step errors
+// ErrorHandler interface for handling step errors.
+// Implementations determine how workflows respond to failures,
+// including retry logic and error recovery strategies.
 type ErrorHandler interface {
 	// HandleError processes an error and returns the action to take
 	HandleError(ctx context.Context, step WorkflowStep, state *WorkflowState, err error) ErrorAction
 }
 
-// DefaultErrorHandler provides basic error handling
+// DefaultErrorHandler provides basic error handling.
+// It implements a simple abort-on-error strategy with
+// configurable retry behavior.
 type DefaultErrorHandler struct {
 	MaxRetries int
 	RetryDelay time.Duration
 }
 
-// HandleError implements ErrorHandler
+// HandleError implements ErrorHandler.
+// Currently returns ErrorActionAbort for all errors.
+// This can be extended to implement more sophisticated error handling.
 func (h *DefaultErrorHandler) HandleError(ctx context.Context, step WorkflowStep, state *WorkflowState, err error) ErrorAction {
 	// Simple implementation - can be extended
 	return ErrorActionAbort
 }
 
-// WorkflowStatus represents the current state of workflow execution
+// WorkflowStatus represents the current state of workflow execution.
+// It provides a complete view of the workflow's progress, including
+// individual step statuses and timing information.
 type WorkflowStatus struct {
 	State       WorkflowStateType
 	StartTime   time.Time
@@ -112,7 +128,9 @@ type WorkflowStatus struct {
 	Steps       map[string]StepStatus
 }
 
-// WorkflowDefinition defines the structure and flow of a workflow
+// WorkflowDefinition defines the structure and flow of a workflow.
+// It specifies the steps to execute and how they should be coordinated
+// (sequential or parallel execution).
 type WorkflowDefinition struct {
 	Name           string
 	Description    string
@@ -121,13 +139,21 @@ type WorkflowDefinition struct {
 	MaxConcurrency int
 }
 
-// AgentStep wraps an agent as a workflow step
+// AgentStep wraps an agent as a workflow step.
+// This allows any BaseAgent to be used as a step in a workflow,
+// providing seamless integration between agents and workflows.
 type AgentStep struct {
 	name  string
 	agent domain.BaseAgent
 }
 
-// NewAgentStep creates a new AgentStep from a BaseAgent
+// NewAgentStep creates a new AgentStep from a BaseAgent.
+//
+// Parameters:
+//   - name: The name for this step
+//   - agent: The agent to wrap as a step
+//
+// Returns a WorkflowStep that executes the agent.
 func NewAgentStep(name string, agent domain.BaseAgent) WorkflowStep {
 	return &AgentStep{
 		name:  name,
@@ -135,12 +161,16 @@ func NewAgentStep(name string, agent domain.BaseAgent) WorkflowStep {
 	}
 }
 
-// Name returns the step name
+// Name returns the step name.
+// Implements WorkflowStep.Name.
 func (s *AgentStep) Name() string {
 	return s.name
 }
 
-// Execute runs the agent
+// Execute runs the agent.
+// It executes the wrapped agent with the workflow state and returns
+// a new workflow state with the agent's results and updated metadata.
+// Implements WorkflowStep.Execute.
 func (s *AgentStep) Execute(ctx context.Context, state *WorkflowState) (*WorkflowState, error) {
 	// Run the agent with the domain state
 	result, err := s.agent.Run(ctx, state.State)
@@ -167,7 +197,9 @@ func (s *AgentStep) Execute(ctx context.Context, state *WorkflowState) (*Workflo
 	return newWorkflowState, nil
 }
 
-// Validate validates the step
+// Validate validates the step.
+// It ensures the wrapped agent is not nil and is itself valid.
+// Implements WorkflowStep.Validate.
 func (s *AgentStep) Validate() error {
 	if s.agent == nil {
 		return fmt.Errorf("agent cannot be nil")

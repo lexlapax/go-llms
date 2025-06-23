@@ -99,7 +99,8 @@ func SelectModelByCapability(registry *DynamicRegistry, ctx context.Context, cap
 	return "", nil, fmt.Errorf("no model found with all required capabilities")
 }
 
-// CompareProviders compares providers based on their capabilities
+// ProviderComparison represents a comparative analysis of a provider's capabilities and features.
+// It is used to compare different LLM providers based on their supported features.
 type ProviderComparison struct {
 	Provider     string
 	Metadata     ProviderMetadata

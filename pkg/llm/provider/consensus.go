@@ -1,5 +1,11 @@
 package provider
 
+// File consensus.go provides consensus algorithms for multi-provider response validation.
+// It implements three strategies: majority voting (most common response), similarity-based
+// grouping (responses grouped by content similarity), and weighted consensus (provider
+// weights influence the final decision). The implementation includes optimized caching
+// for similarity calculations and group membership.
+
 // ABOUTME: Consensus algorithms for multi-provider response validation
 // ABOUTME: Implements majority voting, similarity matching, and weighted consensus
 
@@ -199,35 +205,45 @@ func (c *groupCache) getGroupRepresentative(groupIndex int) string {
 // Groups responses by similarity and returns the most common group
 // This version is optimized with caching and more efficient group comparisons
 func selectSimilarityConsensus(results []fallbackResult, similarityThreshold float64) (string, error) {
-	// If we only have a few results, fall back to majority consensus
+	// Algorithm overview:
+	// 1. Group similar responses together based on similarity threshold
+	// 2. Use caching to avoid redundant similarity calculations
+	// 3. Track group sizes efficiently
+	// 4. Return representative from the largest group
+
+	// Optimization: For small result sets, simple majority voting is more efficient
 	if len(results) <= 2 {
 		return selectMajorityConsensus(results)
 	}
 
 	// Reset the group cache if the threshold has changed
+	// This ensures cached groupings remain valid for the current threshold
 	globalGroupCache.resetIfThresholdChanged(similarityThreshold)
 
-	// Preallocate groups array with estimated capacity
+	// Preallocate data structures with estimated capacity
+	// Most consensus scenarios have 1-5 distinct groups
 	groups := make([][]fallbackResult, 0, min(len(results), 5))
 
-	// Track group counts for faster largest group lookup
+	// Track group counts separately for O(1) size lookups
+	// This avoids repeatedly calling len() on group slices
 	groupCounts := make([]int, 0, 5)
 
-	// Start with the first result as its own group
+	// Bootstrap: First result always starts its own group
 	firstResult := results[0]
 	groups = append(groups, []fallbackResult{firstResult})
 	groupCounts = append(groupCounts, 1)
 	globalGroupCache.addNewGroup(firstResult.content)
 
-	// Track the largest group
+	// Track the largest group index for efficient final selection
 	largestGroupIndex := 0
 
-	// For each remaining result, check if it should join an existing group
+	// Main grouping loop: Process each remaining result
 	for i := 1; i < len(results); i++ {
 		result := results[i]
 		foundGroup := false
 
-		// Check if this content is already in the cache
+		// Fast path: Check if this exact content was already grouped
+		// This handles duplicate responses without similarity calculation
 		groupIndex := globalGroupCache.getGroup(result.content)
 		if groupIndex >= 0 && groupIndex < len(groups) {
 			// Add to the cached group
@@ -235,31 +251,33 @@ func selectSimilarityConsensus(results []fallbackResult, similarityThreshold flo
 			groupCounts[groupIndex]++
 			foundGroup = true
 
-			// Update largest group if needed
+			// Update largest group tracking
 			if groupCounts[groupIndex] > groupCounts[largestGroupIndex] {
 				largestGroupIndex = groupIndex
 			}
 			continue
 		}
 
-		// Try to add to an existing group by comparing with representatives
+		// Slow path: Compare with existing group representatives
+		// We only compare with one representative per group for efficiency
 		for j := range groups {
-			// Get the representative content from cache for comparison
+			// Get cached representative to avoid recalculating
 			representative := globalGroupCache.getGroupRepresentative(j)
 
-			// Compare with the representative
+			// Calculate similarity using Levenshtein-based metric
 			similarity := calculateSimilarity(result.content, representative)
 			if similarity >= similarityThreshold {
+				// Add to this group
 				groups[j] = append(groups[j], result)
 				groupCounts[j]++
 				globalGroupCache.addToGroup(result.content, j)
 				foundGroup = true
 
-				// Update largest group if needed
+				// Update largest group tracking
 				if groupCounts[j] > groupCounts[largestGroupIndex] {
 					largestGroupIndex = j
 				}
-				break
+				break // Stop at first matching group
 			}
 		}
 
@@ -554,15 +572,22 @@ func (c *similarityCache) Set(a, b string, score float64) {
 // Returns a value between 0.0 (completely different) and 1.0 (identical)
 // This version is optimized with caching and fast paths for common cases
 func calculateSimilarity(a, b string) float64 {
-	// Fast paths for common cases
-	// Simple case: exact match
+	// calculateSimilarity computes similarity between two strings using an optimized
+	// Jaccard coefficient algorithm based on word overlap. The implementation includes:
+	// 1. Multiple fast paths for common cases
+	// 2. Caching to avoid redundant calculations
+	// 3. Length-based early termination
+	// 4. Stopword filtering (words <= 2 chars)
+	// 5. Pre-allocation optimizations
+
+	// Fast path 1: Exact match
 	if a == b {
 		return 1.0
 	}
 
-	// Very short strings can be handled directly
+	// Fast path 2: Very short strings - compare directly with case-insensitivity
 	if len(a) < 5 || len(b) < 5 {
-		// For very short strings, do direct comparison to avoid overhead
+		// For very short strings, overhead of word splitting isn't worth it
 		aLower := strings.ToLower(a)
 		bLower := strings.ToLower(b)
 		if aLower == bLower {
@@ -570,27 +595,29 @@ func calculateSimilarity(a, b string) float64 {
 		}
 	}
 
-	// Check cache first - cache lookup is fast so we can do it early
+	// Check cache for previously computed similarity
+	// Cache is bidirectional: similarity(a,b) == similarity(b,a)
 	if score, found := globalSimilarityCache.Get(a, b); found {
 		return score
 	}
 
-	// Convert to lowercase for more forgiving comparison
+	// Normalize to lowercase for case-insensitive comparison
 	aLower := strings.ToLower(a)
 	bLower := strings.ToLower(b)
 
-	// If still exact match after lowercase conversion
+	// Fast path 3: Case-insensitive exact match
 	if aLower == bLower {
 		score := 1.0
 		globalSimilarityCache.Set(a, b, score)
 		return score
 	}
 
-	// Length-based optimization - if the length difference is too great,
-	// the strings are likely very different
+	// Early termination based on length difference
+	// If one string is less than half the length of the other,
+	// they're unlikely to be similar even with word overlap
 	lenA, lenB := len(aLower), len(bLower)
 	if float64(min(lenA, lenB))/float64(max(lenA, lenB)) < 0.5 {
-		// Lengths differ by more than 50%, likely very different
+		// Assign low similarity score for vastly different lengths
 		score := 0.3
 		globalSimilarityCache.Set(a, b, score)
 		return score
@@ -602,16 +629,19 @@ func calculateSimilarity(a, b string) float64 {
 		estimatedWords = 10
 	}
 
-	// Implement an optimized Jaccard similarity based on word overlap
-	// Pre-allocate slices to reduce allocations
+	// Main algorithm: Jaccard similarity based on word overlap
+	// Jaccard coefficient = |intersection| / |union|
+
+	// Split into words (whitespace-delimited)
 	aWords := strings.Fields(aLower)
 	bWords := strings.Fields(bLower)
 
-	// Create sets of words with pre-allocation
+	// Build word set for first string, filtering stopwords
 	aSet := make(map[string]bool, estimatedWords)
 	for _, word := range aWords {
-		// Filter out very common words that don't contribute much to meaning
-		if len(word) > 2 { // Skip very short words
+		// Filter out stopwords (very short words) that don't contribute to meaning
+		// Examples: "a", "an", "is", "to", etc.
+		if len(word) > 2 {
 			aSet[word] = true
 		}
 	}
@@ -627,18 +657,19 @@ func calculateSimilarity(a, b string) float64 {
 	bSet := make(map[string]bool, estimatedWords)
 	intersection := 0
 
-	// Build bSet and count intersection in one pass
+	// Build second word set while counting intersection
+	// This single-pass approach is more efficient than separate passes
 	for _, word := range bWords {
-		// Skip very short words
+		// Apply same stopword filter
 		if len(word) <= 2 {
 			continue
 		}
 
-		// Add to set if not already there
+		// Add to set (map prevents duplicates)
 		if !bSet[word] {
 			bSet[word] = true
 
-			// Check if in both sets
+			// Count words that appear in both sets
 			if aSet[word] {
 				intersection++
 			}

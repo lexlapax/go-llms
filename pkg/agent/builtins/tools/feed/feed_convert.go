@@ -78,7 +78,10 @@ func feedConvertExecute(ctx *domain.ToolContext, params FeedConvertParams) (*Fee
 	return result, nil
 }
 
-// FeedConvert creates a new FeedConvert tool
+// FeedConvert creates a tool that transforms feeds between RSS, Atom, and JSON Feed formats while preserving all standard feed elements.
+// The tool handles format-specific features like RSS enclosures, Atom content/summary separation, and JSON Feed attachments.
+// It supports pretty-printing for human readability and maintains proper date formatting for each target format.
+// This is essential for feed format migration, cross-platform compatibility, and meeting specific API format requirements.
 func FeedConvert() domain.Tool {
 	// Define parameter schema
 	paramSchema := &sdomain.Schema{

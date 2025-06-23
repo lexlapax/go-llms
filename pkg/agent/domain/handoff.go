@@ -12,18 +12,22 @@ import (
 // This is set by the core package during initialization
 var globalAgentRegistry AgentRegistry
 
-// SetGlobalAgentRegistry sets the global agent registry
+// SetGlobalAgentRegistry sets the global agent registry.
 // This should be called by the core package during initialization
+// to enable handoff operations between agents.
 func SetGlobalAgentRegistry(registry AgentRegistry) {
 	globalAgentRegistry = registry
 }
 
-// GetGlobalAgentRegistry returns the global agent registry
+// GetGlobalAgentRegistry returns the global agent registry.
+// Used by handoff implementations to look up target agents.
 func GetGlobalAgentRegistry() AgentRegistry {
 	return globalAgentRegistry
 }
 
-// Handoff represents a delegation mechanism between agents
+// Handoff represents a delegation mechanism between agents.
+// Handoffs enable one agent to delegate work to another agent
+// with input transformation and message filtering capabilities.
 type Handoff interface {
 	// Core identification
 	Name() string

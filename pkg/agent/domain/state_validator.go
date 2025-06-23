@@ -13,12 +13,15 @@ import (
 	sdomain "github.com/lexlapax/go-llms/pkg/schema/domain"
 )
 
-// StateValidator validates state
+// StateValidator validates state contents and structure.
+// Validators can check for required fields, value constraints,
+// and business rules to ensure state integrity during agent execution.
 type StateValidator interface {
 	Validate(state *State) error
 }
 
-// StateValidatorFunc is a function adapter
+// StateValidatorFunc is a function adapter that implements StateValidator.
+// Allows plain functions to be used as state validators.
 type StateValidatorFunc func(state *State) error
 
 func (f StateValidatorFunc) Validate(state *State) error {
@@ -27,7 +30,8 @@ func (f StateValidatorFunc) Validate(state *State) error {
 
 // Built-in validators
 
-// RequiredKeysValidator ensures required keys exist
+// RequiredKeysValidator ensures required keys exist in the state.
+// Validates that all specified keys are present with non-nil values.
 func RequiredKeysValidator(keys ...string) StateValidator {
 	return StateValidatorFunc(func(state *State) error {
 		var missing []string

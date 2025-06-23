@@ -13,7 +13,9 @@ import (
 	"github.com/google/uuid"
 )
 
-// Artifact represents a file or data artifact
+// Artifact represents a file or data artifact that can be stored in agent state.
+// It provides a flexible container for various content types including files, images,
+// documents, and arbitrary data with support for both in-memory and streaming access.
 type Artifact struct {
 	ID       string                 `json:"id"`
 	Name     string                 `json:"name"`
@@ -29,7 +31,8 @@ type Artifact struct {
 	location string        // For file references
 }
 
-// ArtifactType represents the type of artifact
+// ArtifactType represents the type of artifact stored.
+// It helps categorize artifacts for processing and display purposes.
 type ArtifactType string
 
 const (
@@ -45,7 +48,9 @@ const (
 	ArtifactTypeCustom   ArtifactType = "custom"
 )
 
-// NewArtifact creates a new artifact with data
+// NewArtifact creates a new artifact with in-memory data.
+// The artifact is assigned a unique ID and the current timestamp.
+// Use this for small artifacts that fit comfortably in memory.
 func NewArtifact(name string, artifactType ArtifactType, data []byte) *Artifact {
 	return &Artifact{
 		ID:       uuid.New().String(),
@@ -58,7 +63,9 @@ func NewArtifact(name string, artifactType ArtifactType, data []byte) *Artifact 
 	}
 }
 
-// NewArtifactFromReader creates a new artifact from a reader
+// NewArtifactFromReader creates a new artifact from an io.ReadCloser.
+// This is ideal for streaming large files without loading them entirely into memory.
+// The size parameter should specify the expected content size if known.
 func NewArtifactFromReader(name string, artifactType ArtifactType, reader io.ReadCloser, size int64) *Artifact {
 	return &Artifact{
 		ID:       uuid.New().String(),
@@ -71,7 +78,9 @@ func NewArtifactFromReader(name string, artifactType ArtifactType, reader io.Rea
 	}
 }
 
-// NewArtifactFromLocation creates a new artifact referencing a file location
+// NewArtifactFromLocation creates a new artifact referencing an external file.
+// The artifact stores only the file path, not the content itself.
+// This is useful for very large files that should not be loaded into memory.
 func NewArtifactFromLocation(name string, artifactType ArtifactType, location string, size int64) *Artifact {
 	return &Artifact{
 		ID:       uuid.New().String(),
@@ -84,13 +93,16 @@ func NewArtifactFromLocation(name string, artifactType ArtifactType, location st
 	}
 }
 
-// WithMimeType sets the MIME type
+// WithMimeType sets the MIME type for the artifact.
+// Returns the artifact for method chaining.
 func (a *Artifact) WithMimeType(mimeType string) *Artifact {
 	a.MimeType = mimeType
 	return a
 }
 
-// WithMetadata adds metadata to the artifact
+// WithMetadata adds a key-value metadata entry to the artifact.
+// Metadata can store additional context like source, processing status, or custom attributes.
+// Returns the artifact for method chaining.
 func (a *Artifact) WithMetadata(key string, value interface{}) *Artifact {
 	if a.Metadata == nil {
 		a.Metadata = make(map[string]interface{})
@@ -99,7 +111,9 @@ func (a *Artifact) WithMetadata(key string, value interface{}) *Artifact {
 	return a
 }
 
-// Read returns a reader for the artifact content
+// Read returns an io.ReadCloser for accessing the artifact content.
+// For in-memory artifacts, it wraps the data in a reader.
+// For file references, it returns an error indicating external file access is needed.
 func (a *Artifact) Read() (io.ReadCloser, error) {
 	// If we have a reader, return it
 	if a.reader != nil {
@@ -119,7 +133,9 @@ func (a *Artifact) Read() (io.ReadCloser, error) {
 	return nil, fmt.Errorf("no content available for artifact %s", a.ID)
 }
 
-// Data returns the artifact data (if loaded in memory)
+// Data returns the artifact content as a byte slice.
+// If the artifact uses a reader, it will read all content into memory.
+// Returns an error if the artifact references an external file.
 func (a *Artifact) Data() ([]byte, error) {
 	if a.data != nil {
 		return a.data, nil
@@ -141,27 +157,33 @@ func (a *Artifact) Data() ([]byte, error) {
 	return nil, fmt.Errorf("artifact data not loaded in memory")
 }
 
-// Location returns the file location (if artifact references a file)
+// Location returns the file path for artifacts referencing external files.
+// Returns an empty string for in-memory or streaming artifacts.
 func (a *Artifact) Location() string {
 	return a.location
 }
 
-// IsInMemory returns true if the artifact data is loaded in memory
+// IsInMemory returns true if the artifact data is loaded in memory.
+// In-memory artifacts provide fastest access but consume memory.
 func (a *Artifact) IsInMemory() bool {
 	return a.data != nil
 }
 
-// IsStreaming returns true if the artifact has a reader
+// IsStreaming returns true if the artifact uses an io.Reader for content access.
+// Streaming artifacts are memory-efficient for large files.
 func (a *Artifact) IsStreaming() bool {
 	return a.reader != nil
 }
 
-// IsReference returns true if the artifact references an external file
+// IsReference returns true if the artifact references an external file by path.
+// Referenced artifacts require separate file system access to read content.
 func (a *Artifact) IsReference() bool {
 	return a.location != ""
 }
 
-// Clone creates a copy of the artifact metadata (content is shared)
+// Clone creates a shallow copy of the artifact.
+// The metadata is deep copied but the content (data, reader, or location) is shared.
+// The clone retains the same ID as the original artifact.
 func (a *Artifact) Clone() *Artifact {
 	metadata := make(map[string]interface{})
 	for k, v := range a.Metadata {
@@ -182,7 +204,9 @@ func (a *Artifact) Clone() *Artifact {
 	}
 }
 
-// MarshalJSON customizes JSON marshaling
+// MarshalJSON customizes JSON marshaling to exclude binary content.
+// Only metadata and references are included in the JSON representation.
+// Binary data and readers are intentionally omitted for efficiency.
 func (a *Artifact) MarshalJSON() ([]byte, error) {
 	// For JSON serialization, we only include metadata, not content
 	return json.Marshal(map[string]interface{}{
@@ -215,7 +239,9 @@ const (
 	MimeTypeBinary   = "application/octet-stream"
 )
 
-// GuessArtifactType attempts to determine artifact type from MIME type
+// GuessArtifactType attempts to determine the appropriate ArtifactType from a MIME type string.
+// It maps common MIME types to artifact categories like document, image, video, etc.
+// Returns ArtifactTypeFile for unrecognized MIME types.
 func GuessArtifactType(mimeType string) ArtifactType {
 	switch mimeType {
 	case MimeTypePDF, MimeTypeHTML, MimeTypeMarkdown:

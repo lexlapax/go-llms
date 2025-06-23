@@ -12,7 +12,8 @@ import (
 	"github.com/lexlapax/go-llms/pkg/llm/domain"
 )
 
-// OpenAIFactory creates OpenAI provider instances
+// OpenAIFactory creates OpenAI provider instances from configuration.
+// It supports API key from config or OPENAI_API_KEY environment variable.
 type OpenAIFactory struct{}
 
 // CreateProvider implements ProviderFactory
@@ -140,7 +141,8 @@ func (f *OpenAIFactory) GetTemplate() ProviderTemplate {
 	}
 }
 
-// AnthropicFactory creates Anthropic provider instances
+// AnthropicFactory creates Anthropic provider instances from configuration.
+// It supports API key from config or ANTHROPIC_API_KEY environment variable.
 type AnthropicFactory struct{}
 
 // CreateProvider implements ProviderFactory
@@ -225,7 +227,8 @@ func (f *AnthropicFactory) GetTemplate() ProviderTemplate {
 	}
 }
 
-// MockFactory creates mock provider instances for testing
+// MockFactory creates mock provider instances for testing.
+// It supports configurable responses based on prompt patterns.
 type MockFactory struct{}
 
 // CreateProvider implements ProviderFactory
@@ -315,7 +318,8 @@ func (f *MockFactory) GetTemplate() ProviderTemplate {
 	}
 }
 
-// GeminiFactory creates Gemini provider instances
+// GeminiFactory creates Gemini provider instances from configuration.
+// It supports API key from config or GOOGLE_API_KEY environment variable.
 type GeminiFactory struct{}
 
 // CreateProvider implements ProviderFactory
@@ -361,7 +365,8 @@ func (f *GeminiFactory) GetTemplate() ProviderTemplate {
 	}
 }
 
-// OllamaFactory creates Ollama provider instances
+// OllamaFactory creates Ollama provider instances from configuration.
+// It supports base URL from config or OLLAMA_HOST environment variable.
 type OllamaFactory struct{}
 
 // CreateProvider implements ProviderFactory
@@ -411,7 +416,8 @@ func (f *OllamaFactory) GetTemplate() ProviderTemplate {
 	}
 }
 
-// OpenRouterFactory creates OpenRouter provider instances
+// OpenRouterFactory creates OpenRouter provider instances from configuration.
+// It supports API key from config or OPENROUTER_API_KEY environment variable.
 type OpenRouterFactory struct{}
 
 // CreateProvider implements ProviderFactory
@@ -457,7 +463,8 @@ func (f *OpenRouterFactory) GetTemplate() ProviderTemplate {
 	}
 }
 
-// VertexAIFactory creates Vertex AI provider instances
+// VertexAIFactory creates Vertex AI provider instances from configuration.
+// It requires a Google Cloud project ID and supports regional endpoints.
 type VertexAIFactory struct{}
 
 // CreateProvider implements ProviderFactory
@@ -510,7 +517,9 @@ func (f *VertexAIFactory) GetTemplate() ProviderTemplate {
 	}
 }
 
-// RegisterDefaultFactories registers the default provider factories
+// RegisterDefaultFactories registers all built-in provider factories with the given registry.
+// This includes factories for OpenAI, Anthropic, Gemini, Ollama, OpenRouter, VertexAI, and Mock providers.
+// Returns an error if any factory registration fails.
 func RegisterDefaultFactories(registry *DynamicRegistry) error {
 	factories := map[string]ProviderFactory{
 		"openai":     &OpenAIFactory{},
@@ -531,7 +540,9 @@ func RegisterDefaultFactories(registry *DynamicRegistry) error {
 	return nil
 }
 
-// CreateProviderFromEnvironment creates a provider based on environment variables
+// CreateProviderFromEnvironment creates a provider instance using environment variables.
+// It looks for provider-specific environment variables prefixed with the uppercase provider type
+// (e.g., OPENAI_API_KEY, ANTHROPIC_MODEL). Returns an error if the provider cannot be created.
 func CreateProviderFromEnvironment(providerType string) (domain.Provider, error) {
 	envPrefix := strings.ToUpper(providerType)
 	config := make(map[string]interface{})

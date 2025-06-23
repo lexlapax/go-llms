@@ -64,7 +64,15 @@ func getSchemaJSON(schema *schemaDomain.Schema) ([]byte, error) {
 
 // Enhance adds schema information to a prompt - optimized version
 func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (string, error) {
-	// Get schema JSON using cache
+	// Enhance transforms a user prompt by appending JSON schema instructions
+	// to guide LLMs in producing structured outputs. The function:
+	// 1. Converts the schema to JSON (with caching for performance)
+	// 2. Builds an enhanced prompt with clear formatting instructions
+	// 3. Adds schema-specific guidance based on type (object, array, etc.)
+	// 4. Includes examples for complex schemas
+	// 5. Uses efficient string building to minimize allocations
+
+	// Get schema JSON using cache to avoid repeated marshaling
 	schemaJSON, err := getSchemaJSON(schema)
 	if err != nil {
 		return "", err
@@ -104,9 +112,11 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 		return "", fmt.Errorf("failed to write guideline 2: %w", err)
 	}
 
-	// Add type-specific instructions
+	// Add type-specific instructions based on schema type
+	// Different types require different guidance for LLMs
 	switch schema.Type {
 	case "object":
+		// For objects, emphasize required fields and provide field descriptions
 		if len(schema.Required) > 0 {
 			// Pre-join required fields to reduce allocations
 			requiredFields := strings.Join(schema.Required, ", ")
@@ -122,12 +132,14 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 		}
 
 		// Add descriptions for properties if available
+		// Property descriptions help LLMs understand the expected content
 		if len(schema.Properties) > 0 {
 			if _, err := enhancedPrompt.WriteString("4. Field descriptions:\n"); err != nil {
 				return "", fmt.Errorf("failed to write field descriptions header: %w", err)
 			}
 
-			// Fast path: only process properties with descriptions
+			// Fast path optimization: only process properties with descriptions
+			// This avoids iterating through properties twice in most cases
 			hasDescriptions := false
 			for _, prop := range schema.Properties {
 				if prop.Description != "" {
@@ -137,6 +149,7 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 			}
 
 			if hasDescriptions {
+				// Write field descriptions in a clear format
 				for name, prop := range schema.Properties {
 					if prop.Description != "" {
 						if _, err := enhancedPrompt.WriteString("   - "); err != nil {
@@ -159,7 +172,8 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 			}
 		}
 
-		// Add enum values if available
+		// Add enum constraints if available
+		// Enums restrict fields to specific values, which is crucial for LLMs
 		for name, prop := range schema.Properties {
 			if len(prop.Enum) > 0 {
 				// Pre-join enum values to reduce allocations
@@ -183,6 +197,7 @@ func (p *PromptEnhancer) Enhance(prompt string, schema *schemaDomain.Schema) (st
 		}
 
 	case "array":
+		// Array type requires different instructions
 		if _, err := enhancedPrompt.WriteString("3. Format your response as a JSON array of items.\n"); err != nil {
 			return "", fmt.Errorf("failed to write array format instruction: %w", err)
 		}

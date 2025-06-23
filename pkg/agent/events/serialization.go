@@ -11,13 +11,19 @@ import (
 	"github.com/lexlapax/go-llms/pkg/agent/domain"
 )
 
-// SerializableEvent wraps a domain.Event with serialization capabilities
+// SerializableEvent wraps a domain.Event with serialization capabilities.
+// It adds version information and custom JSON marshaling for bridge compatibility.
 type SerializableEvent struct {
 	domain.Event
 	Version string `json:"version"`
 }
 
-// NewSerializableEvent creates a new serializable event
+// NewSerializableEvent creates a new serializable event with version 1.0.
+//
+// Parameters:
+//   - event: The domain event to wrap
+//
+// Returns a new SerializableEvent instance.
 func NewSerializableEvent(event domain.Event) *SerializableEvent {
 	return &SerializableEvent{
 		Event:   event,
@@ -25,7 +31,9 @@ func NewSerializableEvent(event domain.Event) *SerializableEvent {
 	}
 }
 
-// MarshalJSON implements json.Marshaler
+// MarshalJSON implements json.Marshaler interface.
+// It converts the event to a bridge-friendly format with string timestamps
+// and optional fields included only when present.
 func (e *SerializableEvent) MarshalJSON() ([]byte, error) {
 	// Convert to a bridge-friendly format
 	data := map[string]interface{}{
@@ -53,7 +61,9 @@ func (e *SerializableEvent) MarshalJSON() ([]byte, error) {
 	return json.Marshal(data)
 }
 
-// UnmarshalJSON implements json.Unmarshaler
+// UnmarshalJSON implements json.Unmarshaler interface.
+// It reconstructs the event from JSON data, handling type conversions
+// and optional fields gracefully.
 func (e *SerializableEvent) UnmarshalJSON(data []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -103,7 +113,13 @@ func (e *SerializableEvent) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// SerializeEvent converts an event to a bridge-friendly map format
+// SerializeEvent converts an event to a bridge-friendly map format.
+// This is useful for integration with external systems that expect map data.
+//
+// Parameters:
+//   - event: The event to serialize
+//
+// Returns a map representation of the event or an error.
 func SerializeEvent(event domain.Event) (map[string]interface{}, error) {
 	serializable := NewSerializableEvent(event)
 
@@ -122,7 +138,13 @@ func SerializeEvent(event domain.Event) (map[string]interface{}, error) {
 	return result, nil
 }
 
-// DeserializeEvent converts a map back to an event
+// DeserializeEvent converts a map back to an event.
+// It handles the reverse operation of SerializeEvent.
+//
+// Parameters:
+//   - data: Map containing event data
+//
+// Returns the reconstructed event or an error.
 func DeserializeEvent(data map[string]interface{}) (domain.Event, error) {
 	// Marshal map to JSON
 	jsonData, err := json.Marshal(data)
@@ -139,7 +161,8 @@ func DeserializeEvent(data map[string]interface{}) (domain.Event, error) {
 	return serializable.Event, nil
 }
 
-// EventBatch represents a batch of events for efficient serialization
+// EventBatch represents a batch of events for efficient serialization.
+// It groups multiple events together with metadata about the batch.
 type EventBatch struct {
 	Events    []SerializableEvent `json:"events"`
 	BatchID   string              `json:"batch_id"`
@@ -147,7 +170,13 @@ type EventBatch struct {
 	Count     int                 `json:"count"`
 }
 
-// NewEventBatch creates a new event batch
+// NewEventBatch creates a new event batch from a slice of events.
+// It automatically generates a batch ID and timestamp.
+//
+// Parameters:
+//   - events: The events to include in the batch
+//
+// Returns a new EventBatch instance.
 func NewEventBatch(events []domain.Event) *EventBatch {
 	serializable := make([]SerializableEvent, len(events))
 	for i, event := range events {
@@ -162,7 +191,13 @@ func NewEventBatch(events []domain.Event) *EventBatch {
 	}
 }
 
-// SerializeEventBatch converts multiple events to a batch format
+// SerializeEventBatch converts multiple events to a batch format.
+// This is useful for bulk operations and efficient transmission.
+//
+// Parameters:
+//   - events: The events to serialize as a batch
+//
+// Returns a map representation of the batch or an error.
 func SerializeEventBatch(events []domain.Event) (map[string]interface{}, error) {
 	batch := NewEventBatch(events)
 
@@ -181,24 +216,32 @@ func SerializeEventBatch(events []domain.Event) (map[string]interface{}, error) 
 	return result, nil
 }
 
-// EventSerializer provides different serialization formats
+// EventSerializer provides different serialization formats for events.
+// Implementations can provide various formats like JSON, compact, or custom.
 type EventSerializer interface {
 	Serialize(event domain.Event) ([]byte, error)
 	Deserialize(data []byte) (domain.Event, error)
 	Format() string
 }
 
-// JSONSerializer serializes events to JSON
+// JSONSerializer serializes events to JSON format.
+// It supports both compact and pretty-printed output.
 type JSONSerializer struct {
 	pretty bool
 }
 
-// NewJSONSerializer creates a new JSON serializer
+// NewJSONSerializer creates a new JSON serializer.
+//
+// Parameters:
+//   - pretty: If true, output will be indented for readability
+//
+// Returns a new JSONSerializer instance.
 func NewJSONSerializer(pretty bool) *JSONSerializer {
 	return &JSONSerializer{pretty: pretty}
 }
 
-// Serialize implements EventSerializer
+// Serialize implements EventSerializer interface.
+// It converts an event to JSON bytes, optionally pretty-printed.
 func (s *JSONSerializer) Serialize(event domain.Event) ([]byte, error) {
 	serializable := NewSerializableEvent(event)
 
@@ -208,7 +251,8 @@ func (s *JSONSerializer) Serialize(event domain.Event) ([]byte, error) {
 	return json.Marshal(serializable)
 }
 
-// Deserialize implements EventSerializer
+// Deserialize implements EventSerializer interface.
+// It reconstructs an event from JSON bytes.
 func (s *JSONSerializer) Deserialize(data []byte) (domain.Event, error) {
 	var serializable SerializableEvent
 	if err := json.Unmarshal(data, &serializable); err != nil {
@@ -217,20 +261,26 @@ func (s *JSONSerializer) Deserialize(data []byte) (domain.Event, error) {
 	return serializable.Event, nil
 }
 
-// Format implements EventSerializer
+// Format implements EventSerializer interface.
+// It returns "json" as the format identifier.
 func (s *JSONSerializer) Format() string {
 	return "json"
 }
 
-// CompactSerializer provides minimal serialization for performance
+// CompactSerializer provides minimal serialization for performance.
+// It uses short field names to reduce payload size.
 type CompactSerializer struct{}
 
-// NewCompactSerializer creates a new compact serializer
+// NewCompactSerializer creates a new compact serializer.
+// This serializer is optimized for minimal payload size.
+//
+// Returns a new CompactSerializer instance.
 func NewCompactSerializer() *CompactSerializer {
 	return &CompactSerializer{}
 }
 
-// Serialize implements EventSerializer with minimal format
+// Serialize implements EventSerializer interface with minimal format.
+// It uses abbreviated field names: i=ID, t=Type, a=AgentID, s=timestamp, d=data, e=error.
 func (s *CompactSerializer) Serialize(event domain.Event) ([]byte, error) {
 	// Create minimal representation
 	compact := map[string]interface{}{
@@ -251,7 +301,8 @@ func (s *CompactSerializer) Serialize(event domain.Event) ([]byte, error) {
 	return json.Marshal(compact)
 }
 
-// Deserialize implements EventSerializer
+// Deserialize implements EventSerializer interface.
+// It reconstructs an event from compact format.
 func (s *CompactSerializer) Deserialize(data []byte) (domain.Event, error) {
 	var compact map[string]interface{}
 	if err := json.Unmarshal(data, &compact); err != nil {
@@ -289,12 +340,20 @@ func (s *CompactSerializer) Deserialize(data []byte) (domain.Event, error) {
 	return event, nil
 }
 
-// Format implements EventSerializer
+// Format implements EventSerializer interface.
+// It returns "compact" as the format identifier.
 func (s *CompactSerializer) Format() string {
 	return "compact"
 }
 
-// GetSerializer returns a serializer for the specified format
+// GetSerializer returns a serializer for the specified format.
+// Supported formats: "json", "json-pretty", "compact".
+// Defaults to JSON if format is unrecognized.
+//
+// Parameters:
+//   - format: The desired serialization format
+//
+// Returns an appropriate EventSerializer implementation.
 func GetSerializer(format string) EventSerializer {
 	switch format {
 	case "json":
