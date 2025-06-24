@@ -6,7 +6,7 @@ This section provides comprehensive API documentation for all go-llms packages, 
 
 ### LLM Integration
 - **[LLM API](llm.md)** - Language model provider integration
-  - Unified interface for OpenAI, Anthropic, Google Gemini
+  - Unified interface for OpenAI, Anthropic, Google Gemini, Ollama, OpenRouter
   - Multi-provider strategies for reliability
   - Streaming and structured generation support
 
@@ -37,7 +37,7 @@ This section provides comprehensive API documentation for all go-llms packages, 
   - Performance optimizations
 
 - **[Built-in Tools](builtins.md)** - Pre-built tool library
-  - 32 tools across 7 categories
+  - 30+ tools across 7 categories
   - MCP compatibility
   - Tool discovery and registry
 
@@ -49,109 +49,38 @@ This section provides comprehensive API documentation for all go-llms packages, 
 
 ## Utilities
 
+### Testing Support
+- **[Test Utilities](testutils.md)** - Testing helpers and mocks
+  - Provider mocks for unit testing
+  - Fixture management
+  - Assertion helpers
+
 ### General Utilities
-- **[Utils API](utils.md)** - Helper packages
-  - Authentication (OAuth2, API keys)
-  - High-performance JSON operations
-  - LLM convenience functions
-  - Metrics and profiling
+- **[Utilities API](utils.md)** - Common utilities
+  - Provider configuration parsing
+  - Model information management
+  - Error handling utilities
 
-### Testing
-- **[Test Utilities](testutils.md)** - Testing support
-  - Mock providers and tools
-  - Test data helpers
-  - Deterministic testing patterns
+## Quick Links
 
-## Quick Start
+- [Getting Started Guide](/docs/user-guide/getting-started.md)
+- [Examples Directory](/cmd/examples/)
+- [Technical Documentation](/docs/technical/)
+- [Contributing Guide](/CONTRIBUTING.md)
 
-### Basic LLM Usage
-```go
-import "github.com/lexlapax/go-llms/pkg/llm/provider"
+## API Stability
 
-// Create provider
-provider := provider.NewOpenAIProvider("api-key", "gpt-4o")
+The APIs documented here follow semantic versioning:
+- **Stable APIs** (v0.3.x): May have minor changes but no breaking changes
+- **Experimental APIs**: Marked with warnings, may change significantly
+- **Deprecated APIs**: Marked with deprecation notices and migration guides
 
-// Generate text
-response, err := provider.Generate(ctx, "Hello, world!")
-```
+## Documentation Format
 
-### Structured Output
-```go
-import "github.com/lexlapax/go-llms/pkg/structured/processor"
-
-// Define structure
-type Result struct {
-    Name  string `json:"name"`
-    Score int    `json:"score"`
-}
-
-// Generate structured data
-var result Result
-err := provider.GenerateWithSchema(ctx, prompt, &result)
-```
-
-### Agent with Tools
-```go
-import (
-    "github.com/lexlapax/go-llms/pkg/agent/core"
-    "github.com/lexlapax/go-llms/pkg/agent/builtins/tools"
-)
-
-// Create agent
-agent := core.NewLLMAgent("assistant", provider)
-
-// Add built-in tools
-calculator, _ := tools.GetTool("calculator")
-webSearch, _ := tools.GetTool("web_search")
-
-agent.AddTool(calculator)
-agent.AddTool(webSearch)
-
-// Run agent
-state := domain.NewState().Set("input", "Search for Python tutorials and calculate 15% of 200")
-result, err := agent.Run(ctx, state)
-```
-
-## Package Organization
-
-```
-pkg/
-├── llm/           # LLM providers and interfaces
-├── schema/        # JSON Schema validation
-├── structured/    # Structured output processing
-├── agent/         # Agent framework
-│   ├── core/      # Core agent implementation
-│   ├── domain/    # Agent interfaces and types
-│   ├── tools/     # Tool system
-│   ├── builtins/  # Built-in components
-│   └── workflow/  # Workflow patterns
-├── util/          # Utility packages
-│   ├── auth/      # Authentication
-│   ├── json/      # JSON operations
-│   ├── llmutil/   # LLM helpers
-│   ├── metrics/   # Performance metrics
-│   └── profiling/ # Profiling tools
-└── testutils/     # Testing utilities
-```
-
-## Integration Patterns
-
-The packages are designed to work together:
-
-1. **Schema + LLM** → Structured generation
-2. **Agent + Tools** → Autonomous task execution
-3. **Workflow + Agent** → Complex multi-step processes
-4. **Utils + Any** → Enhanced functionality
-
-## Next Steps
-
-- Browse individual API references for detailed documentation
-- Check the [User Guide](../user-guide/) for practical examples
-- See [Technical Docs](../technical/) for implementation details
-- Explore [Examples](../../cmd/examples/) for working code
-
-## Version Information
-
-Current version: v0.3.1
-
-All APIs are subject to change until v1.0. See [CHANGELOG](../../CHANGELOG.md) for version history.
+Each API document includes:
+- **Overview**: High-level description and use cases
+- **Core Types**: Main interfaces and structs
+- **Functions**: Public functions and methods
+- **Examples**: Practical usage examples
+- **Best Practices**: Recommended patterns and anti-patterns
+- **Error Handling**: Common errors and recovery strategies

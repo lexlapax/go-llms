@@ -50,7 +50,7 @@ NC=\033[0m # No Color
 	bench bench-all bench-pkg bench-specific \
 	profile profile-cpu profile-mem \
 	coverage coverage-pkg coverage-view \
-	lint fmt vet quality check generate \
+	lint fmt vet quality check generate docs-api \
 	deps clean clean-all \
 	dev watch
 
@@ -277,6 +277,12 @@ generate:
 	$(GOCMD) generate ./pkg/agent/tools
 	@echo "$(GREEN)✓ Tool metadata generated successfully!$(NC)"
 
+# Generate API documentation
+docs-api:
+	@echo "$(GREEN)Generating API documentation...$(NC)"
+	$(GOCMD) run scripts/generate-api-docs.go
+	@echo "$(GREEN)✓ API documentation generated in docs/api/$(NC)"
+
 # Format code
 fmt:
 	@echo "$(GREEN)Formatting code...$(NC)"
@@ -376,6 +382,7 @@ help:
 	@echo "$(GREEN)Code Quality:$(NC)"
 	@echo "  $(YELLOW)make quality$(NC)       Run all code quality checks"
 	@echo "  $(YELLOW)make generate$(NC)      Generate tool metadata"
+	@echo "  $(YELLOW)make docs-api$(NC)      Generate API documentation"
 	@echo "  $(YELLOW)make coverage$(NC)      Generate coverage report"
 	@echo "  $(YELLOW)make coverage-view$(NC) Generate and open coverage report"
 	@echo ""
