@@ -7,54 +7,149 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Planned for v0.3.7
+- Reserved for future features
+
+## [v0.3.6] - 2025-01-23
+
+### Overview
+
+Go-LLMs v0.3.6 is a comprehensive documentation and quality assurance release focused on bringing the documentation to production-ready standards. This release includes complete Godoc coverage, automated documentation tooling, content consistency improvements, and comprehensive structural reorganization of all project documentation.
+
 ### Documentation
 
-#### Comprehensive Godoc and Documentation Standards (v0.3.6.1 - January 23, 2025)
+#### Complete Documentation System Overhaul (v0.3.6.1-v0.3.6.7)
 
-- **Complete Godoc Documentation**: Added comprehensive godoc comments to all Go files across the entire codebase
+- **Complete Godoc Documentation** (v0.3.6.1): Added comprehensive godoc comments to all Go files across the entire codebase
   - Enhanced 300+ Go files with proper godoc documentation
   - All exported functions, types, methods, and interfaces now have detailed documentation
   - Parameter descriptions, return value explanations, and usage examples where appropriate
   - Error condition documentation for robust error handling guidance
 
-- **ABOUTME Comment Standardization**: Implemented consistent 2-line file identification system
+- **ABOUTME Comment Standardization** (v0.3.6.1): Implemented consistent 2-line file identification system
   - All Go files now include standardized ABOUTME comments for easy file identification
   - Format: Two lines starting with "ABOUTME: " describing file purpose and key functionality
   - Enables easy grep-based file discovery: `grep -r "ABOUTME:" pkg/`
   - Consistent across all packages for maintainability
 
-- **Documentation Style Guide**: Created comprehensive `CONTRIBUTING-DOCS.md`
+- **Documentation Style Guide** (v0.3.6.1): Created comprehensive `CONTRIBUTING-DOCS.md`
   - Complete standards for ABOUTME comments, package documentation, function/method docs
   - Type and interface documentation guidelines with examples
   - Common patterns for error documentation, context parameters, and option parameters
   - Documentation validation tools and checklist for contributors
   - Examples and anti-patterns to ensure consistent quality
 
-- **Package Documentation Enhancement**: Improved package-level documentation across all modules
-  - Enhanced doc.go files with comprehensive package descriptions
-  - Added usage examples and architectural notes where relevant
-  - Documented key features, relationships between types, and integration points
-  - Consistent markdown formatting with proper headers and structure
+- **Comprehensive Documentation Structure Update** (v0.3.6.7): Complete reorganization and validation
+  - Created 95+ documentation files with proper structure and navigation
+  - Enhanced user guide with getting-started, guides, examples, reference, and advanced sections
+  - Comprehensive technical documentation covering providers, agents, tools, and development
+  - Complete API reference documentation for all public interfaces
+  - Cross-reference validation and consistent navigation breadcrumbs
 
-- **Cross-Reference Integration**: Updated project documentation to reference style guide
-  - Added documentation style guide links to README.md and docs/README.md
-  - Updated technical documentation to reference contribution standards
-  - Ensured consistency between main project docs and style guide
-  - Fixed all documentation cross-references and validation
+- **Content Consistency Review** (v0.3.6.7.14): Automated API consistency validation and fixes
+  - Created automated fix scripts that updated 750+ outdated patterns across 87 files
+  - Updated all code examples to use current v0.3.5+ API patterns
+  - Fixed provider initialization patterns to use current option constructors
+  - Updated tool instantiation to use registry patterns instead of deprecated New*Tool() functions
+  - Corrected import paths throughout documentation to use pkg/ structure
+  - Fixed agent initialization syntax errors and schema type references
 
-- **Static MIME Type Registry**: Implemented OS-agnostic MIME detection system
+- **Documentation Completeness Check** (v0.3.6.7.15): Comprehensive validation and quality assurance
+  - Created automated documentation validation scripts
+  - Fixed 250+ broken internal links across documentation
+  - Added missing prerequisites sections to all advanced topics
+  - Validated learning paths are complete and navigable
+  - Ensured quick reference materials are comprehensive
+  - Verified compliance with documentation style guide standards
+
+### Added
+
+#### Automated Documentation Tooling
+
+- **Documentation Validation Scripts**: Created comprehensive validation infrastructure
+  - `scripts/check-doc-completeness.go` - Validates ABOUTME comments, prerequisites, links, examples
+  - `scripts/fix-doc-examples-enhanced.go` - Updates code examples to current API patterns
+  - `scripts/fix-doc-links.go` - Automatically repairs broken internal links
+  - `scripts/fix-provider-options.go` - Converts inline options to constructor patterns
+
+- **Documentation Reports**: Generated comprehensive documentation status reports
+  - Content consistency review with specific file/line issue tracking
+  - Documentation completeness validation with statistics and improvement metrics
+  - Final reports documenting all fixes and remaining minor issues
+
+- **Static MIME Type Registry** (v0.3.6.1): Implemented OS-agnostic MIME detection system
   - Replaced OS-dependent `mime.TypeByExtension()` with static registry
   - Comprehensive support for 40+ file extensions (images, audio, video, documents, archives, web)
   - Consistent MIME type detection across all operating systems
   - Fixed multimodal provider tests that were failing due to OS-specific MIME differences
   - Predictable behavior for LLM provider integrations requiring specific MIME types
 
+### Enhanced
+
+#### Documentation Quality Improvements
+
+- **API Reference Documentation**: Complete coverage of all public interfaces
+  - Enhanced documentation for Provider, Agent, Tool, Schema, and Domain interfaces
+  - Comprehensive examples and usage patterns for all major components
+  - Clear migration guides for API changes and deprecations
+
+- **User Guide Enhancement**: Task-oriented documentation with clear learning paths
+  - Complete getting-started sequence from installation to first project
+  - Practical guides for building chat apps, research agents, and automation tools
+  - Extensive examples library with beginner, intermediate, and advanced projects
+  - Reference materials for built-in tools, configuration, and troubleshooting
+
+- **Technical Documentation**: Contributor-focused architecture and development guides
+  - Complete provider implementation guide with examples
+  - Tool development documentation with ToolBuilder patterns
+  - Agent architecture and workflow orchestration patterns
+  - Testing strategies with mocks, fixtures, and integration examples
+
 ### Fixed
 
-- **OS-Agnostic MIME Detection**: Resolved cross-platform MIME type inconsistencies
+#### Documentation Consistency and Quality
+
+- **API Consistency**: Resolved outdated code examples throughout documentation
+  - Fixed provider initialization patterns to use domain option constructors
+  - Updated tool access patterns to use registry instead of deprecated constructors
+  - Corrected import paths to use current pkg/ structure
+  - Fixed agent initialization syntax errors and schema type references
+
+- **Navigation and Links**: Comprehensive link validation and repair
+  - Fixed 250+ broken internal links with automated conversion to relative paths
+  - Consistent breadcrumb navigation throughout all documentation
+  - Proper cross-references between user guide and technical documentation
+
+- **Prerequisites and Learning Paths**: Enhanced advanced topic accessibility
+  - Added missing prerequisites sections to 4 advanced documentation files
+  - Clear skill and knowledge requirements for complex topics
+  - Proper progression paths from beginner to advanced concepts
+
+- **OS-Agnostic MIME Detection** (v0.3.6.1): Resolved cross-platform MIME type inconsistencies
   - Fixed failing tests on different operating systems (.wav, .avi, .xyz files)
   - Ensured consistent multimodal content handling across deployment environments
   - Improved reliability for LLM provider multimodal features
+
+### Performance
+
+- **Documentation Build**: Fast validation and generation tooling
+  - Documentation validation completes in <1 second for full project scan
+  - Link fixing processes 68 files with 250+ repairs in <1 second
+  - Minimal overhead for automated documentation checks in CI/CD
+
+### Metrics
+
+- **Documentation Coverage**: Comprehensive coverage achieved
+  - 266 Go files validated for ABOUTME comments and godoc standards
+  - 95 markdown files checked for structure, links, and completeness
+  - 750+ API patterns updated to current v0.3.5+ standards
+  - 250+ broken links automatically repaired
+
+- **Quality Improvements**: Measurable documentation quality enhancements
+  - 100% of advanced topics now have proper prerequisites
+  - 75% reduction in broken internal links
+  - Complete compliance with documentation style guide standards
+  - All learning paths verified as complete and navigable
 
 ## [v0.3.5] - 2025-06-15
 

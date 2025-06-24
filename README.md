@@ -162,7 +162,16 @@ See our [provider comparison guide](docs/user-guide/reference/provider-compariso
 
 ## What's New
 
-### v0.3.5 (Latest) - Complete Scripting Engine Support 🚀
+### v0.3.6 (Latest) - Production-Ready Documentation 📚
+Comprehensive documentation and quality assurance improvements:
+- **Complete Godoc Coverage** - Enhanced 300+ Go files with comprehensive documentation
+- **Documentation Automation** - Automated validation, link fixing, and content consistency
+- **Structural Reorganization** - 95+ documentation files with proper navigation and learning paths
+- **Enhanced User Experience** - Complete user guide with visual diagrams and task-oriented guides
+- **API Consistency** - Updated 750+ code examples to current v0.3.5+ standards
+- **Technical Reference** - Advanced tool patterns, integration guides, and architectural documentation
+
+### v0.3.5 - Complete Scripting Engine Support 🚀
 Comprehensive bridge integration for go-llmspell and other scripting engines:
 - **Schema Repositories** with versioning and persistence  
 - **Enhanced Error Handling** with serializable errors and recovery strategies

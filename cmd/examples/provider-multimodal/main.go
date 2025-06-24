@@ -445,12 +445,12 @@ var staticMimeTypes = map[string]string{
 
 func getMimeType(path string) string {
 	ext := strings.ToLower(filepath.Ext(path))
-	
+
 	// Use static registry for consistent OS-agnostic results
 	if mimeType, exists := staticMimeTypes[ext]; exists {
 		return mimeType
 	}
-	
+
 	// Fallback to default for unknown extensions
 	return "application/octet-stream"
 }

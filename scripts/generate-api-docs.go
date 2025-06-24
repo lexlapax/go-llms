@@ -217,7 +217,7 @@ func generatePackageDoc(ctx context.Context, pkg Package, outputDir string) erro
 
 ## Package Information
 
-- **Import Path**: ` + "`github.com/lexlapax/go-llms/%s`" + `
+- **Import Path**: `+"`github.com/lexlapax/go-llms/%s`"+`
 - **Category**: %s
 - **Stability**: Stable (v0.3.x)
 
@@ -227,7 +227,7 @@ func generatePackageDoc(ctx context.Context, pkg Package, outputDir string) erro
 
 ## Core Types
 
-`, strings.Title(pkg.Name), pkg.Description, pkg.Path, pkg.Category, getDetailedDescription(pkg.Name))
+`, strings.ToUpper(pkg.Name[:1])+pkg.Name[1:], pkg.Description, pkg.Path, pkg.Category, getDetailedDescription(pkg.Name))
 
 	// Add package-specific content
 	content += getPackageSpecificContent(pkg.Name)
@@ -261,7 +261,7 @@ func generatePackageDoc(ctx context.Context, pkg Package, outputDir string) erro
 func generateToolsDocumentation(ctx context.Context, outputDir string) error {
 	// Initialize tool discovery
 	discovery := tools.NewDiscovery()
-	
+
 	// Create documentation generator config
 	config := docs.GeneratorConfig{
 		Title:           "Go-LLMs Built-in Tools",
@@ -358,7 +358,7 @@ Key features:
 func getPackageSpecificContent(pkgName string) string {
 	// This would be expanded with actual type definitions
 	// For now, returning package-specific templates
-	
+
 	switch pkgName {
 	case "llm":
 		return getLLMPackageContent()
