@@ -67,7 +67,8 @@ Welcome to the comprehensive Go-LLMs documentation reference. This directory con
 #### 📚 Quick Reference
 - [API Quick Reference](user-guide/reference/api-quick-reference.md) - Essential API calls and patterns
 - [Provider Comparison](user-guide/reference/provider-comparison.md) - Feature matrix and selection
-- [Built-in Tools](user-guide/reference/built-in-tools-reference.md) - Complete tool catalog
+- [Built-in Tools Reference](BUILT-IN-TOOLS-REFERENCE.md) - Complete guide to 33+ built-in tools
+- [Tool Usage Examples](TOOL-USAGE-EXAMPLES.md) - Practical patterns and integration examples
 - [Configuration Reference](user-guide/reference/configuration-reference.md) - All configuration options
 - [Error Codes](user-guide/reference/error-codes-reference.md) - Complete error handling
 - [Best Practices](user-guide/reference/best-practices-checklist.md) - Production readiness checklist
@@ -180,10 +181,11 @@ Welcome to the comprehensive Go-LLMs documentation reference. This directory con
 4. [Contributing Guidelines](technical/development/contributing.md) - Code organization and style
 
 ### 🛠️ For Tool Developers
-1. [Tool Overview](technical/tools/overview.md) - Tool architecture and integration
-2. [Creating Tools](technical/tools/creating-tools.md) - Build custom tools
-3. [Tool Discovery](technical/tools/tool-discovery.md) - Runtime registration and metadata
-4. [Built-in Tools](technical/tools/built-in-tools.md) - Examples and patterns
+1. [Built-in Tools Reference](BUILT-IN-TOOLS-REFERENCE.md) - Complete guide to 33+ built-in tools
+2. [Tool Usage Examples](TOOL-USAGE-EXAMPLES.md) - Practical patterns and integration
+3. [Tool Overview](technical/tools/overview.md) - Tool architecture and integration
+4. [Creating Tools](technical/tools/creating-tools.md) - Build custom tools
+5. [Tool Discovery](technical/tools/tool-discovery.md) - Runtime registration and metadata
 
 ## 🔗 Quick Links
 

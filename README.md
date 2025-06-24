@@ -137,6 +137,8 @@ result, _ := workflow.Run(context.Background(), state)
 
 ### 💡 Examples & Tutorials
 - **[80+ Working Examples](cmd/examples/README.md)** - Provider, agent, tool, and workflow examples
+- **[Built-in Tools Reference](docs/BUILT-IN-TOOLS-REFERENCE.md)** - Complete guide to 33+ built-in tools
+- **[Tool Usage Examples](docs/TOOL-USAGE-EXAMPLES.md)** - Practical patterns and integration examples
 - **[Chat Applications Guide](docs/user-guide/guides/building-chat-apps.md)** - Build conversational AI
 - **[Data Extraction Guide](docs/user-guide/guides/building-data-extractors.md)** - Reliable data processing
 - **[Agent Communication](docs/user-guide/guides/agent-communication.md)** - Multi-agent coordination
