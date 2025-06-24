@@ -1,6 +1,6 @@
 # Provider Registry: Dynamic Registration and Discovery
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Providers](/docs/technical/providers/) / Provider Registry**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Providers](../../technical/providers) / Provider Registry**
 
 The provider registry system in Go-LLMs enables dynamic registration, discovery, and management of LLM providers at runtime. This document covers the registry architecture, registration mechanisms, discovery patterns, and advanced provider management features.
 
@@ -322,13 +322,13 @@ func (r *ProviderRegistry) DiscoverProviders() []ProviderInfo {
             Metadata:     metadata,
             Available:    r.checkAvailability(name),
             HealthStatus: r.checkHealth(name),
-        })
+}
     }
     
     // Sort by name for consistent ordering
     sort.Slice(providers, func(i, j int) bool {
         return providers[i].Name < providers[j].Name
-    })
+}
     
     return providers
 }
@@ -359,7 +359,7 @@ func (r *ProviderRegistry) checkHealth(name string) HealthStatus {
     // Create temporary instance for health check
     provider, err := factory(map[string]interface{}{
         "api_key": os.Getenv(strings.ToUpper(name) + "_API_KEY"),
-    })
+}
     if err != nil {
         return HealthStatusUnhealthy
     }
@@ -399,7 +399,7 @@ func (r *ProviderRegistry) DiscoverByCapability(capabilities ...Capability) []Pr
             }
         }
         return true
-    })
+}
 }
 
 // Model-based discovery
@@ -411,7 +411,7 @@ func (r *ProviderRegistry) DiscoverByModel(modelID string) []ProviderInfo {
             }
         }
         return false
-    })
+}
 }
 
 // Cost-based discovery
@@ -423,12 +423,12 @@ func (r *ProviderRegistry) DiscoverByCost(maxCostPerToken float64) []ProviderInf
             }
         }
         return false
-    })
+}
     
     // Sort by cost
     sort.Slice(providers, func(i, j int) bool {
         return getLowestCost(providers[i]) < getLowestCost(providers[j])
-    })
+}
     
     return providers
 }
@@ -453,14 +453,14 @@ func (r *ProviderRegistry) DiscoverWithScoring(query DiscoveryQuery) []ScoredPro
                 Provider: provider,
                 Score:    score,
                 Reasons:  r.explainScore(provider, query),
-            })
+}
         }
     }
     
     // Sort by score descending
     sort.Slice(scored, func(i, j int) bool {
         return scored[i].Score > scored[j].Score
-    })
+}
     
     return scored
 }
@@ -511,7 +511,7 @@ func (d *K8sDiscoverer) Discover(ctx context.Context) error {
     // List services matching selector
     services, err := d.client.CoreV1().Services(d.namespace).List(ctx, metav1.ListOptions{
         LabelSelector: d.selector.String(),
-    })
+}
     if err != nil {
         return fmt.Errorf("k8s list failed: %w", err)
     }
@@ -1229,7 +1229,7 @@ type ProviderHealth struct {
 ## Next Steps
 
 - **[Provider Metadata](metadata.md)** - Capabilities and configuration schemas
-- **[Provider Interface](/docs/technical/api-reference/providers.md)** - Core provider API
-- **[Custom Providers](/docs/user-guide/advanced/custom-providers.md)** - Building custom providers
-- **[Provider Setup Guide](/docs/user-guide/guides/provider-setup.md)** - Configuration guide
-- **[Multi-Provider Strategies](/docs/user-guide/guides/multi-provider-strategies.md)** - Advanced patterns
+- **[Provider Interface](../../technical/api-reference/providers.md)** - Core provider API
+- **[Custom Providers](../../user-guide/advanced/custom-providers.md)** - Building custom providers
+- **[Provider Setup Guide](../../user-guide/guides/provider-setup.md)** - Configuration guide
+- **[Multi-Provider Strategies](../../user-guide/guides/multi-provider-strategies.md)** - Advanced patterns

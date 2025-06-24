@@ -1,6 +1,6 @@
 # Schema System: JSON Schema Validation and Type Conversion
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Advanced Topics](/docs/technical/advanced/) / Schema System**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Advanced Topics](../../technical/advanced) / Schema System**
 
 Comprehensive guide to the Go-LLMs schema system, covering JSON Schema validation, type conversion mechanisms, schema inference, custom validators, schema composition, runtime validation, and advanced schema patterns for building robust, type-safe LLM applications.
 

@@ -1,6 +1,6 @@
 # Creating Agents: From Simple to Complex AI Systems
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Creating Agents**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Creating Agents**
 
 Master the art of building AI agents that can think, use tools, and coordinate with other agents. Learn progressive patterns from simple conversational agents to sophisticated multi-agent systems.
 
@@ -445,14 +445,14 @@ func main() {
         Amount:       2500.00,
         Date:         time.Now().AddDate(0, -2, 0),
         Satisfaction: 4,
-    })
+}
     
     supportAgent.AddPurchase(customerEmail, Purchase{
         Product:      "Additional User Licenses (5x)",
         Amount:       500.00,
         Date:         time.Now().AddDate(0, -1, -15),
         Satisfaction: 5,
-    })
+}
 
     // Set customer preferences
     supportAgent.SetCustomerPreference(customerEmail, "communication_style", "technical")

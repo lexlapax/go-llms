@@ -1,6 +1,6 @@
 # Go-LLMs Technical Documentation
 
-> **[Project Root](/) / [Documentation](/docs/) / Technical Documentation**
+> **[Project Root](../../) / [Documentation](../) / Technical Documentation**
 
 Welcome to the Go-LLMs technical documentation. This guide is designed for developers, contributors, and advanced users who want to understand the internals of the go-llms library.
 
@@ -131,4 +131,4 @@ This documentation covers go-llms v0.3.5 and later. Features are annotated with 
 
 ## 🤝 Contributing to Documentation
 
-Found an issue or want to improve the documentation? See our [Contributing Guide](development/contributing.md#documentation).
+Found an issue or want to improve the documentation? See our [Contributing Guide](development/contributing.md).

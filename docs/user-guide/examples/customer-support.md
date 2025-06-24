@@ -1,6 +1,6 @@
 # Customer Support: Complete Support System
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Examples](/docs/user-guide/examples/) / Customer Support**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Examples](../../user-guide/examples) / Customer Support**
 
 Build a complete AI-powered customer support system with multi-channel communication, intelligent routing, knowledge base integration, and escalation management. This example demonstrates real-world application of multiple Go-LLMs capabilities in a production-ready system.
 
@@ -187,7 +187,7 @@ func NewCustomerSupportSystem(config *SupportConfig) (*CustomerSupportSystem, er
     }
 
     // Create LLM provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
         provider.WithMaxTokens(2000),
     )
@@ -646,7 +646,7 @@ func (css *CustomerSupportSystem) CreateTicketHandler(c *gin.Context) {
     c.JSON(http.StatusCreated, gin.H{
         "ticket":   ticket,
         "response": response,
-    })
+}
 }
 
 func (css *CustomerSupportSystem) GetTicketHandler(c *gin.Context) {
@@ -681,7 +681,7 @@ func (css *CustomerSupportSystem) GetTicketHandler(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
         "ticket":   ticket,
         "messages": messages,
-    })
+}
 }
 
 func (css *CustomerSupportSystem) AddMessageHandler(c *gin.Context) {
@@ -981,8 +981,8 @@ func main() {
         c.JSON(http.StatusOK, gin.H{
             "status":  "healthy",
             "metrics": metrics,
-        })
-    })
+}
+}
 
     log.Println("Customer Support System starting on :8080")
     log.Fatal(r.Run(":8080"))

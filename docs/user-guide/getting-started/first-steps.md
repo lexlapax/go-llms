@@ -1,6 +1,6 @@
 # First Steps: Your First 3 Programs
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Getting Started](/docs/user-guide/getting-started/) / First Steps**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Getting Started](../../user-guide/getting-started) / First Steps**
 
 Learn Go-LLMs step-by-step by building three progressively more complex applications. Each example builds on the previous one, introducing new concepts and capabilities.
 
@@ -69,7 +69,7 @@ func main() {
     // Step 2: Create an agent
     agent := core.NewLLMAgent("assistant", "gpt-4o-mini", core.LLMDeps{
         Provider: p,
-    })
+}
 
     // Step 3: Set system prompt
     agent.SetSystemPrompt("You are a helpful assistant that gives concise, friendly responses.")

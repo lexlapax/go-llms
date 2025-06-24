@@ -37,7 +37,7 @@ Powered by a language model, can use tools and maintain conversation context.
 ```go
 agent := core.NewLLMAgent("assistant", "gpt-4", core.LLMDeps{
     Provider: provider,
-})
+}
 agent.SetSystemPrompt("You are a helpful assistant")
 agent.AddTool(calculatorTool)
 ```
@@ -145,7 +145,7 @@ agent.OnEvent(func(event domain.Event) {
     case domain.EventAgentError:
         log.Printf("Error: %v", event.Data)
     }
-})
+}
 ```
 
 ## Schema System

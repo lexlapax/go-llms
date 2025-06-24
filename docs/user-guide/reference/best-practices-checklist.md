@@ -1,6 +1,6 @@
 # Best Practices Checklist: Production Readiness Guide
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Reference](/docs/user-guide/reference/) / Best Practices**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Reference](../../user-guide/reference) / Best Practices**
 
 Comprehensive checklist to ensure your Go-LLMs applications are production-ready, secure, performant, and maintainable. Use this guide before deploying to production.
 
@@ -716,8 +716,8 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 
 ## Next Steps
 
-- **[Production Deployment Guide](/docs/user-guide/advanced/production-deployment.md)** - Detailed deployment instructions
-- **[Security Considerations](/docs/user-guide/advanced/security-considerations.md)** - Security deep dive
-- **[Performance Optimization](/docs/user-guide/advanced/performance-optimization.md)** - Performance tuning
-- **[Troubleshooting Guide](/docs/user-guide/advanced/troubleshooting.md)** - Problem resolution
+- **[Production Deployment Guide](../../user-guide/advanced/production-deployment.md)** - Detailed deployment instructions
+- **[Security Considerations](../../user-guide/advanced/security-considerations.md)** - Security deep dive
+- **[Performance Optimization](../../user-guide/advanced/performance-optimization.md)** - Performance tuning
+- **[Troubleshooting Guide](../../user-guide/advanced/troubleshooting.md)** - Problem resolution
 - **[Configuration Reference](configuration-reference.md)** - All configuration options

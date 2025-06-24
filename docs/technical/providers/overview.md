@@ -281,7 +281,7 @@ func GetProvider() domain.Provider {
             os.Getenv("OPENAI_API_KEY"),
             "gpt-4",
         )
-    })
+}
     return openaiProvider
 }
 ```
@@ -330,7 +330,7 @@ return nil, fmt.Errorf("all providers failed")
 mockProvider := provider.NewMockProvider()
 mockProvider.WithGenerateFunc(func(ctx context.Context, prompt string, options ...Option) (Response, error) {
     return Response{Content: "Mock response"}, nil
-})
+}
 ```
 
 ### Provider Testing Pattern

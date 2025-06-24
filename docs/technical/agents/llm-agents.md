@@ -1,6 +1,6 @@
 # LLM Agents: AI-Powered Agents with Tool Support
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Agents](/docs/technical/agents/) / LLM Agents**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Agents](../../technical/agents) / LLM Agents**
 
 Comprehensive guide to building and deploying LLM-powered agents in Go-LLMs, covering agent types, tool integration, prompt engineering, conversation management, function calling, and advanced AI agent patterns.
 
@@ -278,7 +278,7 @@ func (a *DefaultLLMAgent) ListAvailableTools() []ToolInfo {
             InputSchema:  tool.InputSchema(),
             OutputSchema: tool.OutputSchema(),
             Available:    true,
-        })
+}
     }
     
     return toolInfos
@@ -516,7 +516,7 @@ func (a *DefaultLLMAgent) registerBuiltinFunctions() {
             
             return time.Now().In(loc).Format(format), nil
         },
-    })
+}
     
     // Calculate function
     a.RegisterFunction(Function{
@@ -546,7 +546,7 @@ func (a *DefaultLLMAgent) registerBuiltinFunctions() {
             
             return result, nil
         },
-    })
+}
 }
 
 // Simple expression evaluator (placeholder)
@@ -581,7 +581,7 @@ func (a *DefaultLLMAgent) Complete(ctx context.Context, request *CompletionReque
     a.addToHistory(core.Message{
         Role:    "assistant",
         Content: response.Content,
-    })
+}
     
     return response, nil
 }
@@ -630,7 +630,7 @@ func (a *DefaultLLMAgent) getFunctionDefinitions() []FunctionDefinition {
             Name:        function.Name,
             Description: function.Description,
             Parameters:  function.Parameters,
-        })
+}
     }
     
     return definitions
@@ -663,7 +663,7 @@ func (a *DefaultLLMAgent) handleFunctionCall(ctx context.Context, response *Comp
         Role:         "assistant",
         Content:      response.Content,
         FunctionCall: functionCall,
-    })
+}
     a.addToHistory(functionResult)
     
     // Continue conversation with function result
@@ -1349,7 +1349,7 @@ func (m *InMemoryAgentMemory) QueryKnowledge(query string) ([]Knowledge, error) 
             return results[i].Importance > results[j].Importance
         }
         return results[i].Timestamp.After(results[j].Timestamp)
-    })
+}
     
     return results, nil
 }
@@ -1450,7 +1450,7 @@ func (a *ReasoningAgent) executeReasoningStep(ctx context.Context, step Reasonin
         Messages: []core.Message{
             {Role: "user", Content: prompt},
         },
-    })
+}
     if err != nil {
         return nil, err
     }
@@ -1698,5 +1698,5 @@ func (c *MajorityConsensus) createCombinedResponse(responses []AgentResponse) Ag
 - **[Workflow Agents](workflow-agents.md)** - Sequential, parallel, and conditional patterns
 - **[Multi-Agent Systems](multi-agent-systems.md)** - Coordination and communication
 - **[State Management](state-management.md)** - Agent state and data flow
-- **[Tool Development](/docs/technical/tools/creating-tools.md)** - Building custom tools
-- **[Agent API Reference](/docs/technical/api-reference/agents.md)** - Detailed API documentation
+- **[Tool Development](../../technical/tools/creating-tools.md)** - Building custom tools
+- **[Agent API Reference](../../technical/api-reference/agents.md)** - Detailed API documentation

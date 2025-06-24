@@ -1,6 +1,6 @@
 # Web Applications: Framework Integration
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Web Applications**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Web Applications**
 
 Build web applications powered by AI agents. Master the integration of Go-LLMs with popular web frameworks, handle concurrent requests, manage user sessions, and create real-time AI-powered experiences.
 
@@ -81,7 +81,7 @@ type Response struct {
 
 func NewAIService() (*AIService, error) {
     // Create OpenAI provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
         provider.WithMaxTokens(1000),
     )
@@ -158,7 +158,7 @@ func main() {
     http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
         w.WriteHeader(http.StatusOK)
         fmt.Fprint(w, "OK")
-    })
+}
 
     // Start server
     log.Println("Server starting on :8080")
@@ -188,7 +188,7 @@ type AIController struct {
 
 func NewAIController() (*AIController, error) {
     // Create provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
     )
     if err != nil {
@@ -327,7 +327,7 @@ type AIResponse struct {
 
 func NewWebSocketServer() (*WebSocketServer, error) {
     // Create provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
     )
     if err != nil {
@@ -447,7 +447,7 @@ func (s *WebSocketServer) handleChatMessage(session *ClientSession, content inte
     s.sendMessage(session, WSMessage{
         Type:    "typing",
         Content: map[string]bool{"typing": true},
-    })
+}
 
     // Process with agent
     ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -458,7 +458,7 @@ func (s *WebSocketServer) handleChatMessage(session *ClientSession, content inte
         s.sendMessage(session, WSMessage{
             Type:    "error",
             Content: map[string]string{"error": "AI processing failed"},
-        })
+}
         return
     }
 
@@ -466,7 +466,7 @@ func (s *WebSocketServer) handleChatMessage(session *ClientSession, content inte
     s.sendMessage(session, WSMessage{
         Type:    "typing",
         Content: map[string]bool{"typing": false},
-    })
+}
 
     // Extract response
     var reply string
@@ -484,7 +484,7 @@ func (s *WebSocketServer) handleChatMessage(session *ClientSession, content inte
     s.sendMessage(session, WSMessage{
         Type:    "ai_response",
         Content: response,
-    })
+}
 
     // Update session state
     session.state = result
@@ -515,7 +515,7 @@ func main() {
     http.HandleFunc("/ws", server.handleWebSocket)
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
         http.ServeFile(w, r, "index.html")
-    })
+}
 
     log.Println("WebSocket server starting on :8080")
     log.Fatal(http.ListenAndServe(":8080", nil))
@@ -545,7 +545,7 @@ type SessionManager struct {
 func NewSessionManager(redisAddr string) *SessionManager {
     rdb := redis.NewClient(&redis.Options{
         Addr: redisAddr,
-    })
+}
 
     return &SessionManager{
         redis: rdb,
@@ -705,7 +705,7 @@ type AdvancedResponse struct {
 
 func NewAIWebService(config *Config) (*AIWebService, error) {
     // Create provider with dynamic configuration
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
         provider.WithMaxTokens(config.MaxTokens),
     )
@@ -820,7 +820,7 @@ func (s *AIWebService) chatHandler(c *gin.Context) {
                 "tokens_used": result.TokensUsed,
                 "duration":    duration.Milliseconds(),
             },
-        })
+}
     }
 
     // Create response
@@ -844,7 +844,7 @@ func (s *AIWebService) healthHandler(c *gin.Context) {
         "status":    "healthy",
         "timestamp": time.Now(),
         "version":   "1.0.0",
-    })
+}
 }
 
 func (s *AIWebService) metricsHandler() gin.HandlerFunc {
@@ -880,7 +880,7 @@ func main() {
     r.Use(func(c *gin.Context) {
         c.Header("X-Service", "ai-web-service")
         c.Next()
-    })
+}
 
     // Routes
     api := r.Group("/api/v1")

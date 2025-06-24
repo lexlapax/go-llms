@@ -55,7 +55,7 @@ func main() {
     // Create summarizer agent
     summarizer := core.NewLLMAgent("summarizer", "gpt-4", core.LLMDeps{
         Provider: provider,
-    })
+}
     
     // Define what we want back
     summarySchema := &schema.Schema{
@@ -198,7 +198,7 @@ func main() {
     // Create translator agent
     translator := core.NewLLMAgent("translator", "gpt-4", core.LLMDeps{
         Provider: provider,
-    })
+}
     
     // Define translation schema
     translationSchema := &schema.Schema{
@@ -412,7 +412,7 @@ func main() {
     // Create code explainer agent
     explainer := core.NewLLMAgent("code-explainer", "gpt-4", core.LLMDeps{
         Provider: provider,
-    })
+}
     
     // Define explanation schema
     explanationSchema := &schema.Schema{
@@ -768,7 +768,7 @@ func main() {
     // Create smart calculator agent
     calculator := core.NewLLMAgent("smart-calculator", "gpt-4", core.LLMDeps{
         Provider: provider,
-    })
+}
     
     // Configure calculator
     calculator.SetSystemPrompt(`You are a smart calculator that understands natural language math questions.
@@ -932,7 +932,7 @@ func main() {
     // Create email analysis agent
     analyzer := core.NewLLMAgent("email-analyzer", "gpt-4", core.LLMDeps{
         Provider: provider,
-    })
+}
     
     analysisSchema := &schema.Schema{
         Type: "object",
@@ -968,7 +968,7 @@ func main() {
     // Create email writer agent
     writer := core.NewLLMAgent("email-writer", "gpt-4", core.LLMDeps{
         Provider: provider,
-    })
+}
     
     emailSchema := &schema.Schema{
         Type: "object",
@@ -1003,7 +1003,7 @@ func main() {
     // Create email review agent  
     reviewer := core.NewLLMAgent("email-reviewer", "gpt-4", core.LLMDeps{
         Provider: provider,
-    })
+}
     
     reviewSchema := &schema.Schema{
         Type: "object",
@@ -1047,7 +1047,7 @@ func main() {
         analyzer,
         writer, 
         reviewer,
-    })
+}
     
     fmt.Println("📧 EMAIL ASSISTANT")
     fmt.Println("==================")

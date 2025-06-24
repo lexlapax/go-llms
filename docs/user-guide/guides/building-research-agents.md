@@ -1,6 +1,6 @@
 # Building Research Agents: Information Gathering Systems
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Building Research Agents**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Building Research Agents**
 
 Master the creation of intelligent research agents that can search the web, gather information from multiple sources, analyze content, and synthesize comprehensive reports. Build production systems that handle unreliable data sources with grace.
 
@@ -835,7 +835,7 @@ func (s *ProductionResearchSystem) searchWorker(ctx context.Context, jobs <-chan
             }
             
             return searchTool.Execute(ctx, params)
-        })
+}
 
         if err != nil {
             log.Printf("Search failed for query '%s' on engine '%s': %v", job.Query, job.Engine, err)

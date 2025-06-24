@@ -1,6 +1,6 @@
 # API Design: Design Principles and Patterns
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Development](/docs/technical/development/) / API Design**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Development](../../technical/development) / API Design**
 
 Comprehensive guide to API design principles and patterns used in Go-LLMs, covering interface design, package architecture, error handling strategies, configuration patterns, extensibility mechanisms, and best practices for building maintainable, user-friendly APIs.
 

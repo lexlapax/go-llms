@@ -1,8 +1,23 @@
 # Bridge Integration: Scripting Engine Integration
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Advanced Topics](/docs/technical/advanced/) / Bridge Integration**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Advanced Topics](../../technical/advanced) / Bridge Integration**
 
 Comprehensive guide to scripting engine integration in Go-LLMs, covering bridge architecture, script execution environments, language-specific bridges, security isolation, script lifecycle management, and advanced scripting patterns for extending LLM applications with dynamic code execution.
+
+## Prerequisites
+
+Before implementing scripting bridges, ensure you have:
+
+- **Advanced Go Knowledge**: Deep understanding of interfaces, reflection, and concurrency patterns
+- **Scripting Languages**: Familiarity with Lua, JavaScript (V8/Goja), Python embedding
+- **Security Concepts**: Understanding of sandboxing, capability-based security, resource isolation
+- **Memory Management**: Knowledge of memory limits, garbage collection, and resource pooling
+- **Compilation & Interpretation**: Basic understanding of script compilation and execution models
+
+**Required Reading**:
+- [Core Concepts](../../technical/core-concepts.md) - Go-LLMs architecture fundamentals
+- [Tool Overview](../../technical/tools/overview.md) - Tool system that bridges integrate with
+- [Error Handling](error-handling.md) - Error patterns for script execution
 
 ## Bridge Architecture
 
@@ -200,7 +215,7 @@ func (bm *BridgeManager) ExecuteScript(ctx context.Context, script Script, data 
     compiled, err := bridge.Compile(script.Source, CompileOptions{
         Optimize: true,
         Debug:    false,
-    })
+}
     if err != nil {
         return nil, fmt.Errorf("script compilation failed: %w", err)
     }
@@ -385,7 +400,7 @@ func (lb *LuaBridge) createLuaVM() *lua.LState {
         RegistrySize:        1024,
         SkipOpenLibs:        true, // We'll open libraries selectively
         IncludeGoStackTrace: false,
-    })
+}
     
     // Open safe libraries only
     lb.openSafeLibraries(vm)
@@ -1066,7 +1081,7 @@ func (se *StreamingExecutor) ExecuteStream(ctx context.Context, script Script, i
         env, err := se.bridge.CreateEnvironment(EnvironmentConfig{
             Language: script.Language,
             Sandbox:  true,
-        })
+}
         if err != nil {
             outputChan <- StreamChunk{
                 Type:  ChunkTypeError,

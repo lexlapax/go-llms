@@ -1,6 +1,6 @@
 # Research Synthesis: Research and Report Generation
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Examples](/docs/user-guide/examples/) / Research Synthesis**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Examples](../../user-guide/examples) / Research Synthesis**
 
 Build an AI-powered research and report generation system that automates information gathering, source analysis, fact verification, and comprehensive report creation. This example demonstrates how to combine multiple AI agents for sophisticated research workflows.
 
@@ -314,7 +314,7 @@ func NewResearchSynthesisSystem(config *ResearchConfig) (*ResearchSynthesisSyste
     }
 
     // Create LLM provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
         provider.WithMaxTokens(4000),
     )
@@ -1198,7 +1198,7 @@ func (rss *ResearchSynthesisSystem) StartResearchHandler(c *gin.Context) {
     c.JSON(http.StatusAccepted, gin.H{
         "message": "Research started",
         "status":  "researching",
-    })
+}
 }
 
 func (rss *ResearchSynthesisSystem) GetProjectHandler(c *gin.Context) {
@@ -1461,8 +1461,8 @@ func main() {
             "status": "healthy",
             "max_sources": config.MaxSources,
             "citation_style": config.CitationStyle,
-        })
-    })
+}
+}
 
     log.Println("Research Synthesis System starting on :8080")
     log.Fatal(r.Run(":8080"))

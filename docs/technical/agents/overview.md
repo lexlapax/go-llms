@@ -1,6 +1,6 @@
 # Agent Architecture: Overview and Concepts
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Agents](/docs/technical/agents/) / Overview**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Agents](../../technical/agents) / Overview**
 
 Comprehensive overview of the agent architecture in Go-LLMs, covering agent types, design patterns, execution models, communication protocols, and integration strategies for building intelligent, autonomous systems.
 
@@ -948,7 +948,7 @@ func (m *AgentHealthMonitor) runHealthChecks(ctx context.Context) {
                             "check":    check.Name(),
                             "result":   result,
                         },
-                    })
+}
                 }
             }
         }
@@ -983,7 +983,7 @@ func (c *ResponsivenessCheck) Check(ctx context.Context, agent Agent) HealthChec
     _, err := agent.Execute(checkCtx, map[string]interface{}{
         "type": "health_ping",
         "timestamp": time.Now().Unix(),
-    })
+}
     
     latency := time.Since(start)
     
@@ -1253,4 +1253,4 @@ func (f *AgentFactory) CreateFromFile(configPath string) (Agent, error) {
 - **[Workflow Agents](workflow-agents.md)** - Sequential, parallel, and conditional patterns
 - **[Multi-Agent Systems](multi-agent-systems.md)** - Coordination and communication
 - **[State Management](state-management.md)** - Agent state and data flow
-- **[Agent API Reference](/docs/technical/api-reference/agents.md)** - Detailed API documentation
+- **[Agent API Reference](../../technical/api-reference/agents.md)** - Detailed API documentation

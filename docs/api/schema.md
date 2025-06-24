@@ -56,7 +56,7 @@ Automatic type conversion during validation:
 // Register custom coercion rules
 schema.RegisterCoercion(reflect.TypeOf(""), reflect.TypeOf(0), func(v interface{}) (interface{}, error) {
     return strconv.Atoi(v.(string))
-})
+}
 ```
 ## Examples
 

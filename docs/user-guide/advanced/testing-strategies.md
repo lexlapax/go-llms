@@ -59,7 +59,7 @@ func TestBasicProvider(t *testing.T) {
             "location":   "test-city",
             "confidence": 0.95,
         },
-    })
+}
 
     response, err = provider.Generate(context.Background(), "What's the weather like?")
     assert.NoError(t, err)
@@ -125,7 +125,7 @@ func TestTools(t *testing.T) {
         "operation": "add",
         "a":         5.0,
         "b":         3.0,
-    })
+}
     assert.NoError(t, err)
     assert.Equal(t, 8.0, result["result"])
 
@@ -140,7 +140,7 @@ func TestTools(t *testing.T) {
         "operation": "multiply",
         "a":         2.5,
         "b":         4.0,
-    })
+}
     assert.NoError(t, err)
     assert.Equal(t, 10.0, result["result"])
 }
@@ -245,19 +245,19 @@ func TestEvents(t *testing.T) {
     eventCapture.EmitEvent("agent.start", map[string]interface{}{
         "agent_id": "test-agent",
         "task":     "research",
-    })
+}
     
     eventCapture.EmitEvent("tool.execute", map[string]interface{}{
         "tool":   "web_search",
         "query":  "quantum computing",
         "result": "found 42 results",
-    })
+}
     
     eventCapture.EmitEvent("agent.complete", map[string]interface{}{
         "agent_id": "test-agent",
         "status":   "success",
         "duration": "2.5s",
-    })
+}
 
     // Assert on captured events
     events := eventCapture.GetEvents()
@@ -435,10 +435,10 @@ func TestModernApproach(t *testing.T) {
     provider.WithPatternResponse("(?i).*error.*", mocks.Response{
         Content: "",
         Error:   "simulated error",
-    })
+}
     provider.WithPatternResponse(".*", mocks.Response{
         Content: "intelligent mock response based on patterns",
-    })
+}
 
     // Test normal case
     response, err := provider.Generate(context.Background(), "hello world")

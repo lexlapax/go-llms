@@ -47,7 +47,7 @@ Build your own agents by:
 // Create agent with provider
 agent := core.NewLLMAgent("assistant", "gpt-4", core.LLMDeps{
     Provider: provider,
-})
+}
 
 // Configure agent
 agent.SetSystemPrompt("You are a helpful assistant")
@@ -135,7 +135,7 @@ agent.OnEvent(func(event domain.Event) {
     case domain.EventStateChange:
         log.Printf("State changed: %v", event.Data)
     }
-})
+}
 ```
 
 ![State Management](../images/state-management.svg)
@@ -187,7 +187,7 @@ func TestAgent(t *testing.T) {
     // Create agent with mock
     agent := core.NewLLMAgent("test", "model", core.LLMDeps{
         Provider: mockProvider,
-    })
+}
     
     // Test agent behavior
     state := domain.NewState()
@@ -211,7 +211,7 @@ func TestAgentIntegration(t *testing.T) {
     provider := provider.NewOpenAIProvider(apiKey, "gpt-4")
     agent := core.NewLLMAgent("test", "gpt-4", core.LLMDeps{
         Provider: provider,
-    })
+}
     
     // Test with real LLM
     // ...

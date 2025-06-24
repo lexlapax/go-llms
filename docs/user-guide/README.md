@@ -1,6 +1,6 @@
 # Go-LLMs User Guide
 
-> **[Project Root](/) / [Documentation](/docs/) / User Guide (New)**
+> **[Project Root](../../) / [Documentation](../) / User Guide (New)**
 
 Welcome to go-llms! This guide will help you build powerful AI applications using the go-llms library. Whether you're new to LLMs or an experienced developer, this guide provides everything you need to get started and scale up.
 
@@ -185,7 +185,7 @@ func main() {
     // Create an agent
     agent := core.NewLLMAgent("assistant", "gpt-4", core.LLMDeps{
         Provider: openaiProvider,
-    })
+}
     
     // Set system prompt
     agent.SetSystemPrompt("You are a helpful assistant that responds concisely.")

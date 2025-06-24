@@ -39,10 +39,10 @@ func main() {
     }
     
     // Execute tool
-    result, err := readTool.Execute(ctx, file.ReadFileParams{
+    result, err := readTool.Execute(ctx, map[string]interface{}{
         Path: "/etc/hosts",
         IncludeMeta: true,
-    })
+}
     
     if err != nil {
         log.Fatal(err)
@@ -72,7 +72,7 @@ func analyzeWebContent() error {
     fetchResult, err := fetchTool.Execute(ctx, web.WebFetchParams{
         URL: "https://example.com/data.json",
         Selector: "body",
-    })
+}
     if err != nil {
         return err
     }
@@ -83,17 +83,17 @@ func analyzeWebContent() error {
         Data: fetchResult.(*web.WebFetchResult).Content,
         Operation: "query",
         JSONPath: "$.users[*].email",
-    })
+}
     if err != nil {
         return err
     }
     
     // Save results
     writeTool := file.WriteFile()
-    _, err = writeTool.Execute(ctx, file.WriteFileParams{
+    _, err = writeTool.Execute(ctx, map[string]interface{}{
         Path: "/tmp/emails.json",
         Content: fmt.Sprintf("%v", jsonResult.(*data.JSONProcessOutput).Result),
-    })
+}
     
     return err
 }
@@ -113,7 +113,7 @@ func processLargeLogFile(logPath string) error {
         Path: filepath.Dir(logPath),
         Pattern: filepath.Base(logPath),
         Content: "ERROR",
-    })
+}
     if err != nil {
         return err
     }
@@ -121,11 +121,11 @@ func processLargeLogFile(logPath string) error {
     // Step 2: Read specific portions
     readTool := file.ReadFile()
     for _, match := range searchResult.(*file.FileSearchResult).Matches {
-        result, err := readTool.Execute(ctx, file.ReadFileParams{
+        result, err := readTool.Execute(ctx, map[string]interface{}{
             Path: match.Path,
             LineStart: match.LineNumber - 5,
             LineEnd: match.LineNumber + 5,
-        })
+}
         if err != nil {
             continue
         }
@@ -147,7 +147,7 @@ func collectAPIData(apiURL string, endpoints []string) (map[string]interface{}, 
     results := make(map[string]interface{})
     
     for _, endpoint := range endpoints {
-        result, err := httpTool.Execute(ctx, web.HTTPRequestParams{
+        result, err := httpTool.Execute(ctx, map[string]interface{}{
             URL: apiURL + endpoint,
             Method: "GET",
             Headers: map[string]string{
@@ -156,7 +156,7 @@ func collectAPIData(apiURL string, endpoints []string) (map[string]interface{}, 
             AuthType: "bearer",
             AuthToken: os.Getenv("API_TOKEN"),
             Timeout: 30,
-        })
+}
         
         if err != nil {
             log.Printf("Failed to fetch %s: %v", endpoint, err)
@@ -191,7 +191,7 @@ func monitorSystem(interval time.Duration) {
         sysInfo, err := sysInfoTool.Execute(ctx, system.GetSystemInfoParams{
             IncludeMemory: true,
             IncludeRuntime: true,
-        })
+}
         if err == nil {
             info := sysInfo.(*system.SystemInfo)
             log.Printf("Memory: %d MB used", info.Memory.Alloc/1024/1024)
@@ -201,7 +201,7 @@ func monitorSystem(interval time.Duration) {
         processes, err := procListTool.Execute(ctx, system.ProcessListParams{
             Filter: "myapp",
             SortBy: "cpu",
-        })
+}
         if err == nil {
             procResult := processes.(*system.ProcessListResult)
             for _, proc := range procResult.Processes {
@@ -229,7 +229,7 @@ func migrateData(sourceDir, destURL string) error {
         Path: sourceDir,
         Pattern: "*.csv",
         Recursive: true,
-    })
+}
     if err != nil {
         return err
     }
@@ -241,9 +241,9 @@ func migrateData(sourceDir, destURL string) error {
     
     for _, fileInfo := range fileList.Files {
         // Read CSV file
-        content, err := readTool.Execute(ctx, file.ReadFileParams{
+        content, err := readTool.Execute(ctx, map[string]interface{}{
             Path: fileInfo.Path,
-        })
+}
         if err != nil {
             continue
         }
@@ -253,14 +253,14 @@ func migrateData(sourceDir, destURL string) error {
             Data: content.(*file.ReadFileResult).Content,
             Operation: "parse",
             Headers: true,
-        })
+}
         if err != nil {
             continue
         }
         
         // Upload to API
         jsonData, _ := json.Marshal(parsed.(*data.CSVProcessOutput).Result)
-        _, err = httpTool.Execute(ctx, web.HTTPRequestParams{
+        _, err = httpTool.Execute(ctx, map[string]interface{}{
             URL: destURL + "/import",
             Method: "POST",
             Body: string(jsonData),
@@ -268,7 +268,7 @@ func migrateData(sourceDir, destURL string) error {
             Headers: map[string]string{
                 "X-Source-File": fileInfo.Name,
             },
-        })
+}
         
         if err != nil {
             log.Printf("Failed to upload %s: %v", fileInfo.Name, err)
@@ -299,7 +299,7 @@ func analyzeCompetitorPrices(urls []string) (map[string]float64, error) {
             Rules: rules,
             JavaScript: true, // Handle dynamic content
             WaitFor: ".product-price",
-        })
+}
         
         if err != nil {
             log.Printf("Failed to scrape %s: %v", url, err)
@@ -336,7 +336,7 @@ func analyzeLogsAndAlert(logDir string, alertWebhook string) error {
         Base: currentTime,
         Operation: "subtract",
         Duration: "1h",
-    })
+}
     
     // Search recent log files
     searchTool := file.FileSearch()
@@ -344,7 +344,7 @@ func analyzeLogsAndAlert(logDir string, alertWebhook string) error {
         Path: logDir,
         Pattern: "*.log",
         ModifiedAfter: oneHourAgo.(*datetime.DateTimeCalculateOutput).Result,
-    })
+}
     if err != nil {
         return err
     }
@@ -357,9 +357,9 @@ func analyzeLogsAndAlert(logDir string, alertWebhook string) error {
     searchResults := results.(*file.FileSearchResult)
     
     for _, match := range searchResults.Matches {
-        content, err := readTool.Execute(ctx, file.ReadFileParams{
+        content, err := readTool.Execute(ctx, map[string]interface{}{
             Path: match.Path,
-        })
+}
         if err != nil {
             continue
         }
@@ -383,12 +383,12 @@ func analyzeLogsAndAlert(logDir string, alertWebhook string) error {
         }
         
         alertJSON, _ := json.Marshal(alert)
-        _, err = httpTool.Execute(ctx, web.HTTPRequestParams{
+        _, err = httpTool.Execute(ctx, map[string]interface{}{
             URL: alertWebhook,
             Method: "POST",
             Body: string(alertJSON),
             BodyType: "json",
-        })
+}
     }
     
     return nil
@@ -468,7 +468,7 @@ func (c *CachedToolExecutor) Execute(tool domain.Tool, ctx *domain.ToolContext, 
     c.cache.Store(key, cacheEntry{
         result:    result,
         timestamp: time.Now(),
-    })
+}
     
     return result, nil
 }
@@ -491,7 +491,7 @@ func setupEventDrivenExecution() {
         
         // Automatically process modified files
         go processModifiedFile(ctx, filePath)
-    })
+}
     
     ctx.Events.On("error", func(event domain.Event) {
         err := event.Data.(error)
@@ -499,12 +499,12 @@ func setupEventDrivenExecution() {
         
         // Send notification
         notifyError(err)
-    })
+}
     
     ctx.Events.On("progress", func(event domain.Event) {
         progress := event.Data.(domain.ProgressData)
         updateProgressBar(progress.Current, progress.Total, progress.Message)
-    })
+}
 }
 ```
 
@@ -540,7 +540,7 @@ func fetchMultipleURLsConcurrently(urls []string) ([]interface{}, error) {
             data, err := fetchTool.Execute(ctx, web.WebFetchParams{
                 URL: u,
                 Timeout: 10,
-            })
+}
             
             resultChan <- result{url: u, data: data, err: err}
         }(url)
@@ -577,7 +577,7 @@ func processLargeFileInChunks(filePath string, chunkSize int) error {
     info, err := listTool.Execute(ctx, file.FileListParams{
         Path: filepath.Dir(filePath),
         Pattern: filepath.Base(filePath),
-    })
+}
     if err != nil {
         return err
     }
@@ -596,11 +596,11 @@ func processLargeFileInChunks(filePath string, chunkSize int) error {
         }
         
         // Read chunk
-        chunk, err := readTool.Execute(ctx, file.ReadFileParams{
+        chunk, err := readTool.Execute(ctx, map[string]interface{}{
             Path: filePath,
             LineStart: start,
             LineEnd: end,
-        })
+}
         if err != nil {
             continue
         }
@@ -612,7 +612,7 @@ func processLargeFileInChunks(filePath string, chunkSize int) error {
             Options: map[string]interface{}{
                 "operation": "aggregate",
             },
-        })
+}
     }
     
     return nil
@@ -668,7 +668,7 @@ func debugToolExecution(tool domain.Tool, ctx *domain.ToolContext, params interf
     // Enable verbose logging
     ctx.Events.On("*", func(event domain.Event) {
         log.Printf("[%s] %s: %v", event.Type, event.Source, event.Data)
-    })
+}
     
     // Log tool metadata
     log.Printf("Executing tool: %s (v%s)", tool.Name(), tool.Version())

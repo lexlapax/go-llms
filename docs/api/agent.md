@@ -59,10 +59,10 @@ agent := agent.NewLLMAgent(agent.Config{
     Provider: provider,
     SystemPrompt: "You are a helpful assistant.",
     Tools: []tools.Tool{
-        tools.NewHTTPTool(),
+        tools.Tools.Get("http_request"),
         tools.NewFileTool(),
     },
-})
+}
 ```
 ## Examples
 
@@ -75,7 +75,7 @@ agent := agent.NewSimpleAgent(agent.Config{
         // Process input
         return "Processed: " + input.(string), nil
     },
-})
+}
 
 result, err := agent.Execute(ctx, "Hello")
 ```

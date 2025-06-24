@@ -1,6 +1,6 @@
 # Tool Discovery: Runtime Registration and Metadata
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Tools](/docs/technical/tools/) / Tool Discovery**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Tools](../../technical/tools) / Tool Discovery**
 
 Comprehensive guide to the Go-LLMs tool discovery system, covering runtime registration mechanisms, metadata management, dynamic loading, search and filtering capabilities, plugin architectures, and advanced discovery patterns for building extensible tool ecosystems.
 
@@ -243,7 +243,7 @@ func (d *DefaultToolDiscovery) DiscoverTools(ctx context.Context, sources []Disc
             "source_count":  len(sources),
             "errors":        errors,
         },
-    })
+}
     
     return deduplicatedTools, nil
 }
@@ -288,7 +288,7 @@ func (d *DefaultToolDiscovery) discoverFromSource(ctx context.Context, source Di
                         "tool_name": tool.Metadata.Name,
                         "error":     err.Error(),
                     },
-                })
+}
                 continue
             }
             
@@ -444,7 +444,7 @@ func (fs *FileSystemDiscoverySource) Discover(ctx context.Context, options Disco
         
         discoveredTools = append(discoveredTools, discoveredTool)
         return nil
-    })
+}
     
     if err != nil {
         return nil, fmt.Errorf("filesystem discovery failed: %w", err)
@@ -631,7 +631,7 @@ func (ps *PluginDiscoverySource) loadPluginFile(ctx context.Context, pluginFile 
         Sandbox:        ps.config.Sandbox,
         SecurityPolicy: ps.config.SecurityPolicy,
         Timeout:        ps.config.LoadTimeout,
-    })
+}
     if err != nil {
         return nil, fmt.Errorf("failed to load plugin: %w", err)
     }
@@ -740,7 +740,7 @@ func (rs *RemoteRegistryDiscoverySource) Discover(ctx context.Context, options D
         IncludeDocs: options.IncludeDocs,
         Page:        1,
         Limit:       1000, // Get all tools
-    })
+}
     if err != nil {
         return nil, fmt.Errorf("failed to fetch tool list: %w", err)
     }
@@ -809,7 +809,7 @@ func (rs *RemoteRegistryDiscoverySource) downloadTool(ctx context.Context, toolI
         Format:         toolInfo.Format,
         TrustLevel:     rs.config.TrustLevel,
         ValidateSchema: true,
-    })
+}
     if err != nil {
         return nil, fmt.Errorf("failed to load tool from package: %w", err)
     }
@@ -902,14 +902,14 @@ func (ts *ToolSearcher) performTextSearch(text string, tools []ToolInfo) ([]Tool
             results = append(results, ScoredResult{
                 Tool:  tool,
                 Score: score,
-            })
+}
         }
     }
     
     // Sort by score descending
     sort.Slice(results, func(i, j int) bool {
         return results[i].Score > results[j].Score
-    })
+}
     
     // Extract tools
     var searchResults []ToolInfo
@@ -1135,14 +1135,14 @@ func (dl *DynamicToolLoader) handleToolUpdate(path string) {
     source := NewFileSystemDiscoverySource(filepath.Dir(path), FileSystemSourceConfig{
         BasePath: filepath.Dir(path),
         SearchPatterns: []string{"*.so", "*.dll", "*.dylib", "*.tool"},
-    })
+}
     
     ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
     
     discoveredTools, err := source.Discover(ctx, DiscoveryOptions{
         Validate: dl.config.ValidateOnLoad,
-    })
+}
     if err != nil {
         logError("tool discovery failed for path %s: %v", path, err)
         return

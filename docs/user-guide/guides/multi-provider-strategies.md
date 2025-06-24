@@ -1,6 +1,6 @@
 # Multi-Provider Strategies: Reliability and Optimization
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Multi-Provider Strategies**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Multi-Provider Strategies**
 
 Master advanced multi-provider patterns to maximize reliability, optimize costs, and leverage the unique strengths of different LLM providers. Build resilient systems that automatically handle failures and adapt to changing conditions.
 
@@ -1484,7 +1484,7 @@ func (apr *AdvancedProviderRouter) Route(ctx context.Context, request *RoutingRe
         var execErr error
         result, execErr = selectedProvider.Config.Agent.Run(ctx, request.Context)
         return execErr
-    })
+}
 
     if err != nil {
         return nil, fmt.Errorf("execution failed: %w", err)

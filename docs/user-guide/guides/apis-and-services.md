@@ -1,6 +1,6 @@
 # APIs and Services: Building LLM-Powered APIs
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / APIs and Services**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / APIs and Services**
 
 Build robust, scalable APIs and microservices powered by AI agents. Master the art of creating LLM-friendly APIs, handling authentication, implementing proper error handling, and building production-ready services that leverage AI capabilities.
 
@@ -110,7 +110,7 @@ type DataExtractionResponse struct {
 
 func NewAPIService() (*APIService, error) {
     // Create LLM provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
         provider.WithMaxTokens(2000),
     )
@@ -382,8 +382,8 @@ func main() {
             }
             
             next.ServeHTTP(w, r)
-        })
-    })
+}
+}
 
     log.Println("API service starting on :8080")
     log.Fatal(http.ListenAndServe(":8080", r))
@@ -443,7 +443,7 @@ type AuthContext struct {
 }
 
 func NewAuthenticatedAPIService(jwtSecret []byte) (*AuthenticatedAPIService, error) {
-    llm, err := provider.NewOpenAI(provider.WithModel("gpt-4"))
+    llm, err := provider.NewOpenAIProvider(provider.WithModel("gpt-4"))
     if err != nil {
         return nil, err
     }
@@ -518,7 +518,7 @@ func (s *AuthenticatedAPIService) authenticate(r *http.Request) (*AuthContext, e
                 return nil, fmt.Errorf("unexpected signing method")
             }
             return s.jwtSecret, nil
-        })
+}
 
         if err != nil {
             return nil, fmt.Errorf("invalid JWT token: %v", err)
@@ -919,7 +919,7 @@ type CircuitBreaker struct {
 
 func NewLLMAPIServer(config *ServerConfig) (*LLMAPIServer, error) {
     // Create LLM provider with retry logic
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
         provider.WithTimeout(config.Timeout),
         provider.WithRetries(3),
@@ -1068,7 +1068,7 @@ func (s *LLMAPIServer) corsMiddleware(next http.Handler) http.Handler {
         }
 
         next.ServeHTTP(w, r)
-    })
+}
 }
 
 func (s *LLMAPIServer) loggingMiddleware(next http.Handler) http.Handler {
@@ -1078,7 +1078,7 @@ func (s *LLMAPIServer) loggingMiddleware(next http.Handler) http.Handler {
         next.ServeHTTP(w, r)
         
         log.Printf("%s %s %v", r.Method, r.URL.Path, time.Since(start))
-    })
+}
 }
 
 func (s *LLMAPIServer) healthHandler(w http.ResponseWriter, r *http.Request) {

@@ -1,6 +1,6 @@
 # Structured Data: Reliable Data Extraction with Schemas
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Structured Data**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Structured Data**
 
 Master reliable data extraction from LLMs using JSON Schema validation, type coercion, and error recovery. Build production systems that guarantee consistent, validated output from any LLM provider.
 
@@ -700,7 +700,7 @@ func (ce *CoercionEngine) coerceToArray(value interface{}, property schemaDomain
         // Split string by common delimiters
         parts := strings.FieldsFunc(v, func(r rune) bool {
             return r == ',' || r == ';' || r == '|'
-        })
+}
         
         result := make([]interface{}, len(parts))
         for i, part := range parts {

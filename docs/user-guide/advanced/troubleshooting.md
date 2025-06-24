@@ -1,6 +1,6 @@
 # Troubleshooting Guide: Problem Diagnosis and Resolution
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Advanced Topics](/docs/user-guide/advanced/) / Troubleshooting**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Advanced Topics](../../user-guide/advanced) / Troubleshooting**
 
 Comprehensive troubleshooting guide for diagnosing and resolving common issues in Go-LLMs applications, including debugging techniques, error analysis, performance problems, and integration challenges.
 
@@ -80,9 +80,9 @@ func testAPIKey(provider string, apiKey string) error {
     
     switch provider {
     case "openai":
-        p, err := provider.NewOpenAI(provider.OpenAIOptions{
+        p, err := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"), "gpt-4", 
             APIKey: apiKey,
-        })
+}
         if err != nil {
             return err
         }
@@ -922,7 +922,7 @@ func startDebugREPL(provider provider.Provider) {
                 Messages: []Message{
                     {Role: "user", Content: "Say hello"},
                 },
-            })
+}
             if err != nil {
                 fmt.Printf("Error: %v\n", err)
             } else {
@@ -938,7 +938,7 @@ func startDebugREPL(provider provider.Provider) {
                 Messages: []Message{
                     {Role: "user", Content: input},
                 },
-            })
+}
             if err != nil {
                 fmt.Printf("Error: %v\n", err)
             } else {
@@ -987,7 +987,7 @@ func (s *Span) End() {
         End:   s.End,
         Tags:  s.Tags,
         Error: s.Error,
-    })
+}
     s.tracer.mu.Unlock()
 }
 
@@ -1181,7 +1181,7 @@ func StartHealthDashboard(port int) {
         }
         
         json.NewEncoder(w).Encode(health)
-    })
+}
     
     http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
         metrics := collectMetrics()
@@ -1190,7 +1190,7 @@ func StartHealthDashboard(port int) {
         for name, value := range metrics {
             fmt.Fprintf(w, "%s %f\n", name, value)
         }
-    })
+}
     
     log.Printf("Health dashboard started on :%d", port)
     http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
@@ -1344,6 +1344,6 @@ When reporting issues, include:
 
 - **[Performance Optimization](performance-optimization.md)** - Improve application performance
 - **[Security Considerations](security-considerations.md)** - Security troubleshooting
-- **[Best Practices Checklist](/docs/user-guide/reference/best-practices-checklist.md)** - Avoid common issues
-- **[Error Codes Reference](/docs/user-guide/reference/error-codes-reference.md)** - Detailed error information
-- **[Configuration Reference](/docs/user-guide/reference/configuration-reference.md)** - Configuration troubleshooting
+- **[Best Practices Checklist](../../user-guide/reference/best-practices-checklist.md)** - Avoid common issues
+- **[Error Codes Reference](../../user-guide/reference/error-codes-reference.md)** - Detailed error information
+- **[Configuration Reference](../../user-guide/reference/configuration-reference.md)** - Configuration troubleshooting

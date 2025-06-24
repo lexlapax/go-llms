@@ -549,7 +549,7 @@ func TestMyProvider_Integration(t *testing.T) {
         resp, err := provider.Generate(ctx, "Say hello")
         require.NoError(t, err)
         assert.NotEmpty(t, resp.Content)
-    })
+}
     
     t.Run("Stream", func(t *testing.T) {
         ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -567,7 +567,7 @@ func TestMyProvider_Integration(t *testing.T) {
         }
         
         assert.Contains(t, content.String(), "5")
-    })
+}
 }
 ```
 
@@ -585,7 +585,7 @@ func init() {
         apiKey, _ := config["api_key"].(string)
         model, _ := config["model"].(string)
         return NewMyProvider(apiKey, model), nil
-    })
+}
 }
 ```
 
@@ -597,7 +597,7 @@ registry := provider.GetRegistry()
 registry.RegisterProvider("myprovider", func(config map[string]interface{}) (domain.Provider, error) {
     // Create provider from config
     return NewMyProvider(config["api_key"].(string), config["model"].(string)), nil
-})
+}
 ```
 
 ## Best Practices

@@ -1,6 +1,6 @@
 # Workflow Orchestration: Complex Workflow Patterns
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Advanced Topics](/docs/user-guide/advanced/) / Workflow Orchestration**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Advanced Topics](../../user-guide/advanced) / Workflow Orchestration**
 
 Master advanced workflow orchestration patterns in Go-LLMs, including parallel execution, conditional branching, error recovery, state management, and building sophisticated multi-agent systems.
 
@@ -49,7 +49,7 @@ func NewDocumentProcessingWorkflow(provider provider.Provider) *DocumentProcessi
     return &DocumentProcessingWorkflow{
         extractAgent: core.NewLLMAgent("extractor", provider,
             core.WithSystemPrompt("Extract key information from documents"),
-            core.WithTools(tools.NewFileReadTool(), tools.NewJSONProcessTool()),
+            core.WithTools(tools.Tools.Get("file_read"), tools.NewJSONProcessTool()),
         ),
         analyzeAgent: core.NewLLMAgent("analyzer", provider,
             core.WithSystemPrompt("Analyze extracted information for insights"),
@@ -68,7 +68,7 @@ func (w *DocumentProcessingWorkflow) Execute(ctx context.Context, documentPath s
         Messages: []core.Message{
             {Role: "user", Content: fmt.Sprintf("Extract key information from document: %s", documentPath)},
         },
-    })
+}
     if err != nil {
         return nil, fmt.Errorf("extraction failed: %w", err)
     }
@@ -80,7 +80,7 @@ func (w *DocumentProcessingWorkflow) Execute(ctx context.Context, documentPath s
         Messages: []core.Message{
             {Role: "user", Content: fmt.Sprintf("Analyze this data: %s", extractResult.Content)},
         },
-    })
+}
     if err != nil {
         return nil, fmt.Errorf("analysis failed: %w", err)
     }
@@ -92,7 +92,7 @@ func (w *DocumentProcessingWorkflow) Execute(ctx context.Context, documentPath s
         Messages: []core.Message{
             {Role: "user", Content: fmt.Sprintf("Summarize this analysis: %s", analyzeResult.Content)},
         },
-    })
+}
     if err != nil {
         return nil, fmt.Errorf("summarization failed: %w", err)
     }
@@ -282,7 +282,7 @@ func (w *ParallelAnalysisWorkflow) worker(ctx context.Context, tasks <-chan Anal
             Messages: []core.Message{
                 {Role: "user", Content: fmt.Sprintf("Analyze this data: %v", task.Data)},
             },
-        })
+}
         
         if err != nil {
             errors <- fmt.Errorf("agent %s failed: %w", task.AgentName, err)
@@ -407,7 +407,7 @@ documentAnalyzer := &MapReduceWorkflow{
             Messages: []core.Message{
                 {Role: "user", Content: fmt.Sprintf("Extract entities, topics, and sentiment from: %s", doc.Content)},
             },
-        })
+}
         
         if err != nil {
             return nil, err
@@ -423,7 +423,7 @@ documentAnalyzer := &MapReduceWorkflow{
             Messages: []core.Message{
                 {Role: "user", Content: fmt.Sprintf("Summarize these %s findings: %v", key, values)},
             },
-        })
+}
         
         if err != nil {
             return nil, err
@@ -472,7 +472,7 @@ func (n *ConditionalNode) Evaluate(ctx context.Context, state WorkflowState) (st
         Messages: []core.Message{
             {Role: "user", Content: fmt.Sprintf("Evaluate condition with state: %v", state.GetAll())},
         },
-    })
+}
     
     if err != nil {
         return "", err
@@ -648,7 +648,7 @@ func (r *IntelligentRouter) Route(ctx context.Context, input interface{}) (strin
             {Role: "system", Content: "Route inputs to appropriate handlers. Return JSON with 'route' and 'confidence' fields."},
             {Role: "user", Content: fmt.Sprintf("Route this input: %v\nContext: %v", input, context)},
         },
-    })
+}
     
     if err != nil {
         return "", 0, err
@@ -1213,7 +1213,7 @@ func (es *EventSourcedWorkflow) Execute(ctx context.Context, input interface{}) 
     // Record start event
     es.recordEvent(workflowID, "workflow_started", map[string]interface{}{
         "input": input,
-    })
+}
     
     // Create instrumented context
     instrumentedCtx := es.createInstrumentedContext(ctx, workflowID)
@@ -1224,13 +1224,13 @@ func (es *EventSourcedWorkflow) Execute(ctx context.Context, input interface{}) 
     if err != nil {
         es.recordEvent(workflowID, "workflow_failed", map[string]interface{}{
             "error": err.Error(),
-        })
+}
         return nil, err
     }
     
     es.recordEvent(workflowID, "workflow_completed", map[string]interface{}{
         "result": result,
-    })
+}
     
     // Update projections
     es.updateProjections(workflowID)
@@ -1436,7 +1436,7 @@ func (p *WorkflowProfiler) StartSpan(name string) *Span {
         Name:      name,
         StartTime: span.start,
         Metadata:  span.metadata,
-    })
+}
     p.mu.Unlock()
     
     return span
@@ -1569,7 +1569,7 @@ func (h *HealthCheckableWorkflow) runHealthChecks(ctx context.Context) {
                 Message:     result.Message,
                 Severity:    result.Severity,
                 Timestamp:   time.Now(),
-            })
+}
             
             if result.Status == HealthStatusUnhealthy {
                 h.status.Status = HealthStatusUnhealthy
@@ -1712,8 +1712,8 @@ workflows:
 
 ## Next Steps
 
-- **[Multi-Agent Systems](/docs/technical/agents/multi-agent-systems.md)** - Advanced agent coordination
+- **[Multi-Agent Systems](../../technical/agents/multi-agent-systems.md)** - Advanced agent coordination
 - **[Custom Tools](custom-tools.md)** - Build tools for workflows
-- **[State Management](/docs/technical/agents/state-management.md)** - Deep dive into state patterns
+- **[State Management](../../technical/agents/state-management.md)** - Deep dive into state patterns
 - **[Production Deployment](production-deployment.md)** - Deploy workflows at scale
-- **[API Reference](/docs/technical/api-reference/agents.md)** - Workflow API documentation
+- **[API Reference](../../technical/api-reference/agents.md)** - Workflow API documentation

@@ -1,6 +1,6 @@
 # Creating Custom Tools: Build Custom Tools
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Tools](/docs/technical/tools/) / Creating Tools**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Tools](../../technical/tools) / Creating Tools**
 
 Complete guide to designing and implementing custom tools in Go-LLMs, covering tool interfaces, schema definition, validation, testing, packaging, and deployment strategies for building robust, reusable tools that integrate seamlessly with the agent ecosystem.
 
@@ -340,7 +340,7 @@ func (t *FileProcessorTool) executeRead(ctx context.Context, input *FileProcesso
     content, err := t.processor.ReadFile(input.FilePath, FileReadOptions{
         Encoding: input.Options.Encoding,
         MaxSize:  t.config.Parameters["max_file_size"].(int64),
-    })
+}
     if err != nil {
         return nil, fmt.Errorf("failed to read file: %w", err)
     }
@@ -399,7 +399,7 @@ func (t *FileProcessorTool) executeAnalyze(ctx context.Context, input *FileProce
         IncludeChecksum: getBoolParam(input.Parameters, "include_checksum", true),
         DetectType:      getBoolParam(input.Parameters, "detect_type", true),
         SampleSize:      getIntParam(input.Parameters, "sample_size", 1024),
-    })
+}
     if err != nil {
         return nil, fmt.Errorf("file analysis failed: %w", err)
     }
@@ -624,7 +624,7 @@ func (t *AsyncTool) executeAsync(ctx context.Context, jobID string, input interf
     // Execute with progress tracking
     result, err := t.executeWithProgress(ctx, input, func(progress float64) {
         t.updateJobProgress(jobID, progress)
-    })
+}
     
     now := time.Now()
     job.EndTime = &now
@@ -984,7 +984,7 @@ func (t *ToolTester) RunTestSuite(ctx context.Context, suite *TestSuite) (*TestR
                 Status:   TestStatusSkipped,
                 Message:  testCase.SkipReason,
                 Duration: 0,
-            })
+}
             continue
         }
         
@@ -1232,7 +1232,7 @@ func (p *ToolPackager) BuildPackage(pkg *ToolPackage, outputPath string) error {
         IncludeDocs:    true,
         Compression:    true,
         Verification:   true,
-    })
+}
 }
 
 type BuildOptions struct {

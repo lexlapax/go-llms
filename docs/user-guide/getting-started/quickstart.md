@@ -68,7 +68,7 @@ func main() {
     // Create an agent
     agent := core.NewLLMAgent("assistant", "gpt-4", core.LLMDeps{
         Provider: openaiProvider,
-    })
+}
     
     // Set system prompt
     agent.SetSystemPrompt("You are a helpful assistant.")
@@ -153,7 +153,7 @@ anthropicProvider := provider.NewAnthropicProvider(anthropicKey, "claude-3-sonne
 // Use in agent
 agent := core.NewLLMAgent("assistant", "claude-3-sonnet-20240229", core.LLMDeps{
     Provider: anthropicProvider,
-})
+}
 ```
 
 ### Common Issues and Solutions

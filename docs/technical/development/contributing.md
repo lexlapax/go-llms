@@ -1,6 +1,6 @@
 # Contributing: Code Organization and Style Guide
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Development](/docs/technical/development/) / Contributing**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Development](../../technical/development) / Contributing**
 
 Comprehensive guide to contributing to Go-LLMs, covering code organization principles, style guidelines, development workflows, testing requirements, documentation standards, and project governance for maintaining high-quality, consistent codebase contributions.
 
@@ -307,7 +307,7 @@ func (r *ThreadSafeRegistry) Get(name string) (Provider, error) {
 func (r *ThreadSafeRegistry) Close() error {
     r.once.Do(func() {
         close(r.closed)
-    })
+}
     return nil
 }
 ```
@@ -325,7 +325,7 @@ func (r *ThreadSafeRegistry) Close() error {
 //
 // Example usage:
 //
-//	provider := openai.New(openai.Config{
+//	provider := provider.NewOpenAIProvider(
 //		APIKey: "your-api-key",
 //		Model:  "gpt-4",
 //	})
@@ -570,7 +570,7 @@ func TestProvider_Complete(t *testing.T) {
             require.NoError(t, err)
             assert.Equal(t, tt.want.Content, got.Content)
             assert.Equal(t, tt.want.Model, got.Model)
-        })
+}
     }
 }
 
@@ -579,7 +579,7 @@ func BenchmarkProvider_Complete(b *testing.B) {
     provider := New(ProviderConfig{
         APIKey: "test-api-key",
         Model:  "gpt-3.5-turbo",
-    })
+}
     
     request := &core.CompletionRequest{
         Messages: []core.Message{
@@ -625,19 +625,19 @@ func TestProvider_Integration(t *testing.T) {
     provider := openai.New(openai.ProviderConfig{
         APIKey: apiKey,
         Model:  "gpt-3.5-turbo",
-    })
+}
     
     t.Run("real_api_completion", func(t *testing.T) {
         response, err := provider.Complete(context.Background(), &core.CompletionRequest{
             Messages: []core.Message{
                 {Role: "user", Content: "Say 'integration test successful'"},
             },
-        })
+}
         
         require.NoError(t, err)
         require.NotEmpty(t, response.Content)
         require.Contains(t, response.Content, "integration test successful")
-    })
+}
 }
 ```
 

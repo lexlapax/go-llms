@@ -1,6 +1,6 @@
 # Content Generation: Content Creation and Management
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Examples](/docs/user-guide/examples/) / Content Generation**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Examples](../../user-guide/examples) / Content Generation**
 
 Build a comprehensive AI-powered content creation and management system. This example demonstrates automated content generation, SEO optimization, multi-format publishing, content scheduling, and quality assurance workflows using Go-LLMs.
 
@@ -248,7 +248,7 @@ func NewContentGenerationSystem(config *ContentConfig) (*ContentGenerationSystem
     }
 
     // Create LLM provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
         provider.WithMaxTokens(3000),
     )
@@ -978,7 +978,7 @@ func (cgs *ContentGenerationSystem) PublishContentHandler(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
         "message": "Content published successfully",
         "content": content,
-    })
+}
 }
 
 // Publishing channel implementations
@@ -1161,8 +1161,8 @@ func main() {
         c.JSON(http.StatusOK, gin.H{
             "status": "healthy",
             "timestamp": time.Now(),
-        })
-    })
+}
+}
 
     log.Println("Content Generation System starting on :8080")
     log.Fatal(r.Run(":8080"))

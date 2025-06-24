@@ -1,6 +1,6 @@
 # Tool Architecture and Integration
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Tools](/docs/technical/tools/) / Overview**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Tools](../../technical/tools) / Overview**
 
 Deep technical guide to the Go-LLMs tool system architecture, covering tool interfaces, registration mechanisms, execution patterns, metadata management, discovery systems, and integration strategies for building extensible agent-based applications.
 
@@ -150,7 +150,7 @@ func RegisterTool(tool Tool) error {
 
 // GetTool retrieves a tool from the global registry
 func GetTool(name string) (Tool, error) {
-    return GlobalToolRegistry.Get(name)
+    return GlobalToolTools.Get(name)
 }
 
 // DefaultToolRegistry implements the ToolRegistry interface
@@ -220,7 +220,7 @@ func (r *DefaultToolRegistry) RegisterWithOptions(tool Tool, options Registratio
         ToolName:  name,
         Timestamp: time.Now(),
         Data:      tool,
-    })
+}
     
     return nil
 }
@@ -639,7 +639,7 @@ type ToolStep struct {
 // Execute runs the tool step
 func (s *ToolStep) Execute(ctx context.Context, state WorkflowState) (StepResult, error) {
     // Get tool from registry
-    tool, err := GlobalToolRegistry.Get(s.Tool)
+    tool, err := GlobalToolTools.Get(s.Tool)
     if err != nil {
         return StepResult{}, fmt.Errorf("tool %s not found: %w", s.Tool, err)
     }
@@ -870,7 +870,7 @@ func (e *SandboxedToolExecutor) ExecuteInSandbox(ctx context.Context, tool Tool,
         NetworkPolicy:  policy.NetworkPolicy,
         FileSystemPolicy: policy.FileSystemPolicy,
         Isolation:      IsolationLevel_STRICT,
-    })
+}
     if err != nil {
         return nil, fmt.Errorf("failed to create sandbox: %w", err)
     }

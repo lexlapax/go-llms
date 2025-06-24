@@ -1,6 +1,6 @@
 # Databases: Storing LLM Interactions
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Databases**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Databases**
 
 Master persistent storage for LLM interactions, conversation history, and agent state. Learn to integrate with SQL databases, implement caching strategies, and build robust data persistence layers for production AI applications.
 
@@ -290,7 +290,7 @@ func (cs *ConversationStore) GetUserConversations(ctx context.Context, userID st
 
 func NewAgentSession(userID string, store *ConversationStore) (*AgentSession, error) {
     // Create LLM provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
     )
     if err != nil {
@@ -532,7 +532,7 @@ func NewAdvancedConversationStore(dbURL, redisAddr string) (*AdvancedConversatio
     // Connect to Redis
     rdb := redis.NewClient(&redis.Options{
         Addr: redisAddr,
-    })
+}
 
     cache := &ConversationCache{
         redis: rdb,
@@ -1072,7 +1072,7 @@ func (dm *DatabaseManager) Query(ctx context.Context, query string, args ...inte
         
         rows, err = db.QueryxContext(ctx, query, args...)
         return err
-    })
+}
 
     return rows, err
 }
@@ -1088,7 +1088,7 @@ func (dm *DatabaseManager) Exec(ctx context.Context, query string, args ...inter
         
         result, err = dm.primary.ExecContext(ctx, query, args...)
         return err
-    })
+}
 
     return result, err
 }
@@ -1106,7 +1106,7 @@ func (dm *DatabaseManager) Transaction(ctx context.Context, fn func(*sqlx.Tx) er
         }
 
         return tx.Commit()
-    })
+}
 }
 
 // Repository implementations
@@ -1145,7 +1145,7 @@ func (cr *ConversationRepository) Create(ctx context.Context, conv *EnhancedConv
         }
 
         return nil
-    })
+}
 }
 
 func (cr *ConversationRepository) GetByID(ctx context.Context, id string) (*EnhancedConversation, error) {

@@ -6,6 +6,21 @@
 
 The event system in go-llms provides comprehensive observability into agent operations, tool executions, and state changes. It enables monitoring, debugging, auditing, and building reactive systems on top of agent workflows.
 
+## Prerequisites
+
+Before working with the event system, ensure you have:
+
+- **Go Concurrency**: Understanding of channels, goroutines, and synchronization primitives
+- **Event-Driven Architecture**: Familiarity with pub/sub patterns, event sourcing concepts
+- **Observability**: Knowledge of logging, metrics, and distributed tracing
+- **Performance Optimization**: Understanding of buffering, batching, and backpressure
+- **Serialization**: Experience with JSON/Protocol Buffers and custom serialization
+
+**Required Reading**:
+- [Agents Overview](../../technical/agents/overview.md) - Agent system that generates events
+- [Performance](performance.md) - Performance considerations for high-volume events
+- [Core Concepts](../../technical/core-concepts.md) - Fundamental Go-LLMs concepts
+
 ## Architecture
 
 ### Event Flow
@@ -64,14 +79,14 @@ agent := core.NewLLMAgent("assistant", "gpt-4", deps)
 // Subscribe to all events
 agent.OnEvent(func(event domain.Event) {
     log.Printf("Event: %s - %s", event.Type, event.Data)
-})
+}
 
 // Subscribe to specific event types
 agent.OnEventType(domain.EventToolCall, func(event domain.Event) {
     toolCall := event.Data.(ToolCallData)
     log.Printf("Tool called: %s with params: %v", 
         toolCall.Name, toolCall.Parameters)
-})
+}
 ```
 
 ### Event Filters
@@ -130,13 +145,13 @@ emitter := events.NewEventEmitter()
 // Subscribe to events
 unsubscribe := emitter.On(func(event domain.Event) {
     fmt.Printf("Received: %v\n", event)
-})
+}
 
 // Emit event
 emitter.Emit(domain.Event{
     Type: domain.EventCustom,
     Data: "Custom event data",
-})
+}
 
 // Unsubscribe
 unsubscribe()
@@ -155,7 +170,7 @@ emitter := events.NewBufferedEmitter(
 emitter.OnBatch(func(events []domain.Event) {
     // Process batch of events
     processBatch(events)
-})
+}
 ```
 
 ## Event Serialization
@@ -298,7 +313,7 @@ func (e *EventSourcedAgent) Run(ctx context.Context, state *domain.State) (*doma
         Data: map[string]interface{}{
             "input_state": state.Snapshot(),
         },
-    })
+}
     
     // Run agent
     result, err := e.agent.Run(ctx, state)
@@ -309,7 +324,7 @@ func (e *EventSourcedAgent) Run(ctx context.Context, state *domain.State) (*doma
             Data: map[string]interface{}{
                 "error": err.Error(),
             },
-        })
+}
         return nil, err
     }
     
@@ -319,7 +334,7 @@ func (e *EventSourcedAgent) Run(ctx context.Context, state *domain.State) (*doma
         Data: map[string]interface{}{
             "output_state": result.Snapshot(),
         },
-    })
+}
     
     return result, nil
 }
@@ -379,21 +394,21 @@ func (w *EventDrivenWorkflow) Start() {
         if event.Type == domain.EventToolError {
             w.handleToolError(event)
         }
-    })
+}
     
     // Monitor performance
     w.emitter.On(func(event domain.Event) {
         if event.Type == domain.EventAgentComplete {
             w.recordPerformanceMetrics(event)
         }
-    })
+}
     
     // Trigger alerts
     w.emitter.On(func(event domain.Event) {
         if event.Type == domain.EventAgentError {
             w.sendAlert(event)
         }
-    })
+}
 }
 ```
 

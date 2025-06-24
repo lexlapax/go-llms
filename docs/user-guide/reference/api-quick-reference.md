@@ -51,7 +51,7 @@ ollama := provider.NewOllamaProvider("http://localhost:11434", "llama2")
 ```go
 agent := core.NewLLMAgent("agent-name", "model-name", core.LLMDeps{
     Provider: provider,
-})
+}
 ```
 
 ## Common Operations
@@ -142,7 +142,7 @@ sequential := workflow.NewSequentialAgent("pipeline", []domain.BaseAgent{
     extractorAgent,
     processorAgent, 
     formatterAgent,
-})
+}
 ```
 
 ### Parallel Workflow
@@ -152,7 +152,7 @@ parallel := workflow.NewParallelAgent("multi-task", []domain.BaseAgent{
     sentimentAgent,
     entityAgent,
     summaryAgent,
-})
+}
 ```
 
 ### Conditional Workflow
@@ -162,7 +162,7 @@ conditional := workflow.NewConditionalAgent("router", map[string]domain.BaseAgen
     "positive": positiveAgent,
     "negative": negativeAgent,
     "neutral":  neutralAgent,
-})
+}
 ```
 
 ### Loop Workflow
@@ -171,7 +171,7 @@ conditional := workflow.NewConditionalAgent("router", map[string]domain.BaseAgen
 loop := workflow.NewLoopAgent("refiner", refinementAgent, func(state domain.State) bool {
     quality, _ := state.Get("quality_score")
     return quality.(float64) >= 0.8 // Stop when quality >= 0.8
-})
+}
 ```
 
 ## State Management
@@ -407,7 +407,7 @@ func processData(data interface{}) (interface{}, error) {
     pipeline := workflow.NewSequentialAgent("processor", []domain.BaseAgent{
         extractor,
         validator,
-    })
+}
     
     // Process
     state := domain.NewState()
@@ -428,7 +428,7 @@ func runWithFallback(input string, providers []domain.Provider) (string, error) 
     for i, provider := range providers {
         agent := core.NewLLMAgent(fmt.Sprintf("agent-%d", i), "model", core.LLMDeps{
             Provider: provider,
-        })
+}
         
         state := domain.NewState()
         state.Set("user_input", input)

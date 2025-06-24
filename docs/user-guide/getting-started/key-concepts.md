@@ -143,7 +143,7 @@ listSchema := &schema.Schema{
 // Create an LLM agent
 agent := core.NewLLMAgent("assistant", "gpt-4", core.LLMDeps{
     Provider: openaiProvider,
-})
+}
 
 // Configure behavior
 agent.SetSystemPrompt("You are a helpful coding assistant")
@@ -161,7 +161,7 @@ workflow := workflow.NewSequentialAgent("data-processor", []domain.BaseAgent{
     extractorAgent,    // First: extract data from text
     validatorAgent,    // Second: validate the extracted data  
     formatterAgent,    // Third: format for output
-})
+}
 ```
 
 #### Parallel Agent - Concurrent Processing
@@ -171,7 +171,7 @@ parallelAgent := workflow.NewParallelAgent("multi-analyzer", []domain.BaseAgent{
     sentimentAgent,    // Analyze sentiment
     entityAgent,       // Extract entities
     summaryAgent,      // Create summary
-})
+}
 ```
 
 ### When to Use Each Agent Type
@@ -256,7 +256,7 @@ func main() {
     // 2. Create an agent
     agent := core.NewLLMAgent("analyzer", "gpt-4", core.LLMDeps{
         Provider: provider,
-    })
+}
     
     // 3. Define what you want (schema)
     analysisSchema := &schema.Schema{

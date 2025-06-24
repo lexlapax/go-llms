@@ -190,11 +190,11 @@ Welcome to the comprehensive Go-LLMs documentation reference. This directory con
 ## 🔗 Quick Links
 
 ### Documentation Home
-- **[Go-LLMs Home](/)** - Project home and quick start
+- **[Go-LLMs Home](../)** - Project home and quick start
 - **[User Guide](user-guide/README.md)** - Complete user documentation with visual guides
 - **[Technical Documentation](technical/README.md)** - Architecture and implementation details
-- **[Examples Repository](/cmd/examples/)** - 80+ working examples
-- **[CLI Documentation](/cmd/README.md)** - Command line interface
+- **[Examples Repository](../cmd/examples/)** - 80+ working examples
+- **[CLI Documentation](../cmd/README.md)** - Command line interface
 - **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute
 
 ### Project Information
@@ -213,64 +213,64 @@ Welcome to the comprehensive Go-LLMs documentation reference. This directory con
 ## 🎯 Examples Index
 
 ### Basic Provider Examples
-- [Simple Example](/cmd/examples/simple/) - Basic usage with mock providers
-- [Provider Anthropic](/cmd/examples/provider-anthropic/) - Integration with Anthropic Claude
-- [Provider OpenAI](/cmd/examples/provider-openai/) - Integration with OpenAI models
-- [Provider Gemini](/cmd/examples/provider-gemini/) - Integration with Google Gemini
-- [Provider OpenAI Compatible](/cmd/examples/provider-openai-compatible/) - Using OpenRouter and Ollama
-- [Multi-Provider](/cmd/examples/provider-multi/) - Working with multiple providers
-- [Consensus](/cmd/examples/provider-consensus/) - Multi-provider consensus strategies
-- [Provider Options](/cmd/examples/provider-options/) - Provider configuration system
-- [Convenience](/cmd/examples/provider-convenience/) - Utility functions for common tasks
-- [Multimodal](/cmd/examples/provider-multimodal/) - Working with images, audio, and video content
+- [Simple Example](../cmd/examples/simple/) - Basic usage with mock providers
+- [Provider Anthropic](../cmd/examples/provider-anthropic/) - Integration with Anthropic Claude
+- [Provider OpenAI](../cmd/examples/provider-openai/) - Integration with OpenAI models
+- [Provider Gemini](../cmd/examples/provider-gemini/) - Integration with Google Gemini
+- [Provider OpenAI Compatible](../cmd/examples/provider-openai-compatible/) - Using OpenRouter and Ollama
+- [Multi-Provider](../cmd/examples/provider-multi/) - Working with multiple providers
+- [Consensus](../cmd/examples/provider-consensus/) - Multi-provider consensus strategies
+- [Provider Options](../cmd/examples/provider-options/) - Provider configuration system
+- [Convenience](../cmd/examples/provider-convenience/) - Utility functions for common tasks
+- [Multimodal](../cmd/examples/provider-multimodal/) - Working with images, audio, and video content
 
 ### Built-in Tools Examples
-- [Built-in Tools Discovery](/cmd/examples/builtins-discovery/) - Discover and use built-in tools
-- [Built-in File Tools](/cmd/examples/builtins-file-tools/) - Enhanced file operations
-- [Built-in Web Tools](/cmd/examples/builtins-web-tools/) - Web operations (fetch, search, scrape, HTTP requests)
-- [Built-in Web API Client](/cmd/examples/builtins-web-api-client/) - Advanced API client with REST, OpenAPI, and GraphQL support
-- [Built-in API Client Auth](/cmd/examples/builtins-api-client-auth/) - Comprehensive authentication examples
-- [Built-in OpenAPI Discovery](/cmd/examples/builtins-openapi-discovery/) - OpenAPI spec discovery and automatic configuration
-- [Built-in GraphQL Client](/cmd/examples/builtins-graphql-client/) - GraphQL queries with schema introspection
-- [Built-ins Web Search Parallel](/cmd/examples/builtins-web-search-parallel/) - Production API key management with parallel web searches
-- [Built-in System Tools](/cmd/examples/builtins-system-tools/) - System operations (execute commands, environment variables, process list)
-- [Built-in Data Tools](/cmd/examples/builtins-data-tools/) - Data processing (JSON, CSV, XML, transformations)
-- [Built-in DateTime Tools](/cmd/examples/builtins-datetime-tools/) - Date and time operations
-- [Built-in Feed Tools](/cmd/examples/builtins-feed-tools/) - RSS, Atom, and JSON Feed processing
+- [Built-in Tools Discovery](../cmd/examples/builtins-discovery/) - Discover and use built-in tools
+- [Built-in File Tools](../cmd/examples/builtins-file-tools/) - Enhanced file operations
+- [Built-in Web Tools](../cmd/examples/builtins-web-tools/) - Web operations (fetch, search, scrape, HTTP requests)
+- [Built-in Web API Client](../cmd/examples/builtins-web-api-client/) - Advanced API client with REST, OpenAPI, and GraphQL support
+- [Built-in API Client Auth](../cmd/examples/builtins-api-client-auth/) - Comprehensive authentication examples
+- [Built-in OpenAPI Discovery](../cmd/examples/builtins-openapi-discovery/) - OpenAPI spec discovery and automatic configuration
+- [Built-in GraphQL Client](../cmd/examples/builtins-graphql-client/) - GraphQL queries with schema introspection
+- [Built-ins Web Search Parallel](../cmd/examples/builtins-web-search-parallel/) - Production API key management with parallel web searches
+- [Built-in System Tools](../cmd/examples/builtins-system-tools/) - System operations (execute commands, environment variables, process list)
+- [Built-in Data Tools](../cmd/examples/builtins-data-tools/) - Data processing (JSON, CSV, XML, transformations)
+- [Built-in DateTime Tools](../cmd/examples/builtins-datetime-tools/) - Date and time operations
+- [Built-in Feed Tools](../cmd/examples/builtins-feed-tools/) - RSS, Atom, and JSON Feed processing
 
 ### Agent Examples
-- [Agent Simple LLM](/cmd/examples/agent-simple-llm/) - Ultra-simple agent creation
-- [Agent LLM Built-in Tools](/cmd/examples/agent-llm-builtin-tools/) - Using built-in tools with agents
-- [Agent Structured Output](/cmd/examples/agent-structured-output/) - Structured output with schemas
-- [Agent Calculator](/cmd/examples/agent-calculator/) - Built-in calculator tool with LLM agents
-- [Agent Custom Research](/cmd/examples/agent-custom-research/) - Custom agent with sub-agent coordination
-- [Agent Sub-Agents](/cmd/examples/agent-sub-agents/) - Multi-agent coordination patterns
-- [Agent Multi-Coordination](/cmd/examples/agent-multi-coordination/) - Advanced multi-agent patterns
-- [Agent Tools Conversion](/cmd/examples/agent-tools-conversion/) - Converting between tools and agents
-- [Agent Workflow as Tool](/cmd/examples/agent-workflow-as-tool/) - Multi-stage research pipeline
-- [Agent Advanced Tool Context](/cmd/examples/agent-advanced-toolcontext/) - Advanced tool context management
-- [Agent State Persistence](/cmd/examples/agent-state-persistence/) - State management and persistence
-- [Agent Error Handling](/cmd/examples/agent-error-handling/) - Error handling in agents
-- [Agent Guardrails](/cmd/examples/agent-guardrails/) - Agent safety and constraints
-- [Agent Handoff](/cmd/examples/agent-handoff/) - Agent handoff patterns
-- [Agent Metrics Tools](/cmd/examples/agent-metrics-tools/) - Performance monitoring
+- [Agent Simple LLM](../cmd/examples/agent-simple-llm/) - Ultra-simple agent creation
+- [Agent LLM Built-in Tools](../cmd/examples/agent-llm-builtin-tools/) - Using built-in tools with agents
+- [Agent Structured Output](../cmd/examples/agent-structured-output/) - Structured output with schemas
+- [Agent Calculator](../cmd/examples/agent-calculator/) - Built-in calculator tool with LLM agents
+- [Agent Custom Research](../cmd/examples/agent-custom-research/) - Custom agent with sub-agent coordination
+- [Agent Sub-Agents](../cmd/examples/agent-sub-agents/) - Multi-agent coordination patterns
+- [Agent Multi-Coordination](../cmd/examples/agent-multi-coordination/) - Advanced multi-agent patterns
+- [Agent Tools Conversion](../cmd/examples/agent-tools-conversion/) - Converting between tools and agents
+- [Agent Workflow as Tool](../cmd/examples/agent-workflow-as-tool/) - Multi-stage research pipeline
+- [Agent Advanced Tool Context](../cmd/examples/agent-advanced-toolcontext/) - Advanced tool context management
+- [Agent State Persistence](../cmd/examples/agent-state-persistence/) - State management and persistence
+- [Agent Error Handling](../cmd/examples/agent-error-handling/) - Error handling in agents
+- [Agent Guardrails](../cmd/examples/agent-guardrails/) - Agent safety and constraints
+- [Agent Handoff](../cmd/examples/agent-handoff/) - Agent handoff patterns
+- [Agent Metrics Tools](../cmd/examples/agent-metrics-tools/) - Performance monitoring
 
 ### Workflow Examples
-- [Workflow Sequential](/cmd/examples/workflow-sequential/) - Sequential workflow patterns
-- [Workflow Parallel](/cmd/examples/workflow-parallel/) - Parallel workflow execution
-- [Workflow Conditional](/cmd/examples/workflow-conditional/) - Conditional workflow logic
-- [Workflow Loop](/cmd/examples/workflow-loop/) - Loop-based workflows
-- [Workflow Composition](/cmd/examples/workflow-composition/) - Complex workflow composition
-- [Workflow Multi-Provider](/cmd/examples/workflow-multi-provider/) - Multi-provider workflows
-- [Workflow Hooks](/cmd/examples/workflow-hooks/) - Workflow event handling
+- [Workflow Sequential](../cmd/examples/workflow-sequential/) - Sequential workflow patterns
+- [Workflow Parallel](../cmd/examples/workflow-parallel/) - Parallel workflow execution
+- [Workflow Conditional](../cmd/examples/workflow-conditional/) - Conditional workflow logic
+- [Workflow Loop](../cmd/examples/workflow-loop/) - Loop-based workflows
+- [Workflow Composition](../cmd/examples/workflow-composition/) - Complex workflow composition
+- [Workflow Multi-Provider](../cmd/examples/workflow-multi-provider/) - Multi-provider workflows
+- [Workflow Hooks](../cmd/examples/workflow-hooks/) - Workflow event handling
 
 ### Structured Output Examples
-- [Structured Schema](/cmd/examples/structured-schema/) - Schema generation from Go structs
-- [Structured Coercion](/cmd/examples/structured-coercion/) - Type coercion for validation
+- [Structured Schema](../cmd/examples/structured-schema/) - Schema generation from Go structs
+- [Structured Coercion](../cmd/examples/structured-coercion/) - Type coercion for validation
 
 ### Utility Examples
-- [Utils Model Info](/cmd/examples/utils-modelinfo/) - Model discovery and capability information
-- [Utils Profiling](/cmd/examples/utils-profiling/) - Performance profiling and monitoring
+- [Utils Model Info](../cmd/examples/utils-modelinfo/) - Model discovery and capability information
+- [Utils Profiling](../cmd/examples/utils-profiling/) - Performance profiling and monitoring
 
 ## 📖 Documentation Versions
 

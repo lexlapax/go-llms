@@ -1,6 +1,6 @@
 # Configuration Reference: All Configuration Options
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Reference](/docs/user-guide/reference/) / Configuration**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Reference](../../user-guide/reference) / Configuration**
 
 Complete reference for all configuration options in Go-LLMs, including environment variables, provider settings, agent options, and system configurations.
 
@@ -177,50 +177,24 @@ Alternative `~/.gollms/config.json`:
 ### OpenAI Options
 
 ```go
-provider, err := provider.NewOpenAI(provider.OpenAIOptions{
-    APIKey:       "sk-...",
-    Organization: "org-...",
-    BaseURL:      "https://api.openai.com",
-    HTTPClient:   customClient,
-    RetryConfig: RetryConfig{
-        MaxAttempts: 5,
-        InitialDelay: time.Second,
-        MaxDelay: 30 * time.Second,
-    },
-    DefaultOptions: map[string]interface{}{
-        "temperature": 0.7,
-        "max_tokens": 2000,
-        "top_p": 0.9,
-        "frequency_penalty": 0.0,
-        "presence_penalty": 0.0,
-        "logit_bias": map[string]float64{},
-        "user": "user-123",
-    },
-})
+provider := provider.NewOpenAIProvider(
+    domain.NewOpenAIOrganizationOption("org-..."),
+    domain.NewBaseURLOption("https://api.openai.com"),
+)
 ```
 
 ### Anthropic Options
 
 ```go
-provider, err := provider.NewAnthropic(provider.AnthropicOptions{
-    APIKey:  "sk-ant-...",
-    BaseURL: "https://api.anthropic.com",
-    DefaultOptions: map[string]interface{}{
-        "temperature": 0.7,
-        "max_tokens": 4000,
-        "top_p": 0.9,
-        "top_k": 40,
-        "metadata": map[string]string{
-            "user_id": "123",
-        },
-    },
-})
+provider := provider.NewAnthropicProvider(
+    domain.NewBaseURLOption("https://api.anthropic.com"),
+)
 ```
 
 ### Gemini Options
 
 ```go
-provider, err := provider.NewGemini(provider.GeminiOptions{
+provider, err := provider.NewGeminiProvider(os.Getenv("GOOGLE_API_KEY"), "gemini-pro", 
     APIKey: "AIza...",
     SafetySettings: map[string]string{
         "HARM_CATEGORY_HARASSMENT": "BLOCK_MEDIUM_AND_ABOVE",
@@ -234,13 +208,13 @@ provider, err := provider.NewGemini(provider.GeminiOptions{
         "top_k": 40,
         "max_output_tokens": 8192,
     },
-})
+}
 ```
 
 ### Vertex AI Options
 
 ```go
-provider, err := provider.NewVertexAI(provider.VertexAIOptions{
+provider, err := provider.NewVertexAIProvider("my-project", "us-central1", "gemini-pro", 
     ProjectID:    "my-project",
     Location:     "us-central1",
     Credentials:  "/path/to/credentials.json",
@@ -251,45 +225,25 @@ provider, err := provider.NewVertexAI(provider.VertexAIOptions{
         "top_p": 0.95,
         "top_k": 40,
     },
-})
+}
 ```
 
 ### Ollama Options
 
 ```go
-provider, err := provider.NewOllama(provider.OllamaOptions{
-    Host:    "http://localhost:11434",
-    Timeout: 120 * time.Second,
-    Models: []string{
-        "llama3",
-        "mistral",
-        "codellama",
-    },
-    DefaultOptions: map[string]interface{}{
-        "temperature": 0.8,
-        "num_predict": 128,
-        "top_k": 40,
-        "top_p": 0.9,
-        "repeat_penalty": 1.1,
-    },
-})
+provider := provider.NewOllamaProvider(
+    domain.NewTimeoutOption(120 * time.Second),
+)
 ```
 
 ### OpenRouter Options
 
 ```go
-provider, err := provider.NewOpenRouter(provider.OpenRouterOptions{
-    APIKey:   "sk-or-...",
-    SiteURL:  "https://myapp.com",
-    SiteName: "My Application",
-    BaseURL:  "https://openrouter.ai/api",
-    DefaultModel: "openai/gpt-3.5-turbo",
-    Preferences: map[string]interface{}{
-        "cost_preference": "lowest",
-        "speed_preference": "fastest",
-        "quality_preference": "balanced",
-    },
-})
+provider := provider.NewOpenRouterProvider(
+    domain.NewOpenRouterSiteURLOption("https://myapp.com"),
+    domain.NewOpenRouterSiteNameOption("My Application"),
+    domain.NewBaseURLOption("https://openrouter.ai/api"),
+)
 ```
 
 ---
@@ -656,6 +610,6 @@ func ValidateConfig(cfg *Config) error {
 
 - **[Error Codes Reference](error-codes-reference.md)** - Complete error handling guide
 - **[Best Practices Checklist](best-practices-checklist.md)** - Production readiness
-- **[Provider Setup Guide](/docs/user-guide/guides/provider-setup.md)** - Step-by-step setup
-- **[Environment Variables Guide](/docs/technical/configuration/environment-variables.md)** - Detailed env var documentation
-- **[Security Guide](/docs/user-guide/advanced/security-considerations.md)** - Security best practices
+- **[Provider Setup Guide](../../user-guide/guides/provider-setup.md)** - Step-by-step setup
+- **[Environment Variables Guide](../../technical/configuration/environment-variables.md)** - Detailed env var documentation
+- **[Security Guide](../../user-guide/advanced/security-considerations.md)** - Security best practices

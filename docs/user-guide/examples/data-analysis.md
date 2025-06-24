@@ -1,6 +1,6 @@
 # Data Analysis: Data Insights Generation
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Examples](/docs/user-guide/examples/) / Data Analysis**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Examples](../../user-guide/examples) / Data Analysis**
 
 Build an AI-powered data analysis and insights generation system that automates data processing, statistical analysis, visualization generation, and predictive modeling. This example demonstrates how to combine AI agents with data science workflows for comprehensive business intelligence.
 
@@ -340,7 +340,7 @@ func NewDataAnalysisSystem(config *AnalysisConfig) (*DataAnalysisSystem, error) 
     }
 
     // Create LLM provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
         provider.WithMaxTokens(4000),
     )
@@ -1591,7 +1591,7 @@ func (das *DataAnalysisSystem) StartAnalysisHandler(c *gin.Context) {
     c.JSON(http.StatusAccepted, gin.H{
         "message": "Analysis started",
         "status":  "processing",
-    })
+}
 }
 
 func (das *DataAnalysisSystem) GetProjectHandler(c *gin.Context) {
@@ -1993,8 +1993,8 @@ func main() {
             "status": "healthy",
             "max_data_points": config.MaxDataPoints,
             "methods_available": len(config.StatisticalMethods),
-        })
-    })
+}
+}
 
     log.Println("Data Analysis System starting on :8080")
     log.Fatal(r.Run(":8080"))

@@ -1,6 +1,6 @@
 # Error Codes Reference: Complete Error Handling Guide
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Reference](/docs/user-guide/reference/) / Error Codes**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Reference](../../user-guide/reference) / Error Codes**
 
 Comprehensive guide to all error codes, types, and handling strategies in Go-LLMs. Learn how to identify, handle, and recover from various error conditions.
 
@@ -596,6 +596,6 @@ func DebugErrorHandler(err error) {
 
 - **[Best Practices Checklist](best-practices-checklist.md)** - Production readiness guide
 - **[Configuration Reference](configuration-reference.md)** - Error-related configuration
-- **[Troubleshooting Guide](/docs/user-guide/advanced/troubleshooting.md)** - Advanced debugging
+- **[Troubleshooting Guide](../../user-guide/advanced/troubleshooting.md)** - Advanced debugging
 - **[Provider Comparison](provider-comparison.md)** - Provider-specific errors
-- **[Monitoring Guide](/docs/user-guide/advanced/production-deployment.md#monitoring)** - Error monitoring setup
+- **[Monitoring Guide](../../user-guide/advanced/production-deployment.md#monitoring)** - Error monitoring setup

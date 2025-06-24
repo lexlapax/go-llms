@@ -1,6 +1,6 @@
 # Provider Selection: Choosing the Right Provider
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Provider Selection**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Provider Selection**
 
 Master the art of choosing the optimal LLM provider for your specific use case. Learn to evaluate capabilities, costs, performance, and constraints to make informed decisions that drive success.
 

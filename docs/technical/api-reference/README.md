@@ -1,6 +1,6 @@
 # API Reference: Complete API Documentation
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / API Reference**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / API Reference**
 
 Comprehensive API reference for Go-LLMs v0.3.5+, covering all public interfaces, types, methods, and constants. This reference provides detailed technical documentation for developers building applications with the Go-LLMs library.
 
@@ -294,17 +294,17 @@ The following APIs are experimental and may change:
 
 ```go
 // Create a provider
-provider := openai.New(openai.Config{
+provider := provider.NewOpenAIProvider(
     APIKey: "your-api-key",
     Model:  "gpt-4",
-})
+}
 
 // Make a completion request
 response, err := provider.Complete(ctx, &llm.CompletionRequest{
     Messages: []llm.Message{
         {Role: "user", Content: "Hello, how are you?"},
     },
-})
+}
 ```
 
 ### Agent with Tools
@@ -314,7 +314,7 @@ response, err := provider.Complete(ctx, &llm.CompletionRequest{
 agent := agent.NewToolEnabledAgent(agent.Config{
     Name:     "assistant",
     Provider: provider,
-})
+}
 
 // Register tools
 agent.RegisterTool(tools.GetTool("http_request"))
@@ -330,19 +330,19 @@ result, err := agent.Execute(ctx, "Fetch weather data and parse it")
 // Create workflow
 workflow := agent.NewWorkflowAgent(agent.WorkflowConfig{
     Name: "data-pipeline",
-})
+}
 
 // Add steps
 workflow.AddStep(agent.WorkflowStep{
     Name: "fetch",
     Tool: "http_request",
-})
+}
 
 workflow.AddStep(agent.WorkflowStep{
     Name: "process",
     Tool: "json_processor",
     Dependencies: []string{"fetch"},
-})
+}
 
 // Execute workflow
 result, err := workflow.ExecuteWorkflow(ctx, input)
@@ -393,10 +393,10 @@ defer tool.Cleanup(ctx)
 
 ## Additional Resources
 
-- [User Guide](/docs/user-guide/) - High-level usage documentation
-- [Technical Documentation](/docs/technical/) - Architecture and design details
+- [User Guide](../../user-guide) - High-level usage documentation
+- [Technical Documentation](../../technical) - Architecture and design details
 - [Examples](/cmd/examples/) - Complete working examples
-- [Contributing Guide](/docs/technical/development/contributing.md) - Development guidelines
+- [Contributing Guide](../../technical/development/contributing.md) - Development guidelines
 
 ## Support
 

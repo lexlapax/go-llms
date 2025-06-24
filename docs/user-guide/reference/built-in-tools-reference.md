@@ -1,6 +1,6 @@
 # Built-in Tools Reference: Complete Tool Catalog
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Reference](/docs/user-guide/reference/) / Built-in Tools**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Reference](../../user-guide/reference) / Built-in Tools**
 
 Comprehensive catalog of all built-in tools available in Go-LLMs, organized by category with detailed parameters, examples, and best practices.
 
@@ -27,7 +27,7 @@ type Tool interface {
 ```go
 // Basic tool usage
 agent := core.NewLLMAgent("assistant", provider, core.WithTools(
-    tools.NewFileReadTool(),
+    tools.Tools.Get("file_read"),
     tools.NewWebFetchTool(),
     tools.NewCalculatorTool(),
 ))
@@ -50,10 +50,10 @@ allTools := registry.ListTools()
 
 **Example:**
 ```go
-tool := tools.NewFileReadTool()
+tool := tools.Tools.Get("file_read")
 result, err := tool.Execute(ctx, map[string]interface{}{
     "path": "/path/to/file.txt",
-})
+}
 ```
 
 **Output:** File contents as string
@@ -76,12 +76,12 @@ result, err := tool.Execute(ctx, map[string]interface{}{
 
 **Example:**
 ```go
-tool := tools.NewFileWriteTool()
+tool := tools.Tools.Get("file_write")
 result, err := tool.Execute(ctx, map[string]interface{}{
     "path": "/path/to/output.txt",
     "content": "Hello, World!",
     "mode": "append",
-})
+}
 ```
 
 **Output:** Success confirmation with bytes written
@@ -108,7 +108,7 @@ result, err := tool.Execute(ctx, map[string]interface{}{
     "path": "/home/user/documents",
     "recursive": true,
     "pattern": "*.pdf",
-})
+}
 ```
 
 **Output:** Array of file information objects
@@ -138,7 +138,7 @@ result, err := tool.Execute(ctx, map[string]interface{}{
     "pattern": "*.log",
     "content": "ERROR",
     "modified_after": "2024-01-01T00:00:00Z",
-})
+}
 ```
 
 **Output:** Array of matching file paths with metadata
@@ -159,7 +159,7 @@ tool := tools.NewFileMoveTool()
 result, err := tool.Execute(ctx, map[string]interface{}{
     "source": "/tmp/data.csv",
     "destination": "/data/processed/data_2024.csv",
-})
+}
 ```
 
 ---
@@ -177,7 +177,7 @@ tool := tools.NewFileDeleteTool()
 result, err := tool.Execute(ctx, map[string]interface{}{
     "path": "/tmp/old_files",
     "recursive": true,
-})
+}
 ```
 
 ---
@@ -205,7 +205,7 @@ result, err := tool.Execute(ctx, map[string]interface{}{
         "Authorization": "Bearer token",
     },
     "body": `{"query": "test"}`,
-})
+}
 ```
 
 **Output:** Response with status, headers, and body
@@ -232,7 +232,7 @@ tool := tools.NewWebFetchTool()
 result, err := tool.Execute(ctx, map[string]interface{}{
     "url": "https://example.com/article",
     "selector": "article.main-content",
-})
+}
 ```
 
 **Output:** Extracted text content or full page HTML
@@ -262,7 +262,7 @@ result, err := tool.Execute(ctx, map[string]interface{}{
         "next_selector": "a.next-page",
         "max_pages": 10,
     },
-})
+}
 ```
 
 ---
@@ -282,7 +282,7 @@ tool := tools.NewWebSearchTool()
 result, err := tool.Execute(ctx, map[string]interface{}{
     "query": "golang concurrency patterns",
     "num_results": 20,
-})
+}
 ```
 
 ---
@@ -311,7 +311,7 @@ result, err := tool.Execute(ctx, map[string]interface{}{
         "state": "open",
         "labels": "bug",
     },
-})
+}
 ```
 
 ---
@@ -326,10 +326,10 @@ result, err := tool.Execute(ctx, map[string]interface{}{
 
 **Example:**
 ```go
-tool := tools.NewSystemInfoTool()
+tool := tools.Tools.Get("system_info")
 result, err := tool.Execute(ctx, map[string]interface{}{
     "info_type": "memory",
-})
+}
 ```
 
 **Output:** System information based on requested type
@@ -352,7 +352,7 @@ result, err := tool.Execute(ctx, map[string]interface{}{
     "command": "grep",
     "args": []string{"-r", "ERROR", "/var/log"},
     "timeout": 60,
-})
+}
 ```
 
 **Security Warning:** This tool can execute arbitrary commands. Always validate inputs and use with extreme caution.
@@ -372,7 +372,7 @@ tool := tools.NewEnvVarTool()
 result, err := tool.Execute(ctx, map[string]interface{}{
     "name": "API_ENDPOINT",
     "default": "https://api.example.com",
-})
+}
 ```
 
 ---
@@ -390,7 +390,7 @@ tool := tools.NewProcessListTool()
 result, err := tool.Execute(ctx, map[string]interface{}{
     "filter": "python",
     "sort_by": "memory",
-})
+}
 ```
 
 ---
@@ -410,7 +410,7 @@ tool := tools.NewCalculatorTool()
 result, err := tool.Execute(ctx, map[string]interface{}{
     "expression": "(100 * 1.21) / 2 + sqrt(16)",
     "precision": 4,
-})
+}
 ```
 
 **Supported Operations:**
@@ -435,7 +435,7 @@ tool := tools.NewDateTimeNowTool()
 result, err := tool.Execute(ctx, map[string]interface{}{
     "timezone": "America/New_York",
     "format": "2006-01-02 15:04:05",
-})
+}
 ```
 
 ---
@@ -454,7 +454,7 @@ tool := tools.NewDateTimeParseTool()
 result, err := tool.Execute(ctx, map[string]interface{}{
     "date_string": "2024-01-15 14:30:00",
     "format": "2006-01-02 15:04:05",
-})
+}
 ```
 
 ---
@@ -484,7 +484,7 @@ result, err := tool.Execute(ctx, map[string]interface{}{
     "base_date": "2024-01-15",
     "operation": "add",
     "duration": "30d",
-})
+}
 ```
 
 ---
@@ -545,7 +545,7 @@ result, err := tool.Execute(ctx, map[string]interface{}{
     "data": jsonData,
     "operation": "get",
     "path": "$.users[?(@.age > 18)].name",
-})
+}
 ```
 
 ---
@@ -573,7 +573,7 @@ result, err := tool.Execute(ctx, map[string]interface{}{
     "data": "/path/to/data.csv",
     "operation": "filter",
     "condition": "age > 25 AND department = 'Sales'",
-})
+}
 ```
 
 ---
@@ -620,7 +620,7 @@ result, err := tool.Execute(ctx, map[string]interface{}{
         "pretty": true,
         "camel_case": true,
     },
-})
+}
 ```
 
 ---
@@ -641,7 +641,7 @@ tool := tools.NewFeedFetchTool()
 result, err := tool.Execute(ctx, map[string]interface{}{
     "url": "https://example.com/feed.xml",
     "limit": 20,
-})
+}
 ```
 
 ---
@@ -706,7 +706,7 @@ tool := tools.NewFeedDiscoverTool()
 result, err := tool.Execute(ctx, map[string]interface{}{
     "url": "https://blog.example.com",
     "types": []string{"rss", "atom"},
-})
+}
 ```
 
 ---
@@ -734,17 +734,17 @@ if err != nil {
 files, _ := fileListTool.Execute(ctx, map[string]interface{}{
     "path": "/data",
     "pattern": "*.json",
-})
+}
 
 for _, file := range files.([]string) {
     data, _ := fileReadTool.Execute(ctx, map[string]interface{}{
         "path": file,
-    })
+}
     
     processed, _ := jsonProcessTool.Execute(ctx, map[string]interface{}{
         "data": data,
         "operation": "transform",
-    })
+}
 }
 ```
 
@@ -760,7 +760,7 @@ for i, url := range urls {
         defer wg.Done()
         results[idx], _ = webFetchTool.Execute(ctx, map[string]interface{}{
             "url": u,
-        })
+}
     }(i, url)
 }
 
@@ -839,5 +839,5 @@ func (t *CustomTool) Execute(ctx context.Context, input interface{}) (interface{
 - **[Configuration Reference](configuration-reference.md)** - Detailed configuration options
 - **[Error Codes Reference](error-codes-reference.md)** - Complete error handling guide
 - **[Best Practices Checklist](best-practices-checklist.md)** - Production readiness
-- **[Creating Tools Guide](/docs/user-guide/guides/agent-tools.md)** - Build custom tools
-- **[Tool Examples](/docs/user-guide/examples/)** - Real-world tool usage
+- **[Creating Tools Guide](../../user-guide/guides/agent-tools.md)** - Build custom tools
+- **[Tool Examples](../../user-guide/examples)** - Real-world tool usage

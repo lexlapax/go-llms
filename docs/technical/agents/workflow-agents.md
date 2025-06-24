@@ -1,6 +1,6 @@
 # Workflow Agents: Sequential, Parallel, Conditional, and Loop Patterns
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Agents](/docs/technical/agents/) / Workflow Agents**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Agents](../../technical/agents) / Workflow Agents**
 
 Deep dive into workflow agent patterns in Go-LLMs, covering sequential execution, parallel processing, conditional branching, loop constructs, error handling strategies, and complex workflow orchestration for building sophisticated automated processes.
 
@@ -964,7 +964,7 @@ func (g *DecisionGateway) AddDecision(condition Condition, nextStep, description
         Condition:   condition,
         NextStep:    nextStep,
         Description: description,
-    })
+}
 }
 
 func (g *DecisionGateway) Name() string { return g.name }
@@ -1777,4 +1777,4 @@ func (s *CircuitBreakerStep) Validate() error { return s.step.Validate() }
 - **[State Management](state-management.md)** - Agent state and data flow
 - **[LLM Agents](llm-agents.md)** - AI-powered agents with tool support
 - **[Agent Overview](overview.md)** - Agent architecture and concepts
-- **[Agent API Reference](/docs/technical/api-reference/agents.md)** - Detailed API documentation
+- **[Agent API Reference](../../technical/api-reference/agents.md)** - Detailed API documentation

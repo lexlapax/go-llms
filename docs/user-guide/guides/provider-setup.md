@@ -1,6 +1,6 @@
 # Provider Setup: Environment Configuration and API Keys
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Provider Setup**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Provider Setup**
 
 Master the setup and configuration of all LLM providers. From getting API keys to advanced authentication, environment management, and production deployment strategies.
 
@@ -92,7 +92,7 @@ func main() {
     
     explicitAgent := core.NewLLMAgent("explicit-assistant", "gpt-4o-mini", core.LLMDeps{
         Provider: openaiProvider,
-    })
+}
 
     // Test the setup
     state := domain.NewState()
@@ -164,7 +164,7 @@ func main() {
 
     explicitAgent := core.NewLLMAgent("explicit-claude", "claude-3-5-sonnet-latest", core.LLMDeps{
         Provider: anthropicProvider,
-    })
+}
 
     // Test with a reasoning task (Claude's strength)
     state := domain.NewState()
@@ -227,7 +227,7 @@ func main() {
 
     explicitAgent := core.NewLLMAgent("explicit-gemini", "gemini-2.0-flash-latest", core.LLMDeps{
         Provider: geminiProvider,
-    })
+}
 
     // Test with a speed-focused task (Gemini's strength)
     state := domain.NewState()
@@ -309,7 +309,7 @@ func main() {
         ollamaProvider := provider.NewOllamaProvider(host, "llama3.2:3b")
         agent = core.NewLLMAgent("local-assistant", "llama3.2:3b", core.LLMDeps{
             Provider: ollamaProvider,
-        })
+}
     }
 
     // Test local model
@@ -384,7 +384,7 @@ func main() {
 
     explicitAgent := core.NewLLMAgent("explicit-openrouter", "claude-3.5-sonnet", core.LLMDeps{
         Provider: openrouterProvider,
-    })
+}
 
     // Test with model comparison task
     state := domain.NewState()
@@ -456,7 +456,7 @@ func main() {
     
     agent := core.NewLLMAgent("vertex-assistant", "gemini-pro", core.LLMDeps{
         Provider: vertexProvider,
-    })
+}
 
     // Test enterprise features
     state := domain.NewState()

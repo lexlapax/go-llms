@@ -1,6 +1,6 @@
 # Performance: Optimization Strategies and Benchmarking
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Advanced Topics](/docs/technical/advanced/) / Performance**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Advanced Topics](../../technical/advanced) / Performance**
 
 Comprehensive guide to performance optimization in Go-LLMs, covering profiling techniques, memory management, concurrency optimization, caching strategies, request batching, connection pooling, and systematic benchmarking for building high-performance LLM applications.
 
@@ -993,7 +993,7 @@ func (sc *SemanticCache) Get(query string) (*CompletionResponse, float64, error)
     // Generate embedding for query
     embedding, err := sc.embedder.CreateEmbedding(context.Background(), &EmbeddingRequest{
         Input: []string{query},
-    })
+}
     if err != nil {
         return nil, 0, fmt.Errorf("failed to create embedding: %w", err)
     }
@@ -1021,7 +1021,7 @@ func (sc *SemanticCache) Set(query string, response *CompletionResponse) error {
     // Generate embedding
     embedding, err := sc.embedder.CreateEmbedding(context.Background(), &EmbeddingRequest{
         Input: []string{query},
-    })
+}
     if err != nil {
         return fmt.Errorf("failed to create embedding: %w", err)
     }
@@ -1201,7 +1201,7 @@ func (bs *BenchmarkSuite) calculateMetrics(latencies []time.Duration, errors []e
     // Sort latencies for percentile calculations
     sort.Slice(latencies, func(i, j int) bool {
         return latencies[i] < latencies[j]
-    })
+}
     
     var totalLatency time.Duration
     for _, latency := range latencies {

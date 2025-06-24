@@ -1,6 +1,6 @@
 # Installation & Environment Setup
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Getting Started](/docs/user-guide/getting-started/) / Installation**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Getting Started](../../user-guide/getting-started) / Installation**
 
 Get Go-LLMs up and running in your development environment with this comprehensive setup guide.
 

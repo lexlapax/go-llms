@@ -1,6 +1,6 @@
 # Tool Interface Documentation
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [API Reference](/docs/technical/api-reference/) / Tools**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [API Reference](../../technical/api-reference) / Tools**
 
 Complete API reference for tool interfaces and implementations in Go-LLMs, covering core tool interfaces, built-in tools, tool registry, metadata systems, execution patterns, and tool lifecycle management.
 
@@ -97,7 +97,7 @@ Executes the tool with the provided input.
 result, err := tool.Execute(ctx, map[string]interface{}{
     "url": "https://api.example.com/data",
     "method": "GET",
-})
+}
 ```
 
 ### StatefulTool Interface

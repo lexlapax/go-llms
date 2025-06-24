@@ -1,6 +1,6 @@
 # Built-in Tools: Available Tools and Examples
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Tools](/docs/technical/tools/) / Built-in Tools**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Tools](../../technical/tools) / Built-in Tools**
 
 Comprehensive reference for all built-in tools available in Go-LLMs, including detailed documentation, usage examples, configuration options, and integration patterns for each tool category in the standard tool library.
 
@@ -51,7 +51,7 @@ func ExampleReadFileTool() {
         Path:     "/path/to/file.txt",
         Encoding: "utf-8",
         MaxSize:  1048576, // 1MB limit
-    })
+}
     
     if err != nil {
         log.Fatal(err)
@@ -109,7 +109,7 @@ func ExampleWriteFileTool() {
         Atomic:    true,
         Backup:    true,
         CreateDir: true,
-    })
+}
     
     if err != nil {
         log.Fatal(err)
@@ -163,7 +163,7 @@ func ExampleListDirectoryTool() {
         Pattern:   "*.go",
         SortBy:    "mod_time",
         SortOrder: "desc",
-    })
+}
     
     if err != nil {
         log.Fatal(err)
@@ -220,7 +220,7 @@ func ExampleSearchFilesTool() {
         MaxResults:   20,
         IncludeContent: true,
         CaseSensitive: false,
-    })
+}
     
     output := result.(*SearchFilesOutput)
     fmt.Printf("Found %d matching files\n", len(output.Results))
@@ -280,7 +280,7 @@ func ExampleHTTPRequestTool() {
             Type:  "bearer",
             Token: "github_token_here",
         },
-    })
+}
     
     // POST request with JSON body
     postResult, err := tool.Execute(context.Background(), HTTPRequestInput{
@@ -295,7 +295,7 @@ func ExampleHTTPRequestTool() {
             Key:  "X-API-Key",
             Value: "your_api_key",
         },
-    })
+}
     
     output := result.(*HTTPRequestOutput)
     fmt.Printf("Status: %d, Size: %d bytes\n", output.StatusCode, output.Size)
@@ -355,7 +355,7 @@ func ExampleWebScrapeTool() {
         },
         JavaScript: false,
         Timeout:    30,
-    })
+}
     
     output := result.(*WebScrapeOutput)
     fmt.Printf("Scraped: %s\n", output.Title)
@@ -403,7 +403,7 @@ func ExampleAPIClientTool() {
         RetryCount: 3,
         Cache:      true,
         CacheTTL:   600,
-    })
+}
     
     output := result.(*APIClientOutput)
     fmt.Printf("API Response: %v\n", output.Data)
@@ -447,7 +447,7 @@ func ExampleExecuteCommandTool() {
         WorkDir: "/home/user",
         Timeout: 10,
         Capture: true,
-    })
+}
     
     output := result.(*ExecuteCommandOutput)
     fmt.Printf("Exit code: %d\n", output.ExitCode)
@@ -518,7 +518,7 @@ func ExampleSystemInfoTool() {
     result, err := tool.Execute(context.Background(), SystemInfoInput{
         Include:  []string{"cpu", "memory", "disk"},
         Detailed: true,
-    })
+}
     
     output := result.(*SystemInfoOutput)
     fmt.Printf("OS: %s %s\n", output.OS.Name, output.OS.Version)
@@ -580,14 +580,14 @@ func ExampleJSONProcessorTool() {
         Data:      `{"users": [{"name": "John", "age": 30}, {"name": "Jane", "age": 25}]}`,
         Operation: "query",
         Query:     "$.users[?(@.age > 25)].name",
-    })
+}
     
     // Transform JSON structure
     transformResult, err := tool.Execute(context.Background(), JSONProcessorInput{
         Data:      map[string]interface{}{"a": 1, "b": 2},
         Operation: "transform",
         Transform: `{sum: (.a + .b), product: (.a * .b)}`,
-    })
+}
     
     // Validate against schema
     schemaResult, err := tool.Execute(context.Background(), JSONProcessorInput{
@@ -601,7 +601,7 @@ func ExampleJSONProcessorTool() {
             },
             "required": []string{"name", "age"},
         },
-    })
+}
     
     output := result.(*JSONProcessorOutput)
     fmt.Printf("Query result: %v\n", output.Result)
@@ -651,7 +651,7 @@ func ExampleTemplateRenderTool() {
             StrictMode: true,
             MissingKey: "error",
         },
-    })
+}
     
     output := result.(*TemplateRenderOutput)
     fmt.Printf("Rendered: %s\n", output.Rendered)
@@ -690,7 +690,7 @@ func ExampleCalculatorTool() {
     // Basic calculation
     result, err := tool.Execute(context.Background(), CalculatorInput{
         Expression: "2 + 3 * 4",
-    })
+}
     
     // With variables
     varResult, err := tool.Execute(context.Background(), CalculatorInput{
@@ -700,13 +700,13 @@ func ExampleCalculatorTool() {
             "b": 4,
         },
         Precision: 10,
-    })
+}
     
     // Complex numbers
     complexResult, err := tool.Execute(context.Background(), CalculatorInput{
         Expression: "(3+4i) * (2-i)",
         Mode:       "complex",
-    })
+}
     
     output := result.(*CalculatorOutput)
     fmt.Printf("Result: %v\n", output.Result)
@@ -755,7 +755,7 @@ func ExampleStatisticsTool() {
         Operations: []string{"mean", "median", "std", "histogram"},
         Bins: 5,
         Confidence: 0.95,
-    })
+}
     
     output := result.(*StatisticsOutput)
     fmt.Printf("Mean: %.2f, Median: %.2f, StdDev: %.2f\n", 
@@ -799,7 +799,7 @@ func ExampleDateParserTool() {
         Date:         "March 15, 2024 at 3:30 PM",
         Timezone:     "America/New_York",
         OutputFormat: "2006-01-02 15:04:05 MST",
-    })
+}
     
     // Parse with specific format
     specificResult, err := tool.Execute(context.Background(), DateParserInput{
@@ -807,7 +807,7 @@ func ExampleDateParserTool() {
         Format:       time.RFC3339,
         Timezone:     "UTC",
         OutputFormat: "January 2, 2006 at 3:04 PM",
-    })
+}
     
     output := result.(*DateParserOutput)
     fmt.Printf("Parsed: %s\n", output.Formatted)
@@ -857,7 +857,7 @@ func ExampleRegexTool() {
         Pattern:   `\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b`,
         Operation: "match",
         Global:    true,
-    })
+}
     
     // Replace with groups
     replaceResult, err := tool.Execute(context.Background(), RegexInput{
@@ -866,7 +866,7 @@ func ExampleRegexTool() {
         Operation: "replace",
         Replace:   "$2/$3/$1",
         Global:    true,
-    })
+}
     
     output := result.(*RegexOutput)
     fmt.Printf("Found %d matches\n", output.Count)

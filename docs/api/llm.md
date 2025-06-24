@@ -62,29 +62,29 @@ Creating providers with the factory pattern:
 provider, err := llm.NewProvider("openai", llm.ProviderConfig{
     APIKey: "your-api-key",
     Model: "gpt-4",
-})
+}
 
 // Create an Anthropic provider
 provider, err := llm.NewProvider("anthropic", llm.ProviderConfig{
     APIKey: "your-api-key",
     Model: "claude-3-opus-20240229",
-})
+}
 ```
 ## Examples
 
 ### Basic Completion
 
 ```go
-provider, err := openai.New(openai.Config{
-    APIKey: os.Getenv("OPENAI_API_KEY"),
-})
+provider, err := provider.NewOpenAIProvider(
+    // APIKey: os.Getenv("OPENAI_API_KEY"), // Moved to constructor parameters
+}
 
 response, err := provider.Complete(ctx, &llm.CompletionRequest{
     Messages: []llm.Message{
         {Role: "user", Content: "Hello, how are you?"},
     },
     Model: "gpt-3.5-turbo",
-})
+}
 ```
 
 ### Streaming Response

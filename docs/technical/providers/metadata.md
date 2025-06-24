@@ -1,6 +1,6 @@
 # Provider Metadata: Capabilities and Configuration
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Providers](/docs/technical/providers/) / Provider Metadata**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Providers](../../technical/providers) / Provider Metadata**
 
 Provider metadata defines capabilities, configuration schemas, and runtime characteristics for LLM providers in Go-LLMs. This document covers metadata structures, capability definitions, configuration validation, and dynamic metadata discovery.
 
@@ -924,7 +924,7 @@ func (u *MetadataUpdater) UpdateMetadata(metadata ProviderMetadata) error {
         Provider: metadata.Name,
         Version:  versioned.Version,
         Changes:  u.detectChanges(metadata),
-    })
+}
     
     return nil
 }
@@ -945,7 +945,7 @@ func (u *MetadataUpdater) detectChanges(new ProviderMetadata) []Change {
             Field:    "capabilities",
             OldValue: existing.Capabilities,
             NewValue: new.Capabilities,
-        })
+}
     }
     
     // Model changes
@@ -955,7 +955,7 @@ func (u *MetadataUpdater) detectChanges(new ProviderMetadata) []Change {
             Field:    "supported_models",
             OldValue: existing.SupportedModels,
             NewValue: new.SupportedModels,
-        })
+}
     }
     
     // Cost changes
@@ -965,7 +965,7 @@ func (u *MetadataUpdater) detectChanges(new ProviderMetadata) []Change {
             Field:    "cost",
             OldValue: existing.Cost,
             NewValue: new.Cost,
-        })
+}
     }
     
     return changes
@@ -1166,46 +1166,11 @@ func RegisterProviderWithMetadata() {
     
     // Register with factory function
     factory := func(config map[string]interface{}) (provider.Provider, error) {
-        return provider.NewOpenAI(provider.OpenAIOptions{
-            APIKey:       config["api_key"].(string),
-            Organization: getStringValue(config, "organization"),
-            BaseURL:      getStringValue(config, "base_url"),
-            Timeout:      time.Duration(getIntValue(config, "timeout")) * time.Second,
-        })
-    }
-    
-    if err := registry.Register("openai", factory, metadata); err != nil {
-        log.Fatalf("Failed to register OpenAI provider: %v", err)
-    }
-}
-
-// Usage examples
-func ExampleMetadataUsage() {
-    registry := provider.GetGlobalRegistry()
-    
-    // Find streaming-capable providers
-    streamingProviders := registry.Filter(func(info provider.ProviderInfo) bool {
-        for _, cap := range info.Metadata.Capabilities {
-            if cap == CapabilityStreaming {
-                return true
-            }
-        }
-        return false
-    })
-    
-    fmt.Printf("Found %d streaming providers\n", len(streamingProviders))
-    
-    // Find cheapest provider for text generation
-    cheapest := registry.DiscoverByCost(0.001)
-    if len(cheapest) > 0 {
-        fmt.Printf("Cheapest provider: %s (cost: $%.6f per token)\n",
-            cheapest[0].Name, getLowestInputCost(cheapest[0]))
-    }
-    
-    // Capability-based selection
-    visionProviders := registry.DiscoverByCapability(CapabilityVision, CapabilityFunctionCalling)
-    fmt.Printf("Found %d vision + function calling providers\n", len(visionProviders))
-}
+provider := provider.NewOpenAIProvider(return provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"), "gpt-4",
+    domain.NewOpenAIOrganizationOption(getStringValue(config, "organization")),
+    domain.NewBaseURLOption(getStringValue(config, "base_url")),
+    domain.NewTimeoutOption(time.Duration(getIntValue(config, "timeout")) * time.Second),
+)
 ```
 
 ---
@@ -1247,7 +1212,7 @@ func ExampleMetadataUsage() {
 ## Next Steps
 
 - **[Provider Registry](provider-registry.md)** - Dynamic registration and discovery
-- **[Agent Architecture](/docs/technical/agents/overview.md)** - Agent system design
-- **[Custom Providers](/docs/user-guide/advanced/custom-providers.md)** - Building custom providers
-- **[Provider Setup Guide](/docs/user-guide/guides/provider-setup.md)** - Configuration guide
-- **[API Reference](/docs/technical/api-reference/providers.md)** - Provider interface documentation
+- **[Agent Architecture](../../technical/agents/overview.md)** - Agent system design
+- **[Custom Providers](../../user-guide/advanced/custom-providers.md)** - Building custom providers
+- **[Provider Setup Guide](../../user-guide/guides/provider-setup.md)** - Configuration guide
+- **[API Reference](../../technical/api-reference/providers.md)** - Provider interface documentation

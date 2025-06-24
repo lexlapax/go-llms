@@ -1,6 +1,6 @@
 # Custom Tools: Advanced Tool Development
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Advanced Topics](/docs/user-guide/advanced/) / Custom Tools**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Advanced Topics](../../user-guide/advanced) / Custom Tools**
 
 Learn how to create powerful custom tools for Go-LLMs agents, including implementing the tool interface, handling complex inputs/outputs, supporting async operations, and integrating with external services.
 
@@ -1005,7 +1005,7 @@ func TestWeatherTool_Execute(t *testing.T) {
                 "humidity": 65
             }
         }`,
-    })
+}
     
     // Create tool with mock
     tool := NewWeatherTool("test-api-key",
@@ -1018,7 +1018,7 @@ func TestWeatherTool_Execute(t *testing.T) {
     result, err := tool.Execute(ctx, map[string]interface{}{
         "location": "London",
         "units":    "celsius",
-    })
+}
     
     require.NoError(t, err)
     
@@ -1049,7 +1049,7 @@ func TestWeatherTool_Caching(t *testing.T) {
     mockClient.SetResponse("https://api.weather.com/v1/current", MockResponse{
         Status: 200,
         Body:   `{"location": {"name": "Paris"}, "current": {"temperature": 15}}`,
-    })
+}
     
     result1, err := tool.Execute(ctx, input)
     require.NoError(t, err)
@@ -1079,7 +1079,7 @@ func TestWeatherTool_RateLimiting(t *testing.T) {
     for i := 0; i < 3; i++ {
         _, err := tool.Execute(ctx, map[string]interface{}{
             "location": fmt.Sprintf("City%d", i),
-        })
+}
         require.NoError(t, err)
     }
     
@@ -1150,7 +1150,7 @@ func TestWeatherTool_Integration(t *testing.T) {
             result, err := tool.Execute(ctx, tc.input)
             require.NoError(t, err)
             tc.validate(t, result)
-        })
+}
     }
 }
 ```
@@ -1180,13 +1180,13 @@ func TestWeatherTool_SchemaValidation(t *testing.T) {
     err = validator.Validate(map[string]interface{}{
         "location": "London",
         "units":    "celsius",
-    })
+}
     assert.NoError(t, err)
     
     // Invalid input - missing required field
     err = validator.Validate(map[string]interface{}{
         "units": "celsius",
-    })
+}
     assert.Error(t, err)
     assert.Contains(t, err.Error(), "location")
     
@@ -1194,14 +1194,14 @@ func TestWeatherTool_SchemaValidation(t *testing.T) {
     err = validator.Validate(map[string]interface{}{
         "location": 123,
         "units":    "celsius",
-    })
+}
     assert.Error(t, err)
     
     // Invalid input - invalid enum value
     err = validator.Validate(map[string]interface{}{
         "location": "London",
         "units":    "invalid",
-    })
+}
     assert.Error(t, err)
 }
 ```
@@ -1236,7 +1236,7 @@ func init() {
         }
         
         return NewWeatherTool(apiKey, opts...), nil
-    })
+}
 }
 ```
 
@@ -1355,7 +1355,7 @@ registry.Register(weatherTool, ToolMetadata{
             Output:      map[string]interface{}{"temperature": 20, "conditions": "Cloudy"},
         },
     },
-})
+}
 
 // Discover tools
 apiTools := registry.Discover(WithCategory("external_api"))
@@ -1613,7 +1613,7 @@ tools:
 ## Next Steps
 
 - **[Workflow Orchestration](workflow-orchestration.md)** - Combine tools in complex workflows
-- **[Built-in Tools Reference](/docs/user-guide/reference/built-in-tools-reference.md)** - Explore existing tools
-- **[Agent Tools Guide](/docs/user-guide/guides/agent-tools.md)** - Using tools with agents
-- **[Tool Discovery](/docs/technical/tools/tool-discovery.md)** - Runtime tool registration
-- **[API Reference](/docs/technical/api-reference/tools.md)** - Tool interface documentation
+- **[Built-in Tools Reference](../../user-guide/reference/built-in-tools-reference.md)** - Explore existing tools
+- **[Agent Tools Guide](../../user-guide/guides/agent-tools.md)** - Using tools with agents
+- **[Tool Discovery](../../technical/tools/tool-discovery.md)** - Runtime tool registration
+- **[API Reference](../../technical/api-reference/tools.md)** - Tool interface documentation

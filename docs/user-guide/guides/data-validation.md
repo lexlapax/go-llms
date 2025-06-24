@@ -1,6 +1,6 @@
 # Data Validation: Validation and Error Recovery
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Data Validation**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Data Validation**
 
 Master comprehensive data validation and error recovery strategies for LLM outputs. Build robust systems that handle edge cases, validate complex data structures, and recover gracefully from errors.
 
@@ -232,7 +232,7 @@ func (vs *ValidationSystem) ValidateData(schema *schemaDomain.Schema, data map[s
             Rule:     "json_schema",
             Message:  err.Error(),
             Severity: "error",
-        })
+}
     }
 
     // Layer 2: Business rules validation
@@ -246,7 +246,7 @@ func (vs *ValidationSystem) ValidateData(schema *schemaDomain.Schema, data map[s
                     Message:  err.Error(),
                     Value:    value,
                     Severity: "error",
-                })
+}
             }
         }
     }
@@ -277,7 +277,7 @@ func (vs *ValidationSystem) validateSecurity(data map[string]interface{}, result
                     Field:   field,
                     Message: fmt.Sprintf("String exceeds maximum length of %d characters", vs.securityValidator.maxStringLength),
                     Type:    "length",
-                })
+}
             }
 
             // Check for SQL injection patterns
@@ -288,7 +288,7 @@ func (vs *ValidationSystem) validateSecurity(data map[string]interface{}, result
                     Rule:     "sql_injection",
                     Message:  "Potential SQL injection detected",
                     Severity: "critical",
-                })
+}
             }
 
             // Check for script injection
@@ -299,7 +299,7 @@ func (vs *ValidationSystem) validateSecurity(data map[string]interface{}, result
                     Rule:     "script_injection",
                     Message:  "Potential script injection detected",
                     Severity: "critical",
-                })
+}
             }
 
             // Validate URLs against allowed domains
@@ -316,7 +316,7 @@ func (vs *ValidationSystem) validateSecurity(data map[string]interface{}, result
                         Field:   field,
                         Message: "URL points to untrusted domain",
                         Type:    "security",
-                    })
+}
                 }
             }
         }
@@ -341,7 +341,7 @@ func (vs *ValidationSystem) validateSemantics(data map[string]interface{}, resul
                                 Rule:     "semantic_dates",
                                 Message:  err.Error(),
                                 Severity: "error",
-                            })
+}
                         }
                     }
                 }
@@ -358,7 +358,7 @@ func (vs *ValidationSystem) validateSemantics(data map[string]interface{}, resul
                         Field:   "price",
                         Message: "Premium products typically have prices above $100",
                         Type:    "semantic",
-                    })
+}
                 }
             }
         }
@@ -698,7 +698,7 @@ func (ers *ErrorRecoverySystem) RecoverFromErrors(ctx context.Context, context R
                     Strategy:  strategy.name,
                     Success:   true,
                     Result:    recoveredData,
-                })
+}
                 
                 return result, nil
             }

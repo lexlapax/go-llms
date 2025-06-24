@@ -1,6 +1,6 @@
 # Agent Interface Documentation
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [API Reference](/docs/technical/api-reference/) / Agents**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [API Reference](../../technical/api-reference) / Agents**
 
 Complete API reference for agent interfaces and implementations in Go-LLMs, covering core agent interfaces, specialized agent types, workflow orchestration, state management, and multi-agent coordination patterns.
 
@@ -58,7 +58,7 @@ Executes the agent's main logic with the provided input.
 result, err := agent.Execute(ctx, map[string]interface{}{
     "task": "analyze data",
     "data": dataSet,
-})
+}
 ```
 
 ##### GetMetadata
@@ -282,7 +282,7 @@ llmAgent := agent.NewLLMAgent(agent.LLMAgentConfig{
     Temperature:  0.7,
     Model:        "gpt-4",
     Tools:        []string{"http_request", "file_reader"},
-})
+}
 
 // Register tools
 for _, toolName := range config.Tools {
@@ -833,7 +833,7 @@ func (a *ToolEnabledAgentImpl) ExecuteWithTools(ctx context.Context, task string
     
     // Verify tools are available
     for _, toolName := range requiredTools {
-        if _, err := a.toolRegistry.Get(toolName); err != nil {
+        if _, err := a.toolTools.Get(toolName); err != nil {
             return nil, fmt.Errorf("required tool %s not found: %w", toolName, err)
         }
     }

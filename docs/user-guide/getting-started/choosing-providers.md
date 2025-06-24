@@ -1,6 +1,6 @@
 # Choosing Providers: Your AI Partner Selection Guide
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Getting Started](/docs/user-guide/getting-started/) / Choosing Providers**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Getting Started](../../user-guide/getting-started) / Choosing Providers**
 
 Select the right LLM provider for your project with this comprehensive comparison guide. Each provider has unique strengths, costs, and use cases.
 

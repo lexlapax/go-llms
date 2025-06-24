@@ -1,6 +1,6 @@
 # Existing Systems: Adding LLM Capabilities
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Existing Systems**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Existing Systems**
 
 Transform legacy applications and existing systems by adding AI capabilities. Master gradual integration strategies, wrapper patterns, and bridge architectures that enhance existing functionality without disrupting operations.
 
@@ -100,7 +100,7 @@ type AIEnhancedResponse struct {
 
 func NewLegacySystemWrapper(config *SystemConfig) (*LegacySystemWrapper, error) {
     // Create LLM provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
         provider.WithMaxTokens(2000),
     )
@@ -184,7 +184,7 @@ func (lsw *LegacySystemWrapper) callLegacyEndpoint(ctx context.Context, endpoint
     result, err := lsw.agent.RunWithParams(ctx, state, map[string]interface{}{
         "tool": "api_client",
         "params": apiParams,
-    })
+}
     
     if err != nil {
         return nil, err
@@ -504,7 +504,7 @@ type RecommendedAction struct {
 
 func NewLegacyEventBridge(config *BridgeConfig) (*LegacyEventBridge, error) {
     // Create LLM provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
     )
     if err != nil {
@@ -632,7 +632,7 @@ func (leb *LegacyEventBridge) processEvent(ctx context.Context, event LegacyEven
             "processed_event": processed,
             "processor": processor.Name(),
         },
-    })
+}
 
     // Execute recommended actions
     leb.executeActions(ctx, processed.Actions)
@@ -1155,7 +1155,7 @@ func (eip *EnterpriseIntegrationPlatform) RegisterSystem(system *LegacySystem) e
         Operation: "system_registered",
         Data:      map[string]interface{}{"system": system},
         Result:    "success",
-    })
+}
 
     eip.logger.Info("System registered",
         zap.String("system_id", system.ID),

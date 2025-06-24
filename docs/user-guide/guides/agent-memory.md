@@ -1,6 +1,6 @@
 # Agent Memory: State Management Patterns
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Agent Memory**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Agent Memory**
 
 Master sophisticated memory management patterns for intelligent agents. Learn to implement conversation history, context persistence, hierarchical memory, and custom memory strategies to build agents that remember, learn, and adapt over time.
 
@@ -434,7 +434,7 @@ func (fms *FileMemoryStore) LoadSession(sessionID string) (*Session, error) {
             return filepath.SkipAll
         }
         return nil
-    })
+}
     
     if err != nil {
         return nil, err
@@ -488,7 +488,7 @@ func (fms *FileMemoryStore) ListSessions(userID string) ([]SessionSummary, error
                 Summary:     session.Summary,
                 Tags:        session.Tags,
                 MessageCount: len(session.State.GetMessages()),
-            })
+}
         }
     }
     
@@ -510,7 +510,7 @@ func (fms *FileMemoryStore) DeleteSession(sessionID string) error {
             return filepath.SkipAll
         }
         return nil
-    })
+}
     
     if err != nil {
         return err
@@ -1454,7 +1454,7 @@ func main() {
         "topic": "Go interfaces",
         "user_level": "beginner",
         "goal": "understand interface implementation",
-    })
+}
 
     fmt.Printf("📚 Learning episode started: %s\n", episode.ID)
 

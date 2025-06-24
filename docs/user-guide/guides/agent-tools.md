@@ -1,6 +1,6 @@
 # Agent Tools: Using and Creating Tools Effectively
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Agent Tools**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Agent Tools**
 
 Supercharge your agents with powerful tools. Learn to use Go-LLMs' 30+ built-in tools and create custom tools for specialized tasks. From simple calculations to complex API integrations.
 

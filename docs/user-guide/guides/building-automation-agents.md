@@ -1,6 +1,6 @@
 # Building Automation Agents: Task Automation Workflows
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Building Automation Agents**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Building Automation Agents**
 
 Master the creation of intelligent automation agents that can execute system commands, process files, call APIs, and orchestrate complex workflows. Build reliable systems that handle business processes, data pipelines, and infrastructure automation.
 
@@ -945,7 +945,7 @@ func (wo *WorkflowOrchestrator) setupWorkflowMonitoring(name string, workflow do
     }); ok {
         hookable.WithHook(func(event domain.Event) {
             wo.handleWorkflowEvent(name, event)
-        })
+}
     }
 }
 
@@ -1966,7 +1966,7 @@ func (pap *ProductionAutomationPlatform) ExecuteSecureAutomation(ctx context.Con
     // Execute in secure sandbox
     result, err := pap.security.ExecuteInSandbox(ctx, func() (*domain.State, error) {
         return pap.orchestrator.ExecuteWorkflow(ctx, workflowName, request.State)
-    })
+}
 
     // Log execution result
     resultAudit := AuditEntry{

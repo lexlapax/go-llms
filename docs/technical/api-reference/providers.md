@@ -1,6 +1,6 @@
 # Provider Interface Documentation
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [API Reference](/docs/technical/api-reference/) / Providers**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [API Reference](../../technical/api-reference) / Providers**
 
 Complete API reference for LLM provider interfaces and implementations in Go-LLMs, covering core provider interfaces, provider-specific implementations, configuration options, and usage patterns.
 
@@ -54,7 +54,7 @@ response, err := provider.Complete(ctx, &CompletionRequest{
         {Role: "user", Content: "What is the capital of France?"},
     },
     Model: "gpt-3.5-turbo",
-})
+}
 ```
 
 ##### GetCapabilities
@@ -222,19 +222,9 @@ func New(config Config) *Provider
 ```go
 import "github.com/lexlapax/go-llms/pkg/llm/provider/openai"
 
-provider := openai.New(openai.Config{
-    APIKey: os.Getenv("OPENAI_API_KEY"),
-    Model:  "gpt-4",
-})
-
-response, err := provider.Complete(ctx, &llm.CompletionRequest{
-    Messages: []llm.Message{
-        {Role: "system", Content: "You are a helpful assistant."},
-        {Role: "user", Content: "Explain quantum computing in simple terms."},
-    },
-    Temperature: &[]float64{0.7}[0],
-    MaxTokens:   &[]int{500}[0],
-})
+provider := provider.NewOpenAIProvider(
+    domain.NewTemperatureOption(&[]float64{0.7}[0]),
+)
 ```
 
 ### Anthropic Provider
@@ -267,17 +257,17 @@ func New(config Config) *Provider
 ```go
 import "github.com/lexlapax/go-llms/pkg/llm/provider/anthropic"
 
-provider := anthropic.New(anthropic.Config{
-    APIKey: os.Getenv("ANTHROPIC_API_KEY"),
+provider := provider.NewAnthropicProvider(
+    // APIKey: os.Getenv("ANTHROPIC_API_KEY"), // Moved to constructor parameters
     Model:  "claude-3-opus-20240229",
-})
+}
 
 response, err := provider.Complete(ctx, &llm.CompletionRequest{
     Messages: []llm.Message{
         {Role: "user", Content: "Write a haiku about programming."},
     },
     MaxTokens: &[]int{100}[0],
-})
+}
 ```
 
 ### Google Gemini Provider

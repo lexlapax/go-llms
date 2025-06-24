@@ -1,6 +1,6 @@
 # Agent State Management: State and Data Flow
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Agents](/docs/technical/agents/) / State Management**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Agents](../../technical/agents) / State Management**
 
 Comprehensive guide to agent state management in Go-LLMs, covering state architecture, persistence strategies, data flow patterns, state synchronization, versioning, and advanced state management techniques for building robust, stateful agents.
 
@@ -2242,4 +2242,4 @@ func removeDuplicates(slice []interface{}) []interface{} {
 - **[Workflow Agents](workflow-agents.md)** - Sequential, parallel, and conditional patterns
 - **[Multi-Agent Systems](multi-agent-systems.md)** - Coordination and communication
 - **[Agent Overview](overview.md)** - Agent architecture and concepts
-- **[Agent API Reference](/docs/technical/api-reference/agents.md)** - Detailed API documentation
+- **[Agent API Reference](../../technical/api-reference/agents.md)** - Detailed API documentation

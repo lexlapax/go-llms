@@ -112,7 +112,7 @@ func TestCalculator(t *testing.T) {
             
             require.NoError(t, err)
             assert.Equal(t, tt.expected, result)
-        })
+}
     }
 }
 ```
@@ -125,12 +125,12 @@ func TestAgentWithMockProvider(t *testing.T) {
     mockProvider.WithGenerateFunc(func(ctx context.Context, prompt string, opts ...Option) (Response, error) {
         assert.Contains(t, prompt, "weather")
         return Response{Content: "Sunny, 72°F"}, nil
-    })
+}
     
     // Create agent with mock
     agent := core.NewLLMAgent("test", "model", core.LLMDeps{
         Provider: mockProvider,
-    })
+}
     
     // Test agent behavior
     state := domain.NewState()
@@ -186,7 +186,7 @@ func TestAgentWithToolsIntegration(t *testing.T) {
     // Create agent
     agent := core.NewLLMAgent("assistant", "model", core.LLMDeps{
         Provider: provider,
-    })
+}
     
     // Add tools
     agent.AddTool(createTestCalculatorTool())
@@ -224,13 +224,13 @@ func TestEndToEndWorkflow(t *testing.T) {
     // Research agent (OpenAI)
     researcher := core.NewLLMAgent("researcher", "gpt-4", core.LLMDeps{
         Provider: openai,
-    })
+}
     researcher.SetSystemPrompt("You are a research assistant")
     
     // Analysis agent (Anthropic)
     analyst := core.NewLLMAgent("analyst", "claude-3", core.LLMDeps{
         Provider: anthropic,
-    })
+}
     analyst.SetSystemPrompt("You are a data analyst")
     
     // Build workflow
@@ -317,7 +317,7 @@ func TestErrorHandling(t *testing.T) {
             _, err := agent.Run(ctx, domain.NewState())
             assert.Error(t, err)
             assert.Contains(t, err.Error(), tt.expectedErr)
-        })
+}
     }
 }
 ```

@@ -1,6 +1,6 @@
 # Code Analysis: Code Review Systems
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Examples](/docs/user-guide/examples/) / Code Analysis**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Examples](../../user-guide/examples) / Code Analysis**
 
 Build an AI-powered code review and analysis system that automates code quality assessment, security vulnerability detection, performance optimization suggestions, and documentation generation. This example demonstrates how to integrate Go-LLMs with software development workflows.
 
@@ -270,7 +270,7 @@ func NewCodeAnalysisSystem(config *AnalysisConfig) (*CodeAnalysisSystem, error) 
     }
 
     // Create LLM provider
-    llm, err := provider.NewOpenAI(
+    llm, err := provider.NewOpenAIProvider(
         provider.WithModel("gpt-4"),
         provider.WithMaxTokens(3000),
     )
@@ -882,7 +882,7 @@ func (ga *GoAnalyzer) ParseFile(filePath string, content []byte) (*ParsedFile, e
                                     Name:     name.Name,
                                     Line:     fset.Position(name.Pos()).Line,
                                     IsPublic: name.IsExported(),
-                                })
+}
                             }
                         }
 
@@ -892,7 +892,7 @@ func (ga *GoAnalyzer) ParseFile(filePath string, content []byte) (*ParsedFile, e
             }
         }
         return true
-    })
+}
 
     // Calculate metrics
     lines := strings.Split(string(content), "\n")
@@ -946,7 +946,7 @@ func (ga *GoAnalyzer) DetectPatterns(parsed *ParsedFile, rules []SecurityRule) [
                     Rule:     rule.ID,
                     Category: rule.Category,
                     Confidence: 0.8,
-                })
+}
             }
         }
     }
@@ -983,7 +983,7 @@ func calculateCyclomaticComplexity(fn *ast.FuncDecl) int {
             complexity++
         }
         return true
-    })
+}
     
     return complexity
 }
@@ -1154,7 +1154,7 @@ func (cas *CodeAnalysisSystem) StartAnalysisHandler(c *gin.Context) {
     c.JSON(http.StatusAccepted, gin.H{
         "message": "Analysis started",
         "status":  "analyzing",
-    })
+}
 }
 
 func (cas *CodeAnalysisSystem) GetAnalysisHandler(c *gin.Context) {
@@ -1224,7 +1224,7 @@ func (cas *CodeAnalysisSystem) discoverFiles(repoPath string) ([]string, error) 
         }
         
         return nil
-    })
+}
     
     return files, err
 }
@@ -1416,8 +1416,8 @@ func main() {
         c.JSON(http.StatusOK, gin.H{
             "status": "healthy",
             "supported_languages": config.SupportedLanguages,
-        })
-    })
+}
+}
 
     log.Println("Code Analysis System starting on :8080")
     log.Fatal(r.Run(":8080"))

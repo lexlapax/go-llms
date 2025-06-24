@@ -1,6 +1,6 @@
 # Multimodal Content: Images, Audio, and Video
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Multimodal Content**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Multimodal Content**
 
 Master multimodal AI capabilities by processing images, audio, and video content with LLMs. Build intelligent systems that understand and analyze visual, auditory, and multimedia content across different providers.
 
@@ -81,13 +81,13 @@ func NewImageAnalyzer(providerStr string) (*ImageAnalyzer, error) {
     switch providerType {
     case "openai":
         options = append(options, provider.WithModel(model))
-        llmInstance, err = provider.NewOpenAI(options...)
+        llmInstance, err = provider.NewOpenAIProvider(options...)
     case "anthropic":
         options = append(options, provider.WithModel(model))
-        llmInstance, err = provider.NewAnthropic(options...)
+        llmInstance, err = provider.NewAnthropicProvider(options...)
     case "gemini":
         options = append(options, provider.WithModel(model))
-        llmInstance, err = provider.NewGemini(options...)
+        llmInstance, err = provider.NewGeminiProvider(options...)
     default:
         return nil, fmt.Errorf("unsupported provider: %s", providerType)
     }
@@ -371,7 +371,7 @@ func NewMultimodalProcessor(providerStr string) (*MultimodalProcessor, error) {
     switch providerType {
     case "gemini":
         options = append(options, provider.WithModel(model))
-        llmInstance, err = provider.NewGemini(options...)
+        llmInstance, err = provider.NewGeminiProvider(options...)
     default:
         return nil, fmt.Errorf("provider %s has limited multimodal support", providerType)
     }
@@ -518,7 +518,7 @@ func (mp *MultimodalProcessor) ProcessMixedContent(ctx context.Context, contents
                     Data:     encodedData,
                     MIMEType: content.MIMEType,
                 },
-            })
+}
 
         case "audio":
             if !mp.capabilities["audio"] {
@@ -531,7 +531,7 @@ func (mp *MultimodalProcessor) ProcessMixedContent(ctx context.Context, contents
                     Data:     encodedData,
                     MIMEType: content.MIMEType,
                 },
-            })
+}
 
         case "video":
             if !mp.capabilities["video"] {
@@ -544,7 +544,7 @@ func (mp *MultimodalProcessor) ProcessMixedContent(ctx context.Context, contents
                     Data:     encodedData,
                     MIMEType: content.MIMEType,
                 },
-            })
+}
         }
     }
 
@@ -1067,7 +1067,7 @@ func (mp *MultimodalPlatform) buildMessage(request ProcessingRequest) (domain.Me
                     Image: &domain.ImageContent{
                         URL: item.URL,
                     },
-                })
+}
             } else {
                 contentParts = append(contentParts, domain.ContentPart{
                     Type: domain.ContentTypeImage,
@@ -1075,7 +1075,7 @@ func (mp *MultimodalPlatform) buildMessage(request ProcessingRequest) (domain.Me
                         Data:     base64.StdEncoding.EncodeToString(item.Data),
                         MIMEType: item.MIMEType,
                     },
-                })
+}
             }
 
         case domain.ContentTypeAudio:
@@ -1085,7 +1085,7 @@ func (mp *MultimodalPlatform) buildMessage(request ProcessingRequest) (domain.Me
                     Data:     base64.StdEncoding.EncodeToString(item.Data),
                     MIMEType: item.MIMEType,
                 },
-            })
+}
 
         case domain.ContentTypeVideo:
             contentParts = append(contentParts, domain.ContentPart{
@@ -1094,7 +1094,7 @@ func (mp *MultimodalPlatform) buildMessage(request ProcessingRequest) (domain.Me
                     Data:     base64.StdEncoding.EncodeToString(item.Data),
                     MIMEType: item.MIMEType,
                 },
-            })
+}
         }
     }
 
@@ -1476,11 +1476,11 @@ func main() {
 
         switch name {
         case "openai":
-            llmInstance, err = provider.NewOpenAI(provider.WithModel(model))
+            llmInstance, err = provider.NewOpenAIProvider(provider.WithModel(model))
         case "anthropic":
-            llmInstance, err = provider.NewAnthropic(provider.WithModel(model))
+            llmInstance, err = provider.NewAnthropicProvider(provider.WithModel(model))
         case "gemini":
-            llmInstance, err = provider.NewGemini(provider.WithModel(model))
+            llmInstance, err = provider.NewGeminiProvider(provider.WithModel(model))
         }
 
         if err != nil {

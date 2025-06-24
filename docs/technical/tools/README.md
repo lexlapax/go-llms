@@ -208,7 +208,7 @@ compositeTool := tools.NewTool(
         // Use search tool
         searchResults, err := searchTool.Execute(ctx, map[string]interface{}{
             "query": params.Topic,
-        })
+}
         if err != nil {
             return nil, err
         }
@@ -216,7 +216,7 @@ compositeTool := tools.NewTool(
         // Use summary tool
         summary, err := summaryTool.Execute(ctx, map[string]interface{}{
             "text": searchResults,
-        })
+}
         
         return summary, err
     },
@@ -262,7 +262,7 @@ tool := tools.NewTool(
             Output: "Analysis results...",
         },
     },
-})
+}
 ```
 
 ## Testing Tools
@@ -275,7 +275,7 @@ func TestCalculatorTool(t *testing.T) {
         "operation": "multiply",
         "a": 5,
         "b": 6,
-    })
+}
     
     assert.NoError(t, err)
     assert.Equal(t, 30.0, result.(map[string]interface{})["result"])
@@ -285,7 +285,7 @@ func TestCalculatorTool(t *testing.T) {
         "operation": "divide",
         "a": 10,
         "b": 0,
-    })
+}
     
     assert.Error(t, err)
     assert.Contains(t, err.Error(), "division by zero")
@@ -301,7 +301,7 @@ func TestToolWithAgent(t *testing.T) {
     // Create agent with tool
     agent := core.NewLLMAgent("test", "model", core.LLMDeps{
         Provider: mockProvider,
-    })
+}
     agent.AddTool(calculator)
     
     // Set up mock to call tool

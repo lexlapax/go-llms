@@ -1,6 +1,6 @@
 # Performance Optimization: Tuning and Optimization Guide
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Advanced Topics](/docs/user-guide/advanced/) / Performance Optimization**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Advanced Topics](../../user-guide/advanced) / Performance Optimization**
 
 Comprehensive guide to optimizing Go-LLMs applications for maximum performance, efficiency, and scalability. Learn proven techniques for reducing latency, improving throughput, and minimizing costs.
 
@@ -32,9 +32,9 @@ import (
 
 // Benchmark single request performance
 func BenchmarkSingleRequest(b *testing.B) {
-    provider, _ := provider.NewOpenAI(provider.OpenAIOptions{
-        APIKey: os.Getenv("OPENAI_API_KEY"),
-    })
+    provider, _ := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"), "gpt-4", 
+    // APIKey: os.Getenv("OPENAI_API_KEY"), // Moved to constructor parameters
+}
     
     request := &CompletionRequest{
         Messages: []Message{{Role: "user", Content: "Hello"}},
@@ -52,9 +52,9 @@ func BenchmarkSingleRequest(b *testing.B) {
 
 // Benchmark concurrent requests
 func BenchmarkConcurrentRequests(b *testing.B) {
-    provider, _ := provider.NewOpenAI(provider.OpenAIOptions{
-        APIKey: os.Getenv("OPENAI_API_KEY"),
-    })
+    provider, _ := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"), "gpt-4", 
+    // APIKey: os.Getenv("OPENAI_API_KEY"), // Moved to constructor parameters
+}
     
     b.RunParallel(func(pb *testing.PB) {
         for pb.Next() {
@@ -63,7 +63,7 @@ func BenchmarkConcurrentRequests(b *testing.B) {
                 b.Fatal(err)
             }
         }
-    })
+}
 }
 ```
 
@@ -353,7 +353,7 @@ func (sc *SemanticCache) Set(query string, response *CompletionResponse) error {
         Query:     query,
         Response:  response,
         Timestamp: time.Now(),
-    })
+}
 }
 ```
 
@@ -910,7 +910,7 @@ func (pm *PerformanceMonitor) Check() {
         pm.alerter.Alert("High latency detected", map[string]interface{}{
             "current":   avgLatency,
             "threshold": pm.thresholds.MaxLatency,
-        })
+}
     }
     
     // Check cache performance
@@ -918,7 +918,7 @@ func (pm *PerformanceMonitor) Check() {
         pm.alerter.Alert("Low cache hit rate", map[string]interface{}{
             "current":   hitRate,
             "threshold": pm.thresholds.MinCacheHitRate,
-        })
+}
     }
     
     // Check memory usage
@@ -928,7 +928,7 @@ func (pm *PerformanceMonitor) Check() {
         pm.alerter.Alert("High memory usage", map[string]interface{}{
             "current":   m.Alloc,
             "threshold": pm.thresholds.MaxMemoryUsage,
-        })
+}
     }
 }
 ```
@@ -1015,5 +1015,5 @@ func (pm *PerformanceMonitor) Check() {
 - **[Production Deployment](production-deployment.md)** - Deploy optimized applications
 - **[Security Considerations](security-considerations.md)** - Security and performance balance
 - **[Troubleshooting Guide](troubleshooting.md)** - Debug performance issues
-- **[Best Practices Checklist](/docs/user-guide/reference/best-practices-checklist.md)** - Complete production checklist
-- **[Provider Comparison](/docs/user-guide/reference/provider-comparison.md)** - Provider performance characteristics
+- **[Best Practices Checklist](../../user-guide/reference/best-practices-checklist.md)** - Complete production checklist
+- **[Provider Comparison](../../user-guide/reference/provider-comparison.md)** - Provider performance characteristics

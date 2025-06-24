@@ -1,6 +1,6 @@
 # Local Providers: Ollama and Local Models
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Local Providers**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Local Providers**
 
 Master local LLM deployment with Ollama for complete privacy, offline operation, and cost control. Learn to set up, optimize, and scale local models for development and production use.
 
@@ -235,14 +235,14 @@ func recommendModels(info SystemInfo) []ModelRecommendation {
             MinRAM:      "16GB",
             Performance: "High",
             UseCase:     "Complex reasoning, coding, analysis",
-        })
+}
         recommendations = append(recommendations, ModelRecommendation{
             Name:        "codellama:13b",
             Size:        "13B parameters", 
             MinRAM:      "24GB",
             Performance: "High",
             UseCase:     "Advanced code generation and review",
-        })
+}
     }
 
     if info.MemoryGB >= 16 {
@@ -252,21 +252,21 @@ func recommendModels(info SystemInfo) []ModelRecommendation {
             MinRAM:      "4GB",
             Performance: "Good",
             UseCase:     "General conversation, basic tasks",
-        })
+}
         recommendations = append(recommendations, ModelRecommendation{
             Name:        "mistral:7b",
             Size:        "7B parameters",
             MinRAM:      "8GB", 
             Performance: "Good",
             UseCase:     "Efficient general purpose",
-        })
+}
         recommendations = append(recommendations, ModelRecommendation{
             Name:        "codellama:7b",
             Size:        "7B parameters",
             MinRAM:      "8GB",
             Performance: "Good",
             UseCase:     "Code generation and analysis",
-        })
+}
     }
 
     if info.MemoryGB >= 8 {
@@ -276,14 +276,14 @@ func recommendModels(info SystemInfo) []ModelRecommendation {
             MinRAM:      "4GB",
             Performance: "Fast",
             UseCase:     "Quick responses, lightweight tasks",
-        })
+}
         recommendations = append(recommendations, ModelRecommendation{
             Name:        "gemma:2b",
             Size:        "2B parameters",
             MinRAM:      "2GB",
             Performance: "Very Fast",
             UseCase:     "Ultra-lightweight tasks",
-        })
+}
     }
 
     // If insufficient RAM, recommend cloud alternatives
@@ -294,7 +294,7 @@ func recommendModels(info SystemInfo) []ModelRecommendation {
             MinRAM:      "N/A",
             Performance: "Variable",
             UseCase:     "Insufficient local resources",
-        })
+}
     }
 
     return recommendations

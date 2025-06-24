@@ -1,6 +1,6 @@
 # Provider Comparison: Feature Matrix and Selection Guide
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Reference](/docs/user-guide/reference/) / Provider Comparison**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Reference](../../user-guide/reference) / Provider Comparison**
 
 Choose the right LLM provider for your use case with this comprehensive comparison of capabilities, performance, costs, and recommended usage patterns.
 
@@ -28,11 +28,10 @@ Choose the right LLM provider for your use case with this comprehensive comparis
 
 #### Configuration
 ```go
-provider, err := provider.NewOpenAI(provider.OpenAIOptions{
-    APIKey:       os.Getenv("OPENAI_API_KEY"),
-    Organization: "org-123", // Optional
-    BaseURL:      "https://api.openai.com", // Default
-})
+provider := provider.NewOpenAIProvider(
+    domain.NewOpenAIOrganizationOption("org-123", // Optional),
+    domain.NewBaseURLOption("https://api.openai.com", // Default),
+)
 ```
 
 #### Strengths
@@ -71,9 +70,9 @@ provider, err := provider.NewOpenAI(provider.OpenAIOptions{
 
 #### Configuration
 ```go
-provider, err := provider.NewAnthropic(provider.AnthropicOptions{
-    APIKey: os.Getenv("ANTHROPIC_API_KEY"),
-})
+provider, err := provider.NewAnthropicProvider(os.Getenv("ANTHROPIC_API_KEY"), "claude-3-opus-20240229", 
+    // APIKey: os.Getenv("ANTHROPIC_API_KEY"), // Moved to constructor parameters
+}
 ```
 
 #### Strengths
@@ -112,12 +111,12 @@ provider, err := provider.NewAnthropic(provider.AnthropicOptions{
 
 #### Configuration
 ```go
-provider, err := provider.NewGemini(provider.GeminiOptions{
-    APIKey: os.Getenv("GOOGLE_API_KEY"),
+provider, err := provider.NewGeminiProvider(os.Getenv("GOOGLE_API_KEY"), "gemini-pro", 
+    // APIKey: os.Getenv("GOOGLE_API_KEY"), // Moved to constructor parameters
     SafetySettings: map[string]string{
         "HARM_CATEGORY_HARASSMENT": "BLOCK_MEDIUM_AND_ABOVE",
     },
-})
+}
 ```
 
 #### Strengths
@@ -157,11 +156,11 @@ provider, err := provider.NewGemini(provider.GeminiOptions{
 
 #### Configuration
 ```go
-provider, err := provider.NewVertexAI(provider.VertexAIOptions{
+provider, err := provider.NewVertexAIProvider("my-project", "us-central1", "gemini-pro", 
     ProjectID: "my-gcp-project",
     Location:  "us-central1",
     // Uses Application Default Credentials
-})
+}
 ```
 
 #### Strengths
@@ -200,10 +199,9 @@ provider, err := provider.NewVertexAI(provider.VertexAIOptions{
 
 #### Configuration
 ```go
-provider, err := provider.NewOllama(provider.OllamaOptions{
-    Host: "http://localhost:11434", // Default
-    Timeout: 120 * time.Second,
-})
+provider := provider.NewOllamaProvider(
+    domain.NewTimeoutOption(120 * time.Second),
+)
 ```
 
 #### Strengths
@@ -243,11 +241,10 @@ provider, err := provider.NewOllama(provider.OllamaOptions{
 
 #### Configuration
 ```go
-provider, err := provider.NewOpenRouter(provider.OpenRouterOptions{
-    APIKey:   os.Getenv("OPENROUTER_API_KEY"),
-    SiteURL:  "https://myapp.com",
-    SiteName: "My Application",
-})
+provider := provider.NewOpenRouterProvider(
+    domain.NewOpenRouterSiteURLOption("https://myapp.com"),
+    domain.NewOpenRouterSiteNameOption("My Application"),
+)
 ```
 
 #### Strengths
@@ -429,5 +426,5 @@ case "asia":
 - **[Built-in Tools Reference](built-in-tools-reference.md)** - Explore available tools for each provider
 - **[Configuration Reference](configuration-reference.md)** - Detailed configuration options
 - **[Best Practices Checklist](best-practices-checklist.md)** - Production readiness guide
-- **[Provider Setup Guide](/docs/user-guide/guides/provider-setup.md)** - Step-by-step configuration
-- **[Multi-Provider Strategies](/docs/user-guide/guides/multi-provider-strategies.md)** - Advanced patterns
+- **[Provider Setup Guide](../../user-guide/guides/provider-setup.md)** - Step-by-step configuration
+- **[Multi-Provider Strategies](../../user-guide/guides/multi-provider-strategies.md)** - Advanced patterns

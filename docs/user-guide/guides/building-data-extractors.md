@@ -1,6 +1,6 @@
 # Building Data Extractors: Reliable Data Processing Workflows
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Building Data Extractors**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Building Data Extractors**
 
 Transform unstructured text into reliable, validated data with Go-LLMs' powerful extraction capabilities. Learn to build production-ready data processing systems that handle emails, documents, web content, and more.
 

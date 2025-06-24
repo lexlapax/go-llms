@@ -1,6 +1,6 @@
 # Core Type Definitions
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [API Reference](/docs/technical/api-reference/) / Types**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [API Reference](../../technical/api-reference) / Types**
 
 Complete reference for core types, structs, interfaces, and constants used throughout Go-LLMs, including schema types, error types, structured output types, configuration types, and utility types.
 

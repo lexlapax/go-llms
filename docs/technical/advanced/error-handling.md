@@ -1,6 +1,6 @@
 # Error Handling: Error Types and Recovery Strategies
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Advanced Topics](/docs/technical/advanced/) / Error Handling**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Advanced Topics](../../technical/advanced) / Error Handling**
 
 Comprehensive guide to error handling in Go-LLMs, covering structured error types, error classification, recovery strategies, retry mechanisms, circuit breakers, graceful degradation patterns, and robust error reporting for building resilient LLM applications.
 
@@ -492,7 +492,7 @@ type RetryableProvider struct {
 func (rp *RetryableProvider) Complete(ctx context.Context, request *CompletionRequest) (*CompletionResponse, error) {
     result, err := rp.executor.Execute(ctx, func(ctx context.Context) (interface{}, error) {
         return rp.Provider.Complete(ctx, request)
-    })
+}
     
     if err != nil {
         return nil, err
@@ -686,7 +686,7 @@ type ProtectedProvider struct {
 func (pp *ProtectedProvider) Complete(ctx context.Context, request *CompletionRequest) (*CompletionResponse, error) {
     result, err := pp.circuitBreaker.Execute(ctx, func(ctx context.Context) (interface{}, error) {
         return pp.Provider.Complete(ctx, request)
-    })
+}
     
     if err != nil {
         return nil, err
@@ -803,7 +803,7 @@ func (dm *DegradationManager) TriggerDegradation(ctx context.Context, level int,
         Level:     level,
         Timestamp: time.Now(),
         Action:    "activated",
-    })
+}
     
     return nil
 }

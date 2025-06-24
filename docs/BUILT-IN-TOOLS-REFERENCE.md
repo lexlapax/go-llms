@@ -41,8 +41,8 @@ type Tool interface {
     Execute(ctx *ToolContext, params interface{}) (interface{}, error)
     
     // Schema definitions
-    ParameterSchema() *domain.Schema
-    OutputSchema() *domain.Schema
+    ParameterSchema() *ssdomain.Schema
+    OutputSchema() *ssdomain.Schema
     
     // LLM guidance
     UsageInstructions() string
@@ -92,7 +92,7 @@ tools.MustRegisterTool("tool_name", tool, tools.ToolMetadata{
         FileSystem:  true,
         Concurrency: true,
     },
-})
+}
 ```
 
 ### Discovery Methods
@@ -113,7 +113,7 @@ permTools := registry.ListByPermission("file:read")
 // Filter by resource usage
 lowMemTools := registry.ListByResourceUsage(tools.ResourceCriteria{
     MaxMemory: "low",
-})
+}
 ```
 
 ## Tool Categories
@@ -137,7 +137,7 @@ result, err := tool.Execute(ctx, ReadFileParams{
     LineStart: 100,
     LineEnd: 200,
     IncludeMeta: true,
-})
+}
 ```
 
 #### file_write
@@ -212,7 +212,7 @@ result, err := tool.Execute(ctx, HTTPRequestParams{
     Body: `{"key": "value"}`,
     AuthType: "bearer",
     AuthToken: "your-token",
-})
+}
 ```
 
 #### web_fetch
@@ -322,7 +322,7 @@ Performs mathematical calculations including arithmetic, trigonometry, and logar
 result, err := tool.Execute(ctx, CalculatorParams{
     Operation: "sin",
     Operand1: math.Pi/2,
-})
+}
 ```
 
 ### Date/Time Tools
@@ -519,10 +519,10 @@ ctx := &domain.ToolContext{
 }
 
 // Execute with parameters
-result, err := tool.Execute(ctx, file.ReadFileParams{
+result, err := tool.Execute(ctx, map[string]interface{}{
     Path: "/path/to/file.txt",
     IncludeMeta: true,
-})
+}
 
 if err != nil {
     // Handle error with guidance
@@ -583,13 +583,13 @@ ctx.Events.On("progress", func(event domain.Event) {
     progress := event.Data.(domain.ProgressData)
     fmt.Printf("Progress: %d/%d - %s\n", 
         progress.Current, progress.Total, progress.Message)
-})
+}
 
 ctx.Events.On("file_read_complete", func(event domain.Event) {
     data := event.Data.(map[string]interface{})
     fmt.Printf("Read %d bytes in %s\n", 
         data["bytes_read"], data["elapsed_time"])
-})
+}
 ```
 
 ## Tool Integration Patterns
@@ -629,9 +629,9 @@ func executeToolSafely(tool domain.Tool, ctx *domain.ToolContext, params interfa
 func processDataPipeline(ctx *domain.ToolContext) error {
     // Step 1: Read file
     readTool := file.ReadFile()
-    data, err := readTool.Execute(ctx, file.ReadFileParams{
+    data, err := readTool.Execute(ctx, map[string]interface{}{
         Path: "/data/input.json",
-    })
+}
     if err != nil {
         return err
     }
@@ -642,17 +642,17 @@ func processDataPipeline(ctx *domain.ToolContext) error {
         Data: data.(*file.ReadFileResult).Content,
         Operation: "transform",
         Transform: "flatten",
-    })
+}
     if err != nil {
         return err
     }
     
     // Step 3: Write result
     writeTool := file.WriteFile()
-    _, err = writeTool.Execute(ctx, file.WriteFileParams{
+    _, err = writeTool.Execute(ctx, map[string]interface{}{
         Path: "/data/output.json",
         Content: processed.(*data.JSONProcessOutput).Result.(string),
-    })
+}
     
     return err
 }
@@ -705,7 +705,7 @@ func RegisterCustomTools() {
         ResourceUsage: tools.ResourceInfo{
             Memory: "low",
         },
-    })
+}
 }
 ```
 

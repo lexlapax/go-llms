@@ -50,7 +50,7 @@ func main() {
     // Create chat agent
     chatAgent := core.NewLLMAgent("chatbot", "gpt-4", core.LLMDeps{
         Provider: openaiProvider,
-    })
+}
     
     // Configure personality
     chatAgent.SetSystemPrompt(`You are a friendly and helpful assistant. 
@@ -160,7 +160,7 @@ func main() {
     // Create chat agent
     chatAgent := core.NewLLMAgent("memory-chatbot", "gpt-4", core.LLMDeps{
         Provider: openaiProvider,
-    })
+}
     
     // Configure with memory-aware personality
     chatAgent.SetSystemPrompt(`You are a friendly assistant with a good memory. 
@@ -349,7 +349,7 @@ func main() {
     // Create assistant agent
     assistant := core.NewLLMAgent("smart-assistant", "gpt-4", core.LLMDeps{
         Provider: openaiProvider,
-    })
+}
     
     // Configure with tool-aware personality
     assistant.SetSystemPrompt(`You are a helpful AI assistant with access to tools.
@@ -495,7 +495,7 @@ func NewChatApp(configPath string) (*ChatApp, error) {
     // Create agent
     agent := core.NewLLMAgent("chat-app", config.Model, core.LLMDeps{
         Provider: prov,
-    })
+}
     
     agent.SetSystemPrompt(config.SystemPrompt)
     agent.SetTimeout(time.Duration(config.Timeout) * time.Second)

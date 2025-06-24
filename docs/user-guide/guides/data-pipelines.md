@@ -1,6 +1,6 @@
 # Data Pipelines: End-to-End Processing Workflows
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Data Pipelines**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Data Pipelines**
 
 Build sophisticated data processing pipelines that combine LLM capabilities with traditional data workflows. Master the art of creating scalable, reliable, and maintainable data transformation systems.
 
@@ -283,7 +283,7 @@ Return the extracted information as structured JSON.`, doc.Content)
             Document:      doc,
             ExtractedData: extractedData,
             ProcessedAt:   time.Now(),
-        })
+}
     }
 
     return processed, nil
@@ -1104,7 +1104,7 @@ func ComplexPipelineExample() {
             }
             
             return data, nil
-        })
+}
 
     // Stage 3: Windowed aggregation for metrics
     metricAggregator := NewWindowedAggregationStage("metric-aggregator", 
@@ -1143,7 +1143,7 @@ func ComplexPipelineExample() {
             }
             
             return aggregated
-        })
+}
 
     // Stage 4: AI enrichment for logs
     logEnricher := NewEnrichmentStage("log-enricher", agent,
@@ -1176,7 +1176,7 @@ Return as JSON with fields: severity, component, key_info, action`, logContent)
             }
             
             return data, nil
-        })
+}
 
     // Connect stages
     ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -1655,7 +1655,7 @@ func (dpp *DataPipelinePlatform) setupDefaultAlerts() {
         },
         Severity: "high",
         Message:  "Pipeline success rate below 80%",
-    })
+}
 
     // Performance degradation alert
     dpp.alertManager.AddRule(AlertRule{
@@ -1666,7 +1666,7 @@ func (dpp *DataPipelinePlatform) setupDefaultAlerts() {
         },
         Severity: "medium",
         Message:  "Pipeline throughput degraded by 50%",
-    })
+}
 
     // Resource usage alert
     dpp.alertManager.AddRule(AlertRule{
@@ -1677,7 +1677,7 @@ func (dpp *DataPipelinePlatform) setupDefaultAlerts() {
         },
         Severity: "high",
         Message:  "High resource usage detected",
-    })
+}
 }
 
 // Pipeline CRUD operations
@@ -1841,7 +1841,7 @@ func (dpp *DataPipelinePlatform) RunPipeline(id string, input interface{}) (*Pip
                 Severity:   "high",
                 Message:    fmt.Sprintf("Pipeline %s failed: %v", pipeline.Name, err),
                 Timestamp:  time.Now(),
-            })
+}
         } else {
             run.Status = StatusCompleted
             pipeline.Status = StatusCompleted
@@ -2214,7 +2214,7 @@ func (pb *PipelineBuilder) AddStage(stageType, name string, config map[string]in
         Type:   stageType,
         Name:   name,
         Config: config,
-    })
+}
     return pb
 }
 
@@ -2322,7 +2322,7 @@ func main() {
             Type:     "interval",
             Interval: 1 * time.Hour,
             MaxRuns:  24, // Run for 24 hours
-        })
+}
 
     // Create pipeline
     pipeline, err := platform.CreatePipeline(builder)
@@ -2335,7 +2335,7 @@ func main() {
     // List pipelines
     pipelines := platform.ListPipelines(PipelineFilter{
         Tags: []string{"production"},
-    })
+}
 
     fmt.Printf("\n📋 Production Pipelines:\n")
     for _, p := range pipelines {

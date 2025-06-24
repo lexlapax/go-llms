@@ -1,6 +1,6 @@
 # Multi-Agent Systems: Coordination and Communication
 
-> **[Project Root](/) / [Documentation](/docs/) / [Technical Documentation](/docs/technical/) / [Agents](/docs/technical/agents/) / Multi-Agent Systems**
+> **[Project Root](/) / [Documentation](../..) / [Technical Documentation](../../technical) / [Agents](../../technical/agents) / Multi-Agent Systems**
 
 Comprehensive guide to building and orchestrating multi-agent systems in Go-LLMs, covering agent coordination patterns, communication protocols, consensus mechanisms, distributed task execution, and collaborative problem-solving architectures.
 
@@ -767,7 +767,7 @@ func (o *CoordinationOrchestrator) CreateBarrier(name string, agentIDs []string)
             "agent_ids": agentIDs,
         },
         Timestamp: time.Now(),
-    })
+}
     
     return barrier, nil
 }
@@ -789,7 +789,7 @@ func (o *CoordinationOrchestrator) WaitAtBarrier(ctx context.Context, barrierNam
             "agent_id": agentID,
         },
         Timestamp: time.Now(),
-    })
+}
     
     err := barrier.Wait(ctx, agentID)
     
@@ -802,7 +802,7 @@ func (o *CoordinationOrchestrator) WaitAtBarrier(ctx context.Context, barrierNam
                 "agent_id": agentID,
             },
             Timestamp: time.Now(),
-        })
+}
     }
     
     return err
@@ -2340,4 +2340,4 @@ func intSliceToFloat64(ints []int) []float64 {
 - **[LLM Agents](llm-agents.md)** - AI-powered agents with tool support
 - **[Workflow Agents](workflow-agents.md)** - Sequential, parallel, and conditional patterns
 - **[Agent Overview](overview.md)** - Agent architecture and concepts
-- **[Agent API Reference](/docs/technical/api-reference/agents.md)** - Detailed API documentation
+- **[Agent API Reference](../../technical/api-reference/agents.md)** - Detailed API documentation

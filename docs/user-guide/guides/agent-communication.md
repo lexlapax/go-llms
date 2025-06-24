@@ -1,6 +1,6 @@
 # Agent Communication: Coordination and Handoffs
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Guides](/docs/user-guide/guides/) / Agent Communication**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Guides](../../user-guide/guides) / Agent Communication**
 
 Master the art of multi-agent coordination with sophisticated communication patterns, handoff mechanisms, and collaborative workflows. Build systems where specialized agents work together seamlessly to solve complex problems.
 
@@ -353,7 +353,7 @@ func main() {
     pipeline.SetStageTransform("outliner", func(input interface{}) interface{} {
         // Transform research data into outline-friendly format
         return fmt.Sprintf("Research data for outline creation:\n%v\n\nCreate a detailed outline based on this research.", input)
-    })
+}
 
     pipeline.SetStageValidator("researcher", func(output interface{}) error {
         // Validate that research contains key elements
@@ -362,7 +362,7 @@ func main() {
             return fmt.Errorf("research output too short, expected comprehensive research")
         }
         return nil
-    })
+}
 
     // Test the pipeline with different topics
     topics := []string{
@@ -1977,7 +1977,7 @@ func (ah *AgentHierarchy) getDirectReportInfo(manager *HierarchicalAgent) []map[
             "capabilities":  report.Capabilities,
             "authority":     report.Authority,
             "status":        report.Status,
-        })
+}
     }
     return reports
 }

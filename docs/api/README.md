@@ -63,9 +63,9 @@ This section provides comprehensive API documentation for all go-llms packages, 
 
 ## Quick Links
 
-- [Getting Started Guide](/docs/user-guide/getting-started.md)
+- [Getting Started Guide](../user-guide/getting-started.md)
 - [Examples Directory](/cmd/examples/)
-- [Technical Documentation](/docs/technical/)
+- [Technical Documentation](../technical)
 - [Contributing Guide](/CONTRIBUTING.md)
 
 ## API Stability

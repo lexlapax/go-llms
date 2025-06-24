@@ -1,8 +1,23 @@
 # Custom Providers: Creating Custom LLM Providers
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Advanced Topics](/docs/user-guide/advanced/) / Custom Providers**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Advanced Topics](../../user-guide/advanced) / Custom Providers**
 
 Learn how to create custom LLM providers for Go-LLMs, including implementing the provider interface, handling authentication, supporting streaming, and integrating with the provider registry.
+
+## Prerequisites
+
+Before creating a custom provider, ensure you have:
+
+- **Go Programming Knowledge**: Strong understanding of Go interfaces, goroutines, and channels
+- **HTTP/REST APIs**: Experience with HTTP clients, request/response handling, and streaming APIs
+- **LLM API Familiarity**: Understanding of how LLM APIs work (tokens, completions, embeddings)
+- **Error Handling**: Knowledge of Go error handling patterns and best practices
+- **Testing**: Experience with Go testing, mocking, and benchmarking
+
+**Required Reading**:
+- [Provider Overview](../../technical/providers/overview.md) - Core provider concepts
+- [Key Concepts](../../user-guide/getting-started/key-concepts.md) - Go-LLMs fundamentals
+- [API Reference - Providers](../../technical/api-reference/providers.md) - Provider interface details
 
 ## Provider Architecture Overview
 
@@ -606,14 +621,14 @@ func (p *CustomProvider) CompleteWithImages(ctx context.Context, req *provider.V
                     ImageURL: &customImageURL{
                         URL: img.URL,
                     },
-                })
+}
             } else if img.Base64 != "" {
                 content = append(content, customVisionContent{
                     Type: "image_url",
                     ImageURL: &customImageURL{
                         URL: fmt.Sprintf("data:image/jpeg;base64,%s", img.Base64),
                     },
-                })
+}
             }
         }
         
@@ -966,7 +981,7 @@ func init() {
         }
         
         return NewCustomProvider(opts)
-    })
+}
 }
 ```
 
@@ -1106,7 +1121,7 @@ func TestCustomProvider_Complete(t *testing.T) {
     provider, err := NewCustomProvider(CustomOptions{
         APIKey:  "test-key",
         BaseURL: server.URL + "/v1",
-    })
+}
     require.NoError(t, err)
     
     // Test completion
@@ -1115,7 +1130,7 @@ func TestCustomProvider_Complete(t *testing.T) {
         Messages: []provider.Message{
             {Role: "user", Content: "Hello"},
         },
-    })
+}
     
     require.NoError(t, err)
     assert.Equal(t, "Hello!", resp.Content)
@@ -1138,7 +1153,7 @@ func TestCustomProvider_StreamComplete(t *testing.T) {
     provider, err := NewCustomProvider(CustomOptions{
         APIKey:  "test-key",
         BaseURL: server.URL + "/v1",
-    })
+}
     require.NoError(t, err)
     
     // Test streaming
@@ -1147,7 +1162,7 @@ func TestCustomProvider_StreamComplete(t *testing.T) {
         Messages: []provider.Message{
             {Role: "user", Content: "Hello"},
         },
-    })
+}
     require.NoError(t, err)
     
     // Collect chunks
@@ -1173,8 +1188,8 @@ func TestCustomProvider_Integration(t *testing.T) {
     
     // Use real API
     provider, err := NewCustomProvider(CustomOptions{
-        APIKey: os.Getenv("CUSTOM_API_KEY"),
-    })
+    // APIKey: os.Getenv("CUSTOM_API_KEY"), // Moved to constructor parameters
+}
     require.NoError(t, err)
     
     ctx := context.Background()
@@ -1184,7 +1199,7 @@ func TestCustomProvider_Integration(t *testing.T) {
         models, err := provider.ListModels(ctx)
         require.NoError(t, err)
         assert.NotEmpty(t, models)
-    })
+}
     
     // Test completion
     t.Run("Complete", func(t *testing.T) {
@@ -1194,12 +1209,12 @@ func TestCustomProvider_Integration(t *testing.T) {
                 {Role: "user", Content: "What is 2+2?"},
             },
             MaxTokens: 10,
-        })
+}
         
         require.NoError(t, err)
         assert.NotEmpty(t, resp.Content)
         assert.Contains(t, resp.Content, "4")
-    })
+}
     
     // Test error handling
     t.Run("InvalidModel", func(t *testing.T) {
@@ -1208,13 +1223,13 @@ func TestCustomProvider_Integration(t *testing.T) {
             Messages: []provider.Message{
                 {Role: "user", Content: "Test"},
             },
-        })
+}
         
         require.Error(t, err)
         var customErr *CustomProviderError
         assert.ErrorAs(t, err, &customErr)
         assert.Equal(t, 404, customErr.StatusCode)
-    })
+}
 }
 ```
 
@@ -1276,7 +1291,7 @@ func main() {
         "provider": "custom",
         "api_key":  os.Getenv("CUSTOM_API_KEY"),
         "timeout":  30,
-    })
+}
     if err != nil {
         log.Fatal(err)
     }
@@ -1288,7 +1303,7 @@ func main() {
             {Role: "system", Content: "You are a helpful assistant."},
             {Role: "user", Content: "Hello!"},
         },
-    })
+}
     
     if err != nil {
         log.Fatal(err)
@@ -1345,5 +1360,5 @@ func main() {
 - **[Custom Tools](custom-tools.md)** - Create custom tools for agents
 - **[Workflow Orchestration](workflow-orchestration.md)** - Advanced workflow patterns
 - **[Production Deployment](production-deployment.md)** - Deploy custom providers
-- **[Provider Comparison](/docs/user-guide/reference/provider-comparison.md)** - Compare with built-in providers
-- **[API Reference](/docs/technical/api-reference/providers.md)** - Provider interface details
+- **[Provider Comparison](../../user-guide/reference/provider-comparison.md)** - Compare with built-in providers
+- **[API Reference](../../technical/api-reference/providers.md)** - Provider interface details

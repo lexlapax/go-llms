@@ -1,6 +1,6 @@
 # Security Considerations: Security Best Practices
 
-> **[Project Root](/) / [Documentation](/docs/) / [User Guide](/docs/user-guide/) / [Advanced Topics](/docs/user-guide/advanced/) / Security Considerations**
+> **[Project Root](/) / [Documentation](../..) / [User Guide](../../user-guide) / [Advanced Topics](../../user-guide/advanced) / Security Considerations**
 
 Comprehensive security guide for Go-LLMs applications covering API key management, data protection, input validation, access control, and compliance requirements.
 
@@ -322,7 +322,7 @@ func (pr *PIIRedactor) Redact(text string) string {
     for piiType, pattern := range pr.patterns {
         redacted = pattern.ReplaceAllStringFunc(redacted, func(match string) string {
             return fmt.Sprintf("[%s_REDACTED]", strings.ToUpper(piiType))
-        })
+}
     }
     
     return redacted
@@ -583,7 +583,7 @@ func (us *URLSanitizer) Sanitize(text string) string {
         }
         
         return u.String()
-    })
+}
 }
 ```
 
@@ -621,7 +621,7 @@ func (ja *JWTAuthenticator) ValidateToken(tokenString string) (*User, error) {
             return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
         }
         return ja.secretKey, nil
-    })
+}
     
     if err != nil {
         return nil, err
@@ -1050,7 +1050,7 @@ func (td *ThreatDetector) DetectAnomalies(userID string, usage UserUsage) {
             "user_id": userID,
             "rate":    usage.RequestsPerHour,
             "baseline": td.baseline.AvgRequestsPerHour[userID],
-        })
+}
         
         // Apply temporary rate limit
         td.rateLimiter.ReduceLimit(userID, 0.5)
@@ -1062,7 +1062,7 @@ func (td *ThreatDetector) DetectAnomalies(userID string, usage UserUsage) {
             "user_id": userID,
             "tokens":  usage.AvgTokensPerRequest,
             "baseline": td.baseline.AvgTokensPerRequest[userID],
-        })
+}
     }
     
     // Check access time anomaly
@@ -1082,7 +1082,7 @@ func (td *ThreatDetector) DetectAnomalies(userID string, usage UserUsage) {
             "user_id": userID,
             "hour":    currentHour,
             "normal_hours": normalHours,
-        })
+}
     }
 }
 
@@ -1336,5 +1336,5 @@ security:
 - **[Custom Providers](custom-providers.md)** - Create secure custom providers
 - **[Production Deployment](production-deployment.md)** - Secure deployment practices
 - **[Troubleshooting Guide](troubleshooting.md)** - Security issue resolution
-- **[Best Practices Checklist](/docs/user-guide/reference/best-practices-checklist.md)** - Security checklist
-- **[Configuration Reference](/docs/user-guide/reference/configuration-reference.md)** - Security settings
+- **[Best Practices Checklist](../../user-guide/reference/best-practices-checklist.md)** - Security checklist
+- **[Configuration Reference](../../user-guide/reference/configuration-reference.md)** - Security settings
