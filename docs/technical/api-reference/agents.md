@@ -6,197 +6,93 @@ Complete API reference for agent interfaces and implementations in Go-LLMs, cove
 
 ## Core Agent Interfaces
 
-### Agent Interface
+### BaseAgent Interface
 
-The base interface for all agent implementations:
+The core interface that all agent types must implement (`pkg/agent/domain`):
 
 ```go
-package agent
+// BaseAgent defines the core interface for all agent types.
+type BaseAgent interface {
+    // Identification
+    ID() string
+    Name() string
+    Description() string
+    Type() AgentType
 
-// Agent represents an autonomous agent that can execute tasks
-type Agent interface {
-    // Execute runs the agent with the given input
-    Execute(ctx context.Context, input interface{}) (interface{}, error)
-    
-    // GetMetadata returns agent metadata
-    GetMetadata() AgentMetadata
-    
-    // GetConfig returns the current agent configuration
-    GetConfig() AgentConfig
-    
-    // SetConfig updates the agent configuration
-    SetConfig(config AgentConfig) error
-    
-    // Initialize prepares the agent for execution
+    // Hierarchy Management
+    Parent() BaseAgent
+    SetParent(parent BaseAgent) error
+    SubAgents() []BaseAgent
+    AddSubAgent(agent BaseAgent) error
+    RemoveSubAgent(name string) error
+    FindAgent(name string) BaseAgent
+    FindSubAgent(name string) BaseAgent
+
+    // Execution
+    Run(ctx context.Context, input *State) (*State, error)
+    RunAsync(ctx context.Context, input *State) (<-chan Event, error)
+
+    // Lifecycle Hooks
     Initialize(ctx context.Context) error
-    
-    // Shutdown cleans up agent resources
-    Shutdown(ctx context.Context) error
+    BeforeRun(ctx context.Context, state *State) error
+    AfterRun(ctx context.Context, state *State, result *State, err error) error
+    Cleanup(ctx context.Context) error
+
+    // Schema Definition
+    InputSchema() *schema.Schema
+    OutputSchema() *schema.Schema
+
+    // Configuration
+    Config() AgentConfig
+    WithConfig(config AgentConfig) BaseAgent
+    Validate() error
+
+    // Metadata
+    Metadata() map[string]interface{}
+    SetMetadata(key string, value interface{})
 }
 ```
 
-#### Methods
+`AgentType` constants: `"llm"`, `"sequential"`, `"parallel"`, `"conditional"`, `"loop"`, `"custom"`
 
-##### Execute
+#### Key Methods
+
+##### Run
 
 ```go
-Execute(ctx context.Context, input interface{}) (interface{}, error)
+Run(ctx context.Context, input *State) (*State, error)
 ```
 
-Executes the agent's main logic with the provided input.
-
-**Parameters:**
-- `ctx`: Context for cancellation and timeout control
-- `input`: The input data for the agent
-
-**Returns:**
-- `interface{}`: The agent's output
-- `error`: Error if execution fails
+Executes the agent synchronously. Input and output are both `*domain.State` key-value maps.
 
 **Example:**
 ```go
-result, err := agent.Execute(ctx, map[string]interface{}{
-    "task": "analyze data",
-    "data": dataSet,
+import agentdomain "github.com/lexlapax/go-llms/pkg/agent/domain"
+
+state := agentdomain.NewState()
+state.Set("user_input", "Summarize this document")
+result, err := agent.Run(ctx, state)
+if response, ok := result.Get("response"); ok {
+    fmt.Println(response)
 }
 ```
 
-##### GetMetadata
+##### RunAsync
 
 ```go
-GetMetadata() AgentMetadata
+RunAsync(ctx context.Context, input *State) (<-chan Event, error)
 ```
 
-Returns metadata about the agent.
+Executes the agent asynchronously, streaming events as they occur.
 
-**Returns:**
-- `AgentMetadata`: Agent metadata including name, version, and capabilities
-
-### ToolEnabledAgent Interface
-
-Extends Agent with tool execution capabilities:
+##### AddSubAgent / SubAgents
 
 ```go
-// ToolEnabledAgent can use tools to accomplish tasks
-type ToolEnabledAgent interface {
-    Agent
-    
-    // RegisterTool adds a tool to the agent's toolkit
-    RegisterTool(tool Tool) error
-    
-    // UnregisterTool removes a tool from the agent's toolkit
-    UnregisterTool(name string) error
-    
-    // GetTools returns all registered tools
-    GetTools() []Tool
-    
-    // ExecuteTool executes a specific tool by name
-    ExecuteTool(ctx context.Context, name string, input interface{}) (interface{}, error)
-    
-    // GetToolRegistry returns the agent's tool registry
-    GetToolRegistry() ToolRegistry
-}
+AddSubAgent(agent BaseAgent) error
+SubAgents() []BaseAgent
 ```
 
-#### Methods
-
-##### RegisterTool
-
-```go
-RegisterTool(tool Tool) error
-```
-
-Registers a tool for use by the agent.
-
-**Parameters:**
-- `tool`: The tool to register
-
-**Returns:**
-- `error`: Error if registration fails
-
-**Example:**
-```go
-httpTool := tools.GetTool("http_request")
-err := agent.RegisterTool(httpTool)
-```
-
-##### ExecuteTool
-
-```go
-ExecuteTool(ctx context.Context, name string, input interface{}) (interface{}, error)
-```
-
-Executes a specific tool by name.
-
-**Parameters:**
-- `ctx`: Context for cancellation and timeout control
-- `name`: Name of the tool to execute
-- `input`: Input for the tool
-
-**Returns:**
-- `interface{}`: Tool execution result
-- `error`: Error if execution fails
-
-### LLMAgent Interface
-
-Agent powered by a language model:
-
-```go
-// LLMAgent uses a language model for reasoning and decision-making
-type LLMAgent interface {
-    ToolEnabledAgent
-    
-    // SetProvider sets the LLM provider
-    SetProvider(provider Provider) error
-    
-    // GetProvider returns the current LLM provider
-    GetProvider() Provider
-    
-    // SetSystemPrompt sets the system prompt
-    SetSystemPrompt(prompt string)
-    
-    // GetSystemPrompt returns the current system prompt
-    GetSystemPrompt() string
-    
-    // GetConversationHistory returns the conversation history
-    GetConversationHistory() []Message
-    
-    // ClearConversationHistory clears the conversation history
-    ClearConversationHistory()
-    
-    // Complete generates a completion using the LLM
-    Complete(ctx context.Context, messages []Message) (*CompletionResponse, error)
-}
-```
-
-### WorkflowAgent Interface
-
-Agent that orchestrates complex workflows:
-
-```go
-// WorkflowAgent executes multi-step workflows
-type WorkflowAgent interface {
-    Agent
-    
-    // AddStep adds a step to the workflow
-    AddStep(step WorkflowStep) error
-    
-    // RemoveStep removes a step from the workflow
-    RemoveStep(name string) error
-    
-    // GetSteps returns all workflow steps
-    GetSteps() []WorkflowStep
-    
-    // ExecuteWorkflow runs the complete workflow
-    ExecuteWorkflow(ctx context.Context, input interface{}) (*WorkflowResult, error)
-    
-    // ExecuteStep executes a specific step
-    ExecuteStep(ctx context.Context, stepName string, input interface{}) (interface{}, error)
-    
-    // GetWorkflowState returns the current workflow state
-    GetWorkflowState() WorkflowState
-}
-```
+Manage child agents for workflow orchestration (sequential, parallel, etc.).
 
 ## Agent Types and Implementations
 

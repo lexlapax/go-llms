@@ -8,205 +8,94 @@ Complete API reference for tool interfaces and implementations in Go-LLMs, cover
 
 ### Tool Interface
 
-The base interface that all tools must implement:
+The base interface that all tools must implement (`pkg/agent/domain`):
 
 ```go
-package tools
-
-// Tool defines the interface for all tools in the system
+// Tool represents an executable capability that can be invoked by LLMs.
 type Tool interface {
-    // Core identification
+    // Core functionality
     Name() string
     Description() string
-    Version() string
-    
-    // Schema definition
-    GetInputSchema() *jsonschema.Schema
-    GetOutputSchema() *jsonschema.Schema
-    
-    // Execution
-    Execute(ctx context.Context, input interface{}) (interface{}, error)
-    
-    // Validation
-    ValidateInput(input interface{}) error
-    ValidateOutput(output interface{}) error
-    
-    // Lifecycle
-    Initialize(ctx context.Context) error
-    Cleanup(ctx context.Context) error
-    
+    Execute(ctx *ToolContext, params interface{}) (interface{}, error)
+
+    // Schema definitions
+    ParameterSchema() *schema.Schema
+    OutputSchema() *schema.Schema
+
+    // LLM guidance
+    UsageInstructions() string
+    Examples() []ToolExample
+    Constraints() []string
+    ErrorGuidance() map[string]string
+
     // Metadata
-    GetMetadata() ToolMetadata
-    GetCapabilities() ToolCapabilities
+    Category() string
+    Tags() []string
+    Version() string
+
+    // Behavioral hints
+    IsDeterministic() bool
+    IsDestructive() bool
+    RequiresConfirmation() bool
+    EstimatedLatency() string // "fast", "medium", or "slow"
+
+    // MCP compatibility
+    ToMCPDefinition() MCPToolDefinition
 }
 ```
 
 #### Methods
 
-##### Name
+##### Name / Description
 
 ```go
 Name() string
+Description() string
 ```
 
-Returns the unique name identifier for the tool.
-
-**Returns:**
-- `string`: Tool name (e.g., "http_request", "file_reader")
-
-**Example:**
-```go
-name := tool.Name() // "http_request"
-```
-
-##### GetInputSchema
-
-```go
-GetInputSchema() *jsonschema.Schema
-```
-
-Returns the JSON Schema defining valid input for the tool.
-
-**Returns:**
-- `*jsonschema.Schema`: Input schema definition
-
-**Example:**
-```go
-schema := tool.GetInputSchema()
-// Use schema to validate input before execution
-```
+Return the tool's unique identifier and human-readable description.
 
 ##### Execute
 
 ```go
-Execute(ctx context.Context, input interface{}) (interface{}, error)
+Execute(ctx *ToolContext, params interface{}) (interface{}, error)
 ```
 
-Executes the tool with the provided input.
+Executes the tool with the provided parameters.
 
 **Parameters:**
-- `ctx`: Context for cancellation and timeout control
-- `input`: The input data (must match input schema)
+- `ctx`: `*ToolContext` carrying execution context and agent state
+- `params`: Input parameters (validated against `ParameterSchema()`)
 
 **Returns:**
 - `interface{}`: Tool execution result
 - `error`: Error if execution fails
 
-**Example:**
+##### ParameterSchema / OutputSchema
+
 ```go
-result, err := tool.Execute(ctx, map[string]interface{}{
-    "url": "https://api.example.com/data",
-    "method": "GET",
-}
+ParameterSchema() *schema.Schema
+OutputSchema() *schema.Schema
 ```
 
-### StatefulTool Interface
+Return JSON schemas for the tool's input parameters and output structure respectively.
 
-Extends Tool with state management capabilities:
+##### LLM Guidance Methods
 
 ```go
-// StatefulTool maintains state across executions
-type StatefulTool interface {
-    Tool
-    
-    // State management
-    GetState() ToolState
-    SetState(state ToolState) error
-    ResetState() error
-    
-    // State persistence
-    SaveState(ctx context.Context) error
-    LoadState(ctx context.Context) error
-    
-    // State versioning
-    GetStateVersion() int64
-    MigrateState(fromVersion int64) error
-}
-
-// ToolState represents tool state
-type ToolState interface {
-    // Basic operations
-    Get(key string) (interface{}, bool)
-    Set(key string, value interface{}) error
-    Delete(key string) error
-    
-    // Bulk operations
-    GetAll() map[string]interface{}
-    Clear() error
-    
-    // Metadata
-    Version() int64
-    Modified() time.Time
-}
+UsageInstructions() string        // When and how to use the tool
+Examples() []ToolExample          // Concrete usage examples
+Constraints() []string            // Known limitations
+ErrorGuidance() map[string]string // Error type → recovery advice
 ```
 
-### AsyncTool Interface
-
-For tools with asynchronous execution:
+##### Behavioral Hints
 
 ```go
-// AsyncTool supports asynchronous execution
-type AsyncTool interface {
-    Tool
-    
-    // Async execution
-    ExecuteAsync(ctx context.Context, input interface{}) (TaskID, error)
-    
-    // Status checking
-    GetStatus(ctx context.Context, taskID TaskID) (TaskStatus, error)
-    GetResult(ctx context.Context, taskID TaskID) (interface{}, error)
-    
-    // Cancellation
-    Cancel(ctx context.Context, taskID TaskID) error
-    
-    // Bulk operations
-    ListTasks(ctx context.Context) ([]TaskInfo, error)
-    CancelAll(ctx context.Context) error
-}
-
-// TaskStatus represents async task status
-type TaskStatus string
-
-const (
-    TaskStatusPending   TaskStatus = "pending"
-    TaskStatusRunning   TaskStatus = "running"
-    TaskStatusCompleted TaskStatus = "completed"
-    TaskStatusFailed    TaskStatus = "failed"
-    TaskStatusCancelled TaskStatus = "cancelled"
-)
-```
-
-### StreamingTool Interface
-
-For tools that produce streaming output:
-
-```go
-// StreamingTool supports streaming output
-type StreamingTool interface {
-    Tool
-    
-    // Streaming execution
-    ExecuteStream(ctx context.Context, input interface{}) (<-chan StreamChunk, error)
-    
-    // Stream control
-    SupportsBackpressure() bool
-    SetBufferSize(size int) error
-}
-
-// StreamChunk represents a chunk of streaming data
-type StreamChunk struct {
-    Data      interface{} `json:"data"`
-    Metadata  StreamMeta  `json:"metadata"`
-    Error     error       `json:"error,omitempty"`
-    Final     bool        `json:"final"`
-}
-
-// StreamMeta contains streaming metadata
-type StreamMeta struct {
-    Sequence  int64     `json:"sequence"`
-    Timestamp time.Time `json:"timestamp"`
-    Type      string    `json:"type"`
-}
+IsDeterministic() bool      // Same input always produces same output
+IsDestructive() bool        // Tool modifies state or has side effects
+RequiresConfirmation() bool // Needs user confirmation before execution
+EstimatedLatency() string   // "fast", "medium", or "slow"
 ```
 
 ## Tool Registry

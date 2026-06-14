@@ -50,9 +50,9 @@ import (
     "log"
     "os"
 
-    "github.com/lexlapax/go-llms/pkg/llm/provider"
+    agentdomain "github.com/lexlapax/go-llms/pkg/agent/domain"
     "github.com/lexlapax/go-llms/pkg/agent/core"
-    "github.com/lexlapax/go-llms/pkg/llm/domain"
+    "github.com/lexlapax/go-llms/pkg/llm/provider"
 )
 
 func main() {
@@ -66,15 +66,15 @@ func main() {
     openaiProvider := provider.NewOpenAIProvider(apiKey, "gpt-4")
     
     // Create an agent
-    agent := core.NewLLMAgent("assistant", "gpt-4", core.LLMDeps{
+    agent := core.NewLLMAgent("assistant", "A helpful AI assistant", core.LLMDeps{
         Provider: openaiProvider,
-}
+    })
     
     // Set system prompt
     agent.SetSystemPrompt("You are a helpful assistant.")
     
     // Create state with user input
-    state := domain.NewState()
+    state := agentdomain.NewState()
     state.Set("user_input", "Hello! What can you help me with today?")
     
     // Run the agent
@@ -151,9 +151,9 @@ if anthropicKey == "" {
 anthropicProvider := provider.NewAnthropicProvider(anthropicKey, "claude-3-sonnet-20240229")
 
 // Use in agent
-agent := core.NewLLMAgent("assistant", "claude-3-sonnet-20240229", core.LLMDeps{
+agent := core.NewLLMAgent("assistant", "A helpful AI assistant", core.LLMDeps{
     Provider: anthropicProvider,
-}
+})
 ```
 
 ### Common Issues and Solutions

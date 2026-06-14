@@ -8,183 +8,119 @@ Complete API reference for LLM provider interfaces and implementations in Go-LLM
 
 ### Provider Interface
 
-The base interface that all LLM providers must implement:
+The base interface that all LLM providers must implement (`pkg/llm/domain`):
 
 ```go
-package llm
-
-// Provider defines the core interface for LLM providers
+// Provider defines the contract that all LLM providers must implement.
 type Provider interface {
-    // Complete generates a completion for the given request
-    Complete(ctx context.Context, request *CompletionRequest) (*CompletionResponse, error)
-    
-    // GetCapabilities returns the capabilities of this provider
-    GetCapabilities() Capabilities
-    
-    // GetModels returns available models for this provider
-    GetModels(ctx context.Context) ([]Model, error)
-    
-    // Close cleans up any resources used by the provider
-    Close() error
+    // Generate produces text from a prompt
+    Generate(ctx context.Context, prompt string, options ...Option) (string, error)
+
+    // GenerateMessage produces text from a list of messages
+    GenerateMessage(ctx context.Context, messages []Message, options ...Option) (Response, error)
+
+    // GenerateWithSchema produces structured output conforming to a schema
+    GenerateWithSchema(ctx context.Context, prompt string, schema *schema.Schema, options ...Option) (interface{}, error)
+
+    // Stream streams responses token by token
+    Stream(ctx context.Context, prompt string, options ...Option) (ResponseStream, error)
+
+    // StreamMessage streams responses from a list of messages
+    StreamMessage(ctx context.Context, messages []Message, options ...Option) (ResponseStream, error)
 }
 ```
 
+`ResponseStream` is a read-only token channel: `type ResponseStream <-chan Token`
+
 #### Methods
 
-##### Complete
+##### Generate
 
 ```go
-Complete(ctx context.Context, request *CompletionRequest) (*CompletionResponse, error)
+Generate(ctx context.Context, prompt string, options ...Option) (string, error)
 ```
 
-Generates a completion based on the provided request.
+Generates text from a prompt string.
 
 **Parameters:**
 - `ctx`: Context for cancellation and timeout control
-- `request`: The completion request containing messages and parameters
+- `prompt`: The input prompt
+- `options`: Optional provider options (temperature, max tokens, etc.)
 
 **Returns:**
-- `*CompletionResponse`: The generated completion
+- `string`: The generated text
 - `error`: Error if the request fails
 
 **Example:**
 ```go
-response, err := provider.Complete(ctx, &CompletionRequest{
-    Messages: []Message{
-        {Role: "user", Content: "What is the capital of France?"},
-    },
-    Model: "gpt-3.5-turbo",
-}
+text, err := provider.Generate(ctx, "What is the capital of France?")
 ```
 
-##### GetCapabilities
+##### GenerateMessage
 
 ```go
-GetCapabilities() Capabilities
+GenerateMessage(ctx context.Context, messages []Message, options ...Option) (Response, error)
 ```
 
-Returns the capabilities supported by this provider.
-
-**Returns:**
-- `Capabilities`: Provider capabilities including supported features
-
-**Example:**
-```go
-caps := provider.GetCapabilities()
-if caps.SupportsStreaming {
-    // Use streaming
-}
-```
-
-##### GetModels
-
-```go
-GetModels(ctx context.Context) ([]Model, error)
-```
-
-Retrieves the list of available models from the provider.
+Generates a response from a list of messages (chat format).
 
 **Parameters:**
 - `ctx`: Context for cancellation and timeout control
+- `messages`: Conversation messages
+- `options`: Optional provider options
 
 **Returns:**
-- `[]Model`: List of available models
+- `Response`: The generated response
 - `error`: Error if the request fails
 
-### StreamingProvider Interface
-
-Extends Provider with streaming capabilities:
+##### GenerateWithSchema
 
 ```go
-// StreamingProvider adds streaming support to the base Provider interface
-type StreamingProvider interface {
-    Provider
-    
-    // CompleteStream generates a streaming completion
-    CompleteStream(ctx context.Context, request *CompletionRequest) (<-chan StreamChunk, error)
-}
+GenerateWithSchema(ctx context.Context, prompt string, schema *schema.Schema, options ...Option) (interface{}, error)
 ```
 
-#### Methods
+Generates structured output that conforms to the provided JSON schema.
 
-##### CompleteStream
+##### Stream
 
 ```go
-CompleteStream(ctx context.Context, request *CompletionRequest) (<-chan StreamChunk, error)
+Stream(ctx context.Context, prompt string, options ...Option) (ResponseStream, error)
 ```
 
-Generates a streaming completion, returning chunks as they become available.
-
-**Parameters:**
-- `ctx`: Context for cancellation and timeout control
-- `request`: The completion request
+Streams response tokens as they are generated.
 
 **Returns:**
-- `<-chan StreamChunk`: Channel of stream chunks
+- `ResponseStream`: A read-only `<-chan Token` channel
 - `error`: Error if the stream setup fails
 
 **Example:**
 ```go
-stream, err := provider.CompleteStream(ctx, request)
+stream, err := provider.Stream(ctx, "Explain Go interfaces")
 if err != nil {
     return err
 }
-
-for chunk := range stream {
-    if chunk.Error != nil {
-        return chunk.Error
-    }
-    fmt.Print(chunk.Delta)
+for token := range stream {
+    fmt.Print(token.Text)
 }
 ```
 
-### EmbeddingProvider Interface
-
-Provides text embedding generation capabilities:
+##### StreamMessage
 
 ```go
-// EmbeddingProvider generates embeddings for text input
-type EmbeddingProvider interface {
-    // CreateEmbedding generates embeddings for the input text
-    CreateEmbedding(ctx context.Context, request *EmbeddingRequest) (*EmbeddingResponse, error)
-    
-    // GetEmbeddingModels returns available embedding models
-    GetEmbeddingModels(ctx context.Context) ([]EmbeddingModel, error)
-}
+StreamMessage(ctx context.Context, messages []Message, options ...Option) (ResponseStream, error)
 ```
 
-#### Methods
+Streams a response from a list of messages.
 
-##### CreateEmbedding
+### ModelRegistry Interface
 
-```go
-CreateEmbedding(ctx context.Context, request *EmbeddingRequest) (*EmbeddingResponse, error)
-```
-
-Generates embeddings for the provided text input.
-
-**Parameters:**
-- `ctx`: Context for cancellation and timeout control
-- `request`: The embedding request
-
-**Returns:**
-- `*EmbeddingResponse`: Generated embeddings
-- `error`: Error if the request fails
-
-### FunctionCallingProvider Interface
-
-Adds function/tool calling capabilities:
+Optional interface for registering and discovering models by name (`pkg/llm/domain`):
 
 ```go
-// FunctionCallingProvider supports function/tool calling
-type FunctionCallingProvider interface {
-    Provider
-    
-    // SupportsFunctionCalling indicates if the provider supports function calling
-    SupportsFunctionCalling() bool
-    
-    // GetFunctionCallModels returns models that support function calling
-    GetFunctionCallModels(ctx context.Context) ([]Model, error)
+type ModelRegistry interface {
+    RegisterModel(name string, provider Provider) error
+    GetModel(name string) (Provider, error)
+    ListModels() []string
 }
 ```
 
@@ -220,11 +156,10 @@ func New(config Config) *Provider
 #### Usage Example
 
 ```go
-import "github.com/lexlapax/go-llms/pkg/llm/provider/openai"
+import "github.com/lexlapax/go-llms/pkg/llm/provider"
 
-provider := provider.NewOpenAIProvider(
-    domain.NewTemperatureOption(&[]float64{0.7}[0]),
-)
+p := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"), "gpt-4")
+text, err := p.Generate(ctx, "Hello!")
 ```
 
 ### Anthropic Provider
@@ -255,19 +190,10 @@ func New(config Config) *Provider
 #### Usage Example
 
 ```go
-import "github.com/lexlapax/go-llms/pkg/llm/provider/anthropic"
+import "github.com/lexlapax/go-llms/pkg/llm/provider"
 
-provider := provider.NewAnthropicProvider(
-    // APIKey: os.Getenv("ANTHROPIC_API_KEY"), // Moved to constructor parameters
-    Model:  "claude-3-opus-20240229",
-}
-
-response, err := provider.Complete(ctx, &llm.CompletionRequest{
-    Messages: []llm.Message{
-        {Role: "user", Content: "Write a haiku about programming."},
-    },
-    MaxTokens: &[]int{100}[0],
-}
+p := provider.NewAnthropicProvider(os.Getenv("ANTHROPIC_API_KEY"), "claude-3-opus-20240229")
+text, err := p.Generate(ctx, "Write a haiku about programming.")
 ```
 
 ### Google Gemini Provider
@@ -659,7 +585,7 @@ Always use context for proper cancellation:
 ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 defer cancel()
 
-response, err := provider.Complete(ctx, request)
+text, err := provider.Generate(ctx, prompt)
 ```
 
 ### 2. Error Handling
@@ -668,7 +594,7 @@ Handle provider-specific errors appropriately:
 
 ```go
 if err != nil {
-    var providerErr *ProviderError
+    var providerErr *domain.ProviderError
     if errors.As(err, &providerErr) {
         if providerErr.Retryable {
             // Implement retry logic
@@ -677,57 +603,20 @@ if err != nil {
 }
 ```
 
-### 3. Resource Cleanup
-
-Always close providers when done:
-
-```go
-provider := openai.New(config)
-defer provider.Close()
-```
-
-### 4. Model Selection
-
-Check model availability before use:
-
-```go
-models, err := provider.GetModels(ctx)
-if err != nil {
-    return err
-}
-
-// Find suitable model
-var selectedModel *Model
-for _, model := range models {
-    if model.SupportsFunctions && model.ContextLength >= 8000 {
-        selectedModel = &model
-        break
-    }
-}
-```
-
-### 5. Streaming Best Practices
+### 3. Streaming Best Practices
 
 Handle streaming responses properly:
 
 ```go
-stream, err := provider.CompleteStream(ctx, request)
+stream, err := provider.Stream(ctx, prompt)
 if err != nil {
     return err
 }
 
 var fullResponse strings.Builder
-for chunk := range stream {
-    if chunk.Error != nil {
-        return chunk.Error
-    }
-    
-    for _, choice := range chunk.Choices {
-        fullResponse.WriteString(choice.Delta.Content)
-        
-        // Process chunk immediately if needed
-        fmt.Print(choice.Delta.Content)
-    }
+for token := range stream {
+    fullResponse.WriteString(token.Text)
+    fmt.Print(token.Text)
 }
 ```
 

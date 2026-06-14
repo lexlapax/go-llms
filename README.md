@@ -42,9 +42,9 @@ import (
     "fmt"
     "os"
     
-    "github.com/lexlapax/go-llms/pkg/llm/provider"
+    agentdomain "github.com/lexlapax/go-llms/pkg/agent/domain"
     "github.com/lexlapax/go-llms/pkg/agent/core"
-    "github.com/lexlapax/go-llms/pkg/llm/domain"
+    "github.com/lexlapax/go-llms/pkg/llm/provider"
 )
 
 func main() {
@@ -52,15 +52,17 @@ func main() {
     p := provider.NewOpenAIProvider(os.Getenv("OPENAI_API_KEY"), "gpt-4")
     
     // Create agent
-    agent := core.NewLLMAgent("assistant", "gpt-4", core.LLMDeps{Provider: p})
+    agent := core.NewLLMAgent("assistant", "A helpful AI assistant", core.LLMDeps{Provider: p})
     agent.SetSystemPrompt("You are a helpful assistant.")
     
     // Chat
-    state := domain.NewState()
+    state := agentdomain.NewState()
     state.Set("user_input", "Explain quantum computing in simple terms")
     result, _ := agent.Run(context.Background(), state)
     
-    fmt.Println(result.Get("response"))
+    if response, ok := result.Get("response"); ok {
+        fmt.Println(response)
+    }
 }
 ```
 
@@ -68,7 +70,7 @@ func main() {
 
 ```go
 // Create smart agent with built-in tools
-agent := core.NewLLMAgent("smart-assistant", "gpt-4", core.LLMDeps{Provider: p})
+agent := core.NewLLMAgent("smart-assistant", "A smart assistant with tool access", core.LLMDeps{Provider: p})
 
 // Add powerful tools
 agent.AddTool(web.NewWebSearchTool(webAPIKey))
@@ -108,18 +110,17 @@ data := result.Get("structured_output")
 
 ```go
 // Create specialized agents
-extractor := core.NewLLMAgent("extractor", "gpt-4", core.LLMDeps{Provider: p})
-analyzer := core.NewLLMAgent("analyzer", "claude-3-sonnet-20240229", core.LLMDeps{Provider: claude})
+extractor := core.NewLLMAgent("extractor", "Extracts data from documents", core.LLMDeps{Provider: p})
+analyzer := core.NewLLMAgent("analyzer", "Analyzes extracted data", core.LLMDeps{Provider: claude})
 
 // Orchestrate with workflows
-workflow := workflow.NewSequentialAgent("data-pipeline", []domain.BaseAgent{
-    extractor,  // First: extract data from text
-    analyzer,   // Second: analyze extracted data
-})
+pipeline := workflow.NewSequentialAgent("data-pipeline")
+pipeline.AddSubAgent(extractor)  // First: extract data from text
+pipeline.AddSubAgent(analyzer)   // Second: analyze extracted data
 
 // Process data through the pipeline
 state.Set("document", "Large document content...")
-result, _ := workflow.Run(context.Background(), state)
+result, _ := pipeline.Run(context.Background(), state)
 ```
 
 ## Learning Resources
@@ -234,7 +235,7 @@ go run docs/user-guide/getting-started/quickstart.go
 ## Status
 
 ✅ **Actively Maintained** - Regular updates and improvements  
-✅ **Comprehensive Testing** - 280+ tests with >85% coverage  
+✅ **Comprehensive Testing** - 1,200+ tests with >85% coverage  
 ✅ **Complete Documentation** - User guides, API docs, examples  
 ✅ **Bridge Compatible** - Ready for scripting engine integration  
 
